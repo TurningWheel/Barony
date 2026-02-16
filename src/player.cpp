@@ -7276,35 +7276,61 @@ void Player::clearGUIPointers()
 	players[playernum]->inventoryUI.compendiumItemTooltipDisplay.reset();
 }
 
-const char* Player::getAccountName() const {
-    const char* unknown = "...";
-    if (directConnect) {
-	    switch (playernum) {
-	    case 0: return "Player 1";
-	    case 1: return "Player 2";
-	    case 2: return "Player 3";
-	    case 3: return "Player 4";
-	    default: return unknown;
-	    }
-    } else {
-		if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM) {
+static const char* getDirectConnectPlayerName(const int playernum)
+{
+	static std::array<std::array<char, 16>, MAXPLAYERS> directConnectNames{};
+	static bool initialized = false;
+	if ( !initialized )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			snprintf(directConnectNames[i].data(), directConnectNames[i].size(), "Player %d", i + 1);
+		}
+		initialized = true;
+	}
+	if ( playernum >= 0 && playernum < MAXPLAYERS )
+	{
+		return directConnectNames[playernum].data();
+	}
+	return "...";
+}
+
+const char* Player::getAccountName() const
+{
+	const char* unknown = "...";
+	if ( directConnect )
+	{
+		return getDirectConnectPlayerName(playernum);
+	}
+	else
+	{
+		if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_STEAM )
+		{
 #ifdef STEAMWORKS
-			if (isLocalPlayer()) {
+			if ( isLocalPlayer() )
+			{
 				return SteamFriends()->GetPersonaName();
-			} else {
-				for (int remoteIDIndex = 0; remoteIDIndex < MAXPLAYERS; ++remoteIDIndex) {
-					if (steamIDRemote[remoteIDIndex]) {
+			}
+			else
+			{
+				for ( int remoteIDIndex = 0; remoteIDIndex < MAXPLAYERS; ++remoteIDIndex )
+				{
+					if ( steamIDRemote[remoteIDIndex] )
+					{
 						const char* memberNumChar = SteamMatchmaking()->GetLobbyMemberData(
-						    *static_cast<CSteamID*>(currentLobby),
-						    *static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]),
-						    "clientnum");
-						if (memberNumChar) {
+							*static_cast<CSteamID*>(currentLobby),
+							*static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]),
+							"clientnum");
+						if ( memberNumChar )
+						{
 							std::string str = memberNumChar;
-							if (!str.empty()) {
+							if ( !str.empty() )
+							{
 								int memberNum = std::stoi(str);
-								if (memberNum >= 0 && memberNum < MAXPLAYERS && memberNum == playernum) {
+								if ( memberNum >= 0 && memberNum < MAXPLAYERS && memberNum == playernum )
+								{
 									return SteamFriends()->GetFriendPersonaName(
-									    *static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]));
+										*static_cast<CSteamID*>(steamIDRemote[remoteIDIndex]));
 								}
 							}
 						}
@@ -7313,13 +7339,19 @@ const char* Player::getAccountName() const {
 			}
 #endif
 		}
-		else if (LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY) {
+		else if ( LobbyHandler.getP2PType() == LobbyHandler_t::LobbyServiceType::LOBBY_CROSSPLAY )
+		{
 #if defined USE_EOS
-			if (isLocalPlayer()) {
+			if ( isLocalPlayer() )
+			{
 				return EOS.CurrentUserInfo.Name.c_str();
-			} else {
-				for (auto& player : EOS.CurrentLobbyData.playersInLobby) {
-					if (player.clientNumber == playernum) {
+			}
+			else
+			{
+				for ( EOSFuncs::LobbyData_t::PlayerLobbyData_t& player : EOS.CurrentLobbyData.playersInLobby )
+				{
+					if ( player.clientNumber == playernum )
+					{
 						return player.name.c_str();
 					}
 				}
@@ -7327,7 +7359,8 @@ const char* Player::getAccountName() const {
 #endif
 		}
 	}
-    return unknown;
+
+	return unknown;
 }
 
 void Player::PlayerMechanics_t::onItemDegrade(Item* item)

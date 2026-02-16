@@ -1,5 +1,11 @@
 **/books/*
 build/*
+build-*/
+tests/smoke/artifacts/
+docker/*
+!docker/Dockerfile
+!docker/docker-compose.yml
+!docker/build-linux.sh
 **/data/*
 **/fonts/*
 **/images/*
@@ -75,6 +81,9 @@ steam_appid.txt
 xcode/Barony/Barony.xcodeproj/project.xcworkspace/*
 xcode/Barony/Barony.xcodeproj/xcuserdata/*
 *.ps1
+!setup_barony_vs2022_x64.ps1
+restore-env-*.ps1
+install.log
 !LICENSE.nativefiledialog.txt
 /VS.2015/Barony/x64/Debug
 *.sarif
@@ -83,3 +92,7 @@ xcode/Barony/Barony.xcodeproj/xcuserdata/*
 *.ilk
 /VS.2015/x64
 *.sqlite-journal
+/deps/*
+# Local smoke outputs and SDK drops
+tests/smoke/artifacts/
+third_party/steamworks_sdk/

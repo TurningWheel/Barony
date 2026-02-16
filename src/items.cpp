@@ -25,6 +25,7 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "mod_tools.hpp"
+#include "player_slot_map.hpp"
 
 #include <assert.h>
 
@@ -36,6 +37,86 @@ Uint32 enchantedFeatherScrollSeed;
 std::vector<int> enchantedFeatherScrollsShuffled;
 bool overrideTinkeringLimit = false;
 int decoyBoxRange = 15;
+
+namespace
+{
+constexpr int kLootBagFallbackPlayer = 0;
+constexpr int kLootBagFallbackVariation = 4;
+constexpr int kLootBagFallbackLightPalette = 4;
+
+const PlayerSlotLookup<Uint32, MAXPLAYERS>& getLootBagVariationByPlayerLookup(const bool colorblind)
+{
+	static const Uint32 normalPrimary[] = { 0, 1, 2, 3, 4 };
+	static const Uint32 normalCycle[] = { 2, 3, 4 };
+	static const Uint32 colorblindPrimary[] = { 2, 3, 1, 4, 5, 6, 7, 8 };
+	static const Uint32 colorblindCycle[] = { 5, 6, 7, 8 };
+	static const PlayerSlotLookup<Uint32, MAXPLAYERS> normalVariationByPlayer =
+		buildPlayerSlotLookup<Uint32, MAXPLAYERS>(normalPrimary, normalCycle, kLootBagFallbackVariation);
+	static const PlayerSlotLookup<Uint32, MAXPLAYERS> colorblindVariationByPlayer =
+		buildPlayerSlotLookup<Uint32, MAXPLAYERS>(colorblindPrimary, colorblindCycle, kLootBagFallbackVariation);
+
+	return colorblind ? colorblindVariationByPlayer : normalVariationByPlayer;
+}
+
+const PlayerSlotLookup<int, MAXPLAYERS>& getLootBagLightPaletteByPlayerLookup()
+{
+	static const int lightPrimary[] = { 0, 1, 2, 3, 4 };
+	static const int lightCycle[] = { 2, 3, 4 };
+	static const PlayerSlotLookup<int, MAXPLAYERS> lightPaletteByPlayer =
+		buildPlayerSlotLookup<int, MAXPLAYERS>(lightPrimary, lightCycle, kLootBagFallbackLightPalette);
+	return lightPaletteByPlayer;
+}
+}
+
+int getLootBagVariationForPlayer(const int playerOwner, const bool colorblind)
+{
+	const int fallbackVariation = std::max(0,
+		std::min(kLootBagFallbackVariation, items[TOOL_PLAYER_LOOT_BAG].variations - 1));
+
+	if ( playerOwner < 0 || playerOwner >= MAXPLAYERS )
+	{
+		return fallbackVariation;
+	}
+
+	const int variation = static_cast<int>(getLootBagVariationByPlayerLookup(colorblind)[playerOwner]);
+	if ( variation >= 0 && variation < items[TOOL_PLAYER_LOOT_BAG].variations )
+	{
+		return variation;
+	}
+	return fallbackVariation;
+}
+
+int getLootBagPlayerForVariation(const int variation, const bool colorblind)
+{
+	if ( variation < 0 || variation >= items[TOOL_PLAYER_LOOT_BAG].variations )
+	{
+		return kLootBagFallbackPlayer;
+	}
+
+	const PlayerSlotLookup<Uint32, MAXPLAYERS>& variationByPlayer = getLootBagVariationByPlayerLookup(colorblind);
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( static_cast<int>(variationByPlayer[player]) == variation )
+		{
+			return player;
+		}
+	}
+	return kLootBagFallbackPlayer;
+}
+
+int getLootBagLightPaletteForPlayer(const int playerOwner)
+{
+	if ( playerOwner < 0 || playerOwner >= MAXPLAYERS )
+	{
+		return kLootBagFallbackLightPalette;
+	}
+	return getLootBagLightPaletteByPlayerLookup()[playerOwner];
+}
+
+int getLootBagLightPaletteForVariation(const int variation, const bool colorblind)
+{
+	return getLootBagLightPaletteForPlayer(getLootBagPlayerForVariation(variation, colorblind));
+}
 
 bool autoHotbarSoftReserveItem(Item& item)
 {
@@ -1284,33 +1365,7 @@ Sint32 itemModel(const Item* const item, bool shortModel, Entity* creature)
 
 	if ( item->type == TOOL_PLAYER_LOOT_BAG )
 	{
-		if ( colorblind_lobby )
-		{
-			int playerOwner = item->getLootBagPlayer();
-			Uint32 playerIndex = 4;
-			switch ( playerOwner )
-			{
-			case 0:
-				playerIndex = 2;
-				break;
-			case 1:
-				playerIndex = 3;
-				break;
-			case 2:
-				playerIndex = 1;
-				break;
-			case 3:
-				playerIndex = 4;
-				break;
-			default:
-				break;
-			}
-			return index + playerIndex;
-		}
-		else
-		{
-			return index + item->getLootBagPlayer();
-		}
+		return index + getLootBagVariationForPlayer(item->getLootBagPlayer(), colorblind_lobby);
 	}
 	else if ( item->type == MAGICSTAFF_SCEPTER )
 	{

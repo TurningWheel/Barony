@@ -40,6 +40,7 @@
 #include "../ui/Slider.hpp"
 #include "../collision.hpp"
 #include "../classdescriptions.hpp"
+#include "../player_slot_map.hpp"
 
 Uint32 svFlags = 30;
 Uint32 settings_svFlags = svFlags;
@@ -29487,40 +29488,34 @@ void CalloutRadialMenu::closeCalloutMenuGUI()
 
 std::string& CalloutRadialMenu::WorldIconEntry_t::getPlayerIconPath(const int playernum)
 {
-	if ( colorblind_lobby )
+	static const int normalPrimary[] = { 1, 2, 3, 4, 4 };
+	static const int normalCycle[] = { 2, 3, 4 };
+	static const int colorblindPrimary[] = { 3, 4, 2, 0, 0 };
+	static const int colorblindCycle[] = { 3, 4, 0 };
+
+	static const PlayerSlotLookup<int, MAXPLAYERS> normalPaletteByPlayer =
+		buildPlayerSlotLookup<int, MAXPLAYERS>(normalPrimary, normalCycle, 0);
+	static const PlayerSlotLookup<int, MAXPLAYERS> colorblindPaletteByPlayer =
+		buildPlayerSlotLookup<int, MAXPLAYERS>(colorblindPrimary, colorblindCycle, 0);
+
+	if ( playernum < 0 || playernum >= MAXPLAYERS )
 	{
-		switch ( playernum )
-		{
-		case 0:
-			return pathPlayer3;
-		case 1:
-			return pathPlayer4;
-		case 2:
-			return pathPlayer2;
-		case 3:
-			return pathPlayerX;
-		default:
-			return pathPlayerX;
-			break;
-		}
+		return pathPlayerX;
 	}
-	else
-	{
-		switch ( playernum )
-		{
-		case 0:
-			return pathPlayer1;
-		case 1:
-			return pathPlayer2;
-		case 2:
-			return pathPlayer3;
-		case 3:
-			return pathPlayer4;
-		default:
-			return pathPlayerX;
-			break;
-		}
-	}
+
+	// Ordering is intentional: first slots preserve legacy host/player colors.
+	// Player index 4 already reuses the 4th themed icon because there is no 5th
+	// themed asset; after that, overflow slots follow one consistent cycle.
+	// This keeps mapping predictable and avoids reusing player 1 colors first.
+	const int paletteIndex = colorblind_lobby ?
+		colorblindPaletteByPlayer[playernum] : normalPaletteByPlayer[playernum];
+
+	std::string* const kPathByPalette[] = {
+		&pathPlayerX, &pathPlayer1, &pathPlayer2, &pathPlayer3, &pathPlayer4
+	};
+	const int maxPaletteIndex = static_cast<int>(sizeof(kPathByPalette) / sizeof(kPathByPalette[0])) - 1;
+	const int clampedPaletteIndex = std::max(0, std::min(paletteIndex, maxPaletteIndex));
+	return *kPathByPalette[clampedPaletteIndex];
 }
 
 void CalloutRadialMenu::drawCallouts(const int playernum)
@@ -30398,38 +30393,54 @@ std::string CalloutRadialMenu::getCalloutKeyForCommand(CalloutRadialMenu::Callou
 
 int CalloutRadialMenu::getPlayerForDirectPlayerCmd(const int player, const CalloutRadialMenu::CalloutCommand cmd)
 {
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return -1;
+	}
+
+	int targetIndex = -1;
 	if ( cmd == CALLOUT_CMD_SOUTH )
 	{
-		if ( player == 0 )
-		{
-			return 1;
-		}
-		else
-		{
-			return 0;
-		}
+		targetIndex = 0;
 	}
 	else if ( cmd == CALLOUT_CMD_SOUTHWEST )
 	{
-		if ( player == 0 )
-		{
-			return 2;
-		}
-		else
-		{
-			return player == 1 ? 2 : 1;
-		}
+		targetIndex = 1;
 	}
 	else if ( cmd == CALLOUT_CMD_SOUTHEAST )
 	{
-		if ( player == 0 || player == 1 )
+		targetIndex = 2;
+	}
+	if ( targetIndex < 0 )
+	{
+		return -1;
+	}
+
+	if ( player == 0 )
+	{
+		// Legacy host ordering: first three direct targets are players 1,2,3.
+		const int hostTarget = targetIndex + 1;
+		return hostTarget < MAXPLAYERS ? hostTarget : -1;
+	}
+
+	// Legacy non-host ordering: host first, then ascending player slots.
+	if ( targetIndex == 0 )
+	{
+		return 0;
+	}
+
+	int remaining = targetIndex - 1;
+	for ( int candidate = 1; candidate < MAXPLAYERS; ++candidate )
+	{
+		if ( candidate == player )
 		{
-			return 3;
+			continue;
 		}
-		else
+		if ( remaining == 0 )
 		{
-			return player == 2 ? 3 : 2;
+			return candidate;
 		}
+		--remaining;
 	}
 	return -1;
 }

@@ -27,6 +27,9 @@
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
 #include "shops.hpp"
+#ifdef BARONY_SMOKE_TESTS
+#include "smoke/SmokeTestHooks.hpp"
+#endif
 #ifdef USE_PLAYFAB
 #include "playfab.hpp"
 #endif
@@ -2586,6 +2589,36 @@ SaveGameInfo getSaveGameInfo(bool singleplayer, int saveIndex)
 	bool result = FileHelper::readObject(path, info);
 	if (!result) {
 		info.game_version = -1;
+	}
+
+	// Compatibility for legacy saves that do not serialize players_connected.
+	if ( result && !info.players.empty() )
+	{
+		const size_t playerCount = info.players.size();
+		if ( info.players_connected.empty() )
+		{
+			info.players_connected.assign(playerCount, 0);
+			if ( info.multiplayer_type == SINGLE )
+			{
+				info.players_connected[0] = 1;
+			}
+			else
+			{
+				for ( size_t i = 0; i < playerCount; ++i )
+				{
+					info.players_connected[i] = 1;
+				}
+			}
+		}
+		else if ( info.players_connected.size() != playerCount )
+		{
+			const int fillValue = info.multiplayer_type == SINGLE ? 0 : 1;
+			info.players_connected.resize(playerCount, fillValue);
+			if ( info.multiplayer_type == SINGLE && !info.players_connected.empty() )
+			{
+				info.players_connected[0] = 1;
+			}
+		}
 	}
 	
 	// check hash
@@ -6068,6 +6101,16 @@ int saveGame(int saveIndex) {
 	std::string savefile = setSaveGameFileName(multiplayer == SINGLE, SaveFileType::JSON, saveIndex);
 	completePath(path, savefile.c_str(), outputdir);
 	auto result = FileHelper::writeObject(path, *cvar_saveText ? EFileFormat::Json_Compact : EFileFormat::Binary, info);
+#ifdef BARONY_SMOKE_TESTS
+	if ( result == true && SmokeTestHooks::SaveReload::isOwnerEncodingSweepEnabled() )
+	{
+		if ( !SmokeTestHooks::SaveReload::runOwnerEncodingSweep(multiplayer == SINGLE, saveIndex) )
+		{
+			printlog("[SMOKE]: save_reload_owner sweep failed");
+			return 1;
+		}
+	}
+#endif
 	return result == true ? 0 : 1;
 }
 

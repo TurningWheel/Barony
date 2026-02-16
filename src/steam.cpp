@@ -51,7 +51,7 @@ const char* getRoomCode() {
     return roomkey_cached.c_str();
 }
 
-void* steamIDRemote[MAXPLAYERS] = {NULL, NULL, NULL, NULL};
+void* steamIDRemote[MAXPLAYERS] = { nullptr };
 
 char currentLobbyName[32] = { 0 };
 Uint32 currentSvFlags = 0;
@@ -394,12 +394,7 @@ std::string SteamServerClientWrapper::requestAuthTicket()
 
 	consumeAuthTicket();
 
-#if defined(LINUX) || defined(APPLE)
-    // TODO update steamworks SDK for linux and mac
-    authTicketHandle = SteamUser()->GetAuthSessionTicket(rgubTicket, sizeof(rgubTicket), &cubTicket);
-#else
-    authTicketHandle = SteamUser()->GetAuthSessionTicket(rgubTicket, sizeof(rgubTicket), &cubTicket, nullptr);
-#endif
+	authTicketHandle = SteamUser()->GetAuthSessionTicket(rgubTicket, sizeof(rgubTicket), &cubTicket, nullptr);
  
 	if ( authTicketHandle )
 	{

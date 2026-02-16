@@ -35,6 +35,9 @@
 #include "scores.hpp"
 #include "colors.hpp"
 #include "mod_tools.hpp"
+#ifdef BARONY_SMOKE_TESTS
+#include "smoke/SmokeTestHooks.hpp"
+#endif
 #include "lobbies.hpp"
 #include "ui/MainMenu.hpp"
 #include "ui/LoadingScreen.hpp"
@@ -45,8 +48,12 @@
 #endif
 
 #include <atomic>
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
 #include <future>
 #include <thread>
+#include <vector>
 
 NetHandler* net_handler = nullptr;
 
@@ -59,6 +66,162 @@ bool disableFPSLimitOnNetworkMessages = true; // always process the messages, ot
 
 // uncomment this to have the game log packet info
 //#define PACKETINFO
+
+static bool hasUsablePlayerSlot(const int player, const bool requireStats = true, const bool requireConnected = false)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] )
+	{
+		return false;
+	}
+	if ( requireConnected && client_disconnected[player] )
+	{
+		return false;
+	}
+	if ( requireStats && !stats[player] )
+	{
+		return false;
+	}
+	return true;
+}
+
+namespace {
+constexpr Uint8 kJoinCapabilityHeloChunkV1 = 0x01;
+constexpr int kHeloChunkHeaderSize = 12;
+constexpr int kHeloChunkPayloadMax = 900;
+constexpr int kHeloSinglePacketMax = 1100;
+constexpr int kHeloChunkMaxCount = 32;
+static Uint16 g_heloTransferId[MAXPLAYERS] = { 0 };
+
+#ifdef BARONY_SMOKE_TESTS
+using HeloChunkSendPlanEntry = SmokeTestHooks::MainMenu::HeloChunkSendPlanEntry;
+#else
+struct HeloChunkSendPlanEntry
+{
+	int chunkIndex = 0;
+	bool corruptPayload = false;
+};
+#endif
+
+bool forceChunkedHeloForSmoke()
+{
+#ifdef BARONY_SMOKE_TESTS
+	return SmokeTestHooks::Net::isForceHeloChunkEnabled();
+#else
+	return false;
+#endif
+}
+
+int heloChunkPayloadMax()
+{
+#ifdef BARONY_SMOKE_TESTS
+	return SmokeTestHooks::Net::heloChunkPayloadMaxOverride(kHeloChunkPayloadMax, 64);
+#else
+	return kHeloChunkPayloadMax;
+#endif
+}
+
+Uint16 nextHeloTransferIdForPlayer(const int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return 1;
+	}
+	++g_heloTransferId[player];
+	if ( g_heloTransferId[player] == 0 )
+	{
+		++g_heloTransferId[player];
+	}
+	return g_heloTransferId[player];
+}
+
+bool sendChunkedHeloToHost(const int hostnum, const IPaddress& destination, const Uint8* heloData, const int heloLen,
+	const Uint16 transferId, const int playerNumForLog)
+{
+	if ( !heloData || heloLen <= 0 || heloLen > NET_PACKET_SIZE )
+	{
+		printlog("[NET]: refusing to send chunked HELO with invalid payload length %d", heloLen);
+		return false;
+	}
+
+	const int chunkPayloadMax = std::min(heloChunkPayloadMax(), NET_PACKET_SIZE - kHeloChunkHeaderSize);
+	if ( chunkPayloadMax <= 0 )
+	{
+		printlog("[NET]: refusing to send chunked HELO due to invalid payload budget");
+		return false;
+	}
+
+	const int chunkCount = (heloLen + chunkPayloadMax - 1) / chunkPayloadMax;
+	if ( chunkCount <= 0 || chunkCount > kHeloChunkMaxCount || chunkCount > 0xFF )
+	{
+		printlog("[NET]: refusing to send chunked HELO with invalid chunk count %d", chunkCount);
+		return false;
+	}
+
+	printlog("sending chunked HELO: player=%d transfer=%u chunks=%d total=%d",
+		playerNumForLog, static_cast<unsigned>(transferId), chunkCount, heloLen);
+
+	std::vector<int> chunkOffsets(chunkCount, 0);
+	std::vector<int> chunkLens(chunkCount, 0);
+	for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
+	{
+		const int offset = chunkIndex * chunkPayloadMax;
+		const int chunkLen = std::min(chunkPayloadMax, heloLen - offset);
+		if ( chunkLen <= 0 || chunkLen > chunkPayloadMax )
+		{
+			printlog("[NET]: refusing to send chunked HELO due to invalid chunk length %d", chunkLen);
+			return false;
+		}
+		chunkOffsets[chunkIndex] = offset;
+		chunkLens[chunkIndex] = chunkLen;
+	}
+
+	std::vector<HeloChunkSendPlanEntry> sendPlan;
+	sendPlan.reserve(chunkCount + 1);
+	for ( int chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex )
+	{
+		sendPlan.push_back(HeloChunkSendPlanEntry{ chunkIndex, false });
+	}
+#ifdef BARONY_SMOKE_TESTS
+	SmokeTestHooks::MainMenu::applyHeloChunkTxModePlan(sendPlan, chunkCount, transferId);
+#endif
+
+	for ( const HeloChunkSendPlanEntry& planned : sendPlan )
+	{
+		const int chunkIndex = planned.chunkIndex;
+		if ( chunkIndex < 0 || chunkIndex >= chunkCount )
+		{
+			printlog("[NET]: refusing to send chunked HELO due to invalid plan index %d", chunkIndex);
+			return false;
+		}
+		const int offset = chunkOffsets[chunkIndex];
+		const int chunkLen = chunkLens[chunkIndex];
+
+		memcpy(net_packet->data, "HLCN", 4);
+		SDLNet_Write16(transferId, &net_packet->data[4]);
+		net_packet->data[6] = static_cast<Uint8>(chunkIndex);
+		net_packet->data[7] = static_cast<Uint8>(chunkCount);
+		SDLNet_Write16(static_cast<Uint16>(heloLen), &net_packet->data[8]);
+		SDLNet_Write16(static_cast<Uint16>(chunkLen), &net_packet->data[10]);
+		memcpy(&net_packet->data[kHeloChunkHeaderSize], heloData + offset, chunkLen);
+		if ( planned.corruptPayload )
+		{
+			net_packet->data[kHeloChunkHeaderSize] ^= 0x5A;
+		}
+
+		net_packet->address.host = destination.host;
+		net_packet->address.port = destination.port;
+		net_packet->len = kHeloChunkHeaderSize + chunkLen;
+
+		if ( !sendPacketSafe(net_sock, -1, net_packet, hostnum) )
+		{
+			printlog("[NET]: failed sending chunk %d/%d for transfer %u",
+				chunkIndex + 1, chunkCount, static_cast<unsigned>(transferId));
+			return false;
+		}
+	}
+	return true;
+}
+} // namespace
 
 void packetDeconstructor(void* data)
 {
@@ -316,7 +479,7 @@ bool messageLocalPlayers(Uint32 type, char const * const message, ...)
 
 bool messagePlayer(int player, Uint32 type, char const * const message, ...)
 {
-	if ( player < 0 || player >= MAXPLAYERS )
+	if ( !hasUsablePlayerSlot(player, false) )
 	{
 		return false;
 	}
@@ -381,7 +544,7 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	{
 		return false;
 	}
-	if ( player < 0 || player >= MAXPLAYERS )
+	if ( !hasUsablePlayerSlot(player, false) )
 	{
 		return false;
 	}
@@ -398,13 +561,12 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 		return true;
 	}
     
-    // don't bother printing any message if we're not in game, it just clutters the log
-    if (intro) {
-        return false;
-    }
-
-    // if this is for a local player, but we've disabled this message type, don't print it!
-    const bool localPlayer = players[player]->isLocalPlayer();
+	// don't bother printing any message if we're not in game, it just clutters the log
+	if (intro) {
+		return false;
+	}
+	// if this is for a local player, but we've disabled this message type, don't print it!
+	const bool localPlayer = players[player]->isLocalPlayer();
 
 	bool result = false;
 	if ( localPlayer )
@@ -446,7 +608,7 @@ bool messagePlayerColor(int player, Uint32 type, Uint32 color, char const * cons
 	char tempstr[256];
 	for ( c = 0; c < MAXPLAYERS; c++ )
 	{
-		if ( client_disconnected[c] )
+		if ( !hasUsablePlayerSlot(c, true, true) )
 		{
 			continue;
 		}
@@ -1392,11 +1554,7 @@ void serverUpdatePlayerSummonStrength(int player)
 	{
 		return;
 	}
-	if ( player <= 0 || player > MAXPLAYERS )
-	{
-		return;
-	}
-	if ( client_disconnected[player] || !stats[player] || players[player]->isLocalPlayer() )
+	if ( player <= 0 || !hasUsablePlayerSlot(player, true, true) || players[player]->isLocalPlayer() )
 	{
 		return;
 	}
@@ -1522,9 +1680,12 @@ void sendAllyCommandClient(int player, Uint32 uid, int command, Uint8 x, Uint8 y
 	sendPacket(net_sock, -1, net_packet, 0);
 }
 
-NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool lockedSlots[4])
+NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool lockedSlots[MAXPLAYERS], bool& outUseChunkedHelo)
 {
     printlog("processing lobby join request\n");
+	outUseChunkedHelo = false;
+	const bool clientSupportsHeloChunk = (net_packet->len >= 70)
+		&& ((net_packet->data[69] & kJoinCapabilityHeloChunkV1) != 0);
 
 	Uint32 result = MAXPLAYERS;
 	if ( strcmp(VERSION, (char*)net_packet->data + 48) ) // TODO this should be safer.
@@ -1593,6 +1754,9 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		net_packet->len = 8;
 		memcpy(net_packet->data, "HELO", 4);
 		SDLNet_Write32(result, &net_packet->data[4]); // error code for client to interpret
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Net::traceLobbyJoinReject(result, net_packet->data[56], lockedSlots, client_disconnected);
+#endif
 		printlog("sending error code %d to client.\n", result);
 		if ( directConnect )
 		{
@@ -1651,6 +1815,8 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		SDLNet_Write32(c, &net_packet->data[4]);
 		if (loadingsavegame) {
 			constexpr int chunk_size = 6 + 32 + 6 * 10; // 6 bytes for player stats, 32 for name, 60 for equipment
+			static_assert(8 + MAXPLAYERS * chunk_size <= NET_PACKET_SIZE,
+				"NET_PACKET_SIZE is too small for loadingsavegame HELO payload");
 			for ( int x = 0; x < MAXPLAYERS; x++ )
 			{
 				net_packet->data[8 + x * chunk_size + 0] = client_disconnected[x]; // connectedness
@@ -1692,6 +1858,8 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 			net_packet->len = 8 + MAXPLAYERS * chunk_size;
 		} else {
 			constexpr int chunk_size = 6 + 32; // 6 bytes for player stats, 32 for name
+			static_assert(8 + MAXPLAYERS * chunk_size <= NET_PACKET_SIZE,
+				"NET_PACKET_SIZE is too small for HELO payload");
 			for ( int x = 0; x < MAXPLAYERS; x++ )
 			{
 				net_packet->data[8 + x * chunk_size + 0] = client_disconnected[x]; // connectedness
@@ -1709,9 +1877,30 @@ NetworkingLobbyJoinRequestResult lobbyPlayerJoinRequest(int& outResult, bool loc
 		}
 		net_packet->address.host = net_clients[c - 1].host;
 		net_packet->address.port = net_clients[c - 1].port;
+		const bool shouldChunkForSavegame = loadingsavegame && (net_packet->len > kHeloSinglePacketMax);
+		const bool shouldChunkForSmoke = forceChunkedHeloForSmoke();
+		outUseChunkedHelo = clientSupportsHeloChunk && (shouldChunkForSavegame || shouldChunkForSmoke);
 		if ( directConnect )
 		{
-		    sendPacketSafe(net_sock, -1, net_packet, 0);
+			if ( outUseChunkedHelo )
+			{
+				std::vector<Uint8> heloSnapshot(net_packet->len);
+				memcpy(heloSnapshot.data(), net_packet->data, heloSnapshot.size());
+				const Uint16 transferId = nextHeloTransferIdForPlayer(c);
+				if ( !sendChunkedHeloToHost(0, net_packet->address, heloSnapshot.data(),
+					static_cast<int>(heloSnapshot.size()), transferId, c) )
+				{
+					printlog("[NET]: chunked HELO send failed, falling back to legacy HELO for player %d", c);
+					memcpy(net_packet->data, heloSnapshot.data(), heloSnapshot.size());
+					net_packet->len = static_cast<int>(heloSnapshot.size());
+					outUseChunkedHelo = false;
+					sendPacketSafe(net_sock, -1, net_packet, 0);
+				}
+			}
+			else
+			{
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
 			return NET_LOBBY_JOIN_DIRECTIP_SUCCESS;
 		}
 		else
@@ -2109,7 +2298,7 @@ void clientActions(Entity* entity)
 				playernum = SDLNet_Read32(&net_packet->data[30]);
 				if ( playernum >= 0 && playernum < MAXPLAYERS )
 				{
-					if ( players[playernum] && players[playernum]->entity )
+					if ( players[playernum] )
 					{
 						players[playernum]->entity = entity;
 					}
@@ -3814,6 +4003,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// enemy hp bar
 	{'ENHP', [](){
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("client-ENHP",
+			clientnum, clientnum, 0, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("client-ENHP", clientnum);
+#endif
 		Sint16 enemy_hp = SDLNet_Read16(&net_packet->data[4]);
 		Sint16 enemy_maxhp = SDLNet_Read16(&net_packet->data[6]);
 		Sint16 oldhp = SDLNet_Read16(&net_packet->data[8]);
@@ -3856,6 +4050,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// custom damage gib (miss/healing)
 	{'DMGG', [](){
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("client-DMGG",
+			clientnum, clientnum, 0, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("client-DMGG", clientnum);
+#endif
 		Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
 		Sint16 dmg = (Sint16)SDLNet_Read16(&net_packet->data[8]);
 		DamageGib gib = DMG_DEFAULT;
@@ -3918,14 +4117,26 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// pause game
 	{'PAUS', [](){
-	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		const int rawPlayer = static_cast<int>(net_packet->data[4]);
+	    const int player = std::min(rawPlayer, static_cast<int>(MAXPLAYERS - 1));
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("client-PAUS-packet",
+			player, rawPlayer, 0, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("client-PAUS-packet", player);
+#endif
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1118), stats[player]->name);
 		pauseGame(2, 0);
 	}},
 
 	// unpause game
 	{'UNPS', [](){
-	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		const int rawPlayer = static_cast<int>(net_packet->data[4]);
+	    const int player = std::min(rawPlayer, static_cast<int>(MAXPLAYERS - 1));
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("client-UNPS-packet",
+			player, rawPlayer, 0, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("client-UNPS-packet", player);
+#endif
 		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1119), stats[player]->name);
 		pauseGame(1, 0);
 	}},
@@ -4442,6 +4653,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 
 	// damage indicator
 	{'DAMI', [](){
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("client-DAMI",
+			clientnum, clientnum, 0, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("client-DAMI", clientnum);
+#endif
 		DamageIndicatorHandler.insert(clientnum, SDLNet_Read32(&net_packet->data[4]), 
 			SDLNet_Read32(&net_packet->data[8]), net_packet->data[12] == 1 ? true : false);
 	} },
@@ -6931,15 +7147,27 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 
 	// pause game
 	{'PAUS', [](){
-		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1118), stats[net_packet->data[4]]->name);
-		const int j = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		const int rawPlayer = static_cast<int>(net_packet->data[4]);
+		const int j = std::min(rawPlayer, static_cast<int>(MAXPLAYERS - 1));
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("server-PAUS-packet",
+			j, rawPlayer, 1, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("server-PAUS-packet", j);
+#endif
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1118), stats[j] ? stats[j]->name : "Unknown");
 		pauseGame(2, j);
 	}},
 
 	// unpause game
 	{'UNPS', [](){
-		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1119), stats[net_packet->data[4]]->name);
-		const int j = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
+		const int rawPlayer = static_cast<int>(net_packet->data[4]);
+		const int j = std::min(rawPlayer, static_cast<int>(MAXPLAYERS - 1));
+#ifdef BARONY_SMOKE_TESTS
+		SmokeTestHooks::Combat::traceRemoteCombatSlotBounds("server-UNPS-packet",
+			j, rawPlayer, 1, MAXPLAYERS);
+		SmokeTestHooks::Combat::traceRemoteCombatEvent("server-UNPS-packet", j);
+#endif
+		messagePlayer(clientnum, MESSAGE_MISC, Language::get(1119), stats[j] ? stats[j]->name : "Unknown");
 		pauseGame(1, j);
 	}},
 
@@ -7517,12 +7745,13 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 
 	// clicked entity out of range
 	{'CKOR', [](){
+		const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
 		Uint32 uid = SDLNet_Read32(&net_packet->data[5]);
 		Entity* entity = uidToEntity(uid);
 		if ( entity )
 		{
-			client_selected[net_packet->data[4]] = entity;
-			inrange[net_packet->data[4]] = false;
+			client_selected[player] = entity;
+			inrange[player] = false;
 		}
 	}},
 
@@ -9506,6 +9735,11 @@ bool handleSafePacket()
 		{
 			int receivedPacketNum = SDLNet_Read32(&net_packet->data[5]);
 			Uint8 fromClientnum = net_packet->data[4];
+			if ( fromClientnum >= MAXPLAYERS )
+			{
+				printlog("[NET]: Ignoring SAFE packet from invalid client index %u", static_cast<unsigned>(fromClientnum));
+				return true;
+			}
 
 			if ( ticks > (60 * TICKS_PER_SECOND) && (ticks % (TICKS_PER_SECOND / 2) == 0) )
 			{
@@ -9548,7 +9782,7 @@ bool handleSafePacket()
 			}
 			else
 			{
-				if ( j > 0 )
+				if ( j > 0 && j < MAXPLAYERS )
 				{
 					net_packet->address.host = net_clients[j - 1].host;
 					net_packet->address.port = net_clients[j - 1].port;
@@ -9562,7 +9796,7 @@ bool handleSafePacket()
 			}
 			else
 			{
-				if ( j > 0 )
+				if ( j > 0 && j < MAXPLAYERS )
 				{
 					sendPacket(net_sock, -1, net_packet, j - 1);
 				}
