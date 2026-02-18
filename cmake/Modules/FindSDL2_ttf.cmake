@@ -33,6 +33,7 @@ find_path(SDL2_TTF_INCLUDE_DIR SDL_ttf.h
   HINTS
     ENV SDLTTFDIR
     ENV SDLDIR
+	${SDL2DIR}
     PATH_SUFFIXES include/SDL2 include SDL2
 )
 
@@ -45,6 +46,7 @@ find_library(SDL2_TTF_LIBRARY
   HINTS
     ENV SDLTTFDIR
     ENV SDLDIR
+	${SDL2DIR}
   PATH_SUFFIXES lib
 )
 
