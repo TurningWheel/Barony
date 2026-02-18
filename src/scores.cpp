@@ -5342,7 +5342,7 @@ SteamGlobalStatIndexes getIndexForDeathType(int type)
 		case LICH_ICE:
 			return STEAM_GSTAT_DEATHS_LICHICE;
 		case LICH_FIRE:
-			return STEAM_GSTAT_DEATHS_LICHICE;
+			return STEAM_GSTAT_DEATHS_LICHFIRE;
 		case SENTRYBOT:
 			return STEAM_GSTAT_DEATHS_SENTRYBOT;
 		case SPELLBOT:
