@@ -821,24 +821,24 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy);
 bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entity* thrownPotion);
 bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy);
 Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy);
-void item_ScrollMail(Item* item, int player);
-void item_ScrollIdentify(Item* item, int player);
-void item_ScrollLight(Item* item, int player);
-void item_ScrollBlank(Item* item, int player);
-void item_ScrollEnchantWeapon(Item* item, int player);
-void item_ScrollEnchantArmor(Item* item, int player);
-void item_ScrollRemoveCurse(Item* item, int player);
-bool item_ScrollFire(Item* item, int player); // return true if exploded into fire.
-void item_ScrollFood(Item* item, int player);
-void item_ScrollConjureArrow(Item* item, int player);
-void item_ScrollMagicMapping(Item* item, int player);
-void item_ScrollRepair(Item* item, int player);
-void item_ScrollDestroyArmor(Item* item, int player);
-void item_ScrollTeleportation(Item* item, int player);
-void item_ScrollSummon(Item* item, int player);
-void item_AmuletSexChange(Item* item, int player);
+void item_ScrollMail(Item*& item, int player);
+void item_ScrollIdentify(Item*& item, int player);
+void item_ScrollLight(Item*& item, int player);
+void item_ScrollBlank(Item*& item, int player);
+void item_ScrollEnchantWeapon(Item*& item, int player);
+void item_ScrollEnchantArmor(Item*& item, int player);
+void item_ScrollRemoveCurse(Item*& item, int player);
+bool item_ScrollFire(Item*& item, int player); // return true if exploded into fire.
+void item_ScrollFood(Item*& item, int player);
+void item_ScrollConjureArrow(Item*& item, int player);
+void item_ScrollMagicMapping(Item*& item, int player);
+void item_ScrollRepair(Item*& item, int player);
+void item_ScrollDestroyArmor(Item*& item, int player);
+void item_ScrollTeleportation(Item*& item, int player);
+void item_ScrollSummon(Item*& item, int player);
+void item_AmuletSexChange(Item*& item, int player);
 void item_ToolTowel(Item*& item, int player);
-void item_ToolTinOpener(Item* item, int player);
+void item_ToolTinOpener(Item*& item, int player);
 void item_ToolMirror(Item*& item, int player);
 Entity* item_ToolBeartrap(Item*& item, Entity* usedBy);
 void item_Food(Item*& item, int player);
@@ -857,6 +857,7 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng,
 #else
 	int itemLevel = currentlevel
 #endif
+	, int* lastItemType = nullptr, int* lastItemSpellType = nullptr
 );
 ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel, BaronyRNG& rng);
 Item* newItemFromEntity(const Entity* entity, bool discardUid = false); //Make sure to call free(item). discardUid will free the new items uid if this is for temp purposes
@@ -870,7 +871,7 @@ void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped b
 bool dropItem(Item* item, int player, const bool notifyMessage = true, const bool dropAll = false); // return true on free'd item
 bool playerGreasyDropItem(const int player, Item* const item);
 bool playerThrowDuck(const int player, Item* const item, int charge);
-void useItem(Item* item, int player, Entity* usedBy = nullptr, bool unequipForDropping = false);
+void useItem(Item* item, int player, Entity* usedBy = nullptr, bool unequipForDropping = false, bool serverCheckUse = false);
 enum EquipItemResult : int
 {
 	EQUIP_ITEM_FAIL_CANT_UNEQUIP,

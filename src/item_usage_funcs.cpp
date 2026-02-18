@@ -42,14 +42,64 @@ bool potionUseAbundanceEffect(Item* item, Entity* entity, Entity* usedBy)
 				{
 					if ( !itemIsEquipped(item, player) )
 					{
-						int chance = getSpellDamageFromID(SPELL_GREATER_ABUNDANCE, entity, nullptr, entity);
-						int maxchance = getSpellDamageSecondaryFromID(SPELL_GREATER_ABUNDANCE, entity, nullptr, entity);
+						int mpCost = 0;
+						int chance = getSpellDamageFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
+						int maxchance = getSpellDamageSecondaryFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
 						chance = std::min(chance, maxchance);
 						if ( local_rng.rand() % 100 < chance )
 						{
-							item->count++;
-							messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6652), item->getName());
-							result = true;
+							bool hasCost = false;
+							if ( auto spell = getSpellFromID(SPELL_GREATER_ABUNDANCE) )
+							{
+								real_t costPercent = getSpellEffectDurationSecondaryFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity) / 100.0;
+								if ( costPercent > 0.01 )
+								{
+									mpCost = std::max(1.0, spell->mana * costPercent);
+									if ( stats[player]->MP >= mpCost )
+									{
+										hasCost = true;
+									}
+								}
+								else
+								{
+									hasCost = true;
+								}
+							}
+
+							if ( hasCost )
+							{
+								item->count++;
+								messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6652), item->getName());
+								result = true;
+
+								if ( multiplayer == CLIENT )
+								{
+									strcpy((char*)net_packet->data, "FXGD");
+									net_packet->data[4] = player;
+									SDLNet_Write32((Uint32)0, &net_packet->data[5]);
+									SDLNet_Write32((Uint32)mpCost, &net_packet->data[9]);
+
+									Uint16 spellID = SPELL_NONE;
+									SDLNet_Write16(spellID, &net_packet->data[13]);
+									net_packet->address.host = net_server.host;
+									net_packet->address.port = net_server.port;
+									net_packet->len = 15;
+									sendPacketSafe(net_sock, -1, net_packet, 0);
+								}
+								else
+								{
+									if ( mpCost > stats[player]->MP )
+									{
+										cameravars[player].shakex += 0.1;
+										cameravars[player].shakey += 10;
+										playSoundPlayer(player, 28, 92);
+									}
+									Sint32 prevMP = stats[player]->MP;
+									players[player]->entity->drainMP(mpCost);
+								}
+
+								magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_GREATER_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_SUSTAIN, 1);
+							}
 						}
 					}
 				}
@@ -71,6 +121,7 @@ bool foodUseAbundanceEffect(Item* item, int player)
 			{
 				if ( !itemIsEquipped(item, player) )
 				{
+					int mpCost = 0;
 					int chance = getSpellDamageFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
 					int maxchance = getSpellDamageSecondaryFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
 					chance = std::min(chance, maxchance);
@@ -82,8 +133,8 @@ bool foodUseAbundanceEffect(Item* item, int player)
 							real_t costPercent = getSpellEffectDurationSecondaryFromID(SPELL_GREATER_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity) / 100.0;
 							if ( costPercent > 0.01 )
 							{
-								int cost = std::max(1.0, spell->mana * costPercent);
-								if ( stats[player]->MP >= cost )
+								mpCost = std::max(1.0, spell->mana * costPercent);
+								if ( stats[player]->MP >= mpCost )
 								{
 									hasCost = true;
 								}
@@ -100,7 +151,33 @@ bool foodUseAbundanceEffect(Item* item, int player)
 							messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6652), item->getName());
 							result = true;
 
-							magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_GREATER_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+							if ( multiplayer == CLIENT )
+							{
+								strcpy((char*)net_packet->data, "FXGD");
+								net_packet->data[4] = player;
+								SDLNet_Write32((Uint32)0, &net_packet->data[5]);
+								SDLNet_Write32((Uint32)mpCost, &net_packet->data[9]);
+
+								Uint16 spellID = SPELL_NONE;
+								SDLNet_Write16(spellID, &net_packet->data[13]);
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 15;
+								sendPacketSafe(net_sock, -1, net_packet, 0);
+							}
+							else
+							{
+								if ( mpCost > stats[player]->MP )
+								{
+									cameravars[player].shakex += 0.1;
+									cameravars[player].shakey += 10;
+									playSoundPlayer(player, 28, 92);
+								}
+								Sint32 prevMP = stats[player]->MP;
+								players[player]->entity->drainMP(mpCost);
+							}
+
+							magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_GREATER_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_SUSTAIN, 1);
 						}
 					}
 				}
@@ -109,6 +186,7 @@ bool foodUseAbundanceEffect(Item* item, int player)
 			{
 				if ( !itemIsEquipped(item, player) )
 				{
+					int mpCost = 0;
 					int chance = getSpellDamageFromID(SPELL_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
 					int maxchance = getSpellDamageSecondaryFromID(SPELL_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity);
 					chance = std::min(chance, maxchance);
@@ -120,8 +198,8 @@ bool foodUseAbundanceEffect(Item* item, int player)
 							real_t costPercent = getSpellEffectDurationSecondaryFromID(SPELL_ABUNDANCE, players[player]->entity, stats[player], players[player]->entity) / 100.0;
 							if ( costPercent > 0.01 )
 							{
-								int cost = std::max(1.0, spell->mana * costPercent);
-								if ( stats[player]->MP >= cost )
+								mpCost = std::max(1.0, spell->mana * costPercent);
+								if ( stats[player]->MP >= mpCost )
 								{
 									hasCost = true;
 								}
@@ -138,7 +216,33 @@ bool foodUseAbundanceEffect(Item* item, int player)
 							messagePlayerColor(player, MESSAGE_INTERACTION, makeColorRGB(0, 255, 0), Language::get(6653), item->getName());
 							result = true;
 
-							magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+							if ( multiplayer == CLIENT )
+							{
+								strcpy((char*)net_packet->data, "FXGD");
+								net_packet->data[4] = player;
+								SDLNet_Write32((Uint32)0, &net_packet->data[5]);
+								SDLNet_Write32((Uint32)mpCost, &net_packet->data[9]);
+
+								Uint16 spellID = SPELL_NONE;
+								SDLNet_Write16(spellID, &net_packet->data[13]);
+								net_packet->address.host = net_server.host;
+								net_packet->address.port = net_server.port;
+								net_packet->len = 15;
+								sendPacketSafe(net_sock, -1, net_packet, 0);
+							}
+							else
+							{
+								if ( mpCost > stats[player]->MP )
+								{
+									cameravars[player].shakex += 0.1;
+									cameravars[player].shakey += 10;
+									playSoundPlayer(player, 28, 92);
+								}
+								Sint32 prevMP = stats[player]->MP;
+								players[player]->entity->drainMP(mpCost);
+							}
+
+							magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_SUSTAIN, 1);
 						}
 					}
 				}
@@ -2734,7 +2838,7 @@ void onScrollUseAppraisalIncrease(Item* item, int player)
 	}
 }
 
-void item_ScrollMail(Item* item, int player)
+void item_ScrollMail(Item*& item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -2842,7 +2946,7 @@ void item_ScrollMail(Item* item, int player)
 	Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LORE_PERCENT_READ, SCROLL_MAIL, (1 << (result)));
 }
 
-void item_ScrollIdentify(Item* item, int player)
+void item_ScrollIdentify(Item*& item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -2890,7 +2994,7 @@ void item_ScrollIdentify(Item* item, int player)
 	GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
 }
 
-void item_ScrollLight(Item* item, int player)
+void item_ScrollLight(Item*& item, int player)
 {
 	int c;
 
@@ -2951,7 +3055,7 @@ void item_ScrollLight(Item* item, int player)
 	item->identified = true;
 }
 
-void item_ScrollBlank(Item* item, int player)
+void item_ScrollBlank(Item*& item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -2979,7 +3083,7 @@ void item_ScrollBlank(Item* item, int player)
 	item->identified = true;
 }
 
-void item_ScrollEnchantWeapon(Item* item, int player)
+void item_ScrollEnchantWeapon(Item*& item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -3158,7 +3262,7 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 	}
 }
 
-void item_ScrollEnchantArmor(Item* item, int player)
+void item_ScrollEnchantArmor(Item*& item, int player)
 {
 	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -3388,7 +3492,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 	}
 }
 
-void item_ScrollRemoveCurse(Item* item, int player)
+void item_ScrollRemoveCurse(Item*& item, int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
 	{
@@ -3563,7 +3667,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 	}
 }
 
-bool item_ScrollFire(Item* item, int player)
+bool item_ScrollFire(Item*& item, int player)
 {
 	if (multiplayer == CLIENT)
 	{
@@ -3647,7 +3751,7 @@ bool item_ScrollFire(Item* item, int player)
 	return false;
 }
 
-void item_ScrollFood(Item* item, int player)
+void item_ScrollFood(Item*& item, int player)
 {
 	Item* target;
 	node_t* node, *nextnode;
@@ -3717,7 +3821,7 @@ void item_ScrollFood(Item* item, int player)
 	item->identified = true;
 }
 
-void item_ScrollConjureArrow(Item* item, int player)
+void item_ScrollConjureArrow(Item*& item, int player)
 {
 	if ( players[player] == nullptr || players[player]->entity == nullptr )
 	{
@@ -3768,7 +3872,7 @@ void item_ScrollConjureArrow(Item* item, int player)
 	item->identified = true;
 }
 
-void item_ScrollMagicMapping(Item* item, int player)
+void item_ScrollMagicMapping(Item*& item, int player)
 {
 	int x, y;
 
@@ -3820,7 +3924,7 @@ void item_ScrollMagicMapping(Item* item, int player)
 	item->identified = true;
 }
 
-void item_ScrollRepair(Item* item, int player)
+void item_ScrollRepair(Item*& item, int player)
 {
 	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -3991,6 +4095,18 @@ void item_ScrollRepair(Item* item, int player)
 			}
 			else
 			{
+				if ( player >= 0 && player < MAXPLAYERS )
+				{
+					if ( multiplayer == CLIENT )
+					{
+						players[player]->mechanics.updateBreakableCounterClient(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE);
+					}
+					else
+					{
+						players[player]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE, nullptr);
+					}
+				}
+
 				if ( armor->type == TOOL_CRYSTALSHARD )
 				{
 					playSoundPlayer(player, 162, 64);
@@ -4021,7 +4137,7 @@ void item_ScrollRepair(Item* item, int player)
 	}
 }
 
-void item_ScrollDestroyArmor(Item* item, int player)
+void item_ScrollDestroyArmor(Item*& item, int player)
 {
 	Item* armor = nullptr;
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -4171,6 +4287,18 @@ void item_ScrollDestroyArmor(Item* item, int player)
 
 			if ( armor->status == BROKEN )
 			{
+				if ( player >= 0 && player < MAXPLAYERS )
+				{
+					if ( multiplayer == CLIENT )
+					{
+						players[player]->mechanics.updateBreakableCounterClient(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE);
+					}
+					else
+					{
+						players[player]->mechanics.incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent::GBREAK_DEGRADE, nullptr);
+					}
+				}
+
 				if ( armor->type == TOOL_CRYSTALSHARD )
 				{
 					playSoundPlayer(player, 162, 64);
@@ -4190,7 +4318,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 	consumeItem(item, player);
 }
 
-void item_ScrollTeleportation(Item* item, int player)
+void item_ScrollTeleportation(Item*& item, int player)
 {
 	// server only function
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -4231,7 +4359,7 @@ void item_ScrollTeleportation(Item* item, int player)
 	item->identified = true;
 }
 
-void item_ScrollSummon(Item* item, int player)
+void item_ScrollSummon(Item*& item, int player)
 {
 	// server only function
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -4503,7 +4631,7 @@ void item_ToolTowel(Item*& item, int player)
 	}
 }
 
-void item_ToolTinOpener(Item* item, int player)
+void item_ToolTinOpener(Item*& item, int player)
 {
 	if (multiplayer == CLIENT)
 	{
@@ -4526,7 +4654,6 @@ void item_ToolMirror(Item*& item, int player)
 	if ( !players[player]->isLocalPlayer() )
 	{
 		consumeItem(item, player);
-		item = nullptr;
 	}
 
 	if (players[player] == nullptr || players[player]->entity == nullptr || stats[player] == nullptr )
@@ -4693,7 +4820,6 @@ void item_ToolMirror(Item*& item, int player)
 		if ( broken )
 		{
 			consumeItem(item, player);
-			item = nullptr;
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_BROKEN, TOOL_MIRROR, 1);
 		}
 	}
@@ -5749,7 +5875,7 @@ void item_FoodTin(Item*& item, int player)
 	consumeItem(item, player);
 }
 
-void item_AmuletSexChange(Item* item, int player)
+void item_AmuletSexChange(Item*& item, int player)
 {
 	if ( !players[player]->isLocalPlayer() )
 	{

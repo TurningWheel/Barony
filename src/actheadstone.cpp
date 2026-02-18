@@ -35,11 +35,13 @@
 #define HEADSTONE_FIRED my->skill[3]
 #define HEADSTONE_MESSAGE my->skill[4]
 #define HEADSTONE_AMBIENCE my->skill[5]
+#define HEADSTONE_WAS_INVISIBLE my->skill[6]
 
 void actHeadstone(Entity* my)
 {
 	if ( my->flags[INVISIBLE] )
 	{
+		HEADSTONE_WAS_INVISIBLE = 1;
 		if ( multiplayer != CLIENT )
 		{
 			node_t* node;
@@ -144,6 +146,45 @@ void actHeadstone(Entity* my)
 						Uint32 color = makeColorRGB(255, 128, 0);
 						messagePlayerColor(i, MESSAGE_INTERACTION, color, Language::get(502));
 					}
+				}
+			}
+		}
+
+		if ( HEADSTONE_WAS_INVISIBLE )
+		{
+			bool somebodyinside = false;
+			auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+			for ( std::vector<list_t*>::iterator it = entLists.begin(); it != entLists.end() && !somebodyinside; ++it )
+			{
+				list_t* currentList = *it;
+				for ( node_t* node = currentList->first; node != nullptr; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+					{
+						if ( entityInsideEntity(my, entity) )
+						{
+							somebodyinside = true;
+							break;
+						}
+					}
+				}
+			}
+
+			if ( somebodyinside )
+			{
+				if ( !my->flags[PASSABLE] )
+				{
+					my->flags[PASSABLE] = true;
+					serverUpdateEntityFlag(my, PASSABLE);
+				}
+			}
+			else
+			{
+				if ( my->flags[PASSABLE] )
+				{
+					my->flags[PASSABLE] = false;
+					serverUpdateEntityFlag(my, PASSABLE);
 				}
 			}
 		}

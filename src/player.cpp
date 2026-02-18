@@ -7679,6 +7679,7 @@ bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t va
 			|| spellID == SPELL_DETECT_FOOD
 			|| spellID == SPELL_COMMAND
 			|| spellID == SPELL_FLUTTER
+			|| spellID == SPELL_OVERCHARGE
 			|| spellID == SPELL_DIG )
 		{
 			sustainedSpellIDCounter[spellID] += value * scaleValue;
@@ -7686,6 +7687,10 @@ bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t va
 			{
 				sustainedSpellIDCounter[spellID] = 0.0;
 				Uint32 flags = spell_t::SPELL_LEVEL_EVENT_DEFAULT;
+				if ( spellID == SPELL_FLUTTER )
+				{
+					flags = spell_t::SPELL_LEVEL_EVENT_EFFECT;
+				}
 				if ( magicOnSpellCastEvent(players[player.playernum]->entity, players[player.playernum]->entity,
 					nullptr, spellID, flags, 1) )
 				{
@@ -8539,6 +8544,10 @@ int Player::PlayerMechanics_t::getBreakableCounterTier()
 
 void Player::PlayerMechanics_t::incrementBreakableCounter(Player::PlayerMechanics_t::BreakableEvent eventType, Entity* entity)
 {
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
 	if ( stats[player.playernum]->type == GREMLIN )
 	{
 		int amount = 0;
@@ -8576,6 +8585,10 @@ void Player::PlayerMechanics_t::incrementBreakableCounter(Player::PlayerMechanic
 			amount += 5;
 		}
 		int prevTier = getBreakableCounterTier();
+		if ( !strncmp(map.name, "Boss", 4) || !strncmp(map.name, "Sanctum", 7) || !strncmp(map.name, "Hell Boss", 9) )
+		{
+			amount = std::max(10, amount);
+		}
 		gremlinBreakableCounter += amount;
 		gremlinBreakableCounter = std::min(50, gremlinBreakableCounter);
 		if ( getBreakableCounterTier() > prevTier )
@@ -8589,6 +8602,26 @@ void Player::PlayerMechanics_t::incrementBreakableCounter(Player::PlayerMechanic
 				playSoundEntity(player.entity, 168, 128);
 			}
 			updateBreakableCounterServer();
+		}
+	}
+}
+
+void Player::PlayerMechanics_t::updateBreakableCounterClient(Player::PlayerMechanics_t::BreakableEvent eventType)
+{
+	if ( multiplayer == CLIENT )
+	{
+		if ( stats[player.playernum]->type == GREMLIN )
+		{
+			if ( eventType == BreakableEvent::GBREAK_DEGRADE )
+			{
+				strcpy((char*)net_packet->data, "GBRK");
+				net_packet->data[4] = player.playernum;
+				net_packet->data[5] = (int)eventType;
+				net_packet->len = 6;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
 		}
 	}
 }

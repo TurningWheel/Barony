@@ -234,7 +234,7 @@ void lichDie(Entity* my)
 		{
 			spawnExplosion(entity->x, entity->y, entity->z);
 			Stat* stats = entity->getStats();
-			if ( stats )
+			if ( stats && achievementObserver.checkUidIsFromPlayer(stats->leader_uid) < 0 )
 			{
 				if ( stats->type != HUMAN )
 				{

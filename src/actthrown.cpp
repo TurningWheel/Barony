@@ -145,7 +145,7 @@ void actThrown(Entity* my)
 	Item* item = nullptr;
 	Category cat = GEM;
 	ItemType type = WOODEN_SHIELD;
-	char* itemname = nullptr;
+	std::string itemname = "";
 
 	item = newItemFromEntity(my, true);
 	if ( item )
@@ -1394,7 +1394,7 @@ void actThrown(Entity* my)
 				}
 
 				// set the obituary
-				snprintf(whatever, 255, Language::get(1508), itemname);
+				snprintf(whatever, 255, Language::get(1508), itemname.c_str());
 				hit.entity->setObituary(whatever);
 				if (hitstats) {
 				    hitstats->killer = KilledBy::ITEM;
@@ -1846,7 +1846,7 @@ void actThrown(Entity* my)
 								else if ( hit.entity->behavior == &actPlayer )
 								{
 									Uint32 color = makeColorRGB(255, 0, 0);
-									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(588), itemname); // hit by a flying
+									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(588), itemname.c_str()); // hit by a flying
 								}
 								Entity* newTarget = item_PotionPolymorph(item, hit.entity, parent);
 								if ( newTarget )
@@ -2200,7 +2200,7 @@ void actThrown(Entity* my)
 				if ( hit.entity->behavior == &actPlayer && !skipMessage )
 				{
 					Uint32 color = makeColorRGB(255, 0, 0);
-					messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(588), itemname); // hit by a flying
+					messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT, color, Language::get(588), itemname.c_str()); // hit by a flying
 					if ( damage == 0 && !wasPotion )
 					{
 						messagePlayer(hit.entity->skill[2], MESSAGE_COMBAT, Language::get(452));

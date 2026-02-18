@@ -62,6 +62,8 @@ void PlayfabUser_t::gameEnd()
     eventContent.Payload["class"] = client_classes[clientnum];
     eventContent.Payload["multiplayer"] = multiplayer;
     eventContent.Payload["victory"] = victory;
+    eventContent.Payload["level"] = currentlevel;
+    eventContent.Payload["secret"] = secretlevel;
     int players = 1;
     if ( multiplayer == SERVER || (multiplayer == SINGLE && splitscreen) )
     {
@@ -193,6 +195,20 @@ void PlayfabUser_t::globalStat(int index, int player)
     eventContent.Payload["stat"] = SteamGlobalStatStr[index].c_str();
     eventContent.Payload["level"] = currentlevel;
     eventContent.Payload["secret"] = secretlevel;
+    eventContent.Payload["multiplayer"] = multiplayer;
+    eventContent.Payload["version"] = VERSION;
+    int players = 1;
+    if ( multiplayer == SERVER || (multiplayer == SINGLE && splitscreen) )
+    {
+        for ( int i = 1; i < MAXPLAYERS; ++i )
+        {
+            if ( !client_disconnected[i] )
+            {
+                ++players;
+            }
+        }
+    }
+    eventContent.Payload["numplayers"] = players;
     if ( player >= 0 && player < MAXPLAYERS && !client_disconnected[player] )
     {
         eventContent.Payload["class"] = client_classes[player];

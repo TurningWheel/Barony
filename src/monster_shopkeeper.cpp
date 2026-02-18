@@ -336,6 +336,8 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				}
 			}
 
+			int lastGeneratedItemType = -1;
+			int lastGeneratedItemSpellType = -1;
 			Item* tmpItem = nullptr;
 			bool doneAlembic = false;
 			bool doneLockpick = false;
@@ -419,7 +421,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								tmpItem->count = 1;
 								tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
 							}
-							itemLevelCurvePostProcess(my, tmpItem, rng);
+							itemLevelCurvePostProcess(my, tmpItem, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 						}
 					}
 					break;
@@ -442,7 +444,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						}
 						if ( tmpItem )
 						{
-							itemLevelCurvePostProcess(my, tmpItem, rng);
+							itemLevelCurvePostProcess(my, tmpItem, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 						}
 					}
 					break;
@@ -470,7 +472,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						}
 						if ( tmpItem )
 						{
-							itemLevelCurvePostProcess(my, tmpItem, rng);
+							itemLevelCurvePostProcess(my, tmpItem, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 						}
 					}
 					break;
@@ -525,11 +527,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								//		spell_level = 0 + 5 * rng.rand() % 3;
 								//	}
 								//}
-								itemLevelCurvePostProcess(my, tmpItem, rng, spell_level);
+								itemLevelCurvePostProcess(my, tmpItem, rng, spell_level, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 							}
 							else
 							{
-								itemLevelCurvePostProcess(my, tmpItem, rng);
+								itemLevelCurvePostProcess(my, tmpItem, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 							}
 							if ( items[tmpItem->type].category == SPELLBOOK && shoplevel >= 18 )
 							{
@@ -660,7 +662,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						}
 						if ( tmpItem )
 						{
-							itemLevelCurvePostProcess(my, tmpItem, rng);
+							itemLevelCurvePostProcess(my, tmpItem, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 						}
 					}
 					break;
@@ -708,7 +710,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 						}
 						if ( tmpItem )
 						{
-							itemLevelCurvePostProcess(my, tmpItem, rng);
+							itemLevelCurvePostProcess(my, tmpItem, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 						}
 
 						if ( !doneLockpick && rng.rand() % 2 == 0 && spawnedItems < 20 )
@@ -951,7 +953,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 								tmpItem->count = 1;
 								tmpItem->status = static_cast<Status>(SERVICABLE + rng.rand() % 2);
 							}
-							itemLevelCurvePostProcess(my, tmpItem, rng);
+							itemLevelCurvePostProcess(my, tmpItem, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 						}
 					}
 					break;
@@ -971,7 +973,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 							}
 						}
 
-						itemLevelCurvePostProcess(my, tmpItem, rng);
+						itemLevelCurvePostProcess(my, tmpItem, rng, currentlevel, &lastGeneratedItemType, &lastGeneratedItemSpellType);
 					}
 					if ( !doneTinkeringKit && rng.rand() % 20 == 0 )
 					{
