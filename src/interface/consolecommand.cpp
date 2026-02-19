@@ -5339,7 +5339,11 @@ namespace ConsoleCommands {
 						coord += (std::to_string(y));
 						coord += ("], ");
 
-						if ( entity->sprite == 9 )
+						if ( entity->sprite == 21 )
+						{
+							printlog("Map: %s Chest: Locked: %d Mimic: %d", f.c_str(), entity->chestLocked, entity->chestMimicChance);
+						}
+						else if ( entity->sprite == 9 )
 						{
 							loot.push_back(coord + "gold");
 						}
