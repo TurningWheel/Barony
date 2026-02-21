@@ -31,6 +31,15 @@
 #include <functional>
 #ifdef STEAMWORKS
 #include <nfd.h>
+
+static nfdresult_t BaronyNfdPickFolder(nfdchar_t** outPath, const nfdchar_t* defaultPath)
+{
+#if defined(NFD_INTERFACE_VERSION)
+	return NFD_PickFolder(outPath, defaultPath);
+#else
+	return NFD_PickFolder(defaultPath, outPath);
+#endif
+}
 #endif
 #ifdef USE_PLAYFAB
 #include "../playfab.hpp"
@@ -31107,15 +31116,15 @@ failed:
 				}
 				if ( modsPath != "" )
 				{
-					result = NFD_PickFolder(modsPath.c_str(), &outPath);
+					result = BaronyNfdPickFolder(&outPath, modsPath.c_str());
 				}
 				else
 				{
-					result = NFD_PickFolder(outputdir, &outPath); // hopefully this is absolute path?
+					result = BaronyNfdPickFolder(&outPath, outputdir); // hopefully this is absolute path?
 				}
 				if ( result == NFD_ERROR )
 				{
-					result = NFD_PickFolder(PHYSFS_getBaseDir(), &outPath); // fallback path
+					result = BaronyNfdPickFolder(&outPath, PHYSFS_getBaseDir()); // fallback path
 				}
 
 				if ( result == NFD_OKAY )
