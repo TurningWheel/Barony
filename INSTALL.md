@@ -254,6 +254,12 @@ if [ ! -e deps/steamworks/sdk/redistributable_bin/osx32 ] && [ -d deps/steamwork
 fi
 ```
 
+If SDKs were downloaded with a browser and macOS blocks unsigned dylibs, clear quarantine attributes:
+
+```bash
+xattr -dr com.apple.quarantine "$PWD/deps/fmod" "$PWD/deps/steamworks"
+```
+
 Build and stage TheoraPlayer:
 
 ```bash
@@ -284,17 +290,24 @@ cmake -S . -B build-mac-all -G Ninja \
 cmake --build build-mac-all -j8
 ```
 
+If Steamworks is enabled (`-DSTEAMWORKS=ON`), stage the runtime dylib into the app bundle:
+
+```bash
+cp "$PWD/deps/steamworks/sdk/redistributable_bin/osx/libsteam_api.dylib" \
+  "$PWD/build-mac-all/Barony.app/Contents/MacOS/libsteam_api.dylib"
+```
+
 ## 4. Validate run
 
 ```bash
-./build-mac-all/barony.app/Contents/MacOS/barony \
+./build-mac-all/Barony.app/Contents/MacOS/Barony \
   -datadir="$HOME/Library/Application Support/Steam/steamapps/common/Barony/Barony.app/Contents/Resources" \
   -windowed -size=1280x720
 ```
 
 Expected artifacts:
 
-- `build-mac-all/barony.app/Contents/MacOS/barony`
+- `build-mac-all/Barony.app/Contents/MacOS/Barony`
 - `build-mac-all/editor`
 
 
@@ -455,6 +468,19 @@ cmake --build build-linux-all -j4
 ./build-linux-all/barony -datadir=/path/to/Barony -windowed -size=1280x720
 ```
 
+## 6. Package Linux Mod Release (Steam Deck-safe)
+
+Before distributing a Linux/Steam Deck mod zip, run the packager so shared-library
+symlink aliases are flattened into real files inside the archive:
+
+```bash
+scripts/mod_release/package_linux_release.sh \
+  --release-dir dist/<linux-release-folder>
+```
+
+This prevents extraction edge-cases where aliases like `libcurl.so.4` become
+tiny text files (`file too short`) on end-user systems.
+
 Expected artifacts:
 
 - `build-linux-all/barony`
@@ -500,6 +526,12 @@ cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.10 -DCMAKE_BUILD_TYPE=Relea
 
 - macOS Steamworks lookup failure:
   - Apply the `osx32 -> osx` symlink workaround shown in the macOS section
+
+- macOS runtime error `dyld: Library not loaded: @loader_path/libsteam_api.dylib`:
+  - Copy `deps/steamworks/sdk/redistributable_bin/osx/libsteam_api.dylib` to `build-mac-all/Barony.app/Contents/MacOS/` before launching
+
+- macOS dialog `"libfmod.dylib" Not Opened` (Apple could not verify malware status):
+  - Clear quarantine flags on downloaded SDKs: `xattr -dr com.apple.quarantine "$PWD/deps/fmod" "$PWD/deps/steamworks"`
 
 - CMake policy/version warnings:
   - Ensure configure commands include `-DCMAKE_POLICY_VERSION_MINIMUM=3.10` (already present in examples)

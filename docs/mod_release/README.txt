@@ -18,13 +18,23 @@ WINDOWS (STEAM, EPIC, OR NO-DRM)
 
 MACOS
 1. Exit Barony and Steam.
-2. Open your Barony install folder.
-3. Steam path helper: Steam Library -> Barony -> Manage -> Browse local files.
-4. Copy the full Barony folder (or Barony.app) to a new folder.
-5. Extract the matching macOS mod package.
-6. Copy mod files into the copied game app/folder.
-7. Replace files when prompted (modded binary and .dylib files, if included).
-8. Launch the game from the copied/modded app.
+2. In Steam: Library -> Barony -> Manage -> Browse local files.
+3. In Finder, go up one folder if needed so you can see Barony.app.
+4. Duplicate Barony.app (or copy/paste it) and rename the copy (example: Barony-15p.app).
+5. Extract the matching macOS mod package zip.
+6. Right-click your copied app -> Show Package Contents.
+7. Right-click the mod's Barony.app from the zip (older packages: barony.app) -> Show Package Contents.
+8. In the mod app, open Contents/MacOS. Copy:
+   - Barony (older packages may use lowercase barony)
+   - libsteam_api.dylib
+9. Paste those into your copied app's Contents/MacOS folder and replace when prompted.
+10. In the mod app, open Contents/Frameworks and copy all .dylib files.
+11. Paste them into your copied app's Contents/Frameworks folder and replace when prompted.
+12. Launch the copied app (right-click -> Open the first time).
+13. If macOS shows "cannot verify" for a dylib:
+    - Click Done.
+    - Open System Settings -> Privacy & Security.
+    - Click Open Anyway for the blocked app/library, then launch again.
 
 STEAM DECK
 1. Exit Barony.
@@ -35,7 +45,7 @@ STEAM DECK
 5. Extract the matching Steam Deck/Linux mod package.
 6. Copy mod files into the copied folder.
 7. Replace executable/shared library files when prompted.
-8. Launch the modded executable from the copied folder (Desktop Mode or Gaming Mode shortcut).
+8. Launch `run-barony.sh` from the copied folder (Desktop Mode terminal or Gaming Mode shortcut to that script).
 
 LINUX (DESKTOP)
 1. Exit Barony and Steam.
@@ -44,7 +54,7 @@ LINUX (DESKTOP)
 4. Extract the matching Linux/Proton mod package.
 5. Copy mod files into the copied folder.
 6. Replace executable/shared library files provided by the mod package.
-7. Launch the modded executable with your normal Proton setup.
+7. Launch `run-barony.sh` in the copied folder with your normal Proton setup.
 
 IN-GAME HOST SETUP (ALL PLATFORMS)
 1. Start the modded game.

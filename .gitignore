@@ -1,6 +1,9 @@
 **/books/*
 build/*
 build-*/
+# Local distribution/release outputs
+/dist/
+/release/
 tests/smoke/artifacts/
 docker/*
 !docker/Dockerfile
