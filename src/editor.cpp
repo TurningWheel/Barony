@@ -20,6 +20,9 @@
 #include "init.hpp"
 #include "mod_tools.hpp"
 #include <sys/stat.h>
+#ifdef LINUX
+#include <filesystem>
+#endif
 #ifndef EDITOR
 #define EDITOR
 #endif
@@ -1617,10 +1620,21 @@ int main(int argc, char** argv)
 #ifdef WINDOWS
 	strcpy(outputdir, "./");
 #else
-	char *basepath = getenv("HOME");
-	snprintf(outputdir, sizeof(outputdir), "%s/.barony", basepath);
-	if ( access(outputdir, F_OK) == -1 )
-		mkdir(outputdir, 0777);
+	std::string basepath;
+	if (strlen(getenv("XDG_DATA_HOME")) > 0)
+	{
+		printlog("Picked up XDG_DATA_HOME: %s", getenv("XDG_DATA_HOME"));
+		basepath = getenv("XDG_DATA_HOME");
+		basepath += "/barony";
+	}
+	else 
+	{
+		printlog("XDG_DATA_HOME does not exit, using HOME");
+		basepath = getenv("HOME");
+		basepath += "/.local/share/barony";
+	}
+	snprintf(outputdir, sizeof(outputdir), "%s", basepath.c_str());
+	std::filesystem::create_directories(outputdir);
 #endif
 
 	// load default language file (english)
