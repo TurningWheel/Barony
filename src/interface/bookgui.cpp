@@ -536,6 +536,13 @@ void Player::BookGUI_t::openBook(int index, Item* item)
 	openBookItem = item;
 	currentBookPage = 0;
 
+	// Lazy-compile: paginate this book on first open
+	int bookIdx = getBook(openBookName);
+	if ( bookIdx >= 0 && (size_t)bookIdx < allBooks.size() )
+	{
+		bookParser_t.compileBook(bookIdx);
+	}
+
 	playSound(83 + local_rng.rand() % 6, 156);
 
 	// add the book to the list of read books
