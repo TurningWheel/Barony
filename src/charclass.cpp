@@ -3373,16 +3373,15 @@ void initClass(const int player)
 	}
 
 	if ( stats[player]->stat_appearance == 0 
-		&& (stats[player]->playerRace == RACE_DRYAD || stats[player]->playerRace == RACE_MYCONID)
-		&& !stats[player]->helmet )
+		&& ( stats[player]->playerRace == RACE_DRYAD || stats[player]->playerRace == RACE_MYCONID) )
 	{
+		if (stats[player]->helmet && stats[player]->helmet->canUnequip())
+		{
+			useItem(stats[player]->helmet, player);
+		}
+
 		stats[player]->setEffectActive(EFF_GROWTH, 3);
 		stats[player]->EFFECTS_TIMERS[EFF_GROWTH] = -1;
-	}
-	else
-	{
-		stats[player]->clearEffect(EFF_GROWTH);
-		stats[player]->EFFECTS_TIMERS[EFF_GROWTH] = 0;
 	}
 
 	if ( stats[player]->stat_appearance == 0 && stats[player]->playerRace == RACE_AUTOMATON )
