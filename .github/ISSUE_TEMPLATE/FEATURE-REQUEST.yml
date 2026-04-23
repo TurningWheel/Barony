@@ -1,0 +1,84 @@
+name: "✨ Feature Request"
+description: Suggest a low-friction gameplay, content, UI, or QoL improvement.
+title: "✨ [FEATURE] - <title>"
+labels: [
+  "enhancement"
+]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a game improvement for Barony. Use this form for
+        smaller gameplay, content, UI, or quality of life requests. If your request
+        is larger and may have substantial impact to existing systems, try using the 'balancing'
+        intake for a deeper discussion.
+  - type: dropdown
+    id: target
+    attributes:
+      label: "What area of the game are you targeting?"
+      description: Pick the main area this request is affecting.
+      options:
+        - Tutorial
+        - Class/Race
+        - Combat
+        - Consumables
+        - Crafting
+        - Loot Systems
+        - Player stats / status
+        - Dungeon progression
+        - Other
+    validations:
+      required: true
+  
+  - type: textarea
+    id: problem
+    attributes:
+      label: "What problem are you trying to resolve?"
+      description: Describe the frustration, gap, or missed opportunity.
+      placeholder: Not having pets as drops makes me sad because ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "Proposed change"
+      description: Describe the change you want to see
+      placeholder: Every race should have a unique pet drop that persists ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: "Why would this improve the game"
+      description: Focus on player experience, clarity, fun, variety, or usability of the feature.
+      placeholder: It enhances replayability if we want to continue dungeoning ...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: "What is the estimated scope of impact?"
+      description: Pick the best fit.
+      options:
+        - label: Small, isolated change.
+        - label: Multiple systems impacted
+        - label: May require art / audio / UI work
+        - label: Will require balancing considerations
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation_notes
+    attributes:
+      label: Optional implementation notes
+      description: Only include if you have something useful.
+      placeholder: "Possible files, systems, related mechanics, references, etc."
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples or references
+      description: Similar ideas from Barony, other RPGs, mods, screenshots, clips, etc.

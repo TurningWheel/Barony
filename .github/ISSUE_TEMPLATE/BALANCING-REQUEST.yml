@@ -1,0 +1,102 @@
+name: "⚖️ Balancing Intake"
+description: Suggest a gameplay balance adjustment for combat, progression, items, or systems.
+title: "⚖️ [Balance] <Title>"
+labels:
+  - balance
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve game balance.
+        Please focus on specific gameplay impact and user experience, not just 'it feels bad.'
+
+  - type: dropdown
+    id: target_area
+    attributes:
+      label: What area does this target?
+      description: Pick the main system affected by this balance request.
+      options:
+        - Tutorial
+        - Class/Race
+        - Combat
+        - Consumables
+        - Crafting
+        - Loot Systems
+        - Player stats / status
+        - Dungeon progression
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: What kind of balance problem is this?
+      options:
+        - Too strong
+        - Too weak
+        - Too easy
+        - Too hard
+        - Too rewarding
+        - Not rewarding enough
+        - Dominant strategy / build
+        - Underused option
+        - Scaling problem
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_behavior
+    attributes:
+      label: What feels unbalanced right now?
+      description: Describe the current behavior as clearly as possible.
+      placeholder: "Example: Food consumption becomes limited in late dungeons and disincentivizes spending time in each level ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: affected_scenario
+    attributes:
+      label: When does this happen?
+      description: Describe the scenario, build, floor range, class, item combo, enemy, or progression point.
+      placeholder: "Example: In 3–4 player co-op after..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_change
+    attributes:
+      label: What change would you make?
+      description: Include numbers if you have them, but rough suggestions are okay.
+      placeholder: "Reduce X by..., increase Y by..., add cooldown..., adjust drop rate..."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Who or what is affected? Select whichever applies.
+      options:
+        - label: Early game
+        - label: Mid game
+        - label: Late game
+        - label: Solo play
+        - label: Multiplayer / co-op
+        - label: Specific class / build
+        - label: Specific item / weapon / spell
+        - label: Enemy or boss tuning
+
+  - type: textarea
+    id: why_better
+    attributes:
+      label: Why would this improve the game?
+      description: Explain how this would improve fairness, variety, challenge, or fun.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting evidence
+      description: Optional but helpful. Include numbers, clips, screenshots, save state details, or comparisons.

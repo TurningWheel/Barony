@@ -1,0 +1,40 @@
+name: "🐛 Bug Report"
+description: Create a new ticket for a bug.
+title: "🐛 [BUG] - <title>"
+labels: [
+  "bug"
+]
+body:
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected Behavior"
+      description: Tell us what should happen
+      placeholder: Short and explicit description of what you expected to happen
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: "Current Behavior"
+      description: Tell us what happens instead of the expected behavior.
+      placeholder: Short and explicit description of what is happening instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Steps to Reproduce"
+      description: Provide a link to a live example, or an unambiguous steps to reproduce this bug. Include code to reproduce, if relevant.
+      placeholder: 1. .... 2. ...... If applicable, also include details about your computer config. 
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: "Potential Solution"
+      description: Not obligatory, but if you have a suggestion fix for this bug, or a reason you think it is occuring.
+      placeholder: Provide suggestion details here.
+    validations:
+      required: false
+
