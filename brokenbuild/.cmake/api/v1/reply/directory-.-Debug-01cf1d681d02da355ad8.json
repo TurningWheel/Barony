@@ -1,0 +1,107 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 671,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 783,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 788,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 802,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Runtime",
+			"destination" : "/usr/local",
+			"paths" : 
+			[
+				"barony"
+			],
+			"targetId" : "barony::@6890427a1f51a3e7e1df",
+			"targetIndex" : 0,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Runtime",
+			"destination" : "/usr/local",
+			"paths" : 
+			[
+				"editor"
+			],
+			"targetId" : "editor::@6890427a1f51a3e7e1df",
+			"targetIndex" : 1,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "/usr/local",
+			"paths" : 
+			[
+				"books",
+				"data",
+				"fonts",
+				"images",
+				"items",
+				"lang",
+				"maps",
+				"models",
+				"music",
+				"sound"
+			],
+			"type" : "directory"
+		},
+		{
+			"backtrace" : 4,
+			"component" : "Unspecified",
+			"destination" : "/usr/local",
+			"paths" : 
+			[
+				"steam_appid.txt",
+				"gamecontrollerdb.txt",
+				"playernames-female.txt",
+				"playernames-male.txt"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	}
+}

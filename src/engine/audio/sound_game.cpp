@@ -1220,7 +1220,7 @@ static ConsoleCommand ccmd_voice_deinit("/voice_deinit", "",
 		VoiceChat.deinit();
 	});
 
-FMOD_RESULT F_CALLBACK pcmreadcallback(FMOD_SOUND* sound, void* data, unsigned int datalen)
+FMOD_RESULT F_CALL pcmreadcallback(FMOD_SOUND* sound, void* data, unsigned int datalen)
 {
 	char* bitbuffer = (char*)data;
 	if ( !sound ) { return FMOD_OK; }
@@ -3244,13 +3244,13 @@ int VoiceChat_t::RingBuffer::GetReadAvail()
 
 EnsembleSounds_t ensembleSounds;
 
-FMOD_RESULT F_CALLBACK ensembleExplorationCallback(FMOD_CHANNELCONTROL* channelcontrol,
+FMOD_RESULT F_CALL ensembleExplorationCallback(FMOD_CHANNELCONTROL* channelcontrol,
 	FMOD_CHANNELCONTROL_TYPE controltype,
 	FMOD_CHANNELCONTROL_CALLBACK_TYPE callbacktype,
 	void* commanddata1,
 	void* commanddata2);
 
-FMOD_RESULT F_CALLBACK ensembleCombatCallback(FMOD_CHANNELCONTROL* channelcontrol,
+FMOD_RESULT F_CALL ensembleCombatCallback(FMOD_CHANNELCONTROL* channelcontrol,
 	FMOD_CHANNELCONTROL_TYPE controltype,
 	FMOD_CHANNELCONTROL_CALLBACK_TYPE callbacktype,
 	void* commanddata1,
@@ -3786,7 +3786,7 @@ void EnsembleSounds_t::setup()
 
 static ConsoleVariable<int> cvar_ensemble_combat_length("/ensemble_combat_length", 30);
 
-FMOD_RESULT F_CALLBACK ensembleCombatCallback(FMOD_CHANNELCONTROL* channelcontrol,
+FMOD_RESULT F_CALL ensembleCombatCallback(FMOD_CHANNELCONTROL* channelcontrol,
 	FMOD_CHANNELCONTROL_TYPE controltype,
 	FMOD_CHANNELCONTROL_CALLBACK_TYPE callbacktype,
 	void* commanddata1,
@@ -4025,7 +4025,7 @@ FMOD_RESULT F_CALLBACK ensembleCombatCallback(FMOD_CHANNELCONTROL* channelcontro
 	return FMOD_OK;
 }
 
-FMOD_RESULT F_CALLBACK ensembleExplorationCallback(FMOD_CHANNELCONTROL* channelcontrol,
+FMOD_RESULT F_CALL ensembleExplorationCallback(FMOD_CHANNELCONTROL* channelcontrol,
 	FMOD_CHANNELCONTROL_TYPE controltype,
 	FMOD_CHANNELCONTROL_CALLBACK_TYPE callbacktype,
 	void* commanddata1,

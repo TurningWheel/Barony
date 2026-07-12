@@ -1,0 +1,170 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-01cf1d681d02da355ad8.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				},
+				{
+					"build" : "src",
+					"childIndexes" : 
+					[
+						2,
+						3,
+						4,
+						5,
+						7
+					],
+					"jsonFile" : "directory-src-Debug-b6cf2213fc5053b67c22.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src"
+				},
+				{
+					"build" : "src/magic",
+					"jsonFile" : "directory-src.magic-Debug-7aa7df70415442774048.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "src/magic"
+				},
+				{
+					"build" : "src/interface",
+					"jsonFile" : "directory-src.interface-Debug-a88f12ce6dfb18708e23.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "src/interface"
+				},
+				{
+					"build" : "src/ui",
+					"jsonFile" : "directory-src.ui-Debug-c1f78044602f134edac6.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "src/ui"
+				},
+				{
+					"build" : "src/engine",
+					"childIndexes" : 
+					[
+						6
+					],
+					"jsonFile" : "directory-src.engine-Debug-f18d3e3eac6b44c09f1e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "src/engine"
+				},
+				{
+					"build" : "src/engine/audio",
+					"jsonFile" : "directory-src.engine.audio-Debug-694e19aa5bb803afd2c7.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 0,
+					"source" : "src/engine/audio"
+				},
+				{
+					"build" : "src/imgui",
+					"jsonFile" : "directory-src.imgui-Debug-142fd662c150e6570d76.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.0"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "src/imgui"
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					],
+					"name" : "barony",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "barony::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-barony-Debug-b34cd6b3e4fcdffa2d2c.json",
+					"name" : "barony",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "editor::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-editor-Debug-fc6c58d58b41580d350f.json",
+					"name" : "editor",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/conner/BaronyAutomatia/build",
+		"source" : "/home/conner/BaronyAutomatia"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 6
+	}
+}

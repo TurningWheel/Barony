@@ -1,0 +1,657 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "editor"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"install",
+			"target_link_libraries",
+			"remove_definitions",
+			"target_compile_definitions",
+			"INCLUDE_DIRECTORIES"
+		],
+		"files" : 
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 703,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 783,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 720,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 732,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 735,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 740,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 742,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 855,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 846,
+				"parent" : 0
+			},
+			{
+				"command" : 4,
+				"file" : 0,
+				"line" : 706,
+				"parent" : 0
+			},
+			{
+				"command" : 5,
+				"file" : 0,
+				"line" : 372,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -Wno-pedantic -Wno-empty-body -Wno-string-plus-int -Wno-parentheses -Wno-format-security -Wno-multichar -Wno-inconsistent-missing-override -pg -std=c++17 -Wl,-rpath='$ORIGIN'"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 9,
+					"define" : "BASE_DATA_DIR=\"./\""
+				},
+				{
+					"backtrace" : 10,
+					"define" : "EDITOR"
+				},
+				{
+					"backtrace" : 9,
+					"define" : "SOUND"
+				},
+				{
+					"backtrace" : 9,
+					"define" : "USE_OPENAL"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 11,
+					"path" : "/usr/include/SDL2"
+				},
+				{
+					"backtrace" : 11,
+					"path" : "/usr/include/libpng16"
+				},
+				{
+					"backtrace" : 11,
+					"path" : "/usr/include/webp"
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28,
+				29,
+				30,
+				31,
+				32,
+				33,
+				34,
+				35
+			]
+		}
+	],
+	"id" : "editor::@6890427a1f51a3e7e1df",
+	"install" : 
+	{
+		"destinations" : 
+		[
+			{
+				"backtrace" : 2,
+				"path" : "/usr/local"
+			}
+		],
+		"prefix" : 
+		{
+			"path" : "/usr/local"
+		}
+	},
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-g -Wno-pedantic -Wno-empty-body -Wno-string-plus-int -Wno-parentheses -Wno-format-security -Wno-multichar -Wno-inconsistent-missing-override -pg -std=c++17 -Wl,-rpath='$ORIGIN'",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-Wl,-rpath='$ORIGIN'   -rdynamic",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "-lSDL2",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "-lSDL2_image",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "-lSDL2",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-L/usr/lib64",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-lstdc++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lOpenGL",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lGLX",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lGLU",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "-lc",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lphysfs",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lpng",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lGL",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lGLX",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lOpenGL",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "-lSDL2_image",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lSDL2_ttf",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lSDL2_net",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "-lSDL2",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lopenal",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "-lSDL2_image",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-lstdc++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lOpenGL",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lGLX",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lGLU",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "-lm",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 7,
+				"fragment" : "-lc",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lphysfs",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lpng",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lGL",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lGLX",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lOpenGL",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lSDL2_ttf",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "-lSDL2_net",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lopenal",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "editor",
+	"nameOnDisk" : "editor",
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18,
+				19,
+				20,
+				21,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28,
+				29,
+				30,
+				31,
+				32,
+				33,
+				34,
+				35
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/main.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/init.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/light.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/buttons.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/cursors.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/draw.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/opengl.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/objects.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/entity_editor.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/input.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/list.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/hash.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/files.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/editor.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/entity_shared.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/stat_editor.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/stat_shared.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/items_editor.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/steam_shared.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/json.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/eos_editor.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/mod_tools.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/prng.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/shader.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/ui/Button.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/ui/Field.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/ui/Font.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/ui/Frame.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/ui/Image.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/ui/Slider.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/ui/Text.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/ui/Widget.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/ui/LoadingScreen.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/engine/audio/defines.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/engine/audio/init_audio.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/engine/audio/sound.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "EXECUTABLE"
+}
