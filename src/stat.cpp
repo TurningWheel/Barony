@@ -424,6 +424,10 @@ void Stat::clearStats()
 	this->HUNGER = 1000;
 	this->golemBlessedComposition = (this->sex == MALE) ? 10000 : 0;
 	this->runeCreatorIdentity = 0;
+	for ( int stat = 0; stat < NUMSTATS; ++stat )
+	{
+		this->tinctureStacks[stat] = 0;
+	}
 	this->LVL = 1;
 	this->EXP = 0;
 	list_FreeAll(&this->FOLLOWERS);
@@ -661,6 +665,10 @@ Stat* Stat::copyStats()
 	newStat->HUNGER = this->HUNGER;
 	newStat->golemBlessedComposition = this->golemBlessedComposition;
 	newStat->runeCreatorIdentity = this->runeCreatorIdentity;
+	for ( int stat = 0; stat < NUMSTATS; ++stat )
+	{
+		newStat->tinctureStacks[stat] = this->tinctureStacks[stat];
+	}
 
 	for (c = 0; c < NUMPROFICIENCIES; c++)
 	{
@@ -1136,6 +1144,10 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	this->GOLD = src.GOLD;
 	this->golemBlessedComposition = src.golemBlessedComposition;
 	this->runeCreatorIdentity = src.runeCreatorIdentity;
+	for ( int stat = 0; stat < NUMSTATS; ++stat )
+	{
+		this->tinctureStacks[stat] = src.tinctureStacks[stat];
+	}
 	bool oldIntro = intro;
 	if ( player >= 0 && players[player]->isLocalPlayer() )
 	{
@@ -1786,6 +1798,8 @@ bool Stat::emptyLootingBag(const int player, Uint32 key)
 						item2->runeSetCreatorPlayer(item_loot.runeGetCreatorPlayer());
 						item2->runeSetInstanceId(item_loot.runeGetInstanceId());
 						item2->runeSetCreatorIdentity(item_loot.runeGetCreatorIdentity());
+						item2->appliedOil = item_loot.appliedOil;
+						copyItemPersistentCustomState(*item2, item_loot);
 						int pickedUpCount = item2->count;
 						Item* item = itemPickup(player, item2);
 						if ( item )

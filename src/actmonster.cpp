@@ -220,7 +220,8 @@ double sightranges[NUMMONSTERS] =
 	256, // MONSTER_UNUSED_8
 	0,   // MERROW (preserve existing zero-initialized value)
 	256, // mod add: LEONIN uses Human sight range
-	256  // mod add: GOLEM uses humanoid sight range
+	256, // mod add: GOLEM uses humanoid sight range
+	0    // BAT_FAMILIAR never scans for combat targets
 };
 
 int monsterGlobalAnimationMultiplier = 10;
@@ -236,6 +237,10 @@ std::string getMonsterLocalizedName(Monster creature, Stat* optionalStats)
 	if ( creature == GOLEM )
 	{
 		return "golem";
+	}
+	if ( creature == BAT_FAMILIAR )
+	{
+		return "bat familiar";
 	}
 
 	// mod add: Merrow
@@ -2616,6 +2621,17 @@ void batResetIdle(Entity* my);
 
 void monsterAnimate(Entity* my, Stat* myStats, double dist)
 {
+	if ( isAmuletFamiliar(my, myStats) )
+	{
+		switch ( getAmuletFamiliarForm(my) )
+		{
+			case FAMILIAR_FORM_MIMIC: mimicAnimate(my, myStats, dist); break;
+			case FAMILIAR_FORM_CAULDRON: animateAmuletFamiliarCauldron(my); break;
+			case FAMILIAR_FORM_BAT:
+			default: batAnimate(my, myStats, dist); break;
+		}
+		return;
+	}
 	switch ( my->getMonsterTypeFromSprite() ) {
 	case HUMAN: humanMoveBodyparts(my, myStats, dist); break;
 	case RAT: ratAnimate(my, dist); break;
@@ -2651,7 +2667,8 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist)
 	case GYROBOT: gyroBotAnimate(my, myStats, dist); break;
 	case DUMMYBOT: dummyBotAnimate(my, myStats, dist); break;
 	case MIMIC: mimicAnimate(my, myStats, dist); break;
-	case BAT_SMALL: batAnimate(my, myStats, dist); break;
+	case BAT_SMALL:
+	case BAT_FAMILIAR: batAnimate(my, myStats, dist); break;
 	case BUGBEAR: bugbearMoveBodyparts(my, myStats, dist); break;
 	case DRYAD: monsterDMoveBodyparts(my, myStats, dist); break;
 	case MYCONID: monsterMMoveBodyparts(my, myStats, dist); break;
@@ -2762,6 +2779,16 @@ void actMonster(Entity* my)
 			case DUMMYBOT: initDummyBot(my, nullptr); break;
 			case MIMIC: initMimic(my, nullptr); break;
 			case BAT_SMALL: initBat(my, nullptr); break;
+			case BAT_FAMILIAR:
+				if ( getAmuletFamiliarForm(my) == FAMILIAR_FORM_CAULDRON )
+				{
+					rebuildAmuletFamiliarCauldron(my);
+				}
+				else
+				{
+					initBat(my, nullptr);
+				}
+				break;
 			case BUGBEAR: initBugbear(my, nullptr); break;
 			case DRYAD: initMonsterD(my, nullptr); break;
 			case MYCONID: initMonsterM(my, nullptr); break;
@@ -2871,7 +2898,8 @@ void actMonster(Entity* my)
 				case GYROBOT: initGyroBot(my, myStats); break;
 				case DUMMYBOT: initDummyBot(my, myStats); break;
 				case MIMIC: initMimic(my, myStats); break;
-				case BAT_SMALL: initBat(my, myStats); break;
+				case BAT_SMALL:
+				case BAT_FAMILIAR: initBat(my, myStats); break;
 				case BUGBEAR: initBugbear(my, myStats); break;
 				case DRYAD: initMonsterD(my, myStats); break;
 				case MYCONID: initMonsterM(my, myStats); break;
@@ -2954,6 +2982,45 @@ void actMonster(Entity* my)
 	{
 		printlog("ERROR: monster entity at %p has no stats struct!", my);
 		return;
+	}
+	if ( isAmuletFamiliar(my, myStats) && updateAmuletFamiliarSpecialState(my, myStats) )
+	{
+		return;
+	}
+	if ( isAmuletFamiliar(my, myStats) && getAmuletFamiliarForm(my) == FAMILIAR_FORM_BAT )
+	{
+		Entity* leader = uidToEntity(myStats->leader_uid);
+		Stat* leaderStats = leader ? leader->getStats() : nullptr;
+		const int leaderPlayer = leader ? leader->isEntityPlayer() : -1;
+		if ( !leader || leader->behavior != &actPlayer || !leaderStats || leaderStats->HP <= 0
+			|| leaderPlayer < 0 || (leaderPlayer > 0 && client_disconnected[leaderPlayer])
+			|| !leaderStats->amulet || leaderStats->amulet->type != AMULET_FAMILIAR
+			|| leaderStats->amulet->status == BROKEN )
+		{
+			removeBatFamiliar(my);
+			return;
+		}
+		if ( my->monsterTarget )
+		{
+			my->monsterReleaseAttackTarget();
+		}
+		if ( my->monsterState == MONSTER_STATE_ATTACK )
+		{
+			my->monsterState = MONSTER_STATE_WAIT;
+			serverUpdateEntitySkill(my, 0);
+		}
+		if ( my->monsterAllyState != ALLY_STATE_DEFAULT )
+		{
+			my->monsterAllyState = ALLY_STATE_DEFAULT;
+			serverUpdateEntitySkill(my, 43);
+		}
+		if ( MONSTER_ATTACK != 0 )
+		{
+			MONSTER_ATTACK = 0;
+			MONSTER_ATTACKTIME = 0;
+			serverUpdateEntitySkill(my, 8);
+			serverUpdateEntitySkill(my, 9);
+		}
 	}
 	myStats->defending = false;
 	myStats->sneaking = 0;
@@ -3645,10 +3712,19 @@ void actMonster(Entity* my)
 		}
 	}
 
-	// hunger, regaining hp/mp, poison, etc.
-	if ( !intro )
+	// hunger, regaining hp/mp, poison, etc. Bat and Cauldron familiar forms are
+	// explicitly invulnerable and must never enter a generic effect/death cycle.
+	const bool invulnerableFamiliarForm = isAmuletFamiliar(my, myStats)
+		&& getAmuletFamiliarForm(my) != FAMILIAR_FORM_MIMIC;
+	if ( !intro && !invulnerableFamiliarForm )
 	{
 		my->handleEffects(myStats);
+	}
+	else if ( invulnerableFamiliarForm && myStats->HP <= 0 )
+	{
+		myStats->MAXHP = std::max<Sint32>(1, myStats->MAXHP);
+		myStats->HP = 1;
+		myStats->OLDHP = 1;
 	}
 	if ( myStats->HP <= 0
 		&& my->monsterState != MONSTER_STATE_LICH_DEATH
@@ -4148,6 +4224,9 @@ void actMonster(Entity* my)
 			case BAT_SMALL:
 				batDie(my);
 				break;
+			case BAT_FAMILIAR:
+				removeBatFamiliar(my);
+				break;
 			case BUGBEAR:
 				bugbearDie(my);
 				break;
@@ -4399,7 +4478,7 @@ void actMonster(Entity* my)
 	// effect of a ring of conflict
 	bool ringconflict = false;
 	Entity* ringConflictHolder = nullptr;
-	if ( myStats->type != LICH_ICE && myStats->type != LICH_FIRE )
+	if ( myStats->type != LICH_ICE && myStats->type != LICH_FIRE && myStats->type != BAT_FAMILIAR )
 	{
 		for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only creatures can wear rings, so don't search map.entities.
 		{
@@ -4530,6 +4609,22 @@ void actMonster(Entity* my)
 	if ( monsterclicked >= 0 && monsterclicked < MAXPLAYERS
 		&& players[monsterclicked] && players[monsterclicked]->entity )
 	{
+		if ( isAmuletFamiliar(my, myStats) && getAmuletFamiliarForm(my) == FAMILIAR_FORM_CAULDRON )
+		{
+			if ( myStats->leader_uid == players[monsterclicked]->entity->getUID() )
+			{
+				openStewingCauldron(my, monsterclicked);
+			}
+			return;
+		}
+		if ( isAmuletFamiliar(my, myStats) && getAmuletFamiliarForm(my) == FAMILIAR_FORM_MIMIC )
+		{
+			if ( myStats->leader_uid == players[monsterclicked]->entity->getUID() )
+			{
+				openAmuletFamiliarVoidChest(my, monsterclicked);
+			}
+			return;
+		}
 		if ( !my->isMobile() )
 		{
 			// message the player, "the %s doesn't respond"
@@ -6624,7 +6719,8 @@ timeToGoAgain:
 											playSoundEntity(hit.entity, 28, 64);
 										}
 									}
-									else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT && myStats->type != BAT_SMALL )
+									else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT
+										&& myStats->type != BAT_SMALL && myStats->type != BAT_FAMILIAR )
 									{
 										// break it down!
 										my->monsterHitTime++;
@@ -7788,6 +7884,14 @@ timeToGoAgain:
 								}
 								myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
 							}
+							if ( isAmuletFamiliar(my, myStats)
+								&& getAmuletFamiliarForm(my) == FAMILIAR_FORM_BAT )
+							{
+								// Movement uses (DEX + 10), so scale that complete term to
+								// produce an actual 2x familiar Bat movement speed.
+								myDex = static_cast<int>((myDex + 10)
+									* FAMILIAR_BAT_MOVEMENT_SPEED_MULTIPLIER - 10);
+							}
 							real_t maxVelX = cos(tangent) * .045 * (myDex + 10) * weightratio;
 							real_t maxVelY = sin(tangent) * .045 * (myDex + 10) * weightratio;
 							if ( myStats->getEffectActive(EFF_KNOCKBACK) )
@@ -7923,7 +8027,8 @@ timeToGoAgain:
 										playSoundEntity(hit.entity, 28, 64);
 									}
 								}
-								else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT && myStats->type != BAT_SMALL )
+								else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT
+									&& myStats->type != BAT_SMALL && myStats->type != BAT_FAMILIAR )
 								{
 									// break it down!
 									my->monsterHitTime++;
@@ -14855,6 +14960,10 @@ bool Entity::isFollowerFreeToPathToPlayer(Stat* myStats)
 
 bool Entity::isInertMimic() const
 {
+	if ( familiarFormIsCombatTargetable(this) )
+	{
+		return false;
+	}
 	if ( behavior == &actMonster && getMonsterTypeFromSprite() == MIMIC )
 	{
 		if ( monsterSpecialState == MIMIC_INERT || monsterSpecialState == MIMIC_INERT_SECOND )
@@ -14887,6 +14996,10 @@ bool Entity::isUntargetableBat(real_t* outDist) const
 
 bool Entity::monsterIsTargetable(bool targetInertMimics) const
 {
+	if ( behavior == &actMonster && isAmuletFamiliar(this, getStats()) )
+	{
+		return familiarFormIsCombatTargetable(this);
+	}
 	if ( flags[PASSABLE] )
 	{
 		return false;
@@ -14898,7 +15011,11 @@ bool Entity::monsterIsTargetable(bool targetInertMimics) const
 	else if ( behavior == &actMonster ) 
 	{ 
 		Monster type = getMonsterTypeFromSprite();
-		if ( type == GYROBOT )
+		if ( type == BAT_FAMILIAR )
+		{
+			return false;
+		}
+		else if ( type == GYROBOT )
 		{
 			return false;
 		}
@@ -14970,6 +15087,15 @@ void batResetIdle(Entity* my)
 void mimicResetIdle(Entity* my)
 {
 	if ( !my ) { return; }
+	if ( familiarFormIsCombatTargetable(my) )
+	{
+		if ( my->monsterSpecialState != MIMIC_ACTIVE )
+		{
+			my->monsterSpecialState = MIMIC_ACTIVE;
+			serverUpdateEntitySkill(my, 33);
+		}
+		return;
+	}
 	// reset to inert after wandering with no target
 	my->monsterSpecialState = MIMIC_INERT_SECOND;
 	serverUpdateEntitySkill(my, 33);

@@ -695,6 +695,14 @@ void actItem(Entity* my)
 	}
 
 	ITEM_LIFE++;
+	if ( multiplayer != CLIENT && itemTypeIsIngredientBag(static_cast<ItemType>(ITEM_TYPE))
+		&& my->itemIngredientCount0 == 0 && my->itemIngredientCount1 == 0
+		&& my->itemIngredientCount2 == 0 && my->itemIngredientCount3 == 0 )
+	{
+		my->removeLightField();
+		list_RemoveNode(my->mynode);
+		return;
+	}
 
 	// pick up item
 	if (multiplayer != CLIENT)
@@ -910,6 +918,12 @@ void actItem(Entity* my)
 				}
 				else if ( inrange[i] && players[i] && players[i]->entity )
 				{
+					if ( itemTypeIsIngredientBag(static_cast<ItemType>(my->skill[10]))
+						&& my->itemIngredientBagOwnerUid != 0
+						&& static_cast<Uint32>(my->itemIngredientBagOwnerUid) != players[i]->entity->getUID() )
+					{
+						continue;
+					}
 					bool trySalvage = false;
 					if ( static_cast<Uint32>(my->itemAutoSalvageByPlayer) == players[i]->entity->getUID() )
 					{

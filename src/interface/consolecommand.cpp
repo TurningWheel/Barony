@@ -816,6 +816,17 @@ namespace ConsoleCommands {
 		showfps = (showfps == false);
 		});
 
+	static ConsoleCommand ccmd_unlockStewingRecipes("/unlock_stewing_recipes",
+		"unlock all stewing recipes (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		unlockAllStewingRecipes(clientnum);
+		messagePlayer(clientnum, MESSAGE_MISC, "Unlocked all Stewing recipes.");
+		});
+
 	static ConsoleCommand ccmd_golemstats("/golemstats", "toggle Golem debug HUD (cheat)", []CCMD{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
 		{

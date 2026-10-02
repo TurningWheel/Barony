@@ -1324,6 +1324,18 @@ void actThrown(Entity* my)
 						break;
 				}
 				damage = std::max(0, damage);
+				if ( itemTypeIsOil(item->type) && oilMatchesTarget(appliedOilFromItemType(item->type), hit.entity) )
+				{
+					damage = 50;
+				}
+				if ( thrownTypeWeapon && item->appliedOil != APPLIED_OIL_NONE )
+				{
+					if ( damage > 0 && oilMatchesTarget(item->appliedOil, hit.entity) )
+					{
+						damage += damage / 4;
+					}
+					rollProjectileOilWearOff(my);
+				}
 				//messagePlayer(0, "damage: %d", damage);
 				if ( parent && parent->behavior == &actPlayer && parent->checkFriend(hit.entity) && itemCategory(item) == POTION )
 				{
@@ -1516,12 +1528,39 @@ void actThrown(Entity* my)
 					}
 					if ( !ignorePotion )   // this makes it impossible to bork the end boss :)
 					{
-						if ( local_rng.rand() % 4 == 0 && parent != NULL && itemCategory(item) == POTION && item->type != POTION_EMPTY )
+						if ( local_rng.rand() % 4 == 0 && parent != NULL && itemCategory(item) == POTION
+							&& item->type != POTION_EMPTY && !itemTypeIsWitchbrewConsumable(item->type) )
 						{
 							parent->increaseSkill(PRO_ALCHEMY);
 						}
 						switch ( itemType )
 						{
+							case TINCTURE_STR:
+							case TINCTURE_DEX:
+							case TINCTURE_CON:
+							case TINCTURE_INT:
+							case TINCTURE_PER:
+							case TINCTURE_CHA:
+								if ( hit.entity->behavior == &actPlayer )
+								{
+									const bool applied = applyTinctureStackToPlayer(itemType, hit.entity->skill[2]);
+									if ( applied && multiplayer != CLIENT && parent
+										&& parent->behavior == &actPlayer && local_rng.rand() % 4 == 0 )
+									{
+										parent->increaseSkill(PRO_ALCHEMY);
+									}
+								}
+								usedpotion = true;
+								break;
+							case OIL_AETHER:
+							case OIL_SILVER:
+							case OIL_TOXINS:
+							case OIL_BASES:
+							case OIL_LEAD:
+							case OIL_MINERAL:
+							case OIL_BRINE:
+								usedpotion = true;
+								break;
 							case POTION_WATER:
 								usedpotion = true;
 								item_PotionWater(item, hit.entity, parent);
@@ -1812,6 +1851,9 @@ void actThrown(Entity* my)
 								usedpotion = true;
 								break;
 							}
+							case INK_MYSTICISM:
+							case INK_SORCERY:
+							case INK_THAUMATURGY:
 							case FOOD_CREAMPIE:
 							{
 								skipMessage = true;
@@ -1856,6 +1898,11 @@ void actThrown(Entity* my)
 								{
 									Entity* gib = spawnGib(hit.entity, 863);
 									serverSpawnGibForClient(gib);
+								}
+								if ( itemTypeIsInk(itemType) && multiplayer != CLIENT && parent
+									&& parent->behavior == &actPlayer && local_rng.rand() % 4 == 0 )
+								{
+									parent->increaseSkill(PRO_ALCHEMY);
 								}
 								usedpotion = true;
 								break;

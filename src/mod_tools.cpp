@@ -1270,17 +1270,241 @@ void ItemTooltips_t::readItemsFromFile()
 		}
 	}
 
-	// mod add: Keep spell icon indexing aligned with SPELL_ENTRENCH even when
+	// The base game data predates the familiar amulet. Keep the executable's
+	// final item slot valid until a mounted mod supplies its dedicated metadata
+	// and image. Use one known base amulet image rather than cloning every
+	// appearance, so one missing optional variation cannot break startup.
+	if ( itemsRead <= static_cast<int>(AMULET_FAMILIAR) )
+	{
+		items[AMULET_FAMILIAR].level = -1;
+		items[AMULET_FAMILIAR].gold_value = 150;
+		items[AMULET_FAMILIAR].weight = 5;
+		items[AMULET_FAMILIAR].fpindex = items[AMULET_MAGICREFLECTION].fpindex;
+		items[AMULET_FAMILIAR].index = items[AMULET_MAGICREFLECTION].index;
+		items[AMULET_FAMILIAR].indexShort = items[AMULET_MAGICREFLECTION].indexShort;
+		items[AMULET_FAMILIAR].variations = 1;
+		items[AMULET_FAMILIAR].category = AMULET;
+		items[AMULET_FAMILIAR].item_slot = ItemEquippableSlot::EQUIPPABLE_IN_SLOT_AMULET;
+		items[AMULET_FAMILIAR].tooltip = "tooltip_amulet";
+		list_FreeAll(&items[AMULET_FAMILIAR].images);
+		items[AMULET_FAMILIAR].images.first = NULL;
+		items[AMULET_FAMILIAR].images.last = NULL;
+		if ( node_t* imageNode = items[AMULET_MAGICREFLECTION].images.first )
+		{
+			const string_t* source = static_cast<const string_t*>(imageNode->element);
+			if ( source && source->data )
+			{
+				string_t* copy = static_cast<string_t*>(malloc(sizeof(string_t)));
+				const size_t len = 64;
+				copy->data = static_cast<char*>(malloc(len));
+				memset(copy->data, 0, len);
+				copy->lines = 1;
+				node_t* node = list_AddNodeLast(&items[AMULET_FAMILIAR].images);
+				node->element = copy;
+				node->deconstructor = &stringDeconstructor;
+				node->size = sizeof(string_t);
+				copy->node = node;
+				stringCopy(copy->data, source->data, len - 1, strlen(source->data));
+			}
+		}
+	}
+
+	// Witchbrew consumables are executable-defined mod items. Keep their metadata
+	// valid when the mounted base items.json predates them; a newer data file may
+	// still override every value normally.
+	struct WitchbrewItemDef
+	{
+		ItemType type;
+		const char* internalName;
+		int model;
+		const char* image;
+	};
+	static const WitchbrewItemDef witchbrewItems[] = {
+		{ TINCTURE_STR, "tincture_str", 2499, "items/images/witchbrew/tincture_STR.png" },
+		{ TINCTURE_DEX, "tincture_dex", 2496, "items/images/witchbrew/tincture_DEX.png" },
+		{ TINCTURE_CON, "tincture_con", 2495, "items/images/witchbrew/tincture_CON.png" },
+		{ TINCTURE_INT, "tincture_int", 2497, "items/images/witchbrew/tincture_INT.png" },
+		{ TINCTURE_PER, "tincture_per", 2498, "items/images/witchbrew/tincture_PER.png" },
+		{ TINCTURE_CHA, "tincture_cha", 2494, "items/images/witchbrew/tincture_CHA.png" },
+		{ OIL_AETHER, "oil_aether", 2487, "items/images/witchbrew/oil_aether.png" },
+		{ OIL_SILVER, "oil_silver", 2492, "items/images/witchbrew/oil_silver.png" },
+		{ OIL_TOXINS, "oil_toxins", 2493, "items/images/witchbrew/oil_toxins.png" },
+		{ OIL_BASES, "oil_bases", 2488, "items/images/witchbrew/oil_bases.png" },
+		{ OIL_LEAD, "oil_lead", 2490, "items/images/witchbrew/oil_lead.png" },
+		{ OIL_MINERAL, "oil_mineral", 2491, "items/images/witchbrew/oil_mineral.png" },
+		{ OIL_BRINE, "oil_brine", 2489, "items/images/witchbrew/oil_brine.png" },
+		{ INK_MYSTICISM, "ink_mysticism", 2500, "items/images/witchbrew/ink_mysticism.png" },
+		{ INK_SORCERY, "ink_sorcery", 2501, "items/images/witchbrew/ink_sorcery.png" },
+		{ INK_THAUMATURGY, "ink_thaumaturgy", 2502, "items/images/witchbrew/ink_thaumaturgy.png" }
+	};
+	for ( const auto& def : witchbrewItems )
+	{
+		const bool wieldableBottle = itemTypeIsTincture(def.type) || itemTypeIsOil(def.type);
+		// Witchbrew art is supplied by the mod, not the base install. The base
+		// item pass runs before a selected mod is mounted, and every registered
+		// image is preloaded fatally, so use the base null sprite during that pass.
+		const char* resolvedImage = PHYSFS_getRealDir(def.image)
+			? def.image : "items/images/null.png";
+		if ( itemsRead <= static_cast<int>(def.type) )
+		{
+			items[def.type].level = -1;
+			items[def.type].gold_value = 50;
+			items[def.type].weight = 1;
+			items[def.type].fpindex = def.model;
+			items[def.type].index = def.model;
+			items[def.type].indexShort = def.model;
+			items[def.type].variations = 1;
+			items[def.type].category = POTION;
+			items[def.type].item_slot = wieldableBottle
+				? ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON : ItemEquippableSlot::NO_EQUIP;
+			items[def.type].tooltip = "tooltip_potion";
+			list_FreeAll(&items[def.type].images);
+			items[def.type].images.first = nullptr;
+			items[def.type].images.last = nullptr;
+			string_t* image = static_cast<string_t*>(malloc(sizeof(string_t)));
+			const size_t len = 128;
+			image->data = static_cast<char*>(malloc(len));
+			memset(image->data, 0, len);
+			image->lines = 1;
+			node_t* node = list_AddNodeLast(&items[def.type].images);
+			node->element = image;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			image->node = node;
+			stringCopy(image->data, resolvedImage, len - 1, strlen(resolvedImage));
+		}
+		else
+		{
+			// Normalize older mod items.json files that used images/witchbrew/.
+			list_FreeAll(&items[def.type].images);
+			items[def.type].images.first = nullptr;
+			items[def.type].images.last = nullptr;
+			string_t* image = static_cast<string_t*>(malloc(sizeof(string_t)));
+			const size_t len = 128;
+			image->data = static_cast<char*>(malloc(len));
+			memset(image->data, 0, len);
+			image->lines = 1;
+			node_t* node = list_AddNodeLast(&items[def.type].images);
+			node->element = image;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			image->node = node;
+			stringCopy(image->data, resolvedImage, len - 1, strlen(resolvedImage));
+			items[def.type].variations = 1;
+		}
+		// Older mod data declared every Witchbrew item non-equippable. Preserve
+		// Ink's selector-only behavior while making tincture/oil bottles wieldable.
+		items[def.type].item_slot = wieldableBottle
+			? ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON : ItemEquippableSlot::NO_EQUIP;
+		while ( tmpItems.size() <= static_cast<size_t>(def.type) )
+		{
+			tmpItems.push_back(tmpItem_t{});
+		}
+		auto& metadata = tmpItems[def.type];
+		metadata.internalName = def.internalName;
+		metadata.itemId = def.type;
+		metadata.fpIndex = def.model;
+		metadata.tpIndex = def.model;
+		metadata.tpShortIndex = def.model;
+		metadata.category = "POTION";
+		metadata.equipSlot = wieldableBottle ? "weapon" : "none";
+		metadata.tooltip = "tooltip_potion";
+		metadata.imagePaths.clear();
+		metadata.imagePaths.push_back(resolvedImage);
+	}
+
+	struct WitchIngredientItemDef
+	{
+		ItemType type;
+		const char* internalName;
+		const char* image;
+		bool bag;
+	};
+	static const WitchIngredientItemDef witchIngredientItems[] = {
+		{ INGREDIENT_BAG_SLIME, "ingredient_bag_slime", "items/images/witchbrew/ingredients/ingredient_bag.png", true },
+		{ INGREDIENT_BAG_HUMORIN, "ingredient_bag_humorin", "items/images/witchbrew/ingredients/ingredient_bag.png", true },
+		{ INGREDIENT_BAG_WILDBLOOD, "ingredient_bag_wildblood", "items/images/witchbrew/ingredients/ingredient_bag.png", true },
+		{ INGREDIENT_BAG_ANIMATIC, "ingredient_bag_animatic", "items/images/witchbrew/ingredients/ingredient_bag.png", true },
+		{ INGREDIENT_GELATIN, "ingredient_gelatin", "items/images/witchbrew/ingredients/gelatin.png", false },
+		{ INGREDIENT_OOZE, "ingredient_ooze", "items/images/witchbrew/ingredients/ooze.png", false },
+		{ INGREDIENT_GREASE, "ingredient_grease", "items/images/witchbrew/ingredients/grease.png", false },
+		{ INGREDIENT_MOLD, "ingredient_mold", "items/images/witchbrew/ingredients/mold.png", false },
+		{ INGREDIENT_BLOOD, "ingredient_blood", "items/images/witchbrew/ingredients/blood.png", false },
+		{ INGREDIENT_PHLEGM, "ingredient_phlegm", "items/images/witchbrew/ingredients/phlegm.png", false },
+		{ INGREDIENT_BLACK_BILE, "ingredient_black_bile", "items/images/witchbrew/ingredients/black_bile.png", false },
+		{ INGREDIENT_YELLOW_BILE, "ingredient_yellow_bile", "items/images/witchbrew/ingredients/yellow_bile.png", false },
+		{ INGREDIENT_EYE, "ingredient_eye", "items/images/witchbrew/ingredients/eye.png", false },
+		{ INGREDIENT_HEART, "ingredient_heart", "items/images/witchbrew/ingredients/heart.png", false },
+		{ INGREDIENT_TOOTH, "ingredient_tooth", "items/images/witchbrew/ingredients/tooth.png", false },
+		{ INGREDIENT_LIVER, "ingredient_liver", "items/images/witchbrew/ingredients/liver.png", false },
+		{ INGREDIENT_SPIRIT, "ingredient_spirit", "items/images/witchbrew/ingredients/spirit.png", false },
+		{ INGREDIENT_CORE, "ingredient_core", "items/images/witchbrew/ingredients/core.png", false },
+		{ INGREDIENT_DUST, "ingredient_dust", "items/images/witchbrew/ingredients/dust.png", false },
+		{ INGREDIENT_FRAGMENTS, "ingredient_fragments", "items/images/witchbrew/ingredients/fragments.png", false }
+	};
+	for ( const auto& def : witchIngredientItems )
+	{
+		const char* resolvedImage = PHYSFS_getRealDir(def.image) ? def.image : "items/images/null.png";
+		if ( itemsRead <= static_cast<int>(def.type) )
+		{
+			items[def.type].level = -1;
+			items[def.type].gold_value = 0;
+			items[def.type].weight = def.bag ? 0 : 1;
+			items[def.type].fpindex = 2503;
+			items[def.type].index = 2503;
+			items[def.type].indexShort = 2503;
+			items[def.type].variations = 1;
+			items[def.type].category = TOOL;
+			items[def.type].item_slot = ItemEquippableSlot::NO_EQUIP;
+			items[def.type].tooltip = "tooltip_default";
+			list_FreeAll(&items[def.type].images);
+			items[def.type].images.first = nullptr;
+			items[def.type].images.last = nullptr;
+			string_t* image = static_cast<string_t*>(malloc(sizeof(string_t)));
+			const size_t len = 128;
+			image->data = static_cast<char*>(malloc(len));
+			memset(image->data, 0, len);
+			image->lines = 1;
+			node_t* node = list_AddNodeLast(&items[def.type].images);
+			node->element = image;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			image->node = node;
+			stringCopy(image->data, resolvedImage, len - 1, strlen(resolvedImage));
+		}
+		while ( tmpItems.size() <= static_cast<size_t>(def.type) )
+		{
+			tmpItems.push_back(tmpItem_t{});
+		}
+		auto& metadata = tmpItems[def.type];
+		metadata.internalName = def.internalName;
+		metadata.itemId = def.type;
+		metadata.itemLevel = -1;
+		metadata.weight = def.bag ? 0 : 1;
+		metadata.fpIndex = 2503;
+		metadata.tpIndex = 2503;
+		metadata.tpShortIndex = 2503;
+		metadata.category = "TOOL";
+		metadata.equipSlot = "none";
+		metadata.tooltip = "tooltip_default";
+		metadata.imagePaths.clear();
+		metadata.imagePaths.push_back(resolvedImage);
+	}
+
+	// mod add: Keep spell icon indexing aligned with the source-defined spells even when
 	// the mounted items.json still ends at spell 224. Every registered path is
 	// consumed by the fatal startup image preloader, so resolve the optional mod
 	// asset here rather than relying on a later UI fallback.
 	const char* entrenchIconPath = PHYSFS_getRealDir("items/images/spells/entrench.png")
 		? "items/images/spells/entrench.png" : "items/images/null.png";
-	while ( list_Size(&items[SPELL_ITEM].images) <= SPELL_ENTRENCH )
+	const char* familiarPolymorphIconPath = PHYSFS_getRealDir("items/images/spells/polymorph_familiar.png")
+		? "items/images/spells/polymorph_familiar.png" : "items/images/null.png";
+	while ( list_Size(&items[SPELL_ITEM].images) <= SPELL_POLYMORPH_FAMILIAR )
 	{
 		const int iconIndex = list_Size(&items[SPELL_ITEM].images);
 		const char* iconPath = iconIndex == SPELL_ENTRENCH
-			? entrenchIconPath : "items/images/null.png";
+			? entrenchIconPath : (iconIndex == SPELL_POLYMORPH_FAMILIAR
+				? familiarPolymorphIconPath : "items/images/null.png");
 		string_t* string = static_cast<string_t*>(malloc(sizeof(string_t)));
 		const size_t len = 64;
 		string->data = static_cast<char*>(malloc(len));
@@ -1298,6 +1522,13 @@ void ItemTooltips_t::readItemsFromFile()
 		if ( string_t* string = static_cast<string_t*>(entrenchIconNode->element) )
 		{
 			stringCopy(string->data, entrenchIconPath, 63, strlen(entrenchIconPath));
+		}
+	}
+	if ( node_t* familiarIconNode = list_Node(&items[SPELL_ITEM].images, SPELL_POLYMORPH_FAMILIAR) )
+	{
+		if ( string_t* string = static_cast<string_t*>(familiarIconNode->element) )
+		{
+			stringCopy(string->data, familiarPolymorphIconPath, 63, strlen(familiarPolymorphIconPath));
 		}
 	}
 
@@ -1871,7 +2102,9 @@ void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 	}
 
 	printlog("[JSON]: Successfully read %d item names, %d spell names from '%s'", itemNameLocalizations.size(), spellNameLocalizations.size(), inputPath.c_str());
-	assert(itemNameLocalizations.size() == (NUMITEMS));
+	// Executable-defined mod items may intentionally use the fallback names below
+	// when an older localization file is mounted.
+	assert(itemNameLocalizations.size() <= (NUMITEMS));
 #ifndef NDEBUG
 	//assert(spellNameLocalizations.size() == (NUM_SPELLS - 1)); // ignore SPELL_NONE
 #endif
@@ -1899,6 +2132,59 @@ void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 	{
 		items[RUNE_HAMMER].setIdentifiedName(itemNameLocalizations["rune_hammer"].name_identified);
 		items[RUNE_HAMMER].setUnidentifiedName(itemNameLocalizations["rune_hammer"].name_unidentified);
+	}
+	const auto familiarName = itemNameLocalizations.find("amulet_familiar");
+	if ( familiarName != itemNameLocalizations.end()
+		&& !familiarName->second.name_identified.empty() )
+	{
+		items[AMULET_FAMILIAR].setIdentifiedName(familiarName->second.name_identified);
+		items[AMULET_FAMILIAR].setUnidentifiedName(
+			familiarName->second.name_unidentified.empty()
+				? "amulet" : familiarName->second.name_unidentified);
+	}
+	else
+	{
+		// Keep console spawning and UI text usable if older mod localization data
+		// contains the item definition but not its display-name entry yet.
+		items[AMULET_FAMILIAR].setIdentifiedName("amulet of the familiar");
+		items[AMULET_FAMILIAR].setUnidentifiedName("amulet");
+	}
+	static const char* witchbrewNames[] = {
+		"Tincture of Strength", "Tincture of Dexterity", "Tincture of Constitution",
+		"Tincture of Intelligence", "Tincture of Perception", "Tincture of Charisma",
+		"Aether Oil", "Colloidal Silver", "Toxins", "Bases", "Colloidal Lead",
+		"Mineral Oil", "Brine", "Abyssal Ink", "Elemental Ink", "Holy Ink"
+	};
+	static const char* witchbrewUnidentifiedNames[] = {
+		"tincture", "tincture", "tincture", "tincture", "tincture", "tincture",
+		"oil", "oil", "oil", "oil", "oil", "oil", "oil",
+		"ink", "ink", "ink"
+	};
+	for ( int type = TINCTURE_STR; type <= INK_THAUMATURGY; ++type )
+	{
+		const auto& key = tmpItems[type].internalName;
+		const auto localized = itemNameLocalizations.find(key);
+		const char* fallback = witchbrewNames[type - TINCTURE_STR];
+		items[type].setIdentifiedName(localized != itemNameLocalizations.end()
+			&& !localized->second.name_identified.empty() ? localized->second.name_identified : fallback);
+		items[type].setUnidentifiedName(localized != itemNameLocalizations.end()
+			&& !localized->second.name_unidentified.empty() ? localized->second.name_unidentified
+			: witchbrewUnidentifiedNames[type - TINCTURE_STR]);
+	}
+	static const char* ingredientNames[] = {
+		"Slime Ingredient Bag", "Humorin Ingredient Bag", "Wildblood Ingredient Bag", "Animatic Ingredient Bag",
+		"Gelatin", "Ooze", "Grease", "Mold", "Blood", "Phlegm", "Black Bile", "Yellow Bile",
+		"Eye", "Heart", "Tooth", "Liver", "Spirit", "Core", "Dust", "Fragments"
+	};
+	for ( int type = INGREDIENT_BAG_SLIME; type <= INGREDIENT_FRAGMENTS; ++type )
+	{
+		const auto& key = tmpItems[type].internalName;
+		const auto localized = itemNameLocalizations.find(key);
+		const char* fallback = ingredientNames[type - INGREDIENT_BAG_SLIME];
+		items[type].setIdentifiedName(localized != itemNameLocalizations.end()
+			&& !localized->second.name_identified.empty() ? localized->second.name_identified : fallback);
+		items[type].setUnidentifiedName(localized != itemNameLocalizations.end()
+			&& !localized->second.name_unidentified.empty() ? localized->second.name_unidentified : fallback);
 	}
 	for ( auto& spell : spellItems )
 	{
@@ -2784,6 +3070,19 @@ std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item
 std::string& ItemTooltips_t::getIconLabel(Item& item)
 {
 #ifndef EDITOR
+	static std::string witchbrewLabel;
+	const AppliedOil oil = item.appliedOil != APPLIED_OIL_NONE
+		? item.appliedOil : appliedOilFromItemType(item.type);
+	if ( oil != APPLIED_OIL_NONE )
+	{
+		witchbrewLabel = getOilIconPath(oil);
+		return witchbrewLabel;
+	}
+	if ( itemTypeIsTincture(item.type) )
+	{
+		witchbrewLabel = getTinctureIconPath(item.type);
+		return witchbrewLabel;
+	}
 	if ( item.type == SPELL_ITEM && !item.spellNotifyIcon ) { return defaultString; }
 	return tmpItems[item.type].iconLabelPath;
 #endif
@@ -9002,6 +9301,49 @@ void MonsterData_t::loadMonsterDataJSON()
 			entry.keyToSpriteLookup["player male"] = { GOLEM_MODEL_B_HEAD };
 			entry.keyToSpriteLookup["player female"] = { GOLEM_MODEL_C_HEAD };
 		}
+		// BAT_FAMILIAR data normally lives in the mounted monster_data.json. Keep
+		// the source-defined type usable when that data predates the mod entry.
+		{
+			auto& mimicEntry = monsterDataEntries[MIMIC];
+			mimicEntry.modelIndexes.insert(BAT_FAMILIAR_MODEL_MIMIC_TRUNK);
+			mimicEntry.modelIndexes.insert(BAT_FAMILIAR_MODEL_MIMIC_LID);
+
+			auto& entry = monsterDataEntries[BAT_FAMILIAR];
+			entry.monsterType = BAT_FAMILIAR;
+			if ( entry.defaultShortDisplayName.empty() )
+			{
+				entry.defaultShortDisplayName = "Bat Familiar";
+			}
+			entry.defaultIconPath = baseIconPath + "summons/icon_bat_familiar_00.png";
+
+			mimicEntry.iconSpritesAndPaths[BAT_FAMILIAR_MODEL_MIMIC_TRUNK].key =
+				"bat familiar";
+			mimicEntry.iconSpritesAndPaths[BAT_FAMILIAR_MODEL_MIMIC_TRUNK].iconPath =
+				entry.defaultIconPath;
+
+			mimicEntry.iconSpritesAndPaths[BAT_FAMILIAR_MODEL_MIMIC_LID].key =
+				"bat familiar";
+			mimicEntry.iconSpritesAndPaths[BAT_FAMILIAR_MODEL_MIMIC_LID].iconPath =
+				entry.defaultIconPath;
+
+			static constexpr int familiarModels[] =
+			{
+				BAT_FAMILIAR_MODEL_BODY, BAT_FAMILIAR_MODEL_HEAD,
+				BAT_FAMILIAR_MODEL_WING_LEFT, BAT_FAMILIAR_MODEL_WING_RIGHT,
+				BAT_FAMILIAR_MODEL_CAULDRON
+			};
+			for ( const int model : familiarModels )
+			{
+				entry.modelIndexes.insert(model);
+				entry.iconSpritesAndPaths[model].key = "default";
+				entry.iconSpritesAndPaths[model].iconPath = entry.defaultIconPath;
+			}
+			entry.keyToSpriteLookup["default"] = {
+				BAT_FAMILIAR_MODEL_BODY, BAT_FAMILIAR_MODEL_HEAD,
+				BAT_FAMILIAR_MODEL_WING_LEFT, BAT_FAMILIAR_MODEL_WING_RIGHT,
+				BAT_FAMILIAR_MODEL_CAULDRON
+			};
+		}
 		// validate data
 		for ( int i = 0; i < NUMMONSTERS; ++i )
 		{
@@ -12240,6 +12582,16 @@ void Mods::unloadMods(bool force)
 void Mods::loadMods()
 {
 #ifndef EDITOR
+	using ModLoadClock = std::chrono::steady_clock;
+	const auto modLoadStart = ModLoadClock::now();
+	auto logModLoadPhase = [](const char* phase, ModLoadClock::time_point start)
+	{
+		const double milliseconds = 1000.0
+			* std::chrono::duration_cast<std::chrono::duration<double>>(
+				ModLoadClock::now() - start).count();
+		printlog("[Mods::loadMods timing] %s: %.2f ms", phase, milliseconds);
+	};
+	auto phaseStart = ModLoadClock::now();
 	Mods::disableSteamAchievements = false;
 	Mods::verifyAchievements(nullptr, false);
 
@@ -12254,13 +12606,19 @@ void Mods::loadMods()
 	doLoadingScreen();
 
 	// process any new model files encountered in the mod load list.
-	if ( physfsSearchModelsToUpdate() || !Mods::modelsListModifiedIndexes.empty() )
+	phaseStart = ModLoadClock::now();
+	const bool modelFilesChanged = physfsSearchModelsToUpdate();
+	logModLoadPhase("physfsSearchModelsToUpdate", phaseStart);
+	if ( modelFilesChanged || !Mods::modelsListModifiedIndexes.empty() )
 	{
 		int modelsIndexUpdateStart = 1;
 		int modelsIndexUpdateEnd = nummodels;
 		bool oldModelCache = useModelCache;
 		useModelCache = false;
+		phaseStart = ModLoadClock::now();
 		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		logModLoadPhase("physfsModelIndexUpdate", phaseStart);
+		phaseStart = ModLoadClock::now();
 		for (int c = modelsIndexUpdateStart; c < modelsIndexUpdateEnd && c < nummodels; ++c) {
 			if (polymodels[c].faces) {
 				free(polymodels[c].faces);
@@ -12279,12 +12637,17 @@ void Mods::loadMods()
 				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
 			}
 		}
+		logModLoadPhase("model GPU cleanup", phaseStart);
 
 		// polymodels will get free'd if generating all models in generatePolyModels
 		//free(polymodels);
 		//polymodels = nullptr;
+		phaseStart = ModLoadClock::now();
 		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+		logModLoadPhase("generatePolyModels", phaseStart);
+		phaseStart = ModLoadClock::now();
 		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		logModLoadPhase("generateVBOs", phaseStart);
 		useModelCache = oldModelCache;
 		Mods::modelsListRequiresReloadUnmodded = true;
 	}
@@ -12315,7 +12678,11 @@ void Mods::loadMods()
 	updateLoadingScreen(40);
 	doLoadingScreen();
 
-	if ( physfsSearchSpritesToUpdate() )
+	phaseStart = ModLoadClock::now();
+	const bool spriteFilesChanged = physfsSearchSpritesToUpdate();
+	logModLoadPhase("physfsSearchSpritesToUpdate", phaseStart);
+	phaseStart = ModLoadClock::now();
+	if ( spriteFilesChanged )
 	{
 		physfsReloadSprites(false);
 		Mods::spriteImagesRequireReloadUnmodded = true;
@@ -12325,6 +12692,7 @@ void Mods::loadMods()
 		physfsReloadSprites(true);
 		Mods::spriteImagesRequireReloadUnmodded = false;
 	}
+	logModLoadPhase("sprite reload", phaseStart);
 
 	updateLoadingScreen(50);
 	doLoadingScreen();
@@ -12399,7 +12767,11 @@ void Mods::loadMods()
 	updateLoadingScreen(85);
 	doLoadingScreen();
 
-	if ( physfsSearchSystemImagesToUpdate() )
+	phaseStart = ModLoadClock::now();
+	const bool systemImagesChanged = physfsSearchSystemImagesToUpdate();
+	logModLoadPhase("physfsSearchSystemImagesToUpdate", phaseStart);
+	phaseStart = ModLoadClock::now();
+	if ( systemImagesChanged )
 	{
 		physfsReloadSystemImages();
 		Mods::systemImagesReloadUnmodded = true;
@@ -12409,15 +12781,19 @@ void Mods::loadMods()
 		physfsReloadSystemImages();
 		Mods::systemImagesReloadUnmodded = false;
 	}
+	logModLoadPhase("system image reload", phaseStart);
 
 	updateLoadingScreen(90);
 	doLoadingScreen();
 
+	phaseStart = ModLoadClock::now();
 	initGameDatafiles(true);
+	logModLoadPhase("initGameDatafiles", phaseStart);
 
 	updateLoadingScreen(95);
 	doLoadingScreen();
 
+	phaseStart = ModLoadClock::now();
 	std::atomic_bool loading_done{ false };
 	auto loading_task = std::async(std::launch::async, [&loading_done]() {
 		initGameDatafilesAsync(true);
@@ -12429,6 +12805,7 @@ void Mods::loadMods()
 		doLoadingScreen();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
+	logModLoadPhase("initGameDatafilesAsync", phaseStart);
 
 	if ( physfsSearchBooksToUpdate() )
 	{
@@ -12446,6 +12823,10 @@ void Mods::loadMods()
 	loadLights();
 
 	consoleCommand("/dumpcache");
+	const char* halloweenAssetDir = PHYSFS_getRealDir("images/ui/Main Menus/Banners/banner_halloween.png");
+	printlog("[Mods::loadMods timing] Halloween banner source: %s",
+		halloweenAssetDir ? halloweenAssetDir : "not mounted");
+	logModLoadPhase("total", modLoadStart);
 
 	destroyLoadingScreen();
 

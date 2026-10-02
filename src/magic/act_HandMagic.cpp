@@ -385,13 +385,20 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 		return;
 	}
 
-	if ( !spell->rangefinder )
+	if ( !spell->rangefinder && spell->ID != SPELL_POLYMORPH_FAMILIAR )
 	{
 		return;
 	}
 	ScopedSpellPowerOverride spellPowerScope(hasSpellPowerOverride, spellPowerOverride);
 
 	rangefinder = spell->rangefinder;
+	// Polymorph Familiar is an equipment-granted spell and may be copied from a
+	// source definition loaded without the optional mod JSON. Its targeting is
+	// an executable contract, so always restore the floor rangefinder here.
+	if ( spell->ID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		rangefinder = RANGEFINDER_TOUCH_FLOOR_TILE;
+	}
 	// mod add: Entrench's second stage targets a cardinal floor tile.
 	if ( spell->ID == SPELL_ENTRENCH && players[player]
 		&& players[player]->mechanics.entrenchCarriedUid != 0 )
@@ -462,6 +469,12 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	wallDir = 0;
 
 	real_t spellDistance = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_DISTANCE, spell->ID, caster, nullptr, caster);
+	if ( spell->ID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		// This equipment command has a fixed eight-tile reach and should not be
+		// reduced by the generic learned-spell range cap.
+		spellDistance = 128.0;
+	}
 	static ConsoleVariable<bool> cvar_rangefinder_linetrace("/rangefinder_linetrace", true);
 
 	if ( rangefinder == RANGEFINDER_TOUCH_WALL_TILE )
@@ -611,7 +624,8 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	target_y = previousy;
 	//mod add: placement logic consumes a tile, so make the preview and packet
 	// use that tile's exact center instead of an arbitrary point along the ray.
-	if ( spell->ID == SPELL_ENTRENCH && rangefinder == RANGEFINDER_TOUCH_FLOOR_TILE )
+	if ( (spell->ID == SPELL_ENTRENCH || spell->ID == SPELL_POLYMORPH_FAMILIAR)
+		&& rangefinder == RANGEFINDER_TOUCH_FLOOR_TILE )
 	{
 		const int tilex = std::min<int>(std::max(static_cast<int>(floor(target_x / 16.0)), 0), map.width - 1);
 		const int tiley = std::min<int>(std::max(static_cast<int>(floor(target_y / 16.0)), 0), map.height - 1);
@@ -1428,6 +1442,11 @@ void spellcastingAnimationManager_completeSpell(int player, spellcasting_animati
 	const bool entrenchPlacementStage = animation_manager->spell
 		&& animation_manager->spell->ID == SPELL_ENTRENCH
 		&& animation_manager->rangefinder == RANGEFINDER_TOUCH_FLOOR_TILE;
+	if ( animation_manager->spell
+		&& animation_manager->spell->ID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		animation_manager->rangefinder = RANGEFINDER_TOUCH_FLOOR_TILE;
+	}
 	if ( (entrenchFirstStage || entrenchPlacementStage) && animation_manager->entrenchAwaitingResult ) { return; }
 	if ( animation_manager->stage == ANIM_SPELL_TOUCH_THROW
 		|| animation_manager->stage == ANIM_SPELL_OVERCHARGE_THROW )

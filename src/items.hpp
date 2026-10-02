@@ -560,6 +560,48 @@ typedef enum ItemType
 	// mod add: one generic, instance-configured magic rune.
 	MAGIC_RUNE,
 	RUNE_HAMMER,
+	AMULET_FAMILIAR = 531,
+	TINCTURE_STR = 532,
+	TINCTURE_DEX,
+	TINCTURE_CON,
+	TINCTURE_INT,
+	TINCTURE_PER,
+	TINCTURE_CHA,
+	OIL_AETHER,
+	OIL_SILVER,
+	OIL_TOXINS,
+	OIL_BASES,
+	OIL_LEAD,
+	OIL_MINERAL,
+	OIL_BRINE,
+	INK_MYSTICISM,
+	INK_SORCERY,
+	INK_THAUMATURGY,
+
+	INGREDIENT_BAG_SLIME = 548,
+	INGREDIENT_BAG_HUMORIN,
+	INGREDIENT_BAG_WILDBLOOD,
+	INGREDIENT_BAG_ANIMATIC,
+
+	INGREDIENT_GELATIN,
+	INGREDIENT_OOZE,
+	INGREDIENT_GREASE,
+	INGREDIENT_MOLD,
+
+	INGREDIENT_BLOOD,
+	INGREDIENT_PHLEGM,
+	INGREDIENT_BLACK_BILE,
+	INGREDIENT_YELLOW_BILE,
+
+	INGREDIENT_EYE,
+	INGREDIENT_HEART,
+	INGREDIENT_TOOTH,
+	INGREDIENT_LIVER,
+
+	INGREDIENT_SPIRIT,
+	INGREDIENT_CORE,
+	INGREDIENT_DUST,
+	INGREDIENT_FRAGMENTS,
 
 	ITEM_ENUM_MAX
 } ItemType;
@@ -593,6 +635,145 @@ typedef enum Status
 	SERVICABLE,
 	EXCELLENT
 } Status;
+
+enum AppliedOil : Uint8
+{
+	APPLIED_OIL_NONE,
+	APPLIED_OIL_AETHER,
+	APPLIED_OIL_SILVER,
+	APPLIED_OIL_TOXINS,
+	APPLIED_OIL_BASES,
+	APPLIED_OIL_LEAD,
+	APPLIED_OIL_MINERAL,
+	APPLIED_OIL_BRINE,
+	APPLIED_OIL_MAX
+};
+
+bool itemTypeIsTincture(ItemType type);
+bool itemTypeIsOil(ItemType type);
+bool itemTypeIsInk(ItemType type);
+bool itemTypeIsWitchbrewConsumable(ItemType type);
+
+enum WitchIngredientCategory : Sint32
+{
+	INGREDIENT_CATEGORY_NONE = 0,
+	INGREDIENT_CATEGORY_SLIME,
+	INGREDIENT_CATEGORY_HUMORIN,
+	INGREDIENT_CATEGORY_WILDBLOOD,
+	INGREDIENT_CATEGORY_ANIMATIC
+};
+
+bool itemTypeIsIngredientBag(ItemType type);
+bool itemTypeIsWitchIngredient(ItemType type);
+bool itemTypeIsWitchbrewGeneratedItem(ItemType type);
+WitchIngredientCategory ingredientCategoryFromBag(ItemType type);
+WitchIngredientCategory ingredientCategoryFromItem(ItemType type);
+ItemType ingredientBagForCategory(WitchIngredientCategory category);
+ItemType ingredientForCategorySlot(WitchIngredientCategory category, int slot);
+int ingredientSlotForItem(ItemType type);
+WitchIngredientCategory getIngredientCategoryForMonster(Entity* monster);
+AppliedOil appliedOilFromItemType(ItemType type);
+const char* getOilIconPath(AppliedOil oil);
+const char* getTinctureIconPath(ItemType type);
+bool itemTypeCanReceiveOil(ItemType type);
+bool itemCanReceiveOil(const Item* item);
+bool oilMatchesTarget(AppliedOil oil, Entity* target);
+void serverSyncTinctureStacks(int player);
+void serverSyncAppliedOil(int player, bool shieldSlot);
+void rollOilWearOff(Item* source, int ownerPlayer, bool shieldSlot);
+void rollProjectileOilWearOff(Entity* projectile);
+bool applyTinctureStackToPlayer(ItemType tincture, int player);
+bool spellbookIsEligibleForInk(ItemType book);
+ItemType getInkSpellbookResult(ItemType ink, ItemType sourceSpellbook);
+bool useOilOnItem(Item*& oil, Item* target, int player);
+bool useInkOnSpellbook(Item*& ink, Item* book, int player);
+
+static constexpr int STEWING_MAX_EDUCTS = 8;
+static constexpr int STEWING_RECIPE_COUNT = 20;
+static constexpr int STEWING_RESOURCE_COUNT = 18; // 16 Witch ingredients, Water, Empty Bottle.
+static constexpr Uint32 STEWING_GENERATOR_VERSION = 1;
+
+struct StewingEduct
+{
+	ItemType type = ITEM_ENUM_MAX;
+	Uint32 quantity = 0;
+};
+
+using StewingSelection = std::array<StewingEduct, STEWING_MAX_EDUCTS>;
+
+struct StewingRecipe
+{
+	ItemType result = ITEM_ENUM_MAX;
+	std::array<StewingEduct, STEWING_MAX_EDUCTS> educts{};
+	Uint32 eductCount = 0;
+	bool alwaysUnlocked = false;
+};
+
+enum StewingMatchType : Uint8
+{
+	STEWING_MATCH_EMPTY,
+	STEWING_MATCH_TOO_SMALL,
+	STEWING_MATCH_VALID_RECIPE,
+	STEWING_MATCH_INVALID_POISON,
+	STEWING_MATCH_INVALID_RESOURCE
+};
+
+struct StewingMatch
+{
+	StewingMatchType type = STEWING_MATCH_EMPTY;
+	Sint32 recipeIndex = -1;
+	Uint32 multiplier = 0;
+	ItemType result = ITEM_ENUM_MAX;
+};
+
+enum StewingOperation : Uint8
+{
+	STEWING_OPERATION_BREW_INTO,
+	STEWING_OPERATION_APPLY
+};
+
+struct StewingTransactionResult
+{
+	bool success = false;
+	StewingSelection remainingSelection{};
+	std::array<Uint32, STEWING_RESOURCE_COUNT> resources{};
+	std::array<Uint32, STEWING_RESOURCE_COUNT> inventoryConsumed{};
+	ItemType newlyUnlockedRecipe = ITEM_ENUM_MAX;
+};
+
+const std::array<StewingRecipe, STEWING_RECIPE_COUNT>& getStewingRecipes();
+Uint32 getActiveStewingGeneratorVersion();
+void setActiveStewingGeneratorVersion(Uint32 version);
+Uint32 getStewingRecipeUnlockMask(int player);
+void setStewingRecipeUnlockMask(int player, Uint32 mask);
+bool playerKnowsStewingRecipe(int player, ItemType result);
+bool unlockStewingRecipe(int player, ItemType result);
+void unlockAllStewingRecipes(int player);
+int getNumKnownStewingRecipes(int player);
+ItemType tryDiscoverStewingRecipe(int player,
+	const std::array<Uint64, STEWING_RESOURCE_COUNT>& consumedResources);
+void tryIncreaseAlchemyFromWitchbrewUse(int player);
+bool stewingResultCanApplyImmediately(ItemType result);
+bool itemTypeIsStewingSelectable(ItemType type);
+int getStewingResourceIndex(ItemType type);
+ItemType getStewingResourceType(int index);
+int getBottleContribution(ItemType educt);
+Uint32 countSelectedStewingResource(const StewingSelection& selection, ItemType type);
+Uint32 countSelectedWitchIngredients(const StewingSelection& selection);
+StewingMatch evaluateStewingMixture(const StewingSelection& selection);
+Uint32 getTotalStewingResource(int player, ItemType resource);
+Uint32 getAvailableStewingIngredient(int player, ItemType ingredient,
+	const StewingSelection& reserved);
+std::array<Uint32, STEWING_RESOURCE_COUNT> getStewingResourceSnapshot(int player);
+std::array<Uint32, STEWING_RESOURCE_COUNT> getStewingInventoryResourceSnapshot(int player);
+void setServerStewingInventoryMirror(int player,
+	const std::array<Uint32, STEWING_RESOURCE_COUNT>& resources);
+void clearServerStewingInventoryMirror(int player);
+bool serverStewingInventoryMirrorIsValid(int player);
+void consumeClientStewingInventoryResources(int player,
+	const std::array<Uint32, STEWING_RESOURCE_COUNT>& resources);
+bool performStewingTransaction(int player, Entity* familiar, StewingOperation operation,
+	const StewingSelection& selection, StewingTransactionResult& result);
 
 // Compact indices stored in MAGIC_RUNE appearance metadata. Deliberately excludes
 // rock, luckstone, worthless glass, and jewel.
@@ -713,6 +894,24 @@ public:
 	Uint32 runeInstanceId = RUNE_INSTANCE_ID_INVALID;
 	// Persistent character/session identity paired with runeCreatorPlayer.
 	Uint32 runeCreatorIdentity = RUNE_CREATOR_IDENTITY_INVALID;
+	AppliedOil appliedOil = APPLIED_OIL_NONE;
+	Uint32 ingredientCounts[4] = { 0, 0, 0, 0 };
+	// The physical Familiar Amulet owns its Familiar's durable progression.
+	// The summoned monster is only a temporary manifestation of this state.
+	bool familiarInitialized = false;
+	Uint32 familiarInstanceId = 0;
+	Sint32 familiarHP = 0;
+	Sint32 familiarMAXHP = 0;
+	Sint32 familiarMP = 0;
+	Sint32 familiarMAXMP = 0;
+	Sint32 familiarLVL = 0;
+	Sint32 familiarEXP = 0;
+	Sint32 familiarSTR = 0;
+	Sint32 familiarDEX = 0;
+	Sint32 familiarCON = 0;
+	Sint32 familiarINT = 0;
+	Sint32 familiarPER = 0;
+	Sint32 familiarCHR = 0;
 
 	// weight, category and other generic info reported by function calls
 
@@ -760,6 +959,7 @@ public:
 	Uint32 runeGetCreatorIdentity() const;
 	void runeSetCreatorIdentity(Uint32 identity);
 	bool runeCreatorMatchesPlayer(int player) const;
+	Uint32 familiarEnsureInstanceId();
 
 	//General Functions.
 	Sint32 weaponGetAttack(const Stat* wielder = nullptr) const; //Returns the tohit of the weapon.
@@ -964,6 +1164,17 @@ void item_ToolLootBag(Item*& item, int player);
 //General functions.
 Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
 void copyItemPersistentCustomState(Item& destination, const Item& source);
+void copyItemPersistentCustomStateToEntity(Entity& destination, const Item& source);
+void copyItemPersistentCustomStateFromEntity(Item& destination, const Entity& source);
+bool mergeIngredientBags(Item& destination, const Item& source);
+bool ingredientBagIsEmpty(const Item& bag);
+Item* findIngredientBagInInventory(list_t& inventory, WitchIngredientCategory category);
+Item* mergeIngredientBagIntoInventory(list_t& inventory, const Item& source);
+void writeIngredientCountsToPacket(const Item& item, Uint8* data, int offset);
+void readIngredientCountsFromPacket(Item& item, const Uint8* data, int packetLength, int offset);
+static constexpr int FAMILIAR_PERSISTENT_PACKET_BYTES = 14 * static_cast<int>(sizeof(Uint32));
+void writeFamiliarPersistentStateToPacket(const Item& item, Uint8* data, int offset);
+void readFamiliarPersistentStateFromPacket(Item& item, const Uint8* data, int packetLength, int offset);
 Item* newItemFromExistingItem(const Item& source, Sint16 count, list_t* inventory);
 Item* createMagicRune(RuneGemType gem, int spellID, Status status, Sint16 beatitude,
 	bool identified, list_t* inventory = nullptr);
@@ -984,6 +1195,7 @@ Item* findMagicRuneByInstanceId(Uint32 runeInstanceId, int* ownerOut = nullptr,
 	int requiredOwner = -1);
 bool breakMagicRune(Uint32 runeInstanceId, const char* message = nullptr);
 void reserveMagicRuneInstanceId(Uint32 runeInstanceId);
+void reserveFamiliarInstanceId(Uint32 familiarInstanceId);
 Uint32 ensureRuneCreatorIdentity(int player);
 void reserveRuneCreatorIdentity(Uint32 creatorIdentity);
 Item* uidToItem(Uint32 uid);
@@ -1020,7 +1232,8 @@ void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped b
 bool dropItem(Item* item, int player, const bool notifyMessage = true, const bool dropAll = false); // return true on free'd item
 bool playerGreasyDropItem(const int player, Item* const item);
 bool playerThrowDuck(const int player, Item* const item, int charge);
-void useItem(Item* item, int player, Entity* usedBy = nullptr, bool unequipForDropping = false, bool serverCheckUse = false);
+void useItem(Item* item, int player, Entity* usedBy = nullptr, bool unequipForDropping = false,
+	bool serverCheckUse = false, bool alternateUse = false);
 enum EquipItemResult : int
 {
 	EQUIP_ITEM_FAIL_CANT_UNEQUIP,
@@ -1047,7 +1260,8 @@ void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResu
 	Sint32 runeStoredPWR = Item::RUNE_STORED_PWR_INVALID,
 	Sint8 runeCreatorPlayer = Item::RUNE_CREATOR_INVALID,
 	Uint32 runeInstanceId = Item::RUNE_INSTANCE_ID_INVALID,
-	Uint32 runeCreatorIdentity = Item::RUNE_CREATOR_IDENTITY_INVALID);
+	Uint32 runeCreatorIdentity = Item::RUNE_CREATOR_IDENTITY_INVALID,
+	AppliedOil appliedOil = APPLIED_OIL_NONE);
 void clientUnequipSlotAndUpdateServer(const int player, EquipItemSendToServerSlot slot, Item* item);
 void clientSendAppearanceUpdateToServer(const int player, Item* item, const bool onIdentify);
 void clientSendItemTypeUpdateToServer(const int player, Item* item, ItemType prevItemType);

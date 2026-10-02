@@ -21,6 +21,7 @@
 #include "player.hpp"
 #include "prng.hpp"
 #include "files.hpp"
+#include "monster.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -321,7 +322,7 @@ void actSpriteWorldTooltip(Entity* my)
 			}
 		}
 
-		if ( parent->flags[INVISIBLE] )
+		if ( parent->flags[INVISIBLE] && !isAmuletFamiliarMimic(parent) )
 		{
 			skipUpdating = true;
 		}

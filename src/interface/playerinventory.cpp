@@ -153,6 +153,10 @@ bool executeItemMenuOption0ForInventoryItem(const int player, Item* item) // ret
 
 const char* itemEquipString(int player, const Item& item)
 {
+	if ( itemTypeIsTincture(item.type) || itemTypeIsOil(item.type) )
+	{
+		return itemIsEquipped(&item, player) ? Language::get(323) : Language::get(324);
+	}
 	if ( items[item.type].item_slot == ItemEquippableSlot::NO_EQUIP && !(itemCategory(&item) == SPELL_CAT) )
 	{
 		return "Invalid";
@@ -366,6 +370,10 @@ const char* itemEquipString(int player, const Item& item)
 
 const char* itemUseString(int player, const Item& item)
 {
+	if ( itemTypeIsOil(item.type) || itemTypeIsInk(item.type) )
+	{
+		return "Apply";
+	}
 	if ( itemCategory(&item) == POTION )
 	{
 		return Language::get(329);
@@ -2522,7 +2530,10 @@ bool dragDropStackChestItems(const int player, Item*& selectedItem, Item* tempIt
 
 	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
 	bool stackedItems = false;
-	if ( !itemCompare(selectedItem, tempItem, false) )
+	const bool matchingIngredientBags = itemTypeIsIngredientBag(selectedItem->type)
+		&& itemTypeIsIngredientBag(tempItem->type)
+		&& ingredientCategoryFromBag(selectedItem->type) == ingredientCategoryFromBag(tempItem->type);
+	if ( matchingIngredientBags || !itemCompare(selectedItem, tempItem, false) )
 	{
 		int selectedItemQty = 0;
 		int destItemQty = 0;
@@ -2601,6 +2612,25 @@ bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* te
 {
 	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
 	bool stackedItems = false;
+	if ( selectedItem && tempItem && selectedItem != tempItem
+		&& itemTypeIsIngredientBag(selectedItem->type)
+		&& itemTypeIsIngredientBag(tempItem->type)
+		&& ingredientCategoryFromBag(selectedItem->type) == ingredientCategoryFromBag(tempItem->type) )
+	{
+		mergeIngredientBags(*tempItem, *selectedItem);
+		if ( selectedItem->node )
+		{
+			list_RemoveNode(selectedItem->node);
+		}
+		else
+		{
+			free(selectedItem);
+		}
+		selectedItem = nullptr;
+		inputs.getUIInteraction(player)->selectedItemFromChest = 0;
+		toggleclick = false;
+		return true;
+	}
 	if ( !itemCompare(selectedItem, tempItem, false) )
 	{
 		int selectedItemQty = 0;
@@ -7735,6 +7765,130 @@ void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, i
 			frameMain->setSize(mainPos);
 		}
 	}
+
+	static constexpr const char* ingredientOverlayName = "ingredient bag hover overlay";
+	Frame* ingredientOverlay = tooltipContainerFrame->findFrame(ingredientOverlayName);
+	if ( !itemTypeIsIngredientBag(item->type) || doTitleOnlyTooltip )
+	{
+		if ( ingredientOverlay )
+		{
+			ingredientOverlay->setDisabled(true);
+		}
+		return;
+	}
+
+	frameMain->setDisabled(true);
+	if ( frameTooltipPrompt )
+	{
+		frameTooltipPrompt->setDisabled(true);
+	}
+	if ( titleOnlyFrame )
+	{
+		titleOnlyFrame->setDisabled(true);
+	}
+
+	constexpr int overlayWidth = 114;
+	constexpr int overlayHeight = 102;
+	constexpr int slotWidth = 42;
+	constexpr int slotHeight = 39;
+	constexpr int slotStartX = 13;
+	constexpr int slotStartY = 11;
+	constexpr int slotStrideX = 44;
+	constexpr int slotStrideY = 41;
+	constexpr int iconWidth = 36;
+	constexpr int iconHeight = 36;
+	constexpr int quantityInset = 3;
+	if ( !ingredientOverlay )
+	{
+		ingredientOverlay = tooltipContainerFrame->addFrame(ingredientOverlayName);
+		ingredientOverlay->setHollow(true);
+		ingredientOverlay->setInheritParentFrameOpacity(false);
+		ingredientOverlay->addImage(SDL_Rect{ 0, 0, overlayWidth, overlayHeight }, 0xFFFFFFFF,
+			"images/ui/Inventory/HUD_Inventory_Ingredient_Bag_00a.png", "ingredient bag background");
+		for ( int slot = 0; slot < 4; ++slot )
+		{
+			const int column = slot % 2;
+			const int row = slot / 2;
+			char imageName[32];
+			char fieldName[32];
+			snprintf(imageName, sizeof(imageName), "ingredient icon %d", slot);
+			snprintf(fieldName, sizeof(fieldName), "ingredient count %d", slot);
+			const SDL_Rect slotRect{
+				slotStartX + column * slotStrideX,
+				slotStartY + row * slotStrideY,
+				slotWidth, slotHeight };
+			ingredientOverlay->addImage(SDL_Rect{
+				slotRect.x + (slotRect.w - iconWidth) / 2 + (column == 0 ? 3 : 0),
+				slotRect.y + (slotRect.h - iconHeight) / 2 + (row == 0 ? 1 : 0),
+				iconWidth, iconHeight }, 0xFFFFFFFF, "items/images/null.png", imageName);
+			Field* count = ingredientOverlay->addField(fieldName, 16);
+			count->setSize(SDL_Rect{ slotRect.x, slotRect.y,
+				slotRect.w - quantityInset, slotRect.h - quantityInset });
+			count->setFont("fonts/pixel_maz.ttf#32#2");
+			count->setColor(0xFFFFFFFF);
+			count->setHJustify(Field::justify_t::BOTTOM);
+			count->setVJustify(Field::justify_t::RIGHT);
+		}
+	}
+
+	const WitchIngredientCategory category = ingredientCategoryFromBag(item->type);
+	for ( int slot = 0; slot < 4; ++slot )
+	{
+		char imageName[32];
+		char fieldName[32];
+		snprintf(imageName, sizeof(imageName), "ingredient icon %d", slot);
+		snprintf(fieldName, sizeof(fieldName), "ingredient count %d", slot);
+		if ( auto image = ingredientOverlay->findImage(imageName) )
+		{
+			const ItemType ingredientType = ingredientForCategorySlot(category, slot);
+			if ( ingredientType >= 0 && ingredientType < NUMITEMS && items[ingredientType].images.first )
+			{
+				const string_t* path = static_cast<const string_t*>(items[ingredientType].images.first->element);
+				image->path = path ? path->data : "items/images/null.png";
+			}
+			else
+			{
+				image->path = "items/images/null.png";
+			}
+		}
+		if ( Field* count = ingredientOverlay->findField(fieldName) )
+		{
+			char quantity[16];
+			snprintf(quantity, sizeof(quantity), "%u", item->ingredientCounts[slot]);
+			count->setText(quantity);
+		}
+	}
+
+	const SDL_Rect mainPos = frameMain->getSize();
+	const SDL_Rect containerPos = tooltipContainerFrame->getSize();
+	const int gap = 6;
+	int overlayX = std::max(0, std::min(containerPos.w - overlayWidth, mainPos.x));
+	int overlayY = std::max(0, std::min(containerPos.h - overlayHeight, mainPos.y));
+	if ( x >= overlayX && x < overlayX + overlayWidth
+		&& y >= overlayY && y < overlayY + overlayHeight )
+	{
+		const int rightX = x + gap;
+		const int leftX = x - overlayWidth - gap;
+		if ( rightX + overlayWidth <= containerPos.w )
+		{
+			overlayX = rightX;
+		}
+		else if ( leftX >= 0 )
+		{
+			overlayX = leftX;
+		}
+		else if ( y + gap + overlayHeight <= containerPos.h )
+		{
+			overlayY = y + gap;
+		}
+		else
+		{
+			overlayY = std::max(0, y - overlayHeight - gap);
+		}
+	}
+	ingredientOverlay->setSize(SDL_Rect{ overlayX, overlayY, overlayWidth, overlayHeight });
+	ingredientOverlay->setOpacity(100.0);
+	ingredientOverlay->setDisabled(false);
 }
 
 void Player::Inventory_t::setCompactView(bool bCompact)
@@ -8247,6 +8401,7 @@ void Player::Inventory_t::updateInventory()
 	auto& shopGUI = this->player.shopGUI;
 	auto& tinkerGUI = GenericGUI[player].tinkerGUI;
 	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
+	auto& stewingGUI = GenericGUI[player].stewingGUI;
 	auto& mailboxGUI = GenericGUI[player].mailboxGUI;
 	auto& featherGUI = GenericGUI[player].featherGUI;
 	auto& itemfxGUI = GenericGUI[player].itemfxGUI;
@@ -9612,6 +9767,18 @@ void Player::Inventory_t::updateInventory()
 						updateSlotFrameFromItem(slotFrame, item);
 					}
 				}
+				else if ( stewingGUI.bOpen )
+				{
+					if ( !(stewingGUI.inventoryItemAllowedInGUI(item)
+						&& item->identified && !itemIsEquipped(item, player)) )
+					{
+						updateSlotFrameFromItem(slotFrame, item, true);
+					}
+					else
+					{
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+				}
 				else if ( alchemyGUI.bOpen )
 				{
 					if ( !(alchemyGUI.inventoryItemAllowedInGUI(item) /*&& item != GenericGUI[player].alembicItem*/
@@ -10435,6 +10602,7 @@ void Player::Inventory_t::updateInventory()
 				bool sellingItemToShop = false;
 				bool tinkerOpen = false;
 				bool alchemyOpen = false;
+				bool stewingOpen = false;
 				bool mailboxOpen = false;
 				bool featherOpen = false;
 				bool itemfxOpen = false;
@@ -10470,6 +10638,10 @@ void Player::Inventory_t::updateInventory()
 						shopGUI.setItemDisplayNameAndPrice(item);
 					}
 				}
+				else if ( stewingGUI.bOpen )
+				{
+					stewingOpen = true;
+				}
 				else if ( alchemyGUI.bOpen )
 				{
 					alchemyOpen = true;
@@ -10500,6 +10672,28 @@ void Player::Inventory_t::updateInventory()
 					break;
 				}
 
+				auto activateStewingInventoryItem = [&]()
+				{
+					if ( item && stewingGUI.inventoryItemAllowedInGUI(item)
+						&& item->identified && !itemIsEquipped(item, player)
+						&& GenericGUI[player].executeOnItemClick(item) )
+					{
+						Player::soundActivate();
+					}
+					else
+					{
+						playSound(90, 64);
+					}
+				};
+				if ( stewingOpen && inventoryControlActive && !selectedItem
+					&& !inputs.getVirtualMouse(player)->draw_cursor
+					&& Input::inputs[player].binaryToggle("MenuConfirm") )
+				{
+					Input::inputs[player].consumeBinaryToggle("MenuConfirm");
+					activateStewingInventoryItem();
+					break;
+				}
+
 				bool tooltipPromptWasDisabled = tooltipPromptFrame->isDisabled();
 				if ( useItemDropdownOnGamepad == GamepadDropdownTypes::GAMEPAD_DROPDOWN_FULL && !inputs.getVirtualMouse(player)->draw_cursor )
 				{
@@ -10512,7 +10706,8 @@ void Player::Inventory_t::updateInventory()
 					|| featherOpen
 					|| itemfxOpen
 					|| mailboxOpen
-					|| alchemyOpen)
+					|| alchemyOpen
+					|| stewingOpen)
 					&& inventoryControlActive
 					&& !selectedItem )
 				{
@@ -10705,7 +10900,12 @@ void Player::Inventory_t::updateInventory()
 				else if ( Input::inputs[player].binaryToggle("MenuRightClick") && inputs.bPlayerUsingKeyboardControl(player)
 					&& inventoryControlActive && !selectedItem )
 				{
-					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+					if ( stewingOpen )
+					{
+						Input::inputs[player].consumeBinaryToggle("MenuRightClick");
+						activateStewingInventoryItem();
+					}
+					else if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 					{
 						if ( guiAllowDefaultRightClick() )
 						{
@@ -10746,7 +10946,8 @@ void Player::Inventory_t::updateInventory()
 							}
 						}
 					}
-					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen && !mailboxOpen && !featherInscribeOrRepairActive && !itemfxOpen )
+					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen && !stewingOpen
+						&& !mailboxOpen && !featherInscribeOrRepairActive && !itemfxOpen )
 					{
 						// open a drop-down menu of options for "using" the item
 						itemMenuOpen = true;
@@ -11139,6 +11340,18 @@ void Player::Inventory_t::updateInventory()
 								&& invalidItem )
 							{
 								updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+							}
+							else
+							{
+								updateSlotFrameFromItem(slotFrame, item);
+							}
+						}
+						else if ( stewingGUI.bOpen )
+						{
+							if ( !(stewingGUI.inventoryItemAllowedInGUI(item)
+								&& item->identified && !itemIsEquipped(item, player)) )
+							{
+								updateSlotFrameFromItem(slotFrame, item, true);
 							}
 							else
 							{
@@ -11608,7 +11821,30 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 	}
 
-	if ( itemCategory(item) == POTION )
+	if ( itemTypeIsTincture(item->type) )
+	{
+		if ( !itemIsEquipped(item, player) )
+		{
+			options.push_back(PROMPT_EAT);
+		}
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( itemTypeIsOil(item->type) )
+	{
+		options.push_back(PROMPT_INTERACT);
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( itemTypeIsInk(item->type) )
+	{
+		options.push_back(PROMPT_INTERACT);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( itemCategory(item) == POTION )
 	{
 		bool is_potion_bad = isPotionBad(*item);
 		if ( is_potion_bad )

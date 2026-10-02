@@ -2758,7 +2758,9 @@ void setDefaultPlayerConducts()
 		clientLearnedAlchemyIngredients[c].clear();
 		clientLearnedAlchemyRecipes[c].clear();
 		clientLearnedScrollLabels[c].clear();
+		setStewingRecipeUnlockMask(c, 0);
 	}
+	setActiveStewingGeneratorVersion(STEWING_GENERATOR_VERSION);
 	achievementObserver.clearPlayerAchievementData();
 }
 
@@ -5447,6 +5449,10 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 		{
 			hash += (Uint32)(stats->rune_creator_identity << (shift % 32)); ++shift;
 		}
+		for ( auto stack : stats->tincture_stacks )
+		{
+			hash += static_cast<Uint32>(stack << (shift % 32)); ++shift;
+		}
 
 		for ( auto k : stats->PROFICIENCIES )
 		{
@@ -5562,6 +5568,31 @@ void SaveGameInfo::Player::stat_t::item_t::computeHash(Uint32& hash, Uint32& shi
 	// Optional metadata must not perturb the legacy hash layout when absent.
 	if ( runeInstanceId != 0 ) { hash += (Uint32)(runeInstanceId << (shift % 32)); ++shift; }
 	if ( runeCreatorIdentity != 0 ) { hash += (Uint32)(runeCreatorIdentity << (shift % 32)); ++shift; }
+	if ( appliedOil != 0 ) { hash += (Uint32)(appliedOil << (shift % 32)); ++shift; }
+	const bool hasIngredientCounts = ingredientCounts[0] != 0 || ingredientCounts[1] != 0
+		|| ingredientCounts[2] != 0 || ingredientCounts[3] != 0;
+	if ( hasIngredientCounts )
+	{
+		for ( int slot = 0; slot < 4; ++slot )
+		{
+			const Uint32 taggedCount = ingredientCounts[slot] ^ (0x9e3779b9u * (slot + 1));
+			hash += static_cast<Uint32>(taggedCount << (shift % 32));
+			++shift;
+		}
+	}
+	if ( familiarInitialized || familiarInstanceId != 0 )
+	{
+		const Uint32 familiarFields[] = {
+			familiarInitialized ? 1u : 0u, familiarInstanceId,
+			static_cast<Uint32>(familiarHP), static_cast<Uint32>(familiarMAXHP),
+			static_cast<Uint32>(familiarMP), static_cast<Uint32>(familiarMAXMP),
+			static_cast<Uint32>(familiarLVL), static_cast<Uint32>(familiarEXP),
+			static_cast<Uint32>(familiarSTR), static_cast<Uint32>(familiarDEX),
+			static_cast<Uint32>(familiarCON), static_cast<Uint32>(familiarINT),
+			static_cast<Uint32>(familiarPER), static_cast<Uint32>(familiarCHR)
+		};
+		for ( Uint32 value : familiarFields ) { hash += value << (shift % 32); ++shift; }
+	}
 }
 
 int SaveGameInfo::populateFromSession(const int playernum)
@@ -5631,6 +5662,14 @@ int SaveGameInfo::populateFromSession(const int playernum)
 	for ( int c = 0; c < MAXPLAYERS; ++c ) {
 		info->players_connected[c] = client_disconnected[c] && !::players[c]->was_connected_to_game ? 0 : 1;
 		if ( info->players_connected[c] ) {
+			if ( multiplayer != CLIENT && ::players[c] && ::players[c]->entity && stats[c]
+				&& stats[c]->amulet && stats[c]->amulet->type == AMULET_FAMILIAR )
+			{
+				if ( Entity* familiar = findAmuletFamiliar(::players[c]->entity) )
+				{
+					syncAmuletFamiliarPersistentState(familiar, stats[c]->amulet, false);
+				}
+			}
 			auto& player = info->players[c];
 			player.char_class = client_classes[c];
 			player.race = stats[c]->playerRace;
@@ -5765,6 +5804,8 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			player.stats.HUNGER = stats[c]->HUNGER;
 			player.stats.golem_blessed_composition = stats[c]->golemBlessedComposition;
 			player.stats.rune_creator_identity = stats[c]->runeCreatorIdentity;
+			player.stats.tincture_stacks.assign(stats[c]->tinctureStacks,
+				stats[c]->tinctureStacks + NUMSTATS);
 			player.stats.PROFICIENCIES.resize(NUMPROFICIENCIES);
 			for ( int i = 0; i < NUMPROFICIENCIES; ++i ) {
 				player.stats.PROFICIENCIES[i] = stats[c]->getProficiency(i);
@@ -5873,7 +5914,13 @@ int SaveGameInfo::populateFromSession(const int playernum)
 						0,
 						item.runeGetStoredPWRRaw(),
 						static_cast<Sint8>(item.runeGetCreatorPlayer()),
-						item.runeGetInstanceId(), item.runeGetCreatorIdentity()));
+						item.runeGetInstanceId(), item.runeGetCreatorIdentity(), item.appliedOil,
+						item.ingredientCounts[0], item.ingredientCounts[1],
+						item.ingredientCounts[2], item.ingredientCounts[3],
+						item.familiarInitialized, item.familiarInstanceId,
+						item.familiarHP, item.familiarMAXHP, item.familiarMP, item.familiarMAXMP,
+						item.familiarLVL, item.familiarEXP, item.familiarSTR, item.familiarDEX,
+						item.familiarCON, item.familiarINT, item.familiarPER, item.familiarCHR));
 				}
 			}
 
@@ -5916,7 +5963,13 @@ int SaveGameInfo::populateFromSession(const int playernum)
 								slot.second->y,
 								slot.second->runeGetStoredPWRRaw(),
 								static_cast<Sint8>(slot.second->runeGetCreatorPlayer()),
-								slot.second->runeGetInstanceId(), slot.second->runeGetCreatorIdentity(),
+								slot.second->runeGetInstanceId(), slot.second->runeGetCreatorIdentity(), slot.second->appliedOil,
+								slot.second->ingredientCounts[0], slot.second->ingredientCounts[1],
+								slot.second->ingredientCounts[2], slot.second->ingredientCounts[3],
+								slot.second->familiarInitialized, slot.second->familiarInstanceId,
+								slot.second->familiarHP, slot.second->familiarMAXHP, slot.second->familiarMP, slot.second->familiarMAXMP,
+								slot.second->familiarLVL, slot.second->familiarEXP, slot.second->familiarSTR, slot.second->familiarDEX,
+								slot.second->familiarCON, slot.second->familiarINT, slot.second->familiarPER, slot.second->familiarCHR,
 							}));
 					}
 				}
@@ -5944,7 +5997,13 @@ int SaveGameInfo::populateFromSession(const int playernum)
 					item->y,
 					item->runeGetStoredPWRRaw(),
 					static_cast<Sint8>(item->runeGetCreatorPlayer()),
-					item->runeGetInstanceId(), item->runeGetCreatorIdentity(),
+					item->runeGetInstanceId(), item->runeGetCreatorIdentity(), item->appliedOil,
+					item->ingredientCounts[0], item->ingredientCounts[1],
+					item->ingredientCounts[2], item->ingredientCounts[3],
+					item->familiarInitialized, item->familiarInstanceId,
+					item->familiarHP, item->familiarMAXHP, item->familiarMP, item->familiarMAXMP,
+					item->familiarLVL, item->familiarEXP, item->familiarSTR, item->familiarDEX,
+					item->familiarCON, item->familiarINT, item->familiarPER, item->familiarCHR,
 					});
 			}
 
@@ -5964,7 +6023,13 @@ int SaveGameInfo::populateFromSession(const int playernum)
 					item->y,
 					item->runeGetStoredPWRRaw(),
 					static_cast<Sint8>(item->runeGetCreatorPlayer()),
-					item->runeGetInstanceId(), item->runeGetCreatorIdentity(),
+					item->runeGetInstanceId(), item->runeGetCreatorIdentity(), item->appliedOil,
+					item->ingredientCounts[0], item->ingredientCounts[1],
+					item->ingredientCounts[2], item->ingredientCounts[3],
+					item->familiarInitialized, item->familiarInstanceId,
+					item->familiarHP, item->familiarMAXHP, item->familiarMP, item->familiarMAXMP,
+					item->familiarLVL, item->familiarEXP, item->familiarSTR, item->familiarDEX,
+					item->familiarCON, item->familiarINT, item->familiarPER, item->familiarCHR,
 					});
 			}
 
@@ -6042,7 +6107,13 @@ int SaveGameInfo::populateFromSession(const int playernum)
 									slot.second->y,
 									slot.second->runeGetStoredPWRRaw(),
 									static_cast<Sint8>(slot.second->runeGetCreatorPlayer()),
-									slot.second->runeGetInstanceId(), slot.second->runeGetCreatorIdentity(),
+									slot.second->runeGetInstanceId(), slot.second->runeGetCreatorIdentity(), slot.second->appliedOil,
+									slot.second->ingredientCounts[0], slot.second->ingredientCounts[1],
+									slot.second->ingredientCounts[2], slot.second->ingredientCounts[3],
+									slot.second->familiarInitialized, slot.second->familiarInstanceId,
+									slot.second->familiarHP, slot.second->familiarMAXHP, slot.second->familiarMP, slot.second->familiarMAXMP,
+									slot.second->familiarLVL, slot.second->familiarEXP, slot.second->familiarSTR, slot.second->familiarDEX,
+									slot.second->familiarCON, slot.second->familiarINT, slot.second->familiarPER, slot.second->familiarCHR,
 								}));
 						}
 					}
@@ -6063,7 +6134,13 @@ int SaveGameInfo::populateFromSession(const int playernum)
 							item->y,
 							item->runeGetStoredPWRRaw(),
 							static_cast<Sint8>(item->runeGetCreatorPlayer()),
-							item->runeGetInstanceId(), item->runeGetCreatorIdentity(),
+							item->runeGetInstanceId(), item->runeGetCreatorIdentity(), item->appliedOil,
+							item->ingredientCounts[0], item->ingredientCounts[1],
+							item->ingredientCounts[2], item->ingredientCounts[3],
+							item->familiarInitialized, item->familiarInstanceId,
+							item->familiarHP, item->familiarMAXHP, item->familiarMP, item->familiarMAXMP,
+							item->familiarLVL, item->familiarEXP, item->familiarSTR, item->familiarDEX,
+							item->familiarCON, item->familiarINT, item->familiarPER, item->familiarCHR,
 							});
 					}
 
@@ -6072,6 +6149,30 @@ int SaveGameInfo::populateFromSession(const int playernum)
 				}
 			}
 		}
+	}
+
+	for ( auto it = info->additional_data.begin(); it != info->additional_data.end(); )
+	{
+		if ( it->first == "stewing_generator_version"
+			|| it->first == "stewing_recipes_0"
+			|| it->first == "stewing_recipes_1"
+			|| it->first == "stewing_recipes_2"
+			|| it->first == "stewing_recipes_3" )
+		{
+			it = info->additional_data.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+	info->additional_data.push_back(std::make_pair("stewing_generator_version",
+		std::to_string(getActiveStewingGeneratorVersion())));
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		info->additional_data.push_back(std::make_pair(
+			"stewing_recipes_" + std::to_string(c),
+			std::to_string(getStewingRecipeUnlockMask(c))));
 	}
 
 	info->map_messages = ::Player::Minimap_t::mapDetails;
@@ -6396,6 +6497,7 @@ static void reserveSavedRuneMetadata(const SaveGameInfo::Player::stat_t& savedSt
 	{
 		reserveMagicRuneInstanceId(item.runeInstanceId);
 		reserveRuneCreatorIdentity(item.runeCreatorIdentity);
+		reserveFamiliarInstanceId(item.familiarInstanceId);
 	};
 	for ( const auto& item : savedStats.inventory ) { reserveItem(item); }
 	for ( const auto& item : savedStats.void_chest_inventory ) { reserveItem(item); }
@@ -6412,6 +6514,23 @@ static void restoreSavedRuneMetadata(Item& item, const SaveGameInfo::Player::sta
 	item.runeSetCreatorPlayer(savedItem.runeCreatorPlayer);
 	item.runeSetInstanceId(savedItem.runeInstanceId);
 	item.runeSetCreatorIdentity(savedItem.runeCreatorIdentity);
+	item.appliedOil = static_cast<AppliedOil>(std::min<Uint32>(savedItem.appliedOil, APPLIED_OIL_MAX - 1));
+	for ( int i = 0; i < 4; ++i ) { item.ingredientCounts[i] = savedItem.ingredientCounts[i]; }
+	item.familiarInitialized = savedItem.familiarInitialized;
+	item.familiarInstanceId = savedItem.familiarInstanceId;
+	item.familiarHP = savedItem.familiarHP;
+	item.familiarMAXHP = savedItem.familiarMAXHP;
+	item.familiarMP = savedItem.familiarMP;
+	item.familiarMAXMP = savedItem.familiarMAXMP;
+	item.familiarLVL = savedItem.familiarLVL;
+	item.familiarEXP = savedItem.familiarEXP;
+	item.familiarSTR = savedItem.familiarSTR;
+	item.familiarDEX = savedItem.familiarDEX;
+	item.familiarCON = savedItem.familiarCON;
+	item.familiarINT = savedItem.familiarINT;
+	item.familiarPER = savedItem.familiarPER;
+	item.familiarCHR = savedItem.familiarCHR;
+	reserveFamiliarInstanceId(item.familiarInstanceId);
 	item.runeEnsureInstanceId(); // Legacy saves receive a fresh, collision-safe physical Rune ID.
 }
 
@@ -6453,6 +6572,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 				{
 					reserveMagicRuneInstanceId(content.runeInstanceId);
 					reserveRuneCreatorIdentity(content.runeCreatorIdentity);
+					reserveFamiliarInstanceId(content.familiarInstanceId);
 				}
 			}
 		}
@@ -6472,6 +6592,38 @@ int loadGame(int player, const SaveGameInfo& info) {
 
 	// load game info
 	uniqueGameKey = info.gamekey;
+	Uint32 loadedStewingGeneratorVersion = STEWING_GENERATOR_VERSION;
+	for ( const auto& pair : info.additional_data )
+	{
+		if ( pair.first != "stewing_generator_version" ) { continue; }
+		const bool decimal = !pair.second.empty() && std::all_of(
+			pair.second.begin(), pair.second.end(), [](char ch) { return ch >= '0' && ch <= '9'; });
+		char* end = nullptr;
+		const unsigned long long value = strtoull(pair.second.c_str(), &end, 10);
+		if ( decimal && end != pair.second.c_str() && *end == '\0'
+			&& value > 0 && value <= std::numeric_limits<Uint32>::max() )
+		{
+			loadedStewingGeneratorVersion = static_cast<Uint32>(value);
+		}
+		break;
+	}
+	setActiveStewingGeneratorVersion(loadedStewingGeneratorVersion);
+	setStewingRecipeUnlockMask(statsPlayer, 0);
+	const std::string stewingRecipeKey = "stewing_recipes_" + std::to_string(player);
+	for ( const auto& pair : info.additional_data )
+	{
+		if ( pair.first != stewingRecipeKey ) { continue; }
+		const bool decimal = !pair.second.empty() && std::all_of(
+			pair.second.begin(), pair.second.end(), [](char ch) { return ch >= '0' && ch <= '9'; });
+		char* end = nullptr;
+		const unsigned long long value = strtoull(pair.second.c_str(), &end, 10);
+		if ( decimal && end != pair.second.c_str() && *end == '\0'
+			&& value <= std::numeric_limits<Uint32>::max() )
+		{
+			setStewingRecipeUnlockMask(statsPlayer, static_cast<Uint32>(value & 0xffffu));
+		}
+		break;
+	}
 	uniqueLobbyKey = info.lobbykey;
 	mapseed = info.mapseed;
 	completionTime = info.gametimer;
@@ -6615,6 +6767,11 @@ int loadGame(int player, const SaveGameInfo& info) {
 		? std::min(10000, std::max(0, p.golem_blessed_composition))
 		: (stats[statsPlayer]->sex == MALE ? 10000 : 0);
 	stats[statsPlayer]->runeCreatorIdentity = p.rune_creator_identity;
+	for ( int stat = 0; stat < NUMSTATS; ++stat )
+	{
+		stats[statsPlayer]->tinctureStacks[stat] = stat < static_cast<int>(p.tincture_stacks.size())
+			? p.tincture_stacks[stat] : 0;
+	}
 	reserveRuneCreatorIdentity(stats[statsPlayer]->runeCreatorIdentity);
 	for (int c = 0; c < NUMPROFICIENCIES && c < p.PROFICIENCIES.size(); ++c) {
 		stats[statsPlayer]->setProficiency(c, p.PROFICIENCIES[c]);

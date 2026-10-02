@@ -1928,6 +1928,7 @@ void gameLogic(void)
 				    // when this flag is set, it's time to load the next level.
 					loadnextlevel = false;
 					loadedNextLevel = true;
+					sweepAmuletFamiliarIngredientsOnLevelChange();
 
 					int totalFloorGold = 0;
 					int totalFloorItems = 0;
@@ -6288,6 +6289,7 @@ void ingameHud()
 		players[player]->inventoryUI.processInventory();
 		GenericGUI[player].tinkerGUI.updateTinkerMenu();
 		GenericGUI[player].alchemyGUI.updateAlchemyMenu();
+		GenericGUI[player].stewingGUI.updateStewingMenu();
 		GenericGUI[player].assistShrineGUI.updateAssistShrine();
 		GenericGUI[player].mailboxGUI.updateMailMenu();
 		GenericGUI[player].featherGUI.updateFeatherMenu();

@@ -25,8 +25,11 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "mod_tools.hpp"
+#include "monster.hpp"
+#include "collision.hpp"
 
 #include <assert.h>
+#include <limits>
 
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
@@ -41,6 +44,7 @@ namespace
 {
 	Uint32 nextMagicRuneInstanceId = 1;
 	Uint32 nextRuneCreatorIdentity = 1;
+	Uint32 nextFamiliarInstanceId = 1;
 
 	Uint32 allocateNonzeroId(Uint32& nextId)
 	{
@@ -48,6 +52,15 @@ namespace
 		const Uint32 result = nextId++;
 		if ( nextId == 0 ) { nextId = 1; }
 		return result;
+	}
+}
+
+void reserveFamiliarInstanceId(Uint32 familiarInstanceId)
+{
+	if ( familiarInstanceId != 0 && familiarInstanceId >= nextFamiliarInstanceId )
+	{
+		nextFamiliarInstanceId = familiarInstanceId + 1;
+		if ( nextFamiliarInstanceId == 0 ) { nextFamiliarInstanceId = 1; }
 	}
 }
 
@@ -326,6 +339,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 		Status::BROKEN : ((int)status > EXCELLENT ? EXCELLENT : status);
 	item->beatitude = std::min(std::max((Sint16)-100, beatitude), (Sint16)100);
 	item->count = std::max(count, (Sint16)1);
+	if ( itemTypeIsIngredientBag(item->type) ) { item->count = 1; }
 	item->appearance = appearance;
 	item->identified = identified;
 	item->uid = itemuids;
@@ -339,6 +353,25 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->runeCreatorPlayer = Item::RUNE_CREATOR_INVALID;
 	item->runeInstanceId = Item::RUNE_INSTANCE_ID_INVALID;
 	item->runeCreatorIdentity = Item::RUNE_CREATOR_IDENTITY_INVALID;
+	item->appliedOil = APPLIED_OIL_NONE;
+	item->ingredientCounts[0] = 0;
+	item->ingredientCounts[1] = 0;
+	item->ingredientCounts[2] = 0;
+	item->ingredientCounts[3] = 0;
+	item->familiarInitialized = false;
+	item->familiarInstanceId = 0;
+	item->familiarHP = 0;
+	item->familiarMAXHP = 0;
+	item->familiarMP = 0;
+	item->familiarMAXMP = 0;
+	item->familiarLVL = 0;
+	item->familiarEXP = 0;
+	item->familiarSTR = 0;
+	item->familiarDEX = 0;
+	item->familiarCON = 0;
+	item->familiarINT = 0;
+	item->familiarPER = 0;
+	item->familiarCHR = 0;
 	item->interactNPCUid = 0;
 	item->notifyIcon = false;
 	item->spellNotifyIcon = false;
@@ -403,6 +436,1879 @@ void copyItemPersistentCustomState(Item& destination, const Item& source)
 	destination.runeSetCreatorPlayer(source.runeGetCreatorPlayer());
 	destination.runeSetInstanceId(source.runeGetInstanceId());
 	destination.runeSetCreatorIdentity(source.runeGetCreatorIdentity());
+	destination.appliedOil = source.appliedOil;
+	for ( int i = 0; i < 4; ++i )
+	{
+		destination.ingredientCounts[i] = source.ingredientCounts[i];
+	}
+	destination.familiarInitialized = source.familiarInitialized;
+	destination.familiarInstanceId = source.familiarInstanceId;
+	destination.familiarHP = source.familiarHP;
+	destination.familiarMAXHP = source.familiarMAXHP;
+	destination.familiarMP = source.familiarMP;
+	destination.familiarMAXMP = source.familiarMAXMP;
+	destination.familiarLVL = source.familiarLVL;
+	destination.familiarEXP = source.familiarEXP;
+	destination.familiarSTR = source.familiarSTR;
+	destination.familiarDEX = source.familiarDEX;
+	destination.familiarCON = source.familiarCON;
+	destination.familiarINT = source.familiarINT;
+	destination.familiarPER = source.familiarPER;
+	destination.familiarCHR = source.familiarCHR;
+	reserveFamiliarInstanceId(destination.familiarInstanceId);
+}
+
+void copyItemPersistentCustomStateToEntity(Entity& destination, const Item& source)
+{
+	destination.itemRuneStoredPWR = source.runeGetStoredPWRRaw();
+	destination.itemRuneStoredPWRValid = source.runeHasStoredPWR() ? 1 : 0;
+	destination.itemRuneCreatorPlayer = source.runeGetCreatorPlayer();
+	destination.itemRuneCreatorPlayerValid = source.runeHasCreator() ? 1 : 0;
+	destination.itemRuneInstanceId = static_cast<Sint32>(source.runeGetInstanceId());
+	destination.itemRuneCreatorIdentity = static_cast<Sint32>(source.runeGetCreatorIdentity());
+	destination.itemAppliedOil = static_cast<Sint32>(source.appliedOil);
+	destination.itemIngredientCount0 = 0;
+	destination.itemIngredientCount1 = 0;
+	destination.itemIngredientCount2 = 0;
+	destination.itemIngredientCount3 = 0;
+	destination.itemIngredientCount0 = static_cast<Sint32>(source.ingredientCounts[0]);
+	destination.itemIngredientCount1 = static_cast<Sint32>(source.ingredientCounts[1]);
+	destination.itemIngredientCount2 = static_cast<Sint32>(source.ingredientCounts[2]);
+	destination.itemIngredientCount3 = static_cast<Sint32>(source.ingredientCounts[3]);
+	destination.itemFamiliarInitialized = source.familiarInitialized ? 1 : 0;
+	destination.itemFamiliarInstanceId = static_cast<Sint32>(source.familiarInstanceId);
+	destination.itemFamiliarHP = source.familiarHP;
+	destination.itemFamiliarMAXHP = source.familiarMAXHP;
+	destination.itemFamiliarMP = source.familiarMP;
+	destination.itemFamiliarMAXMP = source.familiarMAXMP;
+	destination.itemFamiliarLVL = source.familiarLVL;
+	destination.itemFamiliarEXP = source.familiarEXP;
+	destination.itemFamiliarSTR = source.familiarSTR;
+	destination.itemFamiliarDEX = source.familiarDEX;
+	destination.itemFamiliarCON = source.familiarCON;
+	destination.itemFamiliarINT = source.familiarINT;
+	destination.itemFamiliarPER = source.familiarPER;
+	destination.itemFamiliarCHR = source.familiarCHR;
+}
+
+void copyItemPersistentCustomStateFromEntity(Item& destination, const Entity& source)
+{
+	destination.runeSetStoredPWRRaw(source.itemRuneStoredPWRValid
+		? source.itemRuneStoredPWR : Item::RUNE_STORED_PWR_INVALID);
+	destination.runeSetCreatorPlayer(source.itemRuneCreatorPlayerValid
+		? source.itemRuneCreatorPlayer : Item::RUNE_CREATOR_INVALID);
+	destination.runeSetInstanceId(static_cast<Uint32>(source.itemRuneInstanceId));
+	destination.runeSetCreatorIdentity(static_cast<Uint32>(source.itemRuneCreatorIdentity));
+	destination.appliedOil = static_cast<AppliedOil>(std::max(0, std::min(source.itemAppliedOil,
+		static_cast<Sint32>(APPLIED_OIL_MAX) - 1)));
+	destination.ingredientCounts[0] = static_cast<Uint32>(source.itemIngredientCount0);
+	destination.ingredientCounts[1] = static_cast<Uint32>(source.itemIngredientCount1);
+	destination.ingredientCounts[2] = static_cast<Uint32>(source.itemIngredientCount2);
+	destination.ingredientCounts[3] = static_cast<Uint32>(source.itemIngredientCount3);
+	destination.familiarInitialized = source.itemFamiliarInitialized != 0;
+	destination.familiarInstanceId = static_cast<Uint32>(source.itemFamiliarInstanceId);
+	destination.familiarHP = source.itemFamiliarHP;
+	destination.familiarMAXHP = source.itemFamiliarMAXHP;
+	destination.familiarMP = source.itemFamiliarMP;
+	destination.familiarMAXMP = source.itemFamiliarMAXMP;
+	destination.familiarLVL = source.itemFamiliarLVL;
+	destination.familiarEXP = source.itemFamiliarEXP;
+	destination.familiarSTR = source.itemFamiliarSTR;
+	destination.familiarDEX = source.itemFamiliarDEX;
+	destination.familiarCON = source.itemFamiliarCON;
+	destination.familiarINT = source.itemFamiliarINT;
+	destination.familiarPER = source.itemFamiliarPER;
+	destination.familiarCHR = source.itemFamiliarCHR;
+	reserveFamiliarInstanceId(destination.familiarInstanceId);
+}
+
+bool itemTypeIsTincture(ItemType type)
+{
+	return type >= TINCTURE_STR && type <= TINCTURE_CHA;
+}
+
+bool itemTypeIsOil(ItemType type)
+{
+	return type >= OIL_AETHER && type <= OIL_BRINE;
+}
+
+bool itemTypeIsInk(ItemType type)
+{
+	return type >= INK_MYSTICISM && type <= INK_THAUMATURGY;
+}
+
+bool itemTypeIsWitchbrewConsumable(ItemType type)
+{
+	return itemTypeIsTincture(type) || itemTypeIsOil(type) || itemTypeIsInk(type);
+}
+
+bool itemTypeIsIngredientBag(ItemType type)
+{
+	return type >= INGREDIENT_BAG_SLIME && type <= INGREDIENT_BAG_ANIMATIC;
+}
+
+bool itemTypeIsWitchIngredient(ItemType type)
+{
+	return type >= INGREDIENT_GELATIN && type <= INGREDIENT_FRAGMENTS;
+}
+
+bool itemTypeIsWitchbrewGeneratedItem(ItemType type)
+{
+	return itemTypeIsIngredientBag(type) || itemTypeIsWitchIngredient(type);
+}
+
+WitchIngredientCategory ingredientCategoryFromBag(ItemType type)
+{
+	if ( !itemTypeIsIngredientBag(type) ) { return INGREDIENT_CATEGORY_NONE; }
+	return static_cast<WitchIngredientCategory>(INGREDIENT_CATEGORY_SLIME
+		+ static_cast<int>(type - INGREDIENT_BAG_SLIME));
+}
+
+WitchIngredientCategory ingredientCategoryFromItem(ItemType type)
+{
+	if ( !itemTypeIsWitchIngredient(type) ) { return INGREDIENT_CATEGORY_NONE; }
+	return static_cast<WitchIngredientCategory>(INGREDIENT_CATEGORY_SLIME
+		+ static_cast<int>(type - INGREDIENT_GELATIN) / 4);
+}
+
+ItemType ingredientBagForCategory(WitchIngredientCategory category)
+{
+	if ( category < INGREDIENT_CATEGORY_SLIME || category > INGREDIENT_CATEGORY_ANIMATIC )
+	{
+		return ITEM_ENUM_MAX;
+	}
+	return static_cast<ItemType>(INGREDIENT_BAG_SLIME + category - INGREDIENT_CATEGORY_SLIME);
+}
+
+ItemType ingredientForCategorySlot(WitchIngredientCategory category, int slot)
+{
+	if ( category < INGREDIENT_CATEGORY_SLIME || category > INGREDIENT_CATEGORY_ANIMATIC
+		|| slot < 0 || slot >= 4 )
+	{
+		return ITEM_ENUM_MAX;
+	}
+	return static_cast<ItemType>(INGREDIENT_GELATIN
+		+ (category - INGREDIENT_CATEGORY_SLIME) * 4 + slot);
+}
+
+int ingredientSlotForItem(ItemType type)
+{
+	return itemTypeIsWitchIngredient(type) ? static_cast<int>(type - INGREDIENT_GELATIN) % 4 : -1;
+}
+
+WitchIngredientCategory getIngredientCategoryForMonster(Entity* monster)
+{
+	Stat* monsterStats = monster ? monster->getStats() : nullptr;
+	if ( !monsterStats ) { return INGREDIENT_CATEGORY_NONE; }
+	if ( monsterStats->type == SLIME ) { return INGREDIENT_CATEGORY_SLIME; }
+	auto found = CompendiumEntries.monsters.find(monstertypename[monsterStats->type]);
+	if ( found == CompendiumEntries.monsters.end() ) { return INGREDIENT_CATEGORY_NONE; }
+	switch ( found->second.species )
+	{
+		case Compendium_t::CompendiumMonsters_t::SPECIES_HUMANOID:
+		case Compendium_t::CompendiumMonsters_t::SPECIES_DEMONOID:
+			return INGREDIENT_CATEGORY_HUMORIN;
+		case Compendium_t::CompendiumMonsters_t::SPECIES_BEAST:
+		case Compendium_t::CompendiumMonsters_t::SPECIES_BEASTFOLK:
+			return INGREDIENT_CATEGORY_WILDBLOOD;
+		case Compendium_t::CompendiumMonsters_t::SPECIES_UNDEAD:
+		case Compendium_t::CompendiumMonsters_t::SPECIES_CONSTRUCT:
+			return INGREDIENT_CATEGORY_ANIMATIC;
+		default:
+			return INGREDIENT_CATEGORY_NONE;
+	}
+}
+
+bool ingredientBagIsEmpty(const Item& bag)
+{
+	if ( !itemTypeIsIngredientBag(bag.type) ) { return true; }
+	return bag.ingredientCounts[0] == 0 && bag.ingredientCounts[1] == 0
+		&& bag.ingredientCounts[2] == 0 && bag.ingredientCounts[3] == 0;
+}
+
+bool mergeIngredientBags(Item& destination, const Item& source)
+{
+	if ( !itemTypeIsIngredientBag(destination.type) || !itemTypeIsIngredientBag(source.type)
+		|| ingredientCategoryFromBag(destination.type) != ingredientCategoryFromBag(source.type) )
+	{
+		return false;
+	}
+	for ( int i = 0; i < 4; ++i )
+	{
+		const Uint32 room = std::numeric_limits<Uint32>::max() - destination.ingredientCounts[i];
+		destination.ingredientCounts[i] += std::min(room, source.ingredientCounts[i]);
+	}
+	destination.count = 1;
+	return true;
+}
+
+Item* findIngredientBagInInventory(list_t& inventory, WitchIngredientCategory category)
+{
+	for ( node_t* node = inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && ingredientCategoryFromBag(item->type) == category ) { return item; }
+	}
+	return nullptr;
+}
+
+Item* mergeIngredientBagIntoInventory(list_t& inventory, const Item& source)
+{
+	const WitchIngredientCategory category = ingredientCategoryFromBag(source.type);
+	if ( category == INGREDIENT_CATEGORY_NONE || ingredientBagIsEmpty(source) ) { return nullptr; }
+	if ( Item* existing = findIngredientBagInInventory(inventory, category) )
+	{
+		mergeIngredientBags(*existing, source);
+		return existing;
+	}
+	Item* created = newItem(ingredientBagForCategory(category), EXCELLENT, 0, 1, 0, true, &inventory);
+	copyItemPersistentCustomState(*created, source);
+	created->count = 1;
+	return created;
+}
+
+namespace
+{
+	std::array<std::array<Uint32, STEWING_RESOURCE_COUNT>, MAXPLAYERS> serverStewingInventoryMirrors{};
+	std::array<bool, MAXPLAYERS> serverStewingInventoryMirrorValid{};
+	std::array<Uint32, MAXPLAYERS> learnedStewingRecipeMasks{};
+	Uint32 activeStewingGeneratorVersion = STEWING_GENERATOR_VERSION;
+
+	using SymbolicStewingRecipe = std::array<std::array<Uint8, 4>, 4>;
+	using StewingCategoryMappings = std::array<std::array<ItemType, 4>, 4>;
+
+	struct GeneratedStewingRecipeBook
+	{
+		std::array<StewingRecipe, STEWING_RECIPE_COUNT> recipes{};
+		std::array<SymbolicStewingRecipe, STEWING_RECIPE_COUNT> symbolicRecipes{};
+		StewingCategoryMappings categoryMappings{};
+		std::array<bool, 4> highTinctureCategories{};
+	};
+
+	template <typename T>
+	void stewingShuffle(std::vector<T>& values, BaronyRNG& rng)
+	{
+		for ( int i = static_cast<int>(values.size()) - 1; i > 0; --i )
+		{
+			const int j = rng.uniform(0, i);
+			std::swap(values[i], values[j]);
+		}
+	}
+
+	template <typename T, size_t Size>
+	void stewingShuffle(std::array<T, Size>& values, BaronyRNG& rng)
+	{
+		for ( int i = static_cast<int>(Size) - 1; i > 0; --i )
+		{
+			const int j = rng.uniform(0, i);
+			std::swap(values[i], values[j]);
+		}
+	}
+
+	StewingCategoryMappings generateStewingCategoryMappings(BaronyRNG& rng)
+	{
+		StewingCategoryMappings mappings{};
+		for ( int category = 0; category < 4; ++category )
+		{
+			const auto ingredientCategory = static_cast<WitchIngredientCategory>(
+				static_cast<int>(INGREDIENT_CATEGORY_SLIME) + category);
+			for ( int slot = 0; slot < 4; ++slot )
+			{
+				mappings[category][slot] = ingredientForCategorySlot(ingredientCategory, slot);
+			}
+			stewingShuffle(mappings[category], rng);
+		}
+		return mappings;
+	}
+
+	bool symbolicRecipeAlreadyUsed(const SymbolicStewingRecipe& candidate,
+		const std::array<SymbolicStewingRecipe, STEWING_RECIPE_COUNT>& recipes,
+		int first, int count)
+	{
+		for ( int i = 0; i < count; ++i )
+		{
+			if ( recipes[first + i] == candidate ) { return true; }
+		}
+		return false;
+	}
+
+	bool generateTinctureRecipes(GeneratedStewingRecipeBook& book, BaronyRNG& rng)
+	{
+		std::array<int, 4> categoryOrder{ { 0, 1, 2, 3 } };
+		stewingShuffle(categoryOrder, rng);
+		std::array<int, 4> doubledTargets{};
+		std::array<std::array<int, 2>, 4> resourceTargets{};
+		for ( int i = 0; i < 4; ++i )
+		{
+			const int category = categoryOrder[i];
+			const bool high = i < 2;
+			book.highTinctureCategories[category] = high;
+			doubledTargets[category] = high ? 2 : 1;
+			if ( high )
+			{
+				resourceTargets[category] = { { 4, 4 } };
+			}
+			else if ( rng.uniform(0, 1) == 0 )
+			{
+				resourceTargets[category] = { { 4, 3 } };
+			}
+			else
+			{
+				resourceTargets[category] = { { 3, 4 } };
+			}
+		}
+
+		struct Candidate
+		{
+			SymbolicStewingRecipe recipe{};
+			int doubledCategory = 0;
+		};
+		std::array<int, 4> doubledUsed{};
+		std::array<std::array<int, 2>, 4> resourceUsed{};
+		std::function<bool(int)> solve = [&](int row)
+		{
+			if ( row == 6 )
+			{
+				return doubledUsed == doubledTargets && resourceUsed == resourceTargets;
+			}
+			std::vector<Candidate> candidates;
+			for ( int doubled = 0; doubled < 4; ++doubled )
+			{
+				if ( doubledUsed[doubled] >= doubledTargets[doubled] ) { continue; }
+				for ( int choices = 0; choices < 8; ++choices )
+				{
+					Candidate candidate;
+					candidate.doubledCategory = doubled;
+					candidate.recipe[doubled][0] = 1;
+					candidate.recipe[doubled][1] = 1;
+					int choiceBit = 0;
+					for ( int category = 0; category < 4; ++category )
+					{
+						if ( category == doubled ) { continue; }
+						const int symbol = (choices >> choiceBit) & 1;
+						candidate.recipe[category][symbol] = 1;
+						++choiceBit;
+					}
+					bool valid = !symbolicRecipeAlreadyUsed(candidate.recipe,
+						book.symbolicRecipes, 4, row);
+					for ( int category = 0; category < 4 && valid; ++category )
+					{
+						for ( int symbol = 0; symbol < 2; ++symbol )
+						{
+							if ( resourceUsed[category][symbol]
+								+ candidate.recipe[category][symbol] > resourceTargets[category][symbol] )
+							{
+								valid = false;
+							}
+						}
+					}
+					if ( valid ) { candidates.push_back(candidate); }
+				}
+			}
+			stewingShuffle(candidates, rng);
+			for ( const Candidate& candidate : candidates )
+			{
+				book.symbolicRecipes[4 + row] = candidate.recipe;
+				++doubledUsed[candidate.doubledCategory];
+				for ( int category = 0; category < 4; ++category )
+				{
+					for ( int symbol = 0; symbol < 2; ++symbol )
+					{
+						resourceUsed[category][symbol] += candidate.recipe[category][symbol];
+					}
+				}
+				if ( solve(row + 1) ) { return true; }
+				--doubledUsed[candidate.doubledCategory];
+				for ( int category = 0; category < 4; ++category )
+				{
+					for ( int symbol = 0; symbol < 2; ++symbol )
+					{
+						resourceUsed[category][symbol] -= candidate.recipe[category][symbol];
+					}
+				}
+			}
+			book.symbolicRecipes[4 + row] = SymbolicStewingRecipe{};
+			return false;
+		};
+		return solve(0);
+	}
+
+	bool generateOilRecipes(GeneratedStewingRecipeBook& book, BaronyRNG& rng)
+	{
+		static const std::array<std::array<Uint8, 4>, 12> categoryPatterns{ {
+			{ { 3, 2, 2, 1 } }, { { 3, 2, 1, 2 } }, { { 3, 1, 2, 2 } },
+			{ { 2, 3, 2, 1 } }, { { 2, 3, 1, 2 } },
+			{ { 2, 2, 3, 1 } }, { { 2, 2, 1, 3 } },
+			{ { 2, 1, 3, 2 } }, { { 2, 1, 2, 3 } },
+			{ { 1, 3, 2, 2 } }, { { 1, 2, 3, 2 } }, { { 1, 2, 2, 3 } }
+		} };
+		std::array<std::array<int, 2>, 4> resourceUsed{};
+		std::function<bool(int)> solve = [&](int row)
+		{
+			if ( row == 7 )
+			{
+				for ( const auto& category : resourceUsed )
+				{
+					if ( category[0] != 7 || category[1] != 7 ) { return false; }
+				}
+				return true;
+			}
+			std::vector<SymbolicStewingRecipe> candidates;
+			for ( const auto& pattern : categoryPatterns )
+			{
+				for ( int tripleOrientation = 0; tripleOrientation < 2; ++tripleOrientation )
+				{
+					for ( int singleOrientation = 0; singleOrientation < 2; ++singleOrientation )
+					{
+						SymbolicStewingRecipe candidate{};
+						for ( int category = 0; category < 4; ++category )
+						{
+							if ( pattern[category] == 3 )
+							{
+								candidate[category][2] = tripleOrientation == 0 ? 2 : 1;
+								candidate[category][3] = tripleOrientation == 0 ? 1 : 2;
+							}
+							else if ( pattern[category] == 2 )
+							{
+								candidate[category][2] = 1;
+								candidate[category][3] = 1;
+							}
+							else
+							{
+								candidate[category][2 + singleOrientation] = 1;
+							}
+						}
+						bool valid = !symbolicRecipeAlreadyUsed(candidate,
+							book.symbolicRecipes, 10, row);
+						for ( int category = 0; category < 4 && valid; ++category )
+						{
+							for ( int symbol = 0; symbol < 2; ++symbol )
+							{
+								if ( resourceUsed[category][symbol]
+									+ candidate[category][2 + symbol] > 7 )
+								{
+									valid = false;
+								}
+							}
+						}
+						if ( valid ) { candidates.push_back(candidate); }
+					}
+				}
+			}
+			stewingShuffle(candidates, rng);
+			for ( const SymbolicStewingRecipe& candidate : candidates )
+			{
+				book.symbolicRecipes[10 + row] = candidate;
+				for ( int category = 0; category < 4; ++category )
+				{
+					for ( int symbol = 0; symbol < 2; ++symbol )
+					{
+						resourceUsed[category][symbol] += candidate[category][2 + symbol];
+					}
+				}
+				if ( solve(row + 1) ) { return true; }
+				for ( int category = 0; category < 4; ++category )
+				{
+					for ( int symbol = 0; symbol < 2; ++symbol )
+					{
+						resourceUsed[category][symbol] -= candidate[category][2 + symbol];
+					}
+				}
+			}
+			book.symbolicRecipes[10 + row] = SymbolicStewingRecipe{};
+			return false;
+		};
+		return solve(0);
+	}
+
+	void generateInkRecipes(GeneratedStewingRecipeBook& book, BaronyRNG& rng)
+	{
+		std::array<std::array<bool, 2>, 4> omitExtra{};
+		for ( int category = 0; category < 4; ++category )
+		{
+			if ( book.highTinctureCategories[category] )
+			{
+				omitExtra[category][rng.uniform(0, 1)] = true;
+			}
+		}
+		std::vector<std::array<int, 2>> extras;
+		for ( int category = 0; category < 4; ++category )
+		{
+			for ( int symbol = 0; symbol < 2; ++symbol )
+			{
+				if ( !omitExtra[category][symbol] )
+				{
+					extras.push_back({ { category, symbol + 2 } });
+				}
+			}
+		}
+		stewingShuffle(extras, rng);
+		for ( int row = 0; row < 3; ++row )
+		{
+			SymbolicStewingRecipe& recipe = book.symbolicRecipes[17 + row];
+			for ( int category = 0; category < 4; ++category )
+			{
+				recipe[category][2] = 2;
+				recipe[category][3] = 2;
+			}
+			for ( int extra = 0; extra < 2; ++extra )
+			{
+				const auto& resource = extras[row * 2 + extra];
+				++recipe[resource[0]][resource[1]];
+			}
+		}
+	}
+
+	StewingRecipe symbolicRecipeToConcrete(const SymbolicStewingRecipe& symbolic,
+		const StewingCategoryMappings& mappings, ItemType result, bool addWater)
+	{
+		StewingRecipe recipe;
+		recipe.result = result;
+		recipe.alwaysUnlocked = addWater;
+		recipe.educts.fill(StewingEduct{});
+		recipe.eductCount = 0;
+		for ( int category = 0; category < 4; ++category )
+		{
+			for ( int symbol = 0; symbol < 4; ++symbol )
+			{
+				const Uint8 quantity = symbolic[category][symbol];
+				if ( quantity == 0 ) { continue; }
+				assert(recipe.eductCount < STEWING_MAX_EDUCTS);
+				recipe.educts[recipe.eductCount++] = { mappings[category][symbol], quantity };
+			}
+		}
+		if ( addWater )
+		{
+			assert(recipe.eductCount < STEWING_MAX_EDUCTS);
+			recipe.educts[recipe.eductCount++] = { POTION_WATER, 1 };
+		}
+		return recipe;
+	}
+
+	bool stewingValidationFailure(const char* invariant)
+	{
+		printlog("[Stewing] recipe generator validation failed: %s", invariant);
+		return false;
+	}
+
+	bool validateStewingRecipeBook(const GeneratedStewingRecipeBook& book)
+	{
+		static const std::array<ItemType, STEWING_RECIPE_COUNT> expectedResults{ {
+			POTION_ACID, POTION_BOOZE, POTION_JUICE, POTION_INVISIBILITY,
+			TINCTURE_STR, TINCTURE_DEX, TINCTURE_CON, TINCTURE_INT, TINCTURE_PER, TINCTURE_CHA,
+			OIL_AETHER, OIL_SILVER, OIL_TOXINS, OIL_BASES, OIL_LEAD, OIL_MINERAL, OIL_BRINE,
+			INK_MYSTICISM, INK_SORCERY, INK_THAUMATURGY
+		} };
+		std::array<std::array<Uint32, STEWING_RESOURCE_COUNT>, STEWING_RECIPE_COUNT> concrete{};
+		for ( int row = 0; row < STEWING_RECIPE_COUNT; ++row )
+		{
+			const StewingRecipe& recipe = book.recipes[row];
+			if ( recipe.result != expectedResults[row] )
+			{
+				return stewingValidationFailure("result order/uniqueness");
+			}
+			if ( recipe.eductCount > STEWING_MAX_EDUCTS )
+			{
+				return stewingValidationFailure("eductCount exceeds STEWING_MAX_EDUCTS");
+			}
+			for ( Uint32 i = 0; i < recipe.eductCount; ++i )
+			{
+				const int resource = getStewingResourceIndex(recipe.educts[i].type);
+				if ( recipe.educts[i].quantity == 0 )
+				{
+					return stewingValidationFailure("zero-quantity stored educt");
+				}
+				if ( resource < 0 || concrete[row][resource] != 0 )
+				{
+					return stewingValidationFailure("invalid or duplicate concrete educt");
+				}
+				concrete[row][resource] = recipe.educts[i].quantity;
+			}
+			for ( int previous = 0; previous < row; ++previous )
+			{
+				if ( concrete[previous] == concrete[row] )
+				{
+					return stewingValidationFailure("duplicate full concrete recipe");
+				}
+			}
+		}
+
+		std::array<Uint32, 4> wholeCategoryTotals{};
+		for ( int row = 0; row < STEWING_RECIPE_COUNT; ++row )
+		{
+			for ( int category = 0; category < 4; ++category )
+			{
+				for ( int symbol = 0; symbol < 4; ++symbol )
+				{
+					wholeCategoryTotals[category] += book.symbolicRecipes[row][category][symbol];
+				}
+			}
+		}
+
+		for ( int row = 0; row < 4; ++row )
+		{
+			if ( !book.recipes[row].alwaysUnlocked || concrete[row][16] != 1 )
+			{
+				return stewingValidationFailure("starting Potion unlock/Water invariant");
+			}
+			Uint32 witchTotal = 0;
+			for ( int category = 0; category < 4; ++category )
+			{
+				for ( int symbol = 0; symbol < 4; ++symbol )
+				{
+					const Uint8 expected = category == row ? 1 : 0;
+					if ( book.symbolicRecipes[row][category][symbol] != expected )
+					{
+						return stewingValidationFailure("starting Potion category A+B+C+D invariant");
+					}
+					witchTotal += book.symbolicRecipes[row][category][symbol];
+				}
+			}
+			if ( witchTotal != 4 ) { return stewingValidationFailure("starting Potion cost"); }
+		}
+		for ( int row = 4; row < STEWING_RECIPE_COUNT; ++row )
+		{
+			if ( book.recipes[row].alwaysUnlocked || concrete[row][16] != 0 )
+			{
+				return stewingValidationFailure("non-Potion lock/Water invariant");
+			}
+		}
+
+		std::array<Uint32, 4> tinctureCategoryTotals{};
+		std::array<std::array<Uint32, 2>, 4> tinctureResourceTotals{};
+		for ( int row = 4; row < 10; ++row )
+		{
+			std::array<int, 4> categoryTotals{};
+			int total = 0;
+			for ( int category = 0; category < 4; ++category )
+			{
+				if ( book.symbolicRecipes[row][category][2] != 0
+					|| book.symbolicRecipes[row][category][3] != 0 )
+				{
+					return stewingValidationFailure("Tincture uses C/D");
+				}
+				for ( int symbol = 0; symbol < 2; ++symbol )
+				{
+					const Uint32 quantity = book.symbolicRecipes[row][category][symbol];
+					categoryTotals[category] += quantity;
+					tinctureResourceTotals[category][symbol] += quantity;
+					tinctureCategoryTotals[category] += quantity;
+					total += quantity;
+				}
+				if ( categoryTotals[category] == 2
+					&& (book.symbolicRecipes[row][category][0] != 1
+						|| book.symbolicRecipes[row][category][1] != 1) )
+				{
+					return stewingValidationFailure("Tincture doubled category is not A+B");
+				}
+			}
+			std::sort(categoryTotals.begin(), categoryTotals.end());
+			if ( total != 5 || categoryTotals != std::array<int, 4>{ { 1, 1, 1, 2 } } )
+			{
+				return stewingValidationFailure("Tincture row cost/category multiplicity");
+			}
+		}
+		auto sortedTinctureCategories = tinctureCategoryTotals;
+		std::sort(sortedTinctureCategories.begin(), sortedTinctureCategories.end());
+		if ( sortedTinctureCategories != std::array<Uint32, 4>{ { 7, 7, 8, 8 } } )
+		{
+			return stewingValidationFailure("Tincture global category totals");
+		}
+		int tinctureThrees = 0;
+		std::array<bool, 4> categoryHasThree{};
+		for ( int category = 0; category < 4; ++category )
+		{
+			if ( (tinctureCategoryTotals[category] == 8) != book.highTinctureCategories[category] )
+			{
+				return stewingValidationFailure("Tincture high-category identity");
+			}
+			for ( int symbol = 0; symbol < 2; ++symbol )
+			{
+				const Uint32 total = tinctureResourceTotals[category][symbol];
+				if ( total == 3 ) { ++tinctureThrees; categoryHasThree[category] = true; }
+				else if ( total != 4 ) { return stewingValidationFailure("Tincture A/B total is not 3 or 4"); }
+			}
+		}
+		int categoriesWithThree = 0;
+		for ( bool hasThree : categoryHasThree ) { categoriesWithThree += hasThree ? 1 : 0; }
+		if ( tinctureThrees != 2 || categoriesWithThree != 2 )
+		{
+			return stewingValidationFailure("Tincture two 3-use resources in distinct categories");
+		}
+
+		std::array<std::array<Uint32, 2>, 4> oilResourceTotals{};
+		for ( int row = 10; row < 17; ++row )
+		{
+			std::array<int, 4> categoryTotals{};
+			int total = 0;
+			for ( int category = 0; category < 4; ++category )
+			{
+				if ( book.symbolicRecipes[row][category][0] != 0
+					|| book.symbolicRecipes[row][category][1] != 0 )
+				{
+					return stewingValidationFailure("Oil uses A/B");
+				}
+				for ( int symbol = 0; symbol < 2; ++symbol )
+				{
+					const Uint32 quantity = book.symbolicRecipes[row][category][2 + symbol];
+					categoryTotals[category] += quantity;
+					oilResourceTotals[category][symbol] += quantity;
+					total += quantity;
+				}
+				if ( categoryTotals[category] >= 2
+					&& (book.symbolicRecipes[row][category][2] == 0
+						|| book.symbolicRecipes[row][category][3] == 0) )
+				{
+					return stewingValidationFailure("Oil category >=2 lacks C or D");
+				}
+			}
+			std::sort(categoryTotals.begin(), categoryTotals.end());
+			if ( total != 8 || categoryTotals != std::array<int, 4>{ { 1, 2, 2, 3 } } )
+			{
+				return stewingValidationFailure("Oil row cost/category multiplicity");
+			}
+		}
+		for ( const auto& category : oilResourceTotals )
+		{
+			if ( category[0] != 7 || category[1] != 7 )
+			{
+				return stewingValidationFailure("Oil global C/D totals");
+			}
+		}
+
+		std::array<std::array<Uint32, 2>, 4> inkResourceTotals{};
+		for ( int row = 17; row < 20; ++row )
+		{
+			int total = 0;
+			for ( int category = 0; category < 4; ++category )
+			{
+				if ( book.symbolicRecipes[row][category][0] != 0
+					|| book.symbolicRecipes[row][category][1] != 0
+					|| book.symbolicRecipes[row][category][2] < 2
+					|| book.symbolicRecipes[row][category][3] < 2 )
+				{
+					return stewingValidationFailure("Ink row baseline/C-D-only invariant");
+				}
+				for ( int symbol = 0; symbol < 2; ++symbol )
+				{
+					const Uint32 quantity = book.symbolicRecipes[row][category][2 + symbol];
+					inkResourceTotals[category][symbol] += quantity;
+					total += quantity;
+				}
+			}
+			if ( total != 18 ) { return stewingValidationFailure("Ink row cost"); }
+		}
+		int inkSixes = 0;
+		std::array<bool, 4> inkSixCategories{};
+		for ( int category = 0; category < 4; ++category )
+		{
+			for ( int symbol = 0; symbol < 2; ++symbol )
+			{
+				const Uint32 total = inkResourceTotals[category][symbol];
+				if ( total == 6 ) { ++inkSixes; inkSixCategories[category] = true; }
+				else if ( total != 7 ) { return stewingValidationFailure("Ink global C/D total is not 6 or 7"); }
+			}
+		}
+		int inkSixCategoryCount = 0;
+		for ( int category = 0; category < 4; ++category )
+		{
+			inkSixCategoryCount += inkSixCategories[category] ? 1 : 0;
+			if ( inkSixCategories[category] != book.highTinctureCategories[category] )
+			{
+				return stewingValidationFailure("Ink 6-use category does not match high Tincture category");
+			}
+		}
+		if ( inkSixes != 2 || inkSixCategoryCount != 2 )
+		{
+			return stewingValidationFailure("Ink two 6-use resources in distinct categories");
+		}
+
+		if ( wholeCategoryTotals != std::array<Uint32, 4>{ { 39, 39, 39, 39 } } )
+		{
+			return stewingValidationFailure("whole-book category totals are not 39/39/39/39");
+		}
+		return true;
+	}
+
+	bool buildStewingRecipeBook(GeneratedStewingRecipeBook& book, Uint32 gameKey, Uint32 generatorVersion)
+	{
+		book = GeneratedStewingRecipeBook{};
+		BaronyRNG stewingRng;
+		const Uint32 seedWords[] = { gameKey, 0x53544557u, generatorVersion };
+		stewingRng.seedBytes(seedWords, sizeof(seedWords));
+		book.categoryMappings = generateStewingCategoryMappings(stewingRng);
+
+		for ( int potion = 0; potion < 4; ++potion )
+		{
+			for ( int symbol = 0; symbol < 4; ++symbol )
+			{
+				book.symbolicRecipes[potion][potion][symbol] = 1;
+			}
+		}
+		if ( !generateTinctureRecipes(book, stewingRng) )
+		{
+			printlog("[Stewing] Tincture exhaustive solver failed");
+			return false;
+		}
+		if ( !generateOilRecipes(book, stewingRng) )
+		{
+			printlog("[Stewing] Oil exhaustive solver failed");
+			return false;
+		}
+		generateInkRecipes(book, stewingRng);
+
+		static const std::array<ItemType, STEWING_RECIPE_COUNT> results{ {
+			POTION_ACID, POTION_BOOZE, POTION_JUICE, POTION_INVISIBILITY,
+			TINCTURE_STR, TINCTURE_DEX, TINCTURE_CON, TINCTURE_INT, TINCTURE_PER, TINCTURE_CHA,
+			OIL_AETHER, OIL_SILVER, OIL_TOXINS, OIL_BASES, OIL_LEAD, OIL_MINERAL, OIL_BRINE,
+			INK_MYSTICISM, INK_SORCERY, INK_THAUMATURGY
+		} };
+		for ( int row = 0; row < STEWING_RECIPE_COUNT; ++row )
+		{
+			book.recipes[row] = symbolicRecipeToConcrete(book.symbolicRecipes[row],
+				book.categoryMappings, results[row], row < 4);
+		}
+		return validateStewingRecipeBook(book);
+	}
+
+	std::array<Uint64, STEWING_RESOURCE_COUNT> stewingSelectionAmounts(const StewingSelection& selection,
+		bool* invalidResource = nullptr)
+	{
+		std::array<Uint64, STEWING_RESOURCE_COUNT> amounts{};
+		bool invalid = false;
+		for ( const StewingEduct& educt : selection )
+		{
+			if ( educt.quantity == 0 ) { continue; }
+			const int index = getStewingResourceIndex(educt.type);
+			if ( index < 0 || educt.type == POTION_EMPTY )
+			{
+				invalid = true;
+				continue;
+			}
+			amounts[index] += educt.quantity;
+			if ( amounts[index] > std::numeric_limits<Uint32>::max() )
+			{
+				invalid = true;
+			}
+		}
+		if ( invalidResource ) { *invalidResource = invalid; }
+		return amounts;
+	}
+
+	StewingSelection stewingSelectionFromAmounts(
+		const std::array<Uint64, STEWING_RESOURCE_COUNT>& amounts)
+	{
+		StewingSelection selection{};
+		int slot = 0;
+		for ( int i = 0; i < STEWING_RESOURCE_COUNT && slot < STEWING_MAX_EDUCTS; ++i )
+		{
+			if ( amounts[i] == 0 || getStewingResourceType(i) == POTION_EMPTY ) { continue; }
+			selection[slot].type = getStewingResourceType(i);
+			selection[slot].quantity = static_cast<Uint32>(amounts[i]);
+			++slot;
+		}
+		return selection;
+	}
+
+	Uint64 countStewingResourceInList(const list_t& inventory, ItemType resource)
+	{
+		Uint64 total = 0;
+		if ( itemTypeIsWitchIngredient(resource) )
+		{
+			const WitchIngredientCategory category = ingredientCategoryFromItem(resource);
+			const int ingredientSlot = ingredientSlotForItem(resource);
+			for ( node_t* node = inventory.first; node; node = node->next )
+			{
+				const Item* item = static_cast<const Item*>(node->element);
+				if ( item && ingredientCategoryFromBag(item->type) == category )
+				{
+					total += item->ingredientCounts[ingredientSlot];
+				}
+			}
+		}
+		else
+		{
+			for ( node_t* node = inventory.first; node; node = node->next )
+			{
+				const Item* item = static_cast<const Item*>(node->element);
+				if ( item && item->type == resource && item->count > 0 )
+				{
+					total += static_cast<Uint32>(item->count);
+				}
+			}
+		}
+		return total;
+	}
+
+	Uint32 consumeStewingIngredientFromList(list_t& inventory, ItemType ingredient, Uint32 amount)
+	{
+		const WitchIngredientCategory category = ingredientCategoryFromItem(ingredient);
+		const int ingredientSlot = ingredientSlotForItem(ingredient);
+		Uint32 consumed = 0;
+		for ( node_t* node = inventory.first; node && consumed < amount; )
+		{
+			node_t* next = node->next;
+			Item* bag = static_cast<Item*>(node->element);
+			if ( bag && ingredientCategoryFromBag(bag->type) == category )
+			{
+				const Uint32 take = std::min(amount - consumed, bag->ingredientCounts[ingredientSlot]);
+				bag->ingredientCounts[ingredientSlot] -= take;
+				consumed += take;
+				if ( ingredientBagIsEmpty(*bag) )
+				{
+					list_RemoveNode(node);
+				}
+			}
+			node = next;
+		}
+		return consumed;
+	}
+
+	Uint32 consumeStewingOrdinaryItemFromList(list_t& inventory, ItemType type, Uint32 amount)
+	{
+		Uint32 consumed = 0;
+		for ( node_t* node = inventory.first; node && consumed < amount; )
+		{
+			node_t* next = node->next;
+			Item* item = static_cast<Item*>(node->element);
+			if ( item && item->type == type && item->count > 0 )
+			{
+				const Uint32 take = std::min<Uint32>(amount - consumed,
+					static_cast<Uint32>(item->count));
+				item->count -= static_cast<Sint16>(take);
+				consumed += take;
+				if ( item->count <= 0 )
+				{
+					list_RemoveNode(node);
+				}
+			}
+			node = next;
+		}
+		return consumed;
+	}
+
+	void giveStewingItem(int player, ItemType type, Uint64 amount)
+	{
+		const int resourceIndex = getStewingResourceIndex(type);
+		const Uint64 originalAmount = amount;
+		while ( amount > 0 )
+		{
+			const Sint16 count = static_cast<Sint16>(std::min<Uint64>(amount,
+				static_cast<Uint64>(std::numeric_limits<Sint16>::max())));
+			Item* item = newItem(type, SERVICABLE, 0, count, 0, true, nullptr);
+			itemPickup(player, item);
+			free(item);
+			amount -= count;
+		}
+		if ( multiplayer == SERVER && player > 0 && player < MAXPLAYERS
+			&& players[player] && !players[player]->isLocalPlayer()
+			&& serverStewingInventoryMirrorValid[player] && resourceIndex >= 0 )
+		{
+			const Uint64 updated = static_cast<Uint64>(serverStewingInventoryMirrors[player][resourceIndex])
+				+ originalAmount;
+			serverStewingInventoryMirrors[player][resourceIndex] = static_cast<Uint32>(
+				std::min<Uint64>(updated, std::numeric_limits<Uint32>::max()));
+		}
+	}
+
+	bool playerCanApplyStewingResult(int player)
+	{
+		if ( player < 0 || player >= MAXPLAYERS || !players[player] || !players[player]->entity
+			|| !stats[player] || playerIsPanicking(player) )
+		{
+			return false;
+		}
+		if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_STRANGULATION
+			&& stats[player]->type != SKELETON )
+		{
+			return false;
+		}
+		return !stats[player]->getEffectActive(EFF_VOMITING);
+	}
+
+	bool applyStewingResult(int player, ItemType result)
+	{
+		if ( !playerCanApplyStewingResult(player) ) { return false; }
+		Item* item = newItem(result, SERVICABLE, 0, 1, 0, true, nullptr);
+		Entity* entity = players[player]->entity;
+		bool applied = false;
+		switch ( result )
+		{
+			case POTION_ACID: applied = item_PotionAcid(item, entity, entity); break;
+			case POTION_BOOZE: applied = item_PotionBooze(item, entity, entity); break;
+			case POTION_JUICE: applied = item_PotionJuice(item, entity, entity); break;
+			case POTION_INVISIBILITY: applied = item_PotionInvisibility(item, entity, entity); break;
+			case POTION_SICKNESS: applied = item_PotionSickness(item, entity, entity); break;
+			default: break;
+		}
+		if ( item ) { free(item); }
+		return applied;
+	}
+}
+
+const std::array<StewingRecipe, STEWING_RECIPE_COUNT>& getStewingRecipes()
+{
+	static bool initialized = false;
+	static Uint32 cachedGameKey = 0;
+	static Uint32 cachedGeneratorVersion = 0;
+	static GeneratedStewingRecipeBook book;
+	const Uint32 generatorVersion = getActiveStewingGeneratorVersion();
+	if ( !initialized || cachedGameKey != uniqueGameKey
+		|| cachedGeneratorVersion != generatorVersion )
+	{
+		const bool success = buildStewingRecipeBook(book, uniqueGameKey, generatorVersion);
+		if ( !success )
+		{
+			printlog("[Stewing] failed to build recipe book for key %u, version %u",
+				uniqueGameKey, generatorVersion);
+			assert(success);
+		}
+		cachedGameKey = uniqueGameKey;
+		cachedGeneratorVersion = generatorVersion;
+		initialized = true;
+	}
+	return book.recipes;
+}
+
+Uint32 getActiveStewingGeneratorVersion()
+{
+	return activeStewingGeneratorVersion;
+}
+
+void setActiveStewingGeneratorVersion(Uint32 version)
+{
+	activeStewingGeneratorVersion = version == 0 ? STEWING_GENERATOR_VERSION : version;
+}
+
+Uint32 getStewingRecipeUnlockMask(int player)
+{
+	return player >= 0 && player < MAXPLAYERS ? learnedStewingRecipeMasks[player] : 0;
+}
+
+void setStewingRecipeUnlockMask(int player, Uint32 mask)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return; }
+	learnedStewingRecipeMasks[player] = mask & 0xffffu;
+}
+
+bool playerKnowsStewingRecipe(int player, ItemType result)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
+	for ( const StewingRecipe& recipe : getStewingRecipes() )
+	{
+		if ( recipe.result == result && recipe.alwaysUnlocked ) { return true; }
+	}
+	const int bit = static_cast<int>(result) - static_cast<int>(TINCTURE_STR);
+	return bit >= 0 && bit < 16
+		&& (learnedStewingRecipeMasks[player] & (1u << bit)) != 0;
+}
+
+bool unlockStewingRecipe(int player, ItemType result)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
+	const int bit = static_cast<int>(result) - static_cast<int>(TINCTURE_STR);
+	if ( bit < 0 || bit >= 16 ) { return false; }
+	const Uint32 flag = 1u << bit;
+	if ( (learnedStewingRecipeMasks[player] & flag) != 0 ) { return false; }
+	learnedStewingRecipeMasks[player] |= flag;
+	return true;
+}
+
+void unlockAllStewingRecipes(int player)
+{
+	setStewingRecipeUnlockMask(player, 0xffffu);
+}
+
+int getNumKnownStewingRecipes(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return 0; }
+	Uint32 mask = learnedStewingRecipeMasks[player];
+	int count = 4;
+	while ( mask != 0 )
+	{
+		count += mask & 1u;
+		mask >>= 1;
+	}
+	return count;
+}
+
+ItemType tryDiscoverStewingRecipe(int player,
+	const std::array<Uint64, STEWING_RESOURCE_COUNT>& consumedResources)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return ITEM_ENUM_MAX;
+	}
+
+	std::vector<ItemType> eligibleTinctures;
+	std::vector<ItemType> eligibleAdvanced;
+	for ( const StewingRecipe& recipe : getStewingRecipes() )
+	{
+		if ( recipe.alwaysUnlocked || playerKnowsStewingRecipe(player, recipe.result) )
+		{
+			continue;
+		}
+		bool sharesUsedIngredient = false;
+		for ( Uint32 i = 0; i < recipe.eductCount; ++i )
+		{
+			const int resourceIndex = getStewingResourceIndex(recipe.educts[i].type);
+			if ( resourceIndex >= 0 && resourceIndex < 16
+				&& consumedResources[resourceIndex] > 0 )
+			{
+				sharesUsedIngredient = true;
+				break;
+			}
+		}
+		if ( !sharesUsedIngredient )
+		{
+			continue;
+		}
+		if ( itemTypeIsTincture(recipe.result) )
+		{
+			eligibleTinctures.push_back(recipe.result);
+		}
+		else if ( itemTypeIsOil(recipe.result) || itemTypeIsInk(recipe.result) )
+		{
+			eligibleAdvanced.push_back(recipe.result);
+		}
+	}
+
+	if ( eligibleTinctures.empty() && eligibleAdvanced.empty() )
+	{
+		return ITEM_ENUM_MAX;
+	}
+	const int chance = std::clamp(stats[player]->getProficiency(PRO_ALCHEMY), 0, 100);
+	if ( local_rng.rand() % 100 >= chance )
+	{
+		return ITEM_ENUM_MAX;
+	}
+
+	const std::vector<ItemType>* selectedGroup = nullptr;
+	if ( eligibleTinctures.empty() )
+	{
+		selectedGroup = &eligibleAdvanced;
+	}
+	else if ( eligibleAdvanced.empty() )
+	{
+		selectedGroup = &eligibleTinctures;
+	}
+	else
+	{
+		selectedGroup = local_rng.rand() % 100 < 80
+			? &eligibleTinctures : &eligibleAdvanced;
+	}
+	const ItemType candidate = (*selectedGroup)[local_rng.rand() % selectedGroup->size()];
+	if ( unlockStewingRecipe(player, candidate) )
+	{
+		if ( players[player] && players[player]->entity )
+		{
+			players[player]->entity->increaseSkill(PRO_ALCHEMY);
+		}
+		return candidate;
+	}
+	return ITEM_ENUM_MAX;
+}
+
+void tryIncreaseAlchemyFromWitchbrewUse(int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !players[player]
+		|| !players[player]->entity || !stats[player] )
+	{
+		return;
+	}
+	if ( local_rng.rand() % 6 == 0 )
+	{
+		players[player]->entity->increaseSkill(PRO_ALCHEMY);
+	}
+}
+
+bool stewingResultCanApplyImmediately(ItemType result)
+{
+	switch ( result )
+	{
+		case POTION_ACID:
+		case POTION_BOOZE:
+		case POTION_JUICE:
+		case POTION_INVISIBILITY:
+		case POTION_SICKNESS:
+			return true;
+		default:
+			return false;
+	}
+}
+
+bool itemTypeIsStewingSelectable(ItemType type)
+{
+	return itemTypeIsWitchIngredient(type) || type == POTION_WATER;
+}
+
+int getStewingResourceIndex(ItemType type)
+{
+	if ( itemTypeIsWitchIngredient(type) )
+	{
+		return static_cast<int>(type) - static_cast<int>(INGREDIENT_GELATIN);
+	}
+	if ( type == POTION_WATER ) { return 16; }
+	if ( type == POTION_EMPTY ) { return 17; }
+	return -1;
+}
+
+ItemType getStewingResourceType(int index)
+{
+	if ( index >= 0 && index < 16 )
+	{
+		return static_cast<ItemType>(static_cast<int>(INGREDIENT_GELATIN) + index);
+	}
+	if ( index == 16 ) { return POTION_WATER; }
+	if ( index == 17 ) { return POTION_EMPTY; }
+	return ITEM_ENUM_MAX;
+}
+
+int getBottleContribution(ItemType educt)
+{
+	return educt == POTION_WATER ? 1 : 0;
+}
+
+Uint32 countSelectedStewingResource(const StewingSelection& selection, ItemType type)
+{
+	Uint64 total = 0;
+	for ( const StewingEduct& educt : selection )
+	{
+		if ( educt.type == type ) { total += educt.quantity; }
+	}
+	return static_cast<Uint32>(std::min<Uint64>(total, std::numeric_limits<Uint32>::max()));
+}
+
+Uint32 countSelectedWitchIngredients(const StewingSelection& selection)
+{
+	Uint64 total = 0;
+	for ( const StewingEduct& educt : selection )
+	{
+		if ( itemTypeIsWitchIngredient(educt.type) ) { total += educt.quantity; }
+	}
+	return static_cast<Uint32>(std::min<Uint64>(total, std::numeric_limits<Uint32>::max()));
+}
+
+StewingMatch evaluateStewingMixture(const StewingSelection& selection)
+{
+	StewingMatch match;
+	bool invalidResource = false;
+	const auto selected = stewingSelectionAmounts(selection, &invalidResource);
+	Uint64 total = 0;
+	Uint64 witchIngredients = 0;
+	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+	{
+		total += selected[i];
+		if ( i < 16 ) { witchIngredients += selected[i]; }
+	}
+	if ( invalidResource )
+	{
+		match.type = STEWING_MATCH_INVALID_RESOURCE;
+		return match;
+	}
+	if ( total == 0 )
+	{
+		match.type = STEWING_MATCH_EMPTY;
+		return match;
+	}
+	if ( witchIngredients < 4 )
+	{
+		match.type = STEWING_MATCH_TOO_SMALL;
+		return match;
+	}
+
+	const auto& recipes = getStewingRecipes();
+	for ( int recipeIndex = 0; recipeIndex < STEWING_RECIPE_COUNT; ++recipeIndex )
+	{
+		const StewingRecipe& recipe = recipes[recipeIndex];
+		std::array<Uint64, STEWING_RESOURCE_COUNT> required{};
+		for ( Uint32 i = 0; i < recipe.eductCount; ++i )
+		{
+			const int index = getStewingResourceIndex(recipe.educts[i].type);
+			if ( index >= 0 ) { required[index] = recipe.educts[i].quantity; }
+		}
+		Uint64 multiplier = 0;
+		bool valid = true;
+		for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+		{
+			if ( required[i] == 0 )
+			{
+				if ( selected[i] != 0 ) { valid = false; break; }
+				continue;
+			}
+			if ( selected[i] == 0 || selected[i] % required[i] != 0 )
+			{
+				valid = false;
+				break;
+			}
+			const Uint64 ratio = selected[i] / required[i];
+			if ( ratio == 0 || (multiplier != 0 && ratio != multiplier) )
+			{
+				valid = false;
+				break;
+			}
+			multiplier = ratio;
+		}
+		if ( valid && multiplier >= 1 && multiplier <= std::numeric_limits<Uint32>::max() )
+		{
+			match.type = STEWING_MATCH_VALID_RECIPE;
+			match.recipeIndex = recipeIndex;
+			match.multiplier = static_cast<Uint32>(multiplier);
+			match.result = recipe.result;
+			return match;
+		}
+	}
+	match.type = STEWING_MATCH_INVALID_POISON;
+	match.multiplier = 1;
+	match.result = POTION_SICKNESS;
+	return match;
+}
+
+std::array<Uint32, STEWING_RESOURCE_COUNT> getStewingInventoryResourceSnapshot(int player)
+{
+	std::array<Uint32, STEWING_RESOURCE_COUNT> resources{};
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] ) { return resources; }
+	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+	{
+		resources[i] = static_cast<Uint32>(std::min<Uint64>(
+			countStewingResourceInList(stats[player]->inventory, getStewingResourceType(i)),
+			std::numeric_limits<Uint32>::max()));
+	}
+	return resources;
+}
+
+void setServerStewingInventoryMirror(int player,
+	const std::array<Uint32, STEWING_RESOURCE_COUNT>& resources)
+{
+	if ( player <= 0 || player >= MAXPLAYERS ) { return; }
+	serverStewingInventoryMirrors[player] = resources;
+	serverStewingInventoryMirrorValid[player] = true;
+}
+
+void clearServerStewingInventoryMirror(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return; }
+	serverStewingInventoryMirrors[player].fill(0);
+	serverStewingInventoryMirrorValid[player] = false;
+}
+
+bool serverStewingInventoryMirrorIsValid(int player)
+{
+	return player >= 0 && player < MAXPLAYERS && serverStewingInventoryMirrorValid[player];
+}
+
+Uint32 getTotalStewingResource(int player, ItemType resource)
+{
+	const int index = getStewingResourceIndex(resource);
+	if ( index < 0 || player < 0 || player >= MAXPLAYERS || !stats[player] || !stats[0] ) { return 0; }
+	Uint64 total = 0;
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer()
+		&& serverStewingInventoryMirrorValid[player] )
+	{
+		total = serverStewingInventoryMirrors[player][index];
+	}
+	else
+	{
+		total = countStewingResourceInList(stats[player]->inventory, resource);
+	}
+	total += countStewingResourceInList(stats[0]->void_chest_inventory, resource);
+	return static_cast<Uint32>(std::min<Uint64>(total, std::numeric_limits<Uint32>::max()));
+}
+
+Uint32 getAvailableStewingIngredient(int player, ItemType ingredient,
+	const StewingSelection& reserved)
+{
+	const Uint32 total = getTotalStewingResource(player, ingredient);
+	const Uint32 selected = countSelectedStewingResource(reserved, ingredient);
+	return selected >= total ? 0 : total - selected;
+}
+
+std::array<Uint32, STEWING_RESOURCE_COUNT> getStewingResourceSnapshot(int player)
+{
+	std::array<Uint32, STEWING_RESOURCE_COUNT> resources{};
+	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+	{
+		resources[i] = getTotalStewingResource(player, getStewingResourceType(i));
+	}
+	return resources;
+}
+
+void consumeClientStewingInventoryResources(int player,
+	const std::array<Uint32, STEWING_RESOURCE_COUNT>& resources)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] ) { return; }
+	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+	{
+		if ( resources[i] == 0 ) { continue; }
+		const ItemType type = getStewingResourceType(i);
+		if ( itemTypeIsWitchIngredient(type) )
+		{
+			consumeStewingIngredientFromList(stats[player]->inventory, type, resources[i]);
+		}
+		else
+		{
+			consumeStewingOrdinaryItemFromList(stats[player]->inventory, type, resources[i]);
+		}
+	}
+}
+
+bool performStewingTransaction(int player, Entity* familiar, StewingOperation operation,
+	const StewingSelection& selection, StewingTransactionResult& result)
+{
+	result = StewingTransactionResult{};
+	result.remainingSelection = selection;
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !players[player]
+		|| !players[player]->entity || !stats[player] || !stats[0] || !familiar
+		|| !isAmuletFamiliar(familiar, familiar->getStats())
+		|| getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_CAULDRON
+		|| entityDist(players[player]->entity, familiar) > TOUCHRANGE )
+	{
+		return false;
+	}
+	Stat* familiarStats = familiar->getStats();
+	if ( !familiarStats || familiarStats->leader_uid != players[player]->entity->getUID()
+		|| !stats[player]->amulet || stats[player]->amulet->type != AMULET_FAMILIAR )
+	{
+		return false;
+	}
+	const bool remotePlayer = multiplayer == SERVER && player > 0
+		&& !players[player]->isLocalPlayer();
+	if ( remotePlayer && !serverStewingInventoryMirrorValid[player] ) { return false; }
+
+	const StewingMatch match = evaluateStewingMixture(selection);
+	if ( match.type != STEWING_MATCH_VALID_RECIPE && match.type != STEWING_MATCH_INVALID_POISON )
+	{
+		return false;
+	}
+	if ( operation != STEWING_OPERATION_BREW_INTO && operation != STEWING_OPERATION_APPLY )
+	{
+		return false;
+	}
+	if ( operation == STEWING_OPERATION_APPLY
+		&& !stewingResultCanApplyImmediately(match.result) )
+	{
+		return false;
+	}
+	if ( operation == STEWING_OPERATION_APPLY && !playerCanApplyStewingResult(player) )
+	{
+		return false;
+	}
+
+	std::array<Uint64, STEWING_RESOURCE_COUNT> consumeAmounts{};
+	if ( match.type == STEWING_MATCH_VALID_RECIPE )
+	{
+		const StewingRecipe& recipe = getStewingRecipes()[match.recipeIndex];
+		for ( Uint32 i = 0; i < recipe.eductCount; ++i )
+		{
+			const int index = getStewingResourceIndex(recipe.educts[i].type);
+			consumeAmounts[index] += recipe.educts[i].quantity;
+		}
+	}
+	else
+	{
+		consumeAmounts = stewingSelectionAmounts(selection);
+	}
+
+	Uint64 contributedBottles = 0;
+	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+	{
+		if ( consumeAmounts[i] > getTotalStewingResource(player, getStewingResourceType(i)) )
+		{
+			return false;
+		}
+		contributedBottles += consumeAmounts[i]
+			* static_cast<Uint64>(getBottleContribution(getStewingResourceType(i)));
+	}
+	const Uint32 requiredEmptyBottles = operation == STEWING_OPERATION_BREW_INTO
+		&& contributedBottles == 0 ? 1 : 0;
+	if ( requiredEmptyBottles > getTotalStewingResource(player, POTION_EMPTY) )
+	{
+		return false;
+	}
+	consumeAmounts[getStewingResourceIndex(POTION_EMPTY)] += requiredEmptyBottles;
+
+	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+	{
+		Uint32 amount = static_cast<Uint32>(consumeAmounts[i]);
+		if ( amount == 0 ) { continue; }
+		const ItemType type = getStewingResourceType(i);
+		Uint32 consumedFromInventory = 0;
+		if ( remotePlayer )
+		{
+			consumedFromInventory = std::min(amount, serverStewingInventoryMirrors[player][i]);
+			serverStewingInventoryMirrors[player][i] -= consumedFromInventory;
+		}
+		else if ( itemTypeIsWitchIngredient(type) )
+		{
+			consumedFromInventory = consumeStewingIngredientFromList(
+				stats[player]->inventory, type, amount);
+		}
+		else
+		{
+			consumedFromInventory = consumeStewingOrdinaryItemFromList(
+				stats[player]->inventory, type, amount);
+		}
+		result.inventoryConsumed[i] = consumedFromInventory;
+		const Uint32 remaining = amount - consumedFromInventory;
+		if ( remaining > 0 )
+		{
+			const Uint32 consumedFromVoid = itemTypeIsWitchIngredient(type)
+				? consumeStewingIngredientFromList(stats[0]->void_chest_inventory, type, remaining)
+				: consumeStewingOrdinaryItemFromList(stats[0]->void_chest_inventory, type, remaining);
+			if ( consumedFromVoid != remaining )
+			{
+				return false; // Prevalidation makes this unreachable in the authoritative tick.
+			}
+		}
+	}
+
+	const Uint64 emptyBottleReturns = operation == STEWING_OPERATION_APPLY
+		? contributedBottles : (contributedBottles > 0 ? contributedBottles - 1 : 0);
+	if ( emptyBottleReturns > 0 )
+	{
+		giveStewingItem(player, POTION_EMPTY, emptyBottleReturns);
+	}
+	if ( operation == STEWING_OPERATION_BREW_INTO )
+	{
+		giveStewingItem(player, match.result, 1);
+	}
+	else if ( !applyStewingResult(player, match.result) )
+	{
+		return false;
+	}
+	if ( match.type == STEWING_MATCH_VALID_RECIPE )
+	{
+		auto remaining = stewingSelectionAmounts(selection);
+		const StewingRecipe& recipe = getStewingRecipes()[match.recipeIndex];
+		for ( Uint32 i = 0; i < recipe.eductCount; ++i )
+		{
+			remaining[getStewingResourceIndex(recipe.educts[i].type)] -= recipe.educts[i].quantity;
+		}
+		result.remainingSelection = stewingSelectionFromAmounts(remaining);
+	}
+	else
+	{
+		result.remainingSelection = StewingSelection{};
+	}
+	result.success = true;
+	playSoundEntity(familiar, SFX_STEW_BUBBLES, 96);
+	spawnAmuletFamiliarTransformParticles(familiar);
+	result.newlyUnlockedRecipe = tryDiscoverStewingRecipe(player, consumeAmounts);
+	if ( match.type == STEWING_MATCH_VALID_RECIPE )
+	{
+		if ( local_rng.rand() % 2 == 0 )
+		{
+			players[player]->entity->increaseSkill(PRO_ALCHEMY);
+		}
+	}
+	else
+	{
+		const bool raiseSkill = local_rng.rand() % 10 == 0;
+		if ( raiseSkill && local_rng.rand() % 2 == 0 )
+		{
+			players[player]->entity->increaseSkill(PRO_ALCHEMY);
+		}
+	}
+	result.resources = getStewingResourceSnapshot(player);
+	return true;
+}
+
+void writeIngredientCountsToPacket(const Item& item, Uint8* data, int offset)
+{
+	if ( !data ) { return; }
+	for ( int i = 0; i < 4; ++i )
+	{
+		SDLNet_Write32(item.ingredientCounts[i], &data[offset + i * 4]);
+	}
+}
+
+void readIngredientCountsFromPacket(Item& item, const Uint8* data, int packetLength, int offset)
+{
+	item.ingredientCounts[0] = 0;
+	item.ingredientCounts[1] = 0;
+	item.ingredientCounts[2] = 0;
+	item.ingredientCounts[3] = 0;
+	if ( !data || offset < 0 ) { return; }
+	for ( int i = 0; i < 4; ++i )
+	{
+		const int fieldEnd = offset + (i + 1) * static_cast<int>(sizeof(Uint32));
+		if ( packetLength >= fieldEnd )
+		{
+			item.ingredientCounts[i] = SDLNet_Read32(&data[offset + i * sizeof(Uint32)]);
+		}
+	}
+}
+
+void writeFamiliarPersistentStateToPacket(const Item& item, Uint8* data, int offset)
+{
+	if ( !data ) { return; }
+	const Uint32 fields[14] = {
+		item.familiarInitialized ? 1u : 0u, item.familiarInstanceId,
+		static_cast<Uint32>(item.familiarHP), static_cast<Uint32>(item.familiarMAXHP),
+		static_cast<Uint32>(item.familiarMP), static_cast<Uint32>(item.familiarMAXMP),
+		static_cast<Uint32>(item.familiarLVL), static_cast<Uint32>(item.familiarEXP),
+		static_cast<Uint32>(item.familiarSTR), static_cast<Uint32>(item.familiarDEX),
+		static_cast<Uint32>(item.familiarCON), static_cast<Uint32>(item.familiarINT),
+		static_cast<Uint32>(item.familiarPER), static_cast<Uint32>(item.familiarCHR)
+	};
+	for ( int i = 0; i < 14; ++i )
+	{
+		SDLNet_Write32(fields[i], &data[offset + i * sizeof(Uint32)]);
+	}
+}
+
+void readFamiliarPersistentStateFromPacket(Item& item, const Uint8* data, int packetLength, int offset)
+{
+	item.familiarInitialized = false;
+	item.familiarInstanceId = 0;
+	item.familiarHP = item.familiarMAXHP = item.familiarMP = item.familiarMAXMP = 0;
+	item.familiarLVL = item.familiarEXP = 0;
+	item.familiarSTR = item.familiarDEX = item.familiarCON = 0;
+	item.familiarINT = item.familiarPER = item.familiarCHR = 0;
+	if ( !data || offset < 0 || packetLength < offset + FAMILIAR_PERSISTENT_PACKET_BYTES ) { return; }
+	Uint32 fields[14];
+	for ( int i = 0; i < 14; ++i )
+	{
+		fields[i] = SDLNet_Read32(&data[offset + i * sizeof(Uint32)]);
+	}
+	item.familiarInitialized = fields[0] != 0;
+	item.familiarInstanceId = fields[1];
+	item.familiarHP = static_cast<Sint32>(fields[2]);
+	item.familiarMAXHP = static_cast<Sint32>(fields[3]);
+	item.familiarMP = static_cast<Sint32>(fields[4]);
+	item.familiarMAXMP = static_cast<Sint32>(fields[5]);
+	item.familiarLVL = static_cast<Sint32>(fields[6]);
+	item.familiarEXP = static_cast<Sint32>(fields[7]);
+	item.familiarSTR = static_cast<Sint32>(fields[8]);
+	item.familiarDEX = static_cast<Sint32>(fields[9]);
+	item.familiarCON = static_cast<Sint32>(fields[10]);
+	item.familiarINT = static_cast<Sint32>(fields[11]);
+	item.familiarPER = static_cast<Sint32>(fields[12]);
+	item.familiarCHR = static_cast<Sint32>(fields[13]);
+	reserveFamiliarInstanceId(item.familiarInstanceId);
+}
+
+AppliedOil appliedOilFromItemType(ItemType type)
+{
+	switch ( type )
+	{
+		case OIL_AETHER: return APPLIED_OIL_AETHER;
+		case OIL_SILVER: return APPLIED_OIL_SILVER;
+		case OIL_TOXINS: return APPLIED_OIL_TOXINS;
+		case OIL_BASES: return APPLIED_OIL_BASES;
+		case OIL_LEAD: return APPLIED_OIL_LEAD;
+		case OIL_MINERAL: return APPLIED_OIL_MINERAL;
+		case OIL_BRINE: return APPLIED_OIL_BRINE;
+		default: return APPLIED_OIL_NONE;
+	}
+}
+
+const char* getOilIconPath(AppliedOil oil)
+{
+	static const char* paths[] = {
+		"", "images/ui/Inventory/oils/aether.png", "images/ui/Inventory/oils/silver.png",
+		"images/ui/Inventory/oils/toxins.png", "images/ui/Inventory/oils/bases.png",
+		"images/ui/Inventory/oils/lead.png", "images/ui/Inventory/oils/mineral.png",
+		"images/ui/Inventory/oils/brine.png"
+	};
+	return oil > APPLIED_OIL_NONE && oil < APPLIED_OIL_MAX ? paths[oil] : "";
+}
+
+const char* getTinctureIconPath(ItemType type)
+{
+	static const char* paths[] = {
+		"images/ui/Inventory/tinctures/tincture_STR.png",
+		"images/ui/Inventory/tinctures/tincture_DEX.png",
+		"images/ui/Inventory/tinctures/tincture_CON.png",
+		"images/ui/Inventory/tinctures/tincture_INT.png",
+		"images/ui/Inventory/tinctures/tincture_PER.png",
+		"images/ui/Inventory/tinctures/tincture_CHA.png"
+	};
+	return itemTypeIsTincture(type) ? paths[type - TINCTURE_STR] : "";
+}
+
+bool itemTypeCanReceiveOil(ItemType type)
+{
+	if ( type < 0 || type >= NUMITEMS ) { return false; }
+	if ( itemTypeIsQuiver(type) || items[type].category == THROWN ) { return true; }
+	if ( items[type].category != WEAPON ) { return false; }
+	Item item{};
+	item.type = type;
+	return getWeaponSkill(&item) != PRO_RANGED;
+}
+
+bool itemCanReceiveOil(const Item* item)
+{
+	return item && itemTypeCanReceiveOil(item->type);
+}
+
+bool oilMatchesTarget(AppliedOil oil, Entity* target)
+{
+	if ( oil <= APPLIED_OIL_NONE || oil >= APPLIED_OIL_MAX || !target ) { return false; }
+	Stat* targetStats = target->getStats();
+	if ( !targetStats ) { return false; }
+	if ( oil == APPLIED_OIL_BASES )
+	{
+		return targetStats->type == SLIME;
+	}
+	auto found = CompendiumEntries.monsters.find(monstertypename[targetStats->type]);
+	if ( found == CompendiumEntries.monsters.end() ) { return false; }
+	const auto species = found->second.species;
+	switch ( oil )
+	{
+		case APPLIED_OIL_AETHER: return species == Compendium_t::CompendiumMonsters_t::SPECIES_UNDEAD;
+		case APPLIED_OIL_SILVER: return species == Compendium_t::CompendiumMonsters_t::SPECIES_DEMONOID;
+		case APPLIED_OIL_TOXINS: return species == Compendium_t::CompendiumMonsters_t::SPECIES_HUMANOID;
+		case APPLIED_OIL_LEAD: return species == Compendium_t::CompendiumMonsters_t::SPECIES_BEASTFOLK;
+		case APPLIED_OIL_MINERAL: return species == Compendium_t::CompendiumMonsters_t::SPECIES_BEAST;
+		case APPLIED_OIL_BRINE: return species == Compendium_t::CompendiumMonsters_t::SPECIES_CONSTRUCT;
+		default: return false;
+	}
+}
+
+void serverSyncTinctureStacks(int player)
+{
+	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS || !stats[player] ) { return; }
+	strcpy(reinterpret_cast<char*>(net_packet->data), "TINC");
+	net_packet->data[4] = static_cast<Uint8>(player);
+	for ( int stat = 0; stat < NUMSTATS; ++stat )
+	{
+		SDLNet_Write32(stats[player]->tinctureStacks[stat], &net_packet->data[5 + stat * 4]);
+	}
+	net_packet->address = net_clients[player - 1];
+	net_packet->len = 5 + NUMSTATS * 4;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
+void serverSyncAppliedOil(int player, bool shieldSlot)
+{
+	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS || !stats[player] ) { return; }
+	Item* target = shieldSlot ? stats[player]->shield : stats[player]->weapon;
+	strcpy(reinterpret_cast<char*>(net_packet->data), "OILU");
+	net_packet->data[4] = shieldSlot ? 1 : 0;
+	net_packet->data[5] = target ? static_cast<Uint8>(target->appliedOil) : APPLIED_OIL_NONE;
+	net_packet->address = net_clients[player - 1];
+	net_packet->len = 6;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
+void rollOilWearOff(Item* source, int ownerPlayer, bool shieldSlot)
+{
+	if ( multiplayer == CLIENT || !source || source->appliedOil == APPLIED_OIL_NONE ) { return; }
+	if ( local_rng.rand() % 40 != 0 ) { return; }
+	source->appliedOil = APPLIED_OIL_NONE;
+	serverSyncAppliedOil(ownerPlayer, shieldSlot);
+	messagePlayer(ownerPlayer, MESSAGE_EQUIPMENT, "The oil coating on %s wears off.", source->getName());
+}
+
+void rollProjectileOilWearOff(Entity* projectile)
+{
+	if ( multiplayer == CLIENT || !projectile ) { return; }
+	const AppliedOil oil = static_cast<AppliedOil>(projectile->projectileAppliedOil);
+	if ( oil == APPLIED_OIL_NONE || local_rng.rand() % 40 != 0 ) { return; }
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( !stats[player] ) { continue; }
+		Item* candidates[2] = { stats[player]->weapon, stats[player]->shield };
+		for ( int slot = 0; slot < 2; ++slot )
+		{
+			Item* candidate = candidates[slot];
+			if ( candidate && candidate->uid == static_cast<Uint32>(projectile->projectileOilSourceItemUID)
+				&& candidate->type == static_cast<ItemType>(projectile->projectileOilSourceItemType)
+				&& candidate->appliedOil == oil )
+			{
+				candidate->appliedOil = APPLIED_OIL_NONE;
+				serverSyncAppliedOil(player, slot == 1);
+				return;
+			}
+		}
+		for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+		{
+			Item* candidate = static_cast<Item*>(node->element);
+			if ( candidate && candidate->uid == static_cast<Uint32>(projectile->projectileOilSourceItemUID)
+				&& candidate->type == static_cast<ItemType>(projectile->projectileOilSourceItemType)
+				&& candidate->appliedOil == oil )
+			{
+				candidate->appliedOil = APPLIED_OIL_NONE;
+				return;
+			}
+		}
+	}
+}
+
+bool applyTinctureStackToPlayer(ItemType tincture, int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !stats[player]
+		|| !itemTypeIsTincture(tincture) ) { return false; }
+	const int stat = static_cast<int>(tincture) - static_cast<int>(TINCTURE_STR);
+	if ( stats[player]->tinctureStacks[stat] != UINT32_MAX )
+	{
+		++stats[player]->tinctureStacks[stat];
+	}
+	serverSyncTinctureStacks(player);
+	return true;
+}
+
+bool spellbookIsEligibleForInk(ItemType book)
+{
+	if ( book < 0 || book >= NUMITEMS || items[book].category != SPELLBOOK )
+	{
+		return false;
+	}
+	switch ( book )
+	{
+		case SPELLBOOK_9:
+		case SPELLBOOK_10:
+		case SPELLBOOK_ENTRENCH:
+		case SPELLBOOK_VAMPIRIC_AURA:
+			return false;
+		default:
+			break;
+	}
+	const int spellID = getSpellIDFromSpellbook(book);
+	if ( spellID == SPELL_NONE )
+	{
+		return false;
+	}
+	const spell_t* spell = getSpellFromID(spellID);
+	if ( !spell || spell->ID != spellID || spell->hide_from_ui || spell->drop_table < 0 )
+	{
+		return false;
+	}
+	return getSpellbookFromSpellID(spell->ID) == static_cast<int>(book);
+}
+
+ItemType getInkSpellbookResult(ItemType ink, ItemType sourceSpellbook)
+{
+	if ( !itemTypeIsInk(ink) || sourceSpellbook < 0 || sourceSpellbook >= NUMITEMS
+		|| items[sourceSpellbook].category != SPELLBOOK ) { return ITEM_ENUM_MAX; }
+	const int sourceSpellID = getSpellIDFromSpellbook(sourceSpellbook);
+	spell_t* source = sourceSpellID != SPELL_NONE ? getSpellFromID(sourceSpellID) : nullptr;
+	if ( !source || source->ID != sourceSpellID ) { return ITEM_ENUM_MAX; }
+	const int targetSkill = ink == INK_MYSTICISM ? PRO_MYSTICISM
+		: (ink == INK_SORCERY ? PRO_SORCERY : PRO_THAUMATURGY);
+	auto tierOf = [](const spell_t* spell)
+	{
+		return spell ? std::min(5, std::max(0, spell->difficulty / 20)) : -1;
+	};
+	const int sourceTier = tierOf(source);
+	std::vector<ItemType> sameTier;
+	std::vector<ItemType> nextTier;
+	for ( int type = 0; type < NUMITEMS; ++type )
+	{
+		if ( !spellbookIsEligibleForInk(static_cast<ItemType>(type)) ) { continue; }
+		spell_t* candidate = getSpellFromID(getSpellIDFromSpellbook(static_cast<ItemType>(type)));
+		if ( !candidate || candidate->skillID != targetSkill ) { continue; }
+		if ( tierOf(candidate) == sourceTier ) { sameTier.push_back(static_cast<ItemType>(type)); }
+		else if ( tierOf(candidate) == sourceTier + 1 ) { nextTier.push_back(static_cast<ItemType>(type)); }
+	}
+	if ( sameTier.empty() ) { return ITEM_ENUM_MAX; }
+	auto* pool = &sameTier;
+	if ( source->skillID == targetSkill && !nextTier.empty() && local_rng.rand() % 4 == 0 )
+	{
+		pool = &nextTier;
+	}
+	return (*pool)[local_rng.rand() % pool->size()];
 }
 
 Item* newItemFromExistingItem(const Item& source, const Sint16 count, list_t* const inventory)
@@ -779,6 +2685,11 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 	for ( c = 0; c < numitems; ++c )
 	{
 		chances[c] = false;
+		if ( itemTypeIsWitchbrewConsumable(static_cast<ItemType>(c))
+			|| itemTypeIsWitchbrewGeneratedItem(static_cast<ItemType>(c)) )
+		{
+			continue;
+		}
 		if ( items[c].category == cat )
 		{
 			if ( items[c].level != -1 && (items[c].level >= minLevel && items[c].level <= maxLevel) )
@@ -963,7 +2874,7 @@ char* Item::description() const
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				if ( type == POTION_EMPTY )
+				if ( type == POTION_EMPTY || itemTypeIsWitchbrewConsumable(type) )
 				{
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(982 + status), beatitude);
@@ -1046,7 +2957,7 @@ char* Item::description() const
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				if ( type == POTION_EMPTY )
+				if ( type == POTION_EMPTY || itemTypeIsWitchbrewConsumable(type) )
 				{
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(1008 + status), count, beatitude);
@@ -1127,7 +3038,7 @@ char* Item::description() const
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				if ( type == POTION_EMPTY )
+				if ( type == POTION_EMPTY || itemTypeIsWitchbrewConsumable(type) )
 				{
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(1034 + status), beatitude);
@@ -1208,7 +3119,7 @@ char* Item::description() const
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				if ( type == POTION_EMPTY )
+				if ( type == POTION_EMPTY || itemTypeIsWitchbrewConsumable(type) )
 				{
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(1060 + status), count);
@@ -1687,6 +3598,17 @@ Uint32 Item::runeEnsureInstanceId()
 		runeInstanceId = allocateNonzeroId(nextMagicRuneInstanceId);
 	}
 	return runeInstanceId;
+}
+
+Uint32 Item::familiarEnsureInstanceId()
+{
+	if ( type != AMULET_FAMILIAR ) { return 0; }
+	if ( familiarInstanceId == 0 && multiplayer != CLIENT )
+	{
+		familiarInstanceId = allocateNonzeroId(nextFamiliarInstanceId);
+	}
+	reserveFamiliarInstanceId(familiarInstanceId);
+	return familiarInstanceId;
 }
 
 Uint32 Item::runeGetCreatorIdentity() const
@@ -2359,6 +4281,17 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 	{
 		return 1;
 	}
+	if ( item1->appliedOil != item2->appliedOil )
+	{
+		return 1;
+	}
+	if ( itemTypeIsIngredientBag(item1->type) )
+	{
+		for ( int i = 0; i < 4; ++i )
+		{
+			if ( item1->ingredientCounts[i] != item2->ingredientCounts[i] ) { return 1; }
+		}
+	}
 	if ( itemCategory(item1) != THROWN && !itemTypeIsQuiver(item1->type) )
 	{
 		if (item1->status != item2->status)
@@ -2506,6 +4439,8 @@ bool playerThrowDuck(const int player, Item* const item, int charge)
 		entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
 		entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
 		entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+		entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+		copyItemPersistentCustomStateToEntity(*entity, *item);
 
 		real_t speed = 1.f + 4.f * (-30 + std::min(50, std::max(30, charge))) / (real_t)(20);
 		entity->vel_x = speed * cos(players[player]->entity->yaw);
@@ -2642,6 +4577,8 @@ bool playerGreasyDropItem(const int player, Item* const item)
 		entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
 		entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
 		entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+		entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+		copyItemPersistentCustomStateToEntity(*entity, *item);
 		entity->parent = players[player]->entity->getUID();
 		entity->itemOriginalOwner = entity->parent;
 
@@ -2731,9 +4668,12 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage, cons
 		net_packet->data[30] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 		SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[31]);
 		SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[35]);
+		net_packet->data[39] = static_cast<Uint8>(item->appliedOil);
+		writeIngredientCountsToPacket(*item, net_packet->data, 40);
+		writeFamiliarPersistentStateToPacket(*item, net_packet->data, 56);
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 39;
+		net_packet->len = 112;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		if ( item == players[player]->bookGUI.openBookItem )
 		{
@@ -2840,6 +4780,8 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage, cons
 		entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
 		entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
 		entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+		entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+		copyItemPersistentCustomStateToEntity(*entity, *item);
 		entity->parent = players[player]->entity->getUID();
 		entity->itemOriginalOwner = entity->parent;
 
@@ -3075,6 +5017,8 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 		entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
 		entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
 		entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+		entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+		copyItemPersistentCustomStateToEntity(*entity, *item);
 		entity->itemOriginalOwner = item->ownerUid;
 		entity->parent = monster->getUID();
 
@@ -3520,7 +5464,139 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 
 -------------------------------------------------------------------------------*/
 
-void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDropping, bool serverCheckUse)
+static void witchbrewReturnEmptyBottle(int player)
+{
+	if ( multiplayer == CLIENT ) { return; }
+	Item* bottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
+	itemPickup(player, bottle);
+	messagePlayer(player, MESSAGE_INTERACTION, "You recover an empty bottle.");
+	free(bottle);
+}
+
+static bool useTincture(Item*& item, int player)
+{
+	if ( !item || !stats[player] || !itemTypeIsTincture(item->type) ) { return false; }
+	if ( multiplayer != CLIENT )
+	{
+		const int stat = static_cast<int>(item->type) - static_cast<int>(TINCTURE_STR);
+		if ( !applyTinctureStackToPlayer(item->type, player) ) { return false; }
+		tryIncreaseAlchemyFromWitchbrewUse(player);
+		static const char* statNames[NUMSTATS] = { "Strength", "Dexterity", "Constitution", "Intelligence", "Perception", "Charisma" };
+		messagePlayer(player, MESSAGE_STATUS, "%s affinity tincture stored (%u).",
+			statNames[stat], stats[player]->tinctureStacks[stat]);
+		witchbrewReturnEmptyBottle(player);
+	}
+	consumeItem(item, player);
+	return true;
+}
+
+static Item* chooseOilTarget(int player, bool reversePriority, bool* shieldSlot)
+{
+	Item* weapon = itemCanReceiveOil(stats[player]->weapon) ? stats[player]->weapon : nullptr;
+	Item* quiver = stats[player]->shield && itemTypeIsQuiver(stats[player]->shield->type)
+		? stats[player]->shield : nullptr;
+	Item* first = reversePriority ? quiver : weapon;
+	Item* second = reversePriority ? weapon : quiver;
+	Item* result = (first && first->appliedOil == APPLIED_OIL_NONE) ? first
+		: ((second && second->appliedOil == APPLIED_OIL_NONE) ? second : (first ? first : second));
+	if ( shieldSlot ) { *shieldSlot = result && result == quiver; }
+	return result;
+}
+
+static bool useOil(Item*& item, int player, bool reversePriority = false)
+{
+	if ( !item || !stats[player] || !itemTypeIsOil(item->type) ) { return false; }
+	bool shieldSlot = false;
+	Item* target = chooseOilTarget(player, reversePriority, &shieldSlot);
+	if ( !target )
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			messagePlayer(player, MESSAGE_HINT, "Equip a melee weapon, throwing weapon, or quiver first.");
+			playSoundPlayer(player, 90, 64);
+		}
+		return false;
+	}
+	target->appliedOil = appliedOilFromItemType(item->type);
+	if ( multiplayer != CLIENT )
+	{
+		tryIncreaseAlchemyFromWitchbrewUse(player);
+		serverSyncAppliedOil(player, shieldSlot);
+		witchbrewReturnEmptyBottle(player);
+	}
+	messagePlayer(player, MESSAGE_EQUIPMENT, "You coat %s with %s.", target->getName(), item->getName());
+	consumeItem(item, player);
+	return true;
+}
+
+bool useOilOnItem(Item*& oil, Item* target, int player)
+{
+	if ( !oil || !target || !itemTypeIsOil(oil->type) || !itemCanReceiveOil(target)
+		|| player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return false;
+	}
+	const AppliedOil coating = appliedOilFromItemType(oil->type);
+	if ( multiplayer == CLIENT )
+	{
+		strcpy(reinterpret_cast<char*>(net_packet->data), "WOIL");
+		SDLNet_Write32(static_cast<Uint32>(oil->type), &net_packet->data[4]);
+		SDLNet_Write32(target->uid, &net_packet->data[8]);
+		SDLNet_Write32(static_cast<Uint32>(target->type), &net_packet->data[12]);
+		net_packet->data[16] = static_cast<Uint8>(player);
+		SDLNet_Write32(oil->uid, &net_packet->data[17]);
+		net_packet->data[21] = target == stats[player]->weapon ? 1
+			: (target == stats[player]->shield ? 2 : 0);
+		net_packet->address = net_server;
+		net_packet->len = 22;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+		return true;
+	}
+	target->appliedOil = coating;
+	tryIncreaseAlchemyFromWitchbrewUse(player);
+	if ( target == stats[player]->weapon )
+	{
+		serverSyncAppliedOil(player, false);
+	}
+	else if ( target == stats[player]->shield )
+	{
+		serverSyncAppliedOil(player, true);
+	}
+	messagePlayer(player, MESSAGE_EQUIPMENT, "You coat %s with %s.", target->getName(), oil->getName());
+	witchbrewReturnEmptyBottle(player);
+	consumeItem(oil, player);
+	return true;
+}
+
+bool useInkOnSpellbook(Item*& ink, Item* book, int player)
+{
+	if ( !ink || !book || !itemTypeIsInk(ink->type) || !stats[player]
+		|| itemCategory(book) != SPELLBOOK ) { return false; }
+	if ( multiplayer == CLIENT )
+	{
+		strcpy(reinterpret_cast<char*>(net_packet->data), "WINK");
+		SDLNet_Write32(static_cast<Uint32>(ink->type), &net_packet->data[4]);
+		SDLNet_Write32(book->uid, &net_packet->data[8]);
+		SDLNet_Write32(static_cast<Uint32>(book->type), &net_packet->data[12]);
+		net_packet->data[16] = static_cast<Uint8>(player);
+		SDLNet_Write32(ink->uid, &net_packet->data[17]);
+		net_packet->data[21] = itemIsEquipped(book, player) ? 1 : 0;
+		net_packet->address = net_server;
+		net_packet->len = 22;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+		return true;
+	}
+	const ItemType result = getInkSpellbookResult(ink->type, book->type);
+	if ( result == ITEM_ENUM_MAX ) { return false; }
+	book->type = result;
+	tryIncreaseAlchemyFromWitchbrewUse(player);
+	messagePlayer(player, MESSAGE_INVENTORY, "The spellbook becomes %s.", book->getName());
+	witchbrewReturnEmptyBottle(player);
+	consumeItem(ink, player);
+	return true;
+}
+
+void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDropping, bool serverCheckUse, bool alternateUse)
 {
 	if ( item == nullptr )
 	{
@@ -3602,6 +5678,9 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		Sint8 runeCreatorPlayer = Item::RUNE_CREATOR_INVALID;
 		Uint32 runeInstanceId = 0;
 		Uint32 runeCreatorIdentity = 0;
+		AppliedOil appliedOil = APPLIED_OIL_NONE;
+		Item familiarState{};
+		bool alternateUse = false;
 		bool sendToServer = false;
 		void setItem(Item& item)
 		{
@@ -3615,6 +5694,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			runeCreatorPlayer = static_cast<Sint8>(item.runeGetCreatorPlayer());
 			runeInstanceId = item.runeGetInstanceId();
 			runeCreatorIdentity = item.runeGetCreatorIdentity();
+			appliedOil = item.appliedOil;
+			copyItemPersistentCustomState(familiarState, item);
 			sendToServer = true;
 		}
 		void send()
@@ -3632,13 +5713,17 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			net_packet->data[30] = static_cast<Uint8>(runeCreatorPlayer);
 			SDLNet_Write32(runeInstanceId, &net_packet->data[31]);
 			SDLNet_Write32(runeCreatorIdentity, &net_packet->data[35]);
+			net_packet->data[39] = static_cast<Uint8>(appliedOil);
+			net_packet->data[40] = alternateUse ? 1 : 0;
+			writeFamiliarPersistentStateToPacket(familiarState, net_packet->data, 41);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
-			net_packet->len = 39;
+			net_packet->len = 41 + FAMILIAR_PERSISTENT_PACKET_BYTES;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 	};
 	ItemDetailsForServer itemDetailsForServer;
+	itemDetailsForServer.alternateUse = alternateUse;
 
 	if ( multiplayer == CLIENT && !intro )
 	{
@@ -3678,6 +5763,53 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 
 	switch ( item->type )
 	{
+		case TINCTURE_STR:
+		case TINCTURE_DEX:
+		case TINCTURE_CON:
+		case TINCTURE_INT:
+		case TINCTURE_PER:
+		case TINCTURE_CHA:
+			useTincture(item, player);
+			break;
+		case OIL_AETHER:
+		case OIL_SILVER:
+		case OIL_TOXINS:
+		case OIL_BASES:
+		case OIL_LEAD:
+		case OIL_MINERAL:
+		case OIL_BRINE:
+			if ( !useOil(item, player, alternateUse) )
+			{
+				itemDetailsForServer.sendToServer = false;
+			}
+			break;
+		case INK_MYSTICISM:
+		case INK_SORCERY:
+		case INK_THAUMATURGY:
+			itemDetailsForServer.sendToServer = false;
+			if ( players[player]->isLocalPlayer() )
+			{
+				bool hasSpellbook = false;
+				for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+				{
+					Item* candidate = static_cast<Item*>(node->element);
+					if ( candidate && itemCategory(candidate) == SPELLBOOK )
+					{
+						hasSpellbook = true;
+						break;
+					}
+				}
+				if ( hasSpellbook )
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_HINT, "You need a spellbook to use this ink.");
+					playSoundPlayer(player, 90, 64);
+				}
+			}
+			break;
 		case WOODEN_SHIELD:
 			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
@@ -3921,6 +6053,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			break;
 		case AMULET_POISONRESISTANCE:
 		case AMULET_BURNINGRESIST:
+		case AMULET_FAMILIAR:
 			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case POTION_WATER:
@@ -4815,6 +6948,23 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 	{
 		return nullptr;
 	}
+	if ( itemTypeIsWitchIngredient(item->type) )
+	{
+		const WitchIngredientCategory category = ingredientCategoryFromItem(item->type);
+		const int slot = ingredientSlotForItem(item->type);
+		const Uint32 amount = static_cast<Uint32>(std::max<Sint16>(1, item->count));
+		item->type = ingredientBagForCategory(category);
+		item->count = 1;
+		if ( slot >= 0 )
+		{
+			const Uint32 room = std::numeric_limits<Uint32>::max() - item->ingredientCounts[slot];
+			item->ingredientCounts[slot] += std::min(room, amount);
+		}
+	}
+	if ( itemTypeIsIngredientBag(item->type) )
+	{
+		item->count = 1;
+	}
 	Item* item2;
 
 	/*if ( stats[player]->getProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
@@ -4874,13 +7024,37 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 		net_packet->data[33] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 		SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[34]);
 		SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[38]);
+		net_packet->data[42] = static_cast<Uint8>(item->appliedOil);
+		writeIngredientCountsToPacket(*item, net_packet->data, 43);
+		writeFamiliarPersistentStateToPacket(*item, net_packet->data, 59);
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 42;
+		net_packet->len = 115;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 	else
 	{
+		if ( itemTypeIsIngredientBag(item->type) )
+		{
+			if ( ingredientBagIsEmpty(*item) ) { return nullptr; }
+			Item* existing = nullptr;
+			if ( addToSpecificInventoryItem
+				&& ingredientCategoryFromBag(addToSpecificInventoryItem->type)
+					== ingredientCategoryFromBag(item->type) )
+			{
+				existing = addToSpecificInventoryItem;
+			}
+			else
+			{
+				existing = findIngredientBagInInventory(stats[player]->inventory,
+					ingredientCategoryFromBag(item->type));
+			}
+			if ( existing )
+			{
+				mergeIngredientBags(*existing, *item);
+				return existing;
+			}
+		}
 		std::unordered_set<Uint32> appearancesOfSimilarItems;
 		bool doSpecificItemCheck = (addToSpecificInventoryItem != nullptr);
 		bool hasRunSpecificItemCheck = false;
@@ -4955,12 +7129,14 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 							if ( slot == &stats[player]->weapon )
 							{
 								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
-									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified,
+									item2->runeGetStoredPWRRaw(), static_cast<Sint8>(item2->runeGetCreatorPlayer()), item2->runeGetInstanceId(), item2->runeGetCreatorIdentity(), item2->appliedOil);
 							}
 							else if ( slot == &stats[player]->shield )
 							{
 								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
-									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified,
+									item2->runeGetStoredPWRRaw(), static_cast<Sint8>(item2->runeGetCreatorPlayer()), item2->runeGetInstanceId(), item2->runeGetCreatorIdentity(), item2->appliedOil);
 							}
 						}
 					}
@@ -4994,12 +7170,14 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 							if ( slot == &stats[player]->weapon )
 							{
 								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
-									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified,
+									item2->runeGetStoredPWRRaw(), static_cast<Sint8>(item2->runeGetCreatorPlayer()), item2->runeGetInstanceId(), item2->runeGetCreatorIdentity(), item2->appliedOil);
 							}
 							else if ( slot == &stats[player]->shield )
 							{
 								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
-									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified,
+									item2->runeGetStoredPWRRaw(), static_cast<Sint8>(item2->runeGetCreatorPlayer()), item2->runeGetInstanceId(), item2->runeGetCreatorIdentity(), item2->appliedOil);
 							}
 						}
 					}
@@ -5021,10 +7199,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 		}
 
 		item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
-		item2->runeSetStoredPWRRaw(item->runeGetStoredPWRRaw());
-		item2->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
-		item2->runeSetInstanceId(item->runeGetInstanceId());
-		item2->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+		copyItemPersistentCustomState(*item2, *item);
 		item2->ownerUid = item->ownerUid;
 		item2->notifyIcon = item->notifyIcon;
 
@@ -5097,6 +7272,26 @@ ItemStackResult getItemStackingBehaviorIndividualItemCheck(const int player, Ite
 	if ( !itemToCheck || !itemDestinationStack )
 	{
 		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
+	}
+	if ( itemTypeIsIngredientBag(itemToCheck->type) || itemTypeIsIngredientBag(itemDestinationStack->type) )
+	{
+		newQtyForCheckedItem = itemToCheck->count;
+		newQtyForDestItem = itemDestinationStack->count;
+		if ( itemToCheck != itemDestinationStack
+			&& ingredientCategoryFromBag(itemToCheck->type) != INGREDIENT_CATEGORY_NONE
+			&& ingredientCategoryFromBag(itemToCheck->type)
+				== ingredientCategoryFromBag(itemDestinationStack->type) )
+		{
+			newQtyForCheckedItem = 0;
+			newQtyForDestItem = 1;
+			itemStackResult.resultType = ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+			itemStackResult.itemToStackInto = itemDestinationStack;
+		}
+		else
+		{
+			itemStackResult.resultType = ITEM_DESTINATION_NOT_SAME_ITEM;
+		}
 		return itemStackResult;
 	}
 
@@ -5246,6 +7441,11 @@ ItemStackResult getItemStackingBehaviorIntoChest(const int player, Item* itemToC
 	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
 	newQtyForCheckedItem = itemToCheck->count;
 	newQtyForDestItem = 0;
+	if ( itemTypeIsIngredientBag(itemToCheck->type) && itemToCheck->node
+		&& itemToCheck->node->list == chest_inventory )
+	{
+		return itemStackResult;
+	}
 
 	for ( node_t* node = chest_inventory->first; node != nullptr; node = node->next )
 	{
@@ -5355,6 +7555,11 @@ ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Ite
 	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
 	newQtyForCheckedItem = itemToCheck->count;
 	newQtyForDestItem = 0;
+	if ( itemTypeIsIngredientBag(itemToCheck->type) && itemToCheck->node
+		&& itemToCheck->node->list == &stats[player]->inventory )
+	{
+		return itemStackResult;
+	}
 
 	for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 	{
@@ -5430,12 +7635,7 @@ Item* newItemFromEntity(const Entity* const entity, bool discardUid)
 		item->uid = 0;
 	}
 	item->ownerUid = static_cast<Uint32>(entity->itemOriginalOwner);
-	item->runeSetStoredPWRRaw(entity->itemRuneStoredPWRValid
-		? entity->itemRuneStoredPWR : Item::RUNE_STORED_PWR_INVALID);
-	item->runeSetCreatorPlayer(entity->itemRuneCreatorPlayerValid
-		? entity->itemRuneCreatorPlayer : Item::RUNE_CREATOR_INVALID);
-	item->runeSetInstanceId(static_cast<Uint32>(entity->itemRuneInstanceId));
-	item->runeSetCreatorIdentity(static_cast<Uint32>(entity->itemRuneCreatorIdentity));
+	copyItemPersistentCustomStateFromEntity(*item, *entity);
 	if ( multiplayer != CLIENT ) { item->runeEnsureInstanceId(); }
 	item->interactNPCUid = static_cast<Uint32>(entity->interactedByMonster);
 	return item;
@@ -6421,6 +8621,21 @@ Sint32 Item::getWeight() const
 {
 	if ( type >= 0 && type < NUMITEMS )
 	{
+		if ( itemTypeIsIngredientBag(type) )
+		{
+			Uint64 total = 0;
+			const WitchIngredientCategory category = ingredientCategoryFromBag(type);
+			for ( int i = 0; i < 4; ++i )
+			{
+				const ItemType ingredient = ingredientForCategorySlot(category, i);
+				if ( ingredient >= 0 && ingredient < NUMITEMS )
+				{
+					total += static_cast<Uint64>(ingredientCounts[i])
+						* static_cast<Uint64>(std::max(0, items[ingredient].weight));
+				}
+			}
+			return static_cast<Sint32>(std::min<Uint64>(total, std::numeric_limits<Sint32>::max()));
+		}
 		if ( itemTypeIsQuiver(type) )
 		{
 			return std::max(1, items[type].weight * count / 5);
@@ -7858,6 +10073,14 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* const armorAlrea
 
 bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 {
+	if ( type == AMULET_FAMILIAR )
+	{
+		return false;
+	}
+	if ( itemTypeIsIngredientBag(type) )
+	{
+		return false;
+	}
 	if ( isMagicRune() )
 	{
 		return false;
@@ -9634,6 +11857,7 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 		const Sint8 runeCreatorPlayer = static_cast<Sint8>(item->runeGetCreatorPlayer());
 		const Uint32 runeInstanceId = item->runeGetInstanceId();
 		const Uint32 runeCreatorIdentity = item->runeGetCreatorIdentity();
+		const AppliedOil appliedOil = item->appliedOil;
 
 		const Category cat = itemCategory(item);
 
@@ -9657,14 +11881,14 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 				{
 					clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, equipResult, player,
 						type, status, beatitude, count, appearance, identified, runeStoredPWR, runeCreatorPlayer,
-						runeInstanceId, runeCreatorIdentity);
+						runeInstanceId, runeCreatorIdentity, appliedOil);
 				}
 			}
 			else
 			{
 				clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, equipResult, player,
 				type, status, beatitude, count, appearance, identified, runeStoredPWR, runeCreatorPlayer,
-				runeInstanceId, runeCreatorIdentity);
+				runeInstanceId, runeCreatorIdentity, appliedOil);
 			}
 		}
 	}
@@ -9735,8 +11959,20 @@ void clientSendItemTypeUpdateToServer(const int player, Item* item, ItemType pre
 void clientSendEquipUpdateToServer(const EquipItemSendToServerSlot slot, const EquipItemResult equipType, const int player,
 	const ItemType type, const Status status, const Sint16 beatitude, const int count, const Uint32 appearance, const bool identified,
 	const Sint32 runeStoredPWR, const Sint8 runeCreatorPlayer, const Uint32 runeInstanceId,
-	const Uint32 runeCreatorIdentity)
+	const Uint32 runeCreatorIdentity, const AppliedOil appliedOil)
 {
+	AppliedOil oilToSend = appliedOil;
+	// Older quantity-only call sites do not have the item metadata at hand. Preserve
+	// the equipped instance's oil rather than silently clearing it on the server.
+	if ( oilToSend == APPLIED_OIL_NONE && player >= 0 && player < MAXPLAYERS && stats[player] )
+	{
+		Item* equipped = slot == EQUIP_ITEM_SLOT_WEAPON ? stats[player]->weapon
+			: (slot == EQUIP_ITEM_SLOT_SHIELD ? stats[player]->shield : nullptr);
+		if ( equipped && equipped->type == type && equipped->appearance == appearance )
+		{
+			oilToSend = equipped->appliedOil;
+		}
+	}
 	if ( slot == EQUIP_ITEM_SLOT_SHIELD )
 	{
 		strcpy((char*)net_packet->data, "EQUS");
@@ -9762,9 +11998,18 @@ void clientSendEquipUpdateToServer(const EquipItemSendToServerSlot slot, const E
 	net_packet->data[32] = static_cast<Uint8>(runeCreatorPlayer);
 	SDLNet_Write32(runeInstanceId, &net_packet->data[33]);
 	SDLNet_Write32(runeCreatorIdentity, &net_packet->data[37]);
+	net_packet->data[41] = static_cast<Uint8>(oilToSend);
+	Item* familiarItem = nullptr;
+	if ( type == AMULET_FAMILIAR && player >= 0 && player < MAXPLAYERS && stats[player] )
+	{
+		familiarItem = stats[player]->amulet;
+	}
+	Item emptyFamiliarState{};
+	writeFamiliarPersistentStateToPacket(familiarItem ? *familiarItem : emptyFamiliarState,
+		net_packet->data, 42);
 	net_packet->address.host = net_server.host;
 	net_packet->address.port = net_server.port;
-	net_packet->len = 41;
+	net_packet->len = 42 + FAMILIAR_PERSISTENT_PACKET_BYTES;
 	sendPacketSafe(net_sock, -1, net_packet, 0);
 }
 
@@ -9816,7 +12061,7 @@ void clientUnequipSlotAndUpdateServer(const int player, const EquipItemSendToSer
 	clientSendEquipUpdateToServer(slot, equipType, player,
 		item->type, item->status, item->beatitude, item->count, item->appearance, item->identified,
 		item->runeGetStoredPWRRaw(), static_cast<Sint8>(item->runeGetCreatorPlayer()),
-		item->runeGetInstanceId(), item->runeGetCreatorIdentity());
+		item->runeGetInstanceId(), item->runeGetCreatorIdentity(), item->appliedOil);
 }
 
 int Item::getDuckPlayer() const

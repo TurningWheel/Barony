@@ -137,6 +137,7 @@ void Entity::initMonster(int mySprite)
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
 			break;
 		case BAT_SMALL:
+		case BAT_FAMILIAR:
 			// unused
 			break;
 		case SPIDER:

@@ -348,6 +348,8 @@ public:
 	// Stable identity for Rune creator credit. Persisted with the character so a
 	// later occupant of the same network slot cannot inherit that credit.
 	Uint32 runeCreatorIdentity = 0;
+	// Persistent, independently consumed level-up affinity boosts (STR..CHR).
+	Uint32 tinctureStacks[NUMSTATS];
 	// randomised additional values to add to attributes
 	Sint32 RANDOM_STR, RANDOM_DEX, RANDOM_CON, RANDOM_INT, RANDOM_PER, RANDOM_CHR;
 	Sint32 RANDOM_MAXHP, RANDOM_HP, RANDOM_MAXMP, RANDOM_MP;

@@ -5818,7 +5818,7 @@ void physfsReloadSounds(bool reloadAll)
 					sounds[c] = nullptr;
 				}
 				FMOD_MODE flags = FMOD_DEFAULT | FMOD_3D | FMOD_LOWMEM;
-				if ( c == 133 || c == 672 || c == 135 || c == 155 || c == 149 )
+				if ( c == 133 || c == 672 || c == 135 || c == 155 || c == 149 || c == 866 ) // cauldron_ambiance.ogg
 				{
 					flags |= FMOD_LOOP_NORMAL;
 				}

@@ -246,7 +246,9 @@ static const int SPELL_SANCTUARY = 223;
 static const int SPELL_HOLY_BEAM = 224;
 // mod add: Entrench environmental utility spell.
 static const int SPELL_ENTRENCH = 225;
-static const int NUM_SPELLS = 226;
+// mod add: temporary equipment spell granted by the Amulet of the Familiar.
+static const int SPELL_POLYMORPH_FAMILIAR = 226;
+static const int NUM_SPELLS = 227;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
 #define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
@@ -485,6 +487,8 @@ extern std::map<Uint32, ParticleTimerEffect_t> particleTimerEffects;
 ParticleEmitterHit_t* getParticleEmitterHitProps(Uint32 emitterUid, Entity* hitentity);
 
 bool addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
+bool grantTemporaryEquipmentSpell(int player, int spellID);
+void removeTemporaryEquipmentSpell(int player, int spellID);
 
 //TODO: Create a spell class which has the basic spell(s) involved, the mana to use etc. All of those important details. This should support vanilla spells and custom spells with just one data type. The addSpell function gives the player a vanilla spell if they don't already have it.
 

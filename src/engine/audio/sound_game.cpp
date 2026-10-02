@@ -39,7 +39,7 @@ FMOD::ChannelGroup* getChannelGroupForSoundIndex(Uint32 snd)
 	{
 		return soundEnvironment_group;
 	}
-	if ( snd == 149 || snd == 133 )
+	if ( snd == 149 || snd == 133 || snd == 866 ) // cauldron_ambiance.ogg
 	{
 		return soundAmbient_group;
 	}
@@ -392,7 +392,7 @@ OPENAL_CHANNELGROUP* getChannelGroupForSoundIndex(Uint32 snd)
 	{
 		return soundEnvironment_group;
 	}
-	if ( snd == 149 || snd == 133 )
+	if ( snd == 149 || snd == 133 || snd == 866 ) // cauldron_ambiance.ogg
 	{
 		return soundAmbient_group;
 	}

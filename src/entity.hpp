@@ -321,6 +321,24 @@ public:
 	Sint32& monsterIllusionTauntingThisUid; //skill[55]
 	Sint32& monsterLastDistractedByNoisemaker;//skill[55] shared with above as above only is for inner demons.
 	Sint32& monsterExtraReflexTick; //skill[56]
+	// Amulet Familiar persistent replicated state. These monster slots are safe
+	// for actMonster familiars; their other uses are entity-type-specific.
+	Sint32& familiarIdentity = skill[57];
+	Sint32& familiarForm = skill[58];
+	// Transient transformation commands are authoritative server-only state.
+	// Do not alias these to skill/fskill: skill[59] belongs to entityShowOnMap,
+	// and world coordinates cannot be safely serialized through ENFS.
+	Sint32 familiarPendingForm = -1;
+	real_t familiarTransformTargetX = 0.0;
+	real_t familiarTransformTargetY = 0.0;
+	real_t familiarLastGroundedX = 0.0;
+	real_t familiarLastGroundedY = 0.0;
+	real_t familiarCauldronBaseZ = -2.0;
+	bool familiarHasGroundedPosition = false;
+	Uint32 familiarIngredientTargetUid = 0;
+	// Permanent identity of the physical AMULET_FAMILIAR represented by this
+	// temporary manifestation. This is deliberately separate from leader_uid.
+	Uint32 familiarInstanceId = 0;
 	// mod add: server-only firearm gunshot investigation state. The destination
 	// is deliberately a position, not an entity UID, so this never tracks the shooter.
 	bool monsterInvestigatingGunshot = false;
@@ -610,6 +628,10 @@ public:
 	Sint32& arrowQuiverType; //skill[8]
 	Sint32& arrowShotByParent; //skill[9]
 	Sint32& arrowDropOffEquipmentModifier; //skill[14]
+	// Snapshot at launch; source identity is used only for authoritative wear-off.
+	Sint32& projectileAppliedOil = skill[39];
+	Sint32& projectileOilSourceItemUID = skill[40];
+	Sint32& projectileOilSourceItemType = skill[41];
 	enum arrowShotBy : int
 	{
 		ARROW_SHOT_BY_TRAP,
@@ -640,6 +662,30 @@ public:
 	Sint32& itemRuneCreatorPlayerValid = skill[36];
 	Sint32& itemRuneInstanceId = skill[37];
 	Sint32& itemRuneCreatorIdentity = skill[38];
+	Sint32& itemAppliedOil = skill[39];
+	// actItem-only ingredient transport. These are intentionally named aliases
+	// and never used as Familiar monster state.
+	Sint32& itemIngredientCount0 = skill[40];
+	Sint32& itemIngredientCount1 = skill[41];
+	Sint32& itemIngredientCount2 = skill[42];
+	Sint32& itemIngredientCount3 = skill[43];
+	Sint32& itemIngredientBagOwnerUid = skill[44];
+	// actItem-only Familiar Amulet transport. These slots are mutually exclusive
+	// with their actMonster aliases above.
+	Sint32& itemFamiliarInitialized = skill[45];
+	Sint32& itemFamiliarInstanceId = skill[46];
+	Sint32& itemFamiliarHP = skill[47];
+	Sint32& itemFamiliarMAXHP = skill[48];
+	Sint32& itemFamiliarMP = skill[49];
+	Sint32& itemFamiliarMAXMP = skill[50];
+	Sint32& itemFamiliarLVL = skill[51];
+	Sint32& itemFamiliarEXP = skill[52];
+	Sint32& itemFamiliarSTR = skill[53];
+	Sint32& itemFamiliarDEX = skill[54];
+	Sint32& itemFamiliarCON = skill[55];
+	Sint32& itemFamiliarINT = skill[56];
+	Sint32& itemFamiliarPER = skill[57];
+	Sint32& itemFamiliarCHR = skill[58];
 	real_t& itemWaterBob; //fskill[2]
 	real_t& itemLevitate = fskill[3];
 	real_t& itemLevitateStartZ = fskill[4];
@@ -1025,7 +1071,9 @@ public:
 	void closeChestServer(); //Close the chest serverside, silently. Called when the chest is closed somewhere else for that client, but the server end stuff needs to be tied up.
 	Item* addItemToChest(Item* item, bool forceNewStack, Item* specificDestinationStack); //Adds an item to the chest. If server, notifies the client. If client, notifies the server.
 	static Item* addItemToVoidChest(int player, Item* item, bool forceNewStack, Item* specificDestinationStack); //Adds an item to the chest. If client, notifies the server.
+	static Item* tryAddItemToVoidChestServer(int player, Item* item, bool forceNewStack, Item* specificDestinationStack);
 	static Item* addItemToVoidChestServer(int player, Item* item, bool forceNewStack, Item* specificDestinationStack);
+	static void serverSendItemToOpenVoidChest(int player, const Item* item, bool forceNewStack);
 	Item* getItemFromChest(Item* item, int amount, bool getInfoOnly = false); //Removes an item from the chest and returns a pointer to it.
 	Item* addItemToChestFromInventory(int player, Item* item, int amount, bool forceNewStack, Item* specificDestinationStack);
 	Item* addItemToChestServer(Item* item, bool forceNewStack, Item* specificDestinationStack); //Adds an item to the chest. Called when the server receives a notification from the client that an item was added to the chest.

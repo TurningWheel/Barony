@@ -18,6 +18,7 @@
 #include "menu.hpp"
 #include "collision.hpp"
 #include "mod_tools.hpp"
+#include "monster.hpp"
 #include "draw.hpp"
 #include "colors.hpp"
 #include "ui/GameUI.hpp"
@@ -3406,6 +3407,7 @@ void Player::WorldUI_t::reset()
 	tooltipsInRange.clear();
 	bTooltipInView = false;
 	uidForActiveTooltip = 0;
+	familiarMimicCommandInteraction = false;
 }
 
 bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
@@ -4203,7 +4205,39 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		else if ( parent->behavior == &actMonster )
 		{
 			int monsterType = parent->getMonsterTypeFromSprite();
-			if ( parent->isInertMimic() )
+			Stat* parentStats = parent->getStats();
+				const bool ownedFamiliarMimic =
+					isAmuletFamiliarMimic(parent)
+					&& parentStats
+					&& player.entity
+					&& parentStats->leader_uid == player.entity->getUID();
+
+				if ( ownedFamiliarMimic )
+				{
+					// Keep C / follower-command hotkeys pointed at this familiar.
+					FollowerMenu[player.playernum].recentEntity = parent;
+
+					if ( familiarMimicCommandInteraction )
+					{
+						std::string name = Language::get(4011); // follower
+						if ( strcmp(parentStats->name, "") )
+						{
+							name = parentStats->name;
+						}
+						else
+						{
+							name = getMonsterLocalizedName(
+								static_cast<Monster>(monsterType));
+						}
+
+						interactText = Language::get(4012) + name; // "Command ..."
+					}
+					else
+					{
+						interactText = Language::get(4005); // "Open chest"
+					}
+				}
+				else if ( parent->isInertMimic() )
 			{
 				interactText = Language::get(4005); // "Open chest" 
 			}
@@ -4303,7 +4337,36 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		}
 		else if ( parent->behavior == &actCampfire )
 		{
-			interactText = Language::get(4024); // "Pull torch" 
+			bool ownedFamiliarCauldron = false;
+
+			if ( parent->skill[3] > 0 && player.entity )
+			{
+				const int tilex = static_cast<int>(floor(parent->x / 16.0));
+				const int tiley = static_cast<int>(floor(parent->y / 16.0));
+
+				list_t* entities = TileEntityList.getTileList(tilex, tiley);
+
+				for ( node_t* node = entities ? entities->first : nullptr;
+					node; node = node->next )
+				{
+					Entity* entity = static_cast<Entity*>(node->element);
+					Stat* entityStats = entity ? entity->getStats() : nullptr;
+
+					if ( entity
+						&& entityStats
+						&& isAmuletFamiliar(entity, entityStats)
+						&& getAmuletFamiliarForm(entity) == FAMILIAR_FORM_CAULDRON
+						&& entityStats->leader_uid == player.entity->getUID() )
+					{
+						ownedFamiliarCauldron = true;
+						break;
+					}
+				}
+			}
+
+			interactText = ownedFamiliarCauldron
+				? "Stew brews"
+				: Language::get(4024);
 		}
 		else if ( parent->behavior == &actCauldron )
 		{
@@ -4501,7 +4564,20 @@ void Player::WorldUI_t::setTooltipDisabled(Entity& tooltip)
 	if ( tooltip.parent == uidForActiveTooltip )
 	{
 		uidForActiveTooltip = 0;
+		familiarMimicCommandInteraction = false;
 	}
+}
+bool Player::WorldUI_t::activeTooltipHasAlternateInteraction()
+{
+    Entity* parent = uidToEntity(uidForActiveTooltip);
+    if ( !parent || !player.entity || !isAmuletFamiliarMimic(parent) )
+    {
+        return false;
+    }
+
+    Stat* parentStats = parent->getStats();
+    return parentStats
+        && parentStats->leader_uid == player.entity->getUID();
 }
 bool Player::WorldUI_t::bTooltipActiveForPlayer(Entity& tooltip)
 {
@@ -4514,6 +4590,32 @@ void Player::WorldUI_t::cycleToNextTooltip()
 	{
 		return;
 	}
+
+    if ( activeTooltipHasAlternateInteraction() )
+    {
+        if ( !familiarMimicCommandInteraction )
+        {
+            // First "Next" stays on the Mimic but switches
+            // Open Chest -> Command.
+            familiarMimicCommandInteraction = true;
+
+            for ( auto& pair : tooltipsInRange )
+            {
+                if ( bTooltipActiveForPlayer(*pair.first) )
+                {
+                    setTooltipActive(*pair.first);
+                    return;
+                }
+            }
+        }
+        else
+        {
+            // Second "Next" leaves Command and continues to the next
+            // actual world tooltip.
+            familiarMimicCommandInteraction = false;
+        }
+    }
+
 	int index = 0;
 	int newIndex = 0;
 	bool bFound = false;
@@ -4551,6 +4653,22 @@ void Player::WorldUI_t::cycleToPreviousTooltip()
 	{
 		return;
 	}
+
+	if ( activeTooltipHasAlternateInteraction()
+		&& familiarMimicCommandInteraction )
+	{
+		familiarMimicCommandInteraction = false;
+
+		for ( auto& pair : tooltipsInRange )
+		{
+			if ( bTooltipActiveForPlayer(*pair.first) )
+			{
+				setTooltipActive(*pair.first);
+				return;
+			}
+		}
+	}
+
 	int index = 0;
 	int newIndex = 0;
 	bool bFound = false;
@@ -4843,7 +4961,7 @@ void Player::WorldUI_t::handleTooltips()
 
 		bool cycleNext = Input::inputs[player].consumeBinaryToggle("Interact Tooltip Next");
 		bool cyclePrev = Input::inputs[player].consumeBinaryToggle("Interact Tooltip Prev");
-		if ( !bDoingActionHideTooltips && players[player]->worldUI.tooltipsInRange.size() > 1 )
+		if ( !bDoingActionHideTooltips && (players[player]->worldUI.tooltipsInRange.size() > 1 || players[player]->worldUI.activeTooltipHasAlternateInteraction()) )
 		{
 			if ( cyclePrev )
 			{
@@ -4913,8 +5031,9 @@ void Player::WorldUI_t::handleTooltips()
 				}
 				parent = uidToEntity(tooltip->parent);
 				if ( parent && parent->flags[INVISIBLE] 
-					&& !(parent->behavior == &actMonster && 
-						(parent->getMonsterTypeFromSprite() == DUMMYBOT 
+					&& !(parent->behavior == &actMonster &&
+						(isAmuletFamiliarMimic(parent)
+							|| parent->getMonsterTypeFromSprite() == DUMMYBOT
 							|| parent->getMonsterTypeFromSprite() == MIMIC 
 							|| parent->getMonsterTypeFromSprite() == REVENANT_SKULL
 							|| parent->getMonsterTypeFromSprite() == MINIMIMIC

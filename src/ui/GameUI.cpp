@@ -5710,6 +5710,7 @@ bool StatusEffectQueue_t::insertEffect(int effectID, int spellID)
 		|| effectID == kEffectBloodHunger
 		|| effectID == kEffectAutomatonHunger
 		|| effectID == kEffectGolemHunger
+		|| (effectID <= kEffectTinctureStart && effectID >= kEffectTinctureEnd)
 		|| effectID >= kSpellEffectOffset )
 	{
 		if ( StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
@@ -6379,6 +6380,26 @@ void StatusEffectQueueEntry_t::animateNotification(int player)
 }
 
 static ConsoleVariable<bool> cvar_statusfx_align_text_right("/statusfx_align_text_right", false);
+static std::string witchbrewRomanNumeral(Uint32 value)
+{
+	if ( value == 0 ) { return ""; }
+	if ( value > 3999 ) { return std::to_string(value); }
+	static const std::pair<Uint32, const char*> numerals[] = {
+		{ 1000, "M" }, { 900, "CM" }, { 500, "D" }, { 400, "CD" },
+		{ 100, "C" }, { 90, "XC" }, { 50, "L" }, { 40, "XL" },
+		{ 10, "X" }, { 9, "IX" }, { 5, "V" }, { 4, "IV" }, { 1, "I" }
+	};
+	std::string result;
+	for ( const auto& numeral : numerals )
+	{
+		while ( value >= numeral.first )
+		{
+			result += numeral.second;
+			value -= numeral.first;
+		}
+	}
+	return result;
+}
 void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 	Frame* frame = (Frame*)&widget;
 	if ( auto parent = frame->getParent() )
@@ -6386,7 +6407,13 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 		int player = parent->getOwner();
 		if ( player >= 0 && player < MAXPLAYERS )
 		{
+			bool hasTincture = false;
+			for ( int stat = 0; stat < NUMSTATS; ++stat )
+			{
+				hasTincture |= stats[player]->tinctureStacks[stat] > 0;
+			}
 			if ( stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] > 0
+				|| hasTincture
 				|| stats[player]->getEffectActive(EFF_ENSEMBLE_FLUTE)
 				|| stats[player]->getEffectActive(EFF_ENSEMBLE_LUTE) 
 				|| stats[player]->getEffectActive(EFF_ENSEMBLE_LYRE) 
@@ -6434,8 +6461,23 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 					bool alignRight = *cvar_statusfx_align_text_right;
 					if ( !img->disabled )
 					{
-						// mod add: Merrow reflecting scales
 						if ( queueEntry
+							&& queueEntry->effect <= StatusEffectQueue_t::kEffectTinctureStart
+							&& queueEntry->effect >= StatusEffectQueue_t::kEffectTinctureEnd )
+						{
+							alignRight = true;
+							const std::string val = witchbrewRomanNumeral(queueEntry->customVariable);
+							if ( auto text = Text::get(val.c_str(), "fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w - static_cast<int>(text->getWidth()),
+									pos.y + img->pos.y + img->pos.h / 2 - static_cast<int>(text->getHeight()) / 2 - 3,
+									0, 0 }, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						// mod add: Merrow reflecting scales
+						else if ( queueEntry
 							&& queueEntry->effect == EFF_GROWTH
 							&& players[player]
 							&& players[player]->entity
@@ -7879,7 +7921,18 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 		|| (tooltipShowingEffectVariable != currentTooltipVariable);
 	if ( refreshTooltip )
 	{
-		if ( entry.effect >= StatusEffectQueue_t::kSpellEffectOffset )
+		if ( entry.effect <= kEffectTinctureStart && entry.effect >= kEffectTinctureEnd )
+		{
+			static const char* names[NUMSTATS] = {
+				"STRENGTH AFFINITY", "DEXTERITY AFFINITY", "CONSTITUTION AFFINITY",
+				"INTELLIGENCE AFFINITY", "PERCEPTION AFFINITY", "CHARISMA AFFINITY"
+			};
+			const int stat = kEffectTinctureStart - entry.effect;
+			tooltipHeader->setText(names[stat]);
+			tooltipDesc->setText("Raises this stat's level-up weight by +2 per stored tincture, up to the tincture affinity cap. One stack is consumed when this stat increases on level-up.");
+			tooltipInnerWidth = 260;
+		}
+		else if ( entry.effect >= StatusEffectQueue_t::kSpellEffectOffset )
 		{
 			int effectID = entry.effect - StatusEffectQueue_t::kSpellEffectOffset;
 			if ( StatusEffectQueue_t::StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
@@ -8480,6 +8533,8 @@ const int StatusEffectQueue_t::kEffectBread = -2;
 const int StatusEffectQueue_t::kEffectBloodHunger = -3;
 const int StatusEffectQueue_t::kEffectAutomatonHunger = -4;
 const int StatusEffectQueue_t::kEffectGolemHunger = -32;
+const int StatusEffectQueue_t::kEffectTinctureStart = -100;
+const int StatusEffectQueue_t::kEffectTinctureEnd = -105;
 const int StatusEffectQueue_t::kEffectWanted = -5;
 const int StatusEffectQueue_t::kEffectWantedInShop = -6;
 const int StatusEffectQueue_t::kEffectBurning = -7;
@@ -9311,6 +9366,34 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
+	// Tincture affinities are persistent counters, not timed effects. Mirror
+	// them into the status queue solely for presentation.
+	if ( stats[player] )
+	{
+		for ( int stat = 0; stat < NUMSTATS; ++stat )
+		{
+			const int effectID = kEffectTinctureStart - stat;
+			StatusEffectQueueEntry_t* existing = nullptr;
+			for ( auto& entry : effectQueue )
+			{
+				if ( entry.effect == effectID ) { existing = &entry; break; }
+			}
+			if ( stats[player]->tinctureStacks[stat] == 0 )
+			{
+				if ( existing ) { deleteEffect(effectID); }
+			}
+			else if ( existing )
+			{
+				existing->customVariable = stats[player]->tinctureStacks[stat];
+			}
+			else if ( insertEffect(effectID, -1) )
+			{
+				effectQueue.back().customVariable = stats[player]->tinctureStacks[stat];
+				notificationQueue.back().customVariable = stats[player]->tinctureStacks[stat];
+			}
+		}
+	}
+
 	if ( wantedLevel == ShopkeeperPlayerHostility_t::NO_WANTED_LEVEL )
 	{
 		if ( effectSet.find(kEffectWanted) != effectSet.end() )
@@ -10066,6 +10149,16 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 		if ( entry.effect == kEffectGolemHunger )
 		{
 			img->path = getGolemChargeIconPath(player, entry.customVariable);
+		}
+		else if ( entry.effect <= kEffectTinctureStart && entry.effect >= kEffectTinctureEnd )
+		{
+			static const char* statIcons[NUMSTATS] = {
+				"STR", "DEX", "CON", "INT", "PER", "CHA"
+			};
+			const int stat = kEffectTinctureStart - entry.effect;
+			img->path = "images/ui/CharSheet/HUD_CharSheet_";
+			img->path += statIcons[stat];
+			img->path += "_00.png";
 		}
 		else if ( entry.effect == kEffectBread || entry.effect == kEffectBloodHunger )
 		{
@@ -11874,7 +11967,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 	if ( player.worldUI.isEnabled() )
 	{
-		if ( !text->isDisabled() && !glyph->disabled && player.worldUI.tooltipsInRange.size() > 1 )
+		if ( !text->isDisabled() && !glyph->disabled && (player.worldUI.tooltipsInRange.size() > 1 || player.worldUI.activeTooltipHasAlternateInteraction()) )
 		{
 			if ( Input::inputs[player.playernum].input("Interact Tooltip Next").type != Input::binding_t::bindtype_t::INVALID )
 			{
@@ -23045,6 +23138,14 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 		"", "icon label img");
 	iconLabelImg->disabled = true;
 
+	auto ingredientBagBadge1 = itemSpriteFrame->addImage(SDL_Rect{ 0, 0, 16, 16 }, 0xFFFFFFFF,
+		"", "ingredient bag badge 1");
+	ingredientBagBadge1->disabled = true;
+
+	auto ingredientBagBadge2 = itemSpriteFrame->addImage(SDL_Rect{ 0, 0, 16, 16 }, 0xFFFFFFFF,
+		"", "ingredient bag badge 2");
+	ingredientBagBadge2->disabled = true;
+
 	auto unusableFrame = slotFrame->addFrame("unusable item frame");
 	unusableFrame->setSize(slotSize);
 	unusableFrame->setHollow(true);
@@ -23247,6 +23348,47 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spe
 	return false;
 }
 
+struct IngredientBagBadgePaths
+{
+	std::string first;
+	std::string second;
+};
+
+static std::string getIngredientBagBadgeOilPath(AppliedOil oil)
+{
+	const char* path = getOilIconPath(oil);
+	if ( !path || path[0] == '\0' )
+	{
+		return "";
+	}
+	return std::string("*#") + path;
+}
+
+static IngredientBagBadgePaths getIngredientBagBadgePaths(ItemType type)
+{
+	if ( !itemTypeIsIngredientBag(type) )
+	{
+		return {};
+	}
+
+	switch ( ingredientCategoryFromBag(type) )
+	{
+		case INGREDIENT_CATEGORY_SLIME:
+			return { "", getIngredientBagBadgeOilPath(APPLIED_OIL_BASES) };
+		case INGREDIENT_CATEGORY_HUMORIN:
+			return { getIngredientBagBadgeOilPath(APPLIED_OIL_SILVER),
+				getIngredientBagBadgeOilPath(APPLIED_OIL_TOXINS) };
+		case INGREDIENT_CATEGORY_WILDBLOOD:
+			return { getIngredientBagBadgeOilPath(APPLIED_OIL_MINERAL),
+				getIngredientBagBadgeOilPath(APPLIED_OIL_LEAD) };
+		case INGREDIENT_CATEGORY_ANIMATIC:
+			return { getIngredientBagBadgeOilPath(APPLIED_OIL_BRINE),
+				getIngredientBagBadgeOilPath(APPLIED_OIL_AETHER) };
+		default:
+			return {};
+	}
+}
+
 enum SlotFrameIndices : size_t {
 	SLOTFRAME_BEATITUDE_FRAME = 0,
 	SLOTFRAME_BEATITUDE_IMG = 0,
@@ -23256,6 +23398,8 @@ enum SlotFrameIndices : size_t {
 	SLOTFRAME_ITEMSPRITE_IMG = 0,
 	SLOTFRAME_ITEMSPRITE_LABELBG_IMG = 1,
 	SLOTFRAME_ITEMSPRITE_LABEL_IMG = 2,
+	SLOTFRAME_ITEMSPRITE_INGREDIENT_BADGE1_IMG = 3,
+	SLOTFRAME_ITEMSPRITE_INGREDIENT_BADGE2_IMG = 4,
 	SLOTFRAME_UNUSABLE_ITEM_FRAME = 3,
 	SLOTFRAME_UNUSABLE_IMG = 0,
 	SLOTFRAME_APPRAISAL_FRAME = 4,
@@ -23293,6 +23437,19 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 
 	auto spriteImageFrame = frames[SLOTFRAME_ITEMSPRITE_FRAME]; // slotFrame->findFrame("item sprite frame");
 	auto spriteImage = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_IMG]; // [spriteImageFrame->findImage("item sprite img");
+	auto ingredientBagBadge1 = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_INGREDIENT_BADGE1_IMG];
+	auto ingredientBagBadge2 = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_INGREDIENT_BADGE2_IMG];
+	ingredientBagBadge1->disabled = true;
+	ingredientBagBadge2->disabled = true;
+	ingredientBagBadge1->path = "";
+	ingredientBagBadge2->path = "";
+	constexpr int badgeSize = 16;
+	constexpr int badgeEdgePadding = 1;
+	constexpr int badgeGap = 0;
+	const int rightX = spriteImageFrame->getSize().w - badgeSize - badgeEdgePadding;
+	ingredientBagBadge2->pos = SDL_Rect{ rightX, badgeEdgePadding, badgeSize, badgeSize };
+	ingredientBagBadge1->pos = SDL_Rect{
+		rightX - badgeSize - badgeGap, badgeEdgePadding, badgeSize, badgeSize };
 
 	if ( hiddenItemInGUI )
 	{
@@ -23376,7 +23533,9 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				1 /*spriteImageFrame->getSize().h - size*/, size, size };
 			if ( iconLabelImg->path != "" )
 			{
-				iconLabelImg->disabled = (!item->identified || hiddenItemInGUI);
+				const bool witchbrewBottleBadge = itemTypeIsTincture(item->type) || itemTypeIsOil(item->type);
+				iconLabelImg->disabled = ((!item->identified && item->appliedOil == APPLIED_OIL_NONE
+					&& !witchbrewBottleBadge) || hiddenItemInGUI);
 				if ( item->type == SPELL_ITEM && !(slotType && *slotType == GAMEUI_FRAMEDATA_SPELL_LEARNABLE) )
 				{
 					iconLabelImg->disabled = true;
@@ -23412,6 +23571,23 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 			}
 		}
 	}
+
+	if ( itemTypeIsIngredientBag(item->type) && !hiddenItemInGUI )
+	{
+		const auto badges = getIngredientBagBadgePaths(item->type);
+		if ( !badges.first.empty() )
+		{
+			ingredientBagBadge1->path = badges.first;
+			ingredientBagBadge1->disabled = false;
+		}
+		if ( !badges.second.empty() )
+		{
+			ingredientBagBadge2->path = badges.second;
+			ingredientBagBadge2->disabled = false;
+		}
+	}
+	ingredientBagBadge1->color = spriteImage->color;
+	ingredientBagBadge2->color = spriteImage->color;
 
 	if ( auto qtyFrame = frames[SLOTFRAME_QTY_FRAME]/*slotFrame->findFrame("quantity frame")*/ )
 	{
@@ -28975,6 +29151,13 @@ void createPlayerInventory(const int player)
 		GenericGUI[player].alchemyGUI.alchFrame->setInheritParentFrameOpacity(false);
 		GenericGUI[player].alchemyGUI.alchFrame->setDisabled(true);
 
+		GenericGUI[player].stewingGUI.stewFrame = frame->addFrame("stewing");
+		GenericGUI[player].stewingGUI.stewFrame->setHollow(true);
+		GenericGUI[player].stewingGUI.stewFrame->setBorder(0);
+		GenericGUI[player].stewingGUI.stewFrame->setOwner(player);
+		GenericGUI[player].stewingGUI.stewFrame->setInheritParentFrameOpacity(false);
+		GenericGUI[player].stewingGUI.stewFrame->setDisabled(true);
+
 		GenericGUI[player].featherGUI.featherFrame = frame->addFrame("feather");
 		GenericGUI[player].featherGUI.featherFrame->setHollow(true);
 		GenericGUI[player].featherGUI.featherFrame->setBorder(0);
@@ -29991,6 +30174,14 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	else if ( prompt == PROMPT_CONSUME || prompt == PROMPT_CONSUME_ALTERNATE )
 	{
+		if ( prompt == PROMPT_CONSUME_ALTERNATE && itemTypeIsOil(item->type) )
+		{
+			if ( !disableItemUsage )
+			{
+				useItem(item, player, nullptr, false, false, true);
+			}
+			return;
+		}
 		// consume item
 		const bool golemConsume = players[player] && players[player]->entity
 			&& players[player]->entity->isNaturalGolemPlayer();
@@ -30011,10 +30202,11 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 				net_packet->data[30] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 				SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[31]);
 				SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[35]);
+				net_packet->data[39] = static_cast<Uint8>(item->appliedOil);
 			}
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
-			net_packet->len = golemConsume ? 39 : 26;
+			net_packet->len = golemConsume ? 40 : 26;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 		if ( golemConsume )
@@ -30149,7 +30341,14 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			}
 			else if ( !disableItemUsage && prompt == PROMPT_INTERACT )
 			{
-				useItem(item, player);
+				if ( itemTypeIsOil(item->type) )
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
+				}
+				else
+				{
+					useItem(item, player);
+				}
 			}
 			else
 			{
@@ -31269,6 +31468,11 @@ void Player::Inventory_t::processInventory()
 		players[player.playernum]->camera_virtualHeight()});
 
 	bool tooltipWasDisabled = tooltipFrame->isDisabled();
+	if ( Frame* ingredientOverlay = tooltipContainerFrame->findFrame("ingredient bag hover overlay") )
+	{
+		// updateFrameTooltip() re-enables this only when this frame actually hovers a bag.
+		ingredientOverlay->setDisabled(true);
+	}
 
 	updateInventory();
 

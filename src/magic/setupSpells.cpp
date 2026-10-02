@@ -3432,6 +3432,17 @@ void setupSpells()   ///TODO: Verify this function.
 	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT;
 	spell->distance = 128.0;
 
+	// Amulet of the Familiar equipment spell. It has no book/staff/rune source.
+	spell = createSimpleSpell(
+		SPELL_POLYMORPH_FAMILIAR,
+		0, // difficulty
+		10, // mana
+		1, 1, 0, 1,
+		"spell_polymorph_familiar");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 128.0;
+	spell->hide_from_ui = true;
+
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;
 	//static const int SPELL_IGNITE = 186;
@@ -3554,6 +3565,14 @@ void setupSpells()   ///TODO: Verify this function.
 			entrench->difficulty = salvage->difficulty;
 		}
 		entrench->distance = 128.0;
+	}
+	if ( auto familiarPolymorph = getSpellFromID(SPELL_POLYMORPH_FAMILIAR) )
+	{
+		familiarPolymorph->difficulty = 0;
+		familiarPolymorph->mana = 10;
+		familiarPolymorph->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+		familiarPolymorph->distance = 128.0;
+		familiarPolymorph->hide_from_ui = true;
 	}
 }
 

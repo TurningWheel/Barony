@@ -159,6 +159,8 @@ struct StatusEffectQueue_t
 	static const int kEffectBloodHunger;
 	static const int kEffectAutomatonHunger;
 	static const int kEffectGolemHunger;
+	static const int kEffectTinctureStart;
+	static const int kEffectTinctureEnd;
 	static const int kSpellEffectOffset;
 	static const int kEffectBurning;
 	static const int kEffectWanted;

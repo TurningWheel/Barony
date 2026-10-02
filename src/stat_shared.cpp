@@ -71,6 +71,10 @@ Stat::Stat(Sint32 sprite) :
 	this->HUNGER = 800;
 	this->golemBlessedComposition = (this->sex == MALE) ? 10000 : 0;
 	this->runeCreatorIdentity = 0;
+	for ( int stat = 0; stat < NUMSTATS; ++stat )
+	{
+		this->tinctureStacks[stat] = 0;
+	}
 
 	//random variables to add to base
 	this->RANDOM_LVL = 0;
@@ -1316,7 +1320,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			break;
 		case 188:
 		case (1000 + BAT_SMALL):
-			stats->type = BAT_SMALL;
+		case (1000 + BAT_FAMILIAR):
+			stats->type = sprite == (1000 + BAT_FAMILIAR) ? BAT_FAMILIAR : BAT_SMALL;
 			stats->stat_appearance = local_rng.rand();
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;

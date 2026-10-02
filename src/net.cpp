@@ -1400,9 +1400,11 @@ void serverSendItemToPickupAndEquip(int player, Item* item)
 	net_packet->data[33] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 	SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[34]);
 	SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[38]);
+	net_packet->data[42] = static_cast<Uint8>(item->appliedOil);
+	writeFamiliarPersistentStateToPacket(*item, net_packet->data, 43);
 	net_packet->address.host = net_clients[player - 1].host;
 	net_packet->address.port = net_clients[player - 1].port;
-	net_packet->len = 42;
+	net_packet->len = 43 + FAMILIAR_PERSISTENT_PACKET_BYTES;
 	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
@@ -2701,6 +2703,93 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		client_keepalive[0] = ticks;
 	}},
 
+	// Stewing Cauldron: server requests a snapshot of the remote player's
+	// client-owned inventory. Void Chest resources remain server-owned.
+	{'STWQ', [](){
+		if ( net_packet->len != 8 || clientnum <= 0 || clientnum >= MAXPLAYERS ) { return; }
+		const Uint32 familiarUid = SDLNet_Read32(&net_packet->data[4]);
+		const auto resources = getStewingInventoryResourceSnapshot(clientnum);
+		strcpy(reinterpret_cast<char*>(net_packet->data), "STWS");
+		net_packet->data[4] = static_cast<Uint8>(clientnum);
+		SDLNet_Write32(familiarUid, &net_packet->data[5]);
+		for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+		{
+			SDLNet_Write32(resources[i], &net_packet->data[9 + i * 4]);
+		}
+		net_packet->address = net_server;
+		net_packet->len = 9 + STEWING_RESOURCE_COUNT * 4;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}},
+
+	// Stewing Cauldron: open with the server's combined inventory/Void snapshot.
+	{'STWO', [](){
+		if ( net_packet->len != 8 + STEWING_RESOURCE_COUNT * 4 ) { return; }
+		const Uint32 familiarUid = SDLNet_Read32(&net_packet->data[4]);
+		Entity* familiar = uidToEntity(familiarUid);
+		if ( !familiar || !isAmuletFamiliar(familiar, familiar->getStats())
+			|| getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_CAULDRON )
+		{
+			return;
+		}
+		std::array<Uint32, STEWING_RESOURCE_COUNT> resources{};
+		for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+		{
+			resources[i] = SDLNet_Read32(&net_packet->data[8 + i * 4]);
+		}
+		GenericGUI[clientnum].openGUI(GUI_TYPE_STEWING, familiar);
+		if ( GenericGUI[clientnum].stewingGUI.bOpen )
+		{
+			GenericGUI[clientnum].stewingGUI.openStewingMenu(familiarUid, resources);
+		}
+	}},
+
+	// Stewing Cauldron: authoritative transaction result and exact client-owned
+	// inventory resources which were consumed by the server transaction.
+	{'STWU', [](){
+		const int oldPacketLength = 146 + STEWING_RESOURCE_COUNT * 4;
+		if ( net_packet->len != oldPacketLength + static_cast<int>(sizeof(Uint32)) ) { return; }
+		const bool success = net_packet->data[4] != 0;
+		const Uint32 familiarUid = SDLNet_Read32(&net_packet->data[6]);
+		StewingSelection remaining{};
+		for ( int i = 0; i < STEWING_MAX_EDUCTS; ++i )
+		{
+			remaining[i].type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[10 + i * 8]));
+			remaining[i].quantity = SDLNet_Read32(&net_packet->data[14 + i * 8]);
+		}
+		std::array<Uint32, STEWING_RESOURCE_COUNT> resources{};
+		std::array<Uint32, STEWING_RESOURCE_COUNT> inventoryConsumed{};
+		for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+		{
+			resources[i] = SDLNet_Read32(&net_packet->data[74 + i * 4]);
+			inventoryConsumed[i] = SDLNet_Read32(&net_packet->data[146 + i * 4]);
+		}
+		const ItemType newlyUnlocked = static_cast<ItemType>(
+			SDLNet_Read32(&net_packet->data[oldPacketLength]));
+		if ( success )
+		{
+			consumeClientStewingInventoryResources(clientnum, inventoryConsumed);
+		}
+		if ( newlyUnlocked != ITEM_ENUM_MAX )
+		{
+			unlockStewingRecipe(clientnum, newlyUnlocked);
+		}
+		if ( GenericGUI[clientnum].stewingGUI.bOpen
+			&& GenericGUI[clientnum].stewingGUI.cauldronUid == familiarUid )
+		{
+			GenericGUI[clientnum].stewingGUI.receiveTransaction(success, remaining, resources);
+		}
+	}},
+
+	{'STWC', [](){
+		if ( net_packet->len != 8 ) { return; }
+		const Uint32 familiarUid = SDLNet_Read32(&net_packet->data[4]);
+		if ( GenericGUI[clientnum].stewingGUI.bOpen
+			&& GenericGUI[clientnum].stewingGUI.cauldronUid == familiarUid )
+		{
+			GenericGUI[clientnum].closeGUI();
+		}
+	}},
+
 	{'ENAK', [](){
 		if ( net_packet->len == 12 )
 		{
@@ -2889,7 +2978,14 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		Entity *entity = uidToEntity((int)SDLNet_Read32(&net_packet->data[4]));
 		if ( entity )
 		{
-			entity->skill[net_packet->data[8]] = SDLNet_Read32(&net_packet->data[9]);
+			const int skillIndex = net_packet->data[8];
+			const Sint32 oldValue = entity->skill[skillIndex];
+			entity->skill[skillIndex] = SDLNet_Read32(&net_packet->data[9]);
+			if ( skillIndex == 58 && oldValue != entity->skill[skillIndex]
+				&& entity->skill[3] != 0 && isAmuletFamiliar(entity) )
+			{
+				rebuildAmuletFamiliarVisuals(entity);
+			}
 		}
 	}},
 
@@ -3046,7 +3142,20 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			{
 				if ( entity->skill[10] >= 0 && entity->skill[10] < NUMITEMS )
 				{
-					if ( entity->skill[10] == MAGIC_RUNE && net_packet->len >= 25 )
+					if ( itemTypeIsIngredientBag(static_cast<ItemType>(entity->skill[10])) )
+					{
+						entity->itemIngredientCount0 = 0;
+						entity->itemIngredientCount1 = 0;
+						entity->itemIngredientCount2 = 0;
+						entity->itemIngredientCount3 = 0;
+						entity->itemIngredientBagOwnerUid = 0;
+						if ( net_packet->len >= 20 ) { entity->itemIngredientCount0 = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[16])); }
+						if ( net_packet->len >= 24 ) { entity->itemIngredientCount1 = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[20])); }
+						if ( net_packet->len >= 28 ) { entity->itemIngredientCount2 = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[24])); }
+						if ( net_packet->len >= 32 ) { entity->itemIngredientCount3 = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[28])); }
+						if ( net_packet->len >= 36 ) { entity->itemIngredientBagOwnerUid = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[32])); }
+					}
+					else if ( entity->skill[10] == MAGIC_RUNE && net_packet->len >= 25 )
 					{
 						entity->skill[14] = SDLNet_Read32(&net_packet->data[16]);
 						entity->itemRuneStoredPWR = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[20]));
@@ -3060,6 +3169,18 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 							? static_cast<Sint32>(SDLNet_Read32(&net_packet->data[26])) : 0;
 						entity->itemRuneCreatorIdentity = net_packet->len >= 34
 							? static_cast<Sint32>(SDLNet_Read32(&net_packet->data[30])) : 0;
+					}
+					else if ( entity->skill[10] == AMULET_FAMILIAR && net_packet->len >= 72 )
+					{
+						Sint32* fields[] = { &entity->itemFamiliarInitialized, &entity->itemFamiliarInstanceId,
+							&entity->itemFamiliarHP, &entity->itemFamiliarMAXHP, &entity->itemFamiliarMP,
+							&entity->itemFamiliarMAXMP, &entity->itemFamiliarLVL, &entity->itemFamiliarEXP,
+							&entity->itemFamiliarSTR, &entity->itemFamiliarDEX, &entity->itemFamiliarCON,
+							&entity->itemFamiliarINT, &entity->itemFamiliarPER, &entity->itemFamiliarCHR };
+						for ( int i = 0; i < 14; ++i )
+						{
+							*fields[i] = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[16 + i * 4]));
+						}
 					}
 					else if ( items[entity->skill[10]].category == TOME_SPELL )
 					{
@@ -4319,6 +4440,24 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	}},
 
 	// Update a Rune by its network/save-stable physical instance ID.
+	{'TINC', [](){
+		if ( !stats[clientnum] ) { return; }
+		for ( int stat = 0; stat < NUMSTATS; ++stat )
+		{
+			stats[clientnum]->tinctureStacks[stat] = SDLNet_Read32(&net_packet->data[5 + stat * 4]);
+		}
+	}},
+
+	{'OILU', [](){
+		if ( !stats[clientnum] ) { return; }
+		Item* target = net_packet->data[4] ? stats[clientnum]->shield : stats[clientnum]->weapon;
+		if ( target )
+		{
+			target->appliedOil = static_cast<AppliedOil>(std::min<int>(net_packet->data[5], APPLIED_OIL_MAX - 1));
+		}
+	}},
+
+	// Update a Rune by its network/save-stable physical instance ID.
 	{'RUSD', [](){
 		const Uint32 runeInstanceId = SDLNet_Read32(&net_packet->data[4]);
 		for ( node_t* node = stats[clientnum]->inventory.first; node; node = node->next )
@@ -4773,6 +4912,46 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	}},
 
 	// get item
+	{'INKR', [](){
+		const Uint32 uid = SDLNet_Read32(&net_packet->data[4]);
+		const ItemType result = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8]));
+		if ( result < 0 || result >= NUMITEMS || items[result].category != SPELLBOOK ) { return; }
+		if ( Item* book = uidToItem(uid) )
+		{
+			book->type = result;
+			messagePlayer(clientnum, MESSAGE_INVENTORY, "The spellbook becomes %s.", book->getName());
+		}
+		if ( net_packet->len >= 16 )
+		{
+			if ( Item* ink = uidToItem(SDLNet_Read32(&net_packet->data[12])) )
+			{
+				if ( itemTypeIsInk(ink->type) ) { consumeItem(ink, clientnum); }
+			}
+		}
+	}},
+
+	// authoritative result of applying an oil through the inventory selector
+	{'OILR', [](){
+		const Uint32 targetUid = SDLNet_Read32(&net_packet->data[4]);
+		const AppliedOil coating = static_cast<AppliedOil>(net_packet->data[8]);
+		if ( coating <= APPLIED_OIL_NONE || coating >= APPLIED_OIL_MAX ) { return; }
+		Item* target = uidToItem(targetUid);
+		Item* oil = net_packet->len >= 13 ? uidToItem(SDLNet_Read32(&net_packet->data[9])) : nullptr;
+		if ( target && itemCanReceiveOil(target) )
+		{
+			target->appliedOil = coating;
+			if ( oil && itemTypeIsOil(oil->type) )
+			{
+				messagePlayer(clientnum, MESSAGE_EQUIPMENT, "You coat %s with %s.", target->getName(), oil->getName());
+			}
+		}
+		if ( oil && itemTypeIsOil(oil->type) )
+		{
+			consumeItem(oil, clientnum);
+		}
+	}},
+
+	// get item
 	{'ITEM', [](){
 		Item* item = newItem(
 		    static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])),
@@ -4790,6 +4969,10 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[33]) : Item::RUNE_CREATOR_INVALID);
 		item->runeSetInstanceId(net_packet->len >= 38 ? SDLNet_Read32(&net_packet->data[34]) : 0);
 		item->runeSetCreatorIdentity(net_packet->len >= 42 ? SDLNet_Read32(&net_packet->data[38]) : 0);
+		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 43
+			? std::min<int>(net_packet->data[42], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
+		readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 43);
+		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 59);
 		Item* pickedUp = itemPickup(clientnum, item);
 		free(item);
 		if ( players[clientnum] && players[clientnum]->entity )
@@ -4980,6 +5163,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				? static_cast<Sint8>(net_packet->data[22]) : Item::RUNE_CREATOR_INVALID);
 			item->runeSetInstanceId(net_packet->len >= 27 ? SDLNet_Read32(&net_packet->data[23]) : 0);
 			item->runeSetCreatorIdentity(net_packet->len >= 31 ? SDLNet_Read32(&net_packet->data[27]) : 0);
+			item->appliedOil = net_packet->len >= 32
+				? static_cast<AppliedOil>(std::min<int>(net_packet->data[31], APPLIED_OIL_MAX - 1))
+				: APPLIED_OIL_NONE;
+			readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 32);
+			readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 48);
 			item->x = x;
 			item->y = y;
 			item->playerSoldItemToShop = buybackItem;
@@ -5101,9 +5289,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				net_packet->data[32] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 				SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[33]);
 				SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[37]);
+				net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
+				writeIngredientCountsToPacket(*item, net_packet->data, 42);
+				writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
-				net_packet->len = 41;
+				net_packet->len = 114;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
 		}
@@ -5143,9 +5334,12 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					net_packet->data[32] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 					SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[33]);
 					SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[37]);
+					net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
+					writeIngredientCountsToPacket(*item, net_packet->data, 42);
+					writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
 					net_packet->address.host = net_server.host;
 					net_packet->address.port = net_server.port;
-					net_packet->len = 41;
+					net_packet->len = 114;
 					sendPacketSafe(net_sock, -1, net_packet, 0);
 					list_RemoveNode(node);
 				}
@@ -6015,10 +6209,33 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[32]) : Item::RUNE_CREATOR_INVALID);
 		newitem->runeSetInstanceId(net_packet->len >= 37 ? SDLNet_Read32(&net_packet->data[33]) : 0);
 		newitem->runeSetCreatorIdentity(net_packet->len >= 41 ? SDLNet_Read32(&net_packet->data[37]) : 0);
+		newitem->appliedOil = static_cast<AppliedOil>(net_packet->len >= 42 ? std::min<int>(net_packet->data[41], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
+		readIngredientCountsFromPacket(*newitem, net_packet->data, net_packet->len, 42);
+		readFamiliarPersistentStateFromPacket(*newitem, net_packet->data, net_packet->len, 58);
 		bool forceNewStack = net_packet->data[25] ? true : false;
 		newitem->x = (Sint8)net_packet->data[26];
 		newitem->y = (Sint8)net_packet->data[27];
 		addItemToChestClientside(clientnum, newitem, forceNewStack, nullptr);
+	}},
+
+	// Live Ingredient Bag update for an open Void Chest.
+	{'IBAG', [](){
+		const ItemType type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4]));
+		const WitchIngredientCategory category = ingredientCategoryFromBag(type);
+		if ( category == INGREDIENT_CATEGORY_NONE || !openedChest[clientnum] ) { return; }
+		Item* bag = findIngredientBagInInventory(chestInv[clientnum], category);
+		if ( !bag )
+		{
+			bag = newItem(type, EXCELLENT, 0, 1, 0, true, nullptr);
+			addItemToChestClientside(clientnum, bag, true, nullptr);
+		}
+		readIngredientCountsFromPacket(*bag, net_packet->data, net_packet->len, 8);
+		if ( net_packet->len >= 26 )
+		{
+			bag->x = static_cast<Sint8>(net_packet->data[24]);
+			bag->y = static_cast<Sint8>(net_packet->data[25]);
+		}
+		bag->count = 1;
 	}},
 
 	//Close the chest.
@@ -6541,6 +6758,9 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[33]) : Item::RUNE_CREATOR_INVALID);
 		item->runeSetInstanceId(net_packet->len >= 38 ? SDLNet_Read32(&net_packet->data[34]) : 0);
 		item->runeSetCreatorIdentity(net_packet->len >= 42 ? SDLNet_Read32(&net_packet->data[38]) : 0);
+		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 43
+			? std::min<int>(net_packet->data[42], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
+		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 43);
 		Item* pickedUp = itemPickup(clientnum, item);
 		free(item);
 		if ( players[clientnum] && players[clientnum]->entity && pickedUp )
@@ -6549,6 +6769,29 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			intro = true;
 			useItem(pickedUp, clientnum);
 			intro = oldIntro;
+		}
+	}},
+
+	// Authoritative progression mirror for the currently equipped Familiar Amulet.
+	{'FAMP', [](){
+		if ( !stats[clientnum] ) { return; }
+		const Uint32 instanceId = SDLNet_Read32(&net_packet->data[4]);
+		Item* equippedAmulet = stats[clientnum]->amulet;
+		if ( equippedAmulet && equippedAmulet->type == AMULET_FAMILIAR
+			&& equippedAmulet->familiarInstanceId == instanceId )
+		{
+			readFamiliarPersistentStateFromPacket(*equippedAmulet,
+				net_packet->data, net_packet->len, 8);
+			return;
+		}
+		for ( node_t* node = stats[clientnum]->inventory.first; node; node = node->next )
+		{
+			Item* item = static_cast<Item*>(node->element);
+			if ( item && item->type == AMULET_FAMILIAR && item->familiarInstanceId == instanceId )
+			{
+				readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 8);
+				break;
+			}
 		}
 	}},
 
@@ -7267,6 +7510,92 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		client_keepalive[player] = ticks;
 	}},
 
+	// Client inventory snapshot requested as part of opening a Stewing session.
+	{'STWS', [](){
+		if ( net_packet->len != 9 + STEWING_RESOURCE_COUNT * 4 ) { return; }
+		const int player = net_packet->data[4];
+		const Uint32 familiarUid = SDLNet_Read32(&net_packet->data[5]);
+		Entity* familiar = uidToEntity(familiarUid);
+		if ( player <= 0 || player >= MAXPLAYERS || !players[player]
+			|| players[player]->isLocalPlayer() || !players[player]->entity || !stats[player]
+			|| !familiar || !isAmuletFamiliar(familiar, familiar->getStats())
+			|| getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_CAULDRON
+			|| !familiar->getStats()
+			|| familiar->getStats()->leader_uid != players[player]->entity->getUID()
+			|| entityDist(players[player]->entity, familiar) > TOUCHRANGE
+			|| !stats[player]->amulet || stats[player]->amulet->type != AMULET_FAMILIAR
+			|| stats[player]->amulet->status == BROKEN )
+		{
+			return;
+		}
+		std::array<Uint32, STEWING_RESOURCE_COUNT> resources{};
+		for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+		{
+			resources[i] = SDLNet_Read32(&net_packet->data[9 + i * 4]);
+		}
+		setServerStewingInventoryMirror(player, resources);
+		const auto combined = getStewingResourceSnapshot(player);
+		strcpy(reinterpret_cast<char*>(net_packet->data), "STWO");
+		SDLNet_Write32(familiarUid, &net_packet->data[4]);
+		for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+		{
+			SDLNet_Write32(combined[i], &net_packet->data[8 + i * 4]);
+		}
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 8 + STEWING_RESOURCE_COUNT * 4;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}},
+
+	// The client supplies only operation + selected educts. The server derives
+	// the result and commits all item/bottle/effect changes.
+	{'STWR', [](){
+		if ( net_packet->len != 10 + STEWING_MAX_EDUCTS * 8 ) { return; }
+		const int player = net_packet->data[4];
+		const StewingOperation operation = static_cast<StewingOperation>(net_packet->data[5]);
+		const Uint32 familiarUid = SDLNet_Read32(&net_packet->data[6]);
+		StewingSelection selection{};
+		for ( int i = 0; i < STEWING_MAX_EDUCTS; ++i )
+		{
+			selection[i].type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[10 + i * 8]));
+			selection[i].quantity = SDLNet_Read32(&net_packet->data[14 + i * 8]);
+		}
+		StewingTransactionResult result;
+		result.remainingSelection = selection;
+		Entity* familiar = uidToEntity(familiarUid);
+		const bool success = performStewingTransaction(player, familiar, operation, selection, result);
+		if ( !success && player > 0 && player < MAXPLAYERS && serverStewingInventoryMirrorIsValid(player) )
+		{
+			result.resources = getStewingResourceSnapshot(player);
+		}
+		strcpy(reinterpret_cast<char*>(net_packet->data), "STWU");
+		net_packet->data[4] = success ? 1 : 0;
+		net_packet->data[5] = static_cast<Uint8>(operation);
+		SDLNet_Write32(familiarUid, &net_packet->data[6]);
+		for ( int i = 0; i < STEWING_MAX_EDUCTS; ++i )
+		{
+			SDLNet_Write32(static_cast<Uint32>(result.remainingSelection[i].type), &net_packet->data[10 + i * 8]);
+			SDLNet_Write32(result.remainingSelection[i].quantity, &net_packet->data[14 + i * 8]);
+		}
+		for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+		{
+			SDLNet_Write32(result.resources[i], &net_packet->data[74 + i * 4]);
+			SDLNet_Write32(result.inventoryConsumed[i], &net_packet->data[146 + i * 4]);
+		}
+		const int oldPacketLength = 146 + STEWING_RESOURCE_COUNT * 4;
+		SDLNet_Write32(static_cast<Uint32>(result.newlyUnlockedRecipe),
+			&net_packet->data[oldPacketLength]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = oldPacketLength + static_cast<int>(sizeof(Uint32));
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}},
+
+	{'STWX', [](){
+		if ( net_packet->len != 9 ) { return; }
+		clearServerStewingInventoryMirror(net_packet->data[4]);
+	}},
+
 	// ping
 	{'PING', [](){
 		const int j = net_packet->data[4];
@@ -7382,7 +7711,16 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			net_packet->len = 16;
 			if ( entity->skill[10] >= 0 && entity->skill[10] < NUMITEMS )
 			{
-				if ( entity->skill[10] == MAGIC_RUNE )
+				if ( itemTypeIsIngredientBag(static_cast<ItemType>(entity->skill[10])) )
+				{
+					SDLNet_Write32(static_cast<Uint32>(entity->itemIngredientCount0), &net_packet->data[16]);
+					SDLNet_Write32(static_cast<Uint32>(entity->itemIngredientCount1), &net_packet->data[20]);
+					SDLNet_Write32(static_cast<Uint32>(entity->itemIngredientCount2), &net_packet->data[24]);
+					SDLNet_Write32(static_cast<Uint32>(entity->itemIngredientCount3), &net_packet->data[28]);
+					SDLNet_Write32(static_cast<Uint32>(entity->itemIngredientBagOwnerUid), &net_packet->data[32]);
+					net_packet->len = 36;
+				}
+				else if ( entity->skill[10] == MAGIC_RUNE )
 				{
 					SDLNet_Write32(entity->skill[14], &net_packet->data[16]);
 					SDLNet_Write32(static_cast<Uint32>(entity->itemRuneStoredPWR), &net_packet->data[20]);
@@ -7392,6 +7730,19 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 					SDLNet_Write32(static_cast<Uint32>(entity->itemRuneInstanceId), &net_packet->data[26]);
 					SDLNet_Write32(static_cast<Uint32>(entity->itemRuneCreatorIdentity), &net_packet->data[30]);
 					net_packet->len = 34;
+				}
+				else if ( entity->skill[10] == AMULET_FAMILIAR )
+				{
+					const Sint32 fields[] = { entity->itemFamiliarInitialized, entity->itemFamiliarInstanceId,
+						entity->itemFamiliarHP, entity->itemFamiliarMAXHP, entity->itemFamiliarMP,
+						entity->itemFamiliarMAXMP, entity->itemFamiliarLVL, entity->itemFamiliarEXP,
+						entity->itemFamiliarSTR, entity->itemFamiliarDEX, entity->itemFamiliarCON,
+						entity->itemFamiliarINT, entity->itemFamiliarPER, entity->itemFamiliarCHR };
+					for ( int i = 0; i < 14; ++i )
+					{
+						SDLNet_Write32(static_cast<Uint32>(fields[i]), &net_packet->data[16 + i * 4]);
+					}
+					net_packet->len = 72;
 				}
 				else if ( items[entity->skill[10]].category == TOME_SPELL )
 				{
@@ -8106,6 +8457,10 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[30]) : Item::RUNE_CREATOR_INVALID);
 		item->runeSetInstanceId(net_packet->len >= 35 ? SDLNet_Read32(&net_packet->data[31]) : 0);
 		item->runeSetCreatorIdentity(net_packet->len >= 39 ? SDLNet_Read32(&net_packet->data[35]) : 0);
+		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 40
+			? std::min<int>(net_packet->data[39], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
+		readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 40);
+		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 56);
 		dropItem(item, player);
 	}},
 
@@ -8200,6 +8555,9 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[32]) : Item::RUNE_CREATOR_INVALID);
 		item->runeSetInstanceId(net_packet->len >= 37 ? SDLNet_Read32(&net_packet->data[33]) : 0);
 		item->runeSetCreatorIdentity(net_packet->len >= 41 ? SDLNet_Read32(&net_packet->data[37]) : 0);
+		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 42 ? std::min<int>(net_packet->data[41], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
+		readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 42);
+		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 58);
 
 		real_t x = net_packet->data[26];
 		x = (x * 16) + 8;
@@ -8353,6 +8711,11 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[34]) : Item::RUNE_CREATOR_INVALID);
 		item->runeSetInstanceId(net_packet->len >= 39 ? SDLNet_Read32(&net_packet->data[35]) : 0);
 		item->runeSetCreatorIdentity(net_packet->len >= 43 ? SDLNet_Read32(&net_packet->data[39]) : 0);
+		item->appliedOil = net_packet->len >= 44
+			? static_cast<AppliedOil>(std::min<int>(net_packet->data[43], APPLIED_OIL_MAX - 1))
+			: APPLIED_OIL_NONE;
+		readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 44);
+		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 60);
 		node_t* nextnode;
 		for ( auto node = entitystats->inventory.first; node != NULL; node = nextnode )
 		{
@@ -8533,6 +8896,11 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[34]) : Item::RUNE_CREATOR_INVALID);
 		item->runeSetInstanceId(net_packet->len >= 39 ? SDLNet_Read32(&net_packet->data[35]) : 0);
 		item->runeSetCreatorIdentity(net_packet->len >= 43 ? SDLNet_Read32(&net_packet->data[39]) : 0);
+		item->appliedOil = net_packet->len >= 44
+			? static_cast<AppliedOil>(std::min<int>(net_packet->data[43], APPLIED_OIL_MAX - 1))
+			: APPLIED_OIL_NONE;
+		readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 44);
+		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 60);
 
 		Sint32 goldValue = item->sellValue(client);
 		int xout = Player::ShopGUI_t::MAX_SHOP_X;
@@ -8554,6 +8922,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			item2->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
 			item2->runeSetInstanceId(item->runeGetInstanceId());
 			item2->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+			item2->appliedOil = item->appliedOil;
+			copyItemPersistentCustomState(*item2, *item);
 			item2->x = xout;
 			item2->y = yout;
 			item2->playerSoldItemToShop = true;
@@ -8585,6 +8955,67 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	}},
 
 	// use item
+	{'WINK', [](){
+		const int client = std::min(net_packet->data[16], static_cast<Uint8>(MAXPLAYERS - 1));
+		if ( client <= 0 || !stats[client] || !players[client] || !players[client]->entity
+			|| playerIsPanicking(client) ) { return; }
+		const ItemType ink = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4]));
+		const Uint32 bookUid = SDLNet_Read32(&net_packet->data[8]);
+		const ItemType source = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[12]));
+		const Uint32 inkUid = net_packet->len >= 21 ? SDLNet_Read32(&net_packet->data[17]) : 0;
+		const bool targetEquipped = net_packet->len >= 22 && net_packet->data[21] != 0;
+		const ItemType result = getInkSpellbookResult(ink, source);
+		if ( result == ITEM_ENUM_MAX ) { return; }
+		if ( targetEquipped )
+		{
+			if ( !stats[client]->shield || stats[client]->shield->type != source ) { return; }
+			stats[client]->shield->type = result;
+		}
+		strcpy(reinterpret_cast<char*>(net_packet->data), "INKR");
+		SDLNet_Write32(bookUid, &net_packet->data[4]);
+		SDLNet_Write32(static_cast<Uint32>(result), &net_packet->data[8]);
+		SDLNet_Write32(inkUid, &net_packet->data[12]);
+		net_packet->address = net_clients[client - 1];
+		net_packet->len = 16;
+		sendPacketSafe(net_sock, -1, net_packet, client - 1);
+		tryIncreaseAlchemyFromWitchbrewUse(client);
+		Item* bottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
+		itemPickup(client, bottle);
+		free(bottle);
+	}},
+
+	// apply an oil to a client-selected inventory item
+	{'WOIL', [](){
+		const int client = std::min(net_packet->data[16], static_cast<Uint8>(MAXPLAYERS - 1));
+		if ( client <= 0 || !stats[client] || playerIsPanicking(client) ) { return; }
+		const ItemType oilType = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4]));
+		const Uint32 targetUid = SDLNet_Read32(&net_packet->data[8]);
+		const ItemType targetType = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[12]));
+		const Uint32 oilUid = SDLNet_Read32(&net_packet->data[17]);
+		const Uint8 targetSlot = net_packet->data[21];
+		if ( !itemTypeIsOil(oilType) || !itemTypeCanReceiveOil(targetType) || targetSlot > 2 ) { return; }
+		const AppliedOil coating = appliedOilFromItemType(oilType);
+		if ( targetSlot == 1 || targetSlot == 2 )
+		{
+			Item* serverTarget = targetSlot == 1 ? stats[client]->weapon : stats[client]->shield;
+			if ( !serverTarget || serverTarget->type != targetType || !itemCanReceiveOil(serverTarget) ) { return; }
+			serverTarget->appliedOil = coating;
+			serverSyncAppliedOil(client, targetSlot == 2);
+		}
+		strcpy(reinterpret_cast<char*>(net_packet->data), "OILR");
+		SDLNet_Write32(targetUid, &net_packet->data[4]);
+		net_packet->data[8] = static_cast<Uint8>(coating);
+		SDLNet_Write32(oilUid, &net_packet->data[9]);
+		net_packet->address = net_clients[client - 1];
+		net_packet->len = 13;
+		sendPacketSafe(net_sock, -1, net_packet, client - 1);
+		tryIncreaseAlchemyFromWitchbrewUse(client);
+		Item* bottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
+		itemPickup(client, bottle);
+		free(bottle);
+	}},
+
+	// use item
 	{'USEI', [](){
 		const int client = std::min(net_packet->data[25], (Uint8)(MAXPLAYERS - 1));
 		if ( playerIsPanicking(client) )
@@ -8606,7 +9037,10 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[30]) : Item::RUNE_CREATOR_INVALID);
 		item->runeSetInstanceId(net_packet->len >= 35 ? SDLNet_Read32(&net_packet->data[31]) : 0);
 		item->runeSetCreatorIdentity(net_packet->len >= 39 ? SDLNet_Read32(&net_packet->data[35]) : 0);
-		useItem(item, client, nullptr, false, true);
+		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 40
+			? std::min<int>(net_packet->data[39], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
+		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 41);
+		useItem(item, client, nullptr, false, true, net_packet->len >= 41 && net_packet->data[40] != 0);
 	}},
 
 	// use loot bag
@@ -8638,6 +9072,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[32]) : Item::RUNE_CREATOR_INVALID);
 		item->runeSetInstanceId(net_packet->len >= 37 ? SDLNet_Read32(&net_packet->data[33]) : 0);
 		item->runeSetCreatorIdentity(net_packet->len >= 41 ? SDLNet_Read32(&net_packet->data[37]) : 0);
+		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 42 ? std::min<int>(net_packet->data[41], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
 		EquipItemResult res = equipItem(item, &stats[client]->weapon, client, false);
 		if ( res == EQUIP_ITEM_SUCCESS_UPDATE_QTY
 			|| res == EQUIP_ITEM_FAIL_CANT_UNEQUIP )
@@ -8678,6 +9113,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[32]) : Item::RUNE_CREATOR_INVALID);
 		item->runeSetInstanceId(net_packet->len >= 37 ? SDLNet_Read32(&net_packet->data[33]) : 0);
 		item->runeSetCreatorIdentity(net_packet->len >= 41 ? SDLNet_Read32(&net_packet->data[37]) : 0);
+		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 42 ? std::min<int>(net_packet->data[41], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
 		EquipItemResult res = equipItem(item, &stats[client]->shield, client, false);
 		if ( res == EQUIP_ITEM_SUCCESS_UPDATE_QTY
 			|| res == EQUIP_ITEM_FAIL_CANT_UNEQUIP )
@@ -8762,6 +9198,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[32]) : Item::RUNE_CREATOR_INVALID);
 		item->runeSetInstanceId(net_packet->len >= 37 ? SDLNet_Read32(&net_packet->data[33]) : 0);
 		item->runeSetCreatorIdentity(net_packet->len >= 41 ? SDLNet_Read32(&net_packet->data[37]) : 0);
+		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 42 ? std::min<int>(net_packet->data[41], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
+		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 42);
 		
 		int res = -1;
 		switch ( net_packet->data[27] )
@@ -9207,6 +9645,9 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[32]) : Item::RUNE_CREATOR_INVALID);
 		newitem->runeSetInstanceId(net_packet->len >= 37 ? SDLNet_Read32(&net_packet->data[33]) : 0);
 		newitem->runeSetCreatorIdentity(net_packet->len >= 41 ? SDLNet_Read32(&net_packet->data[37]) : 0);
+		newitem->appliedOil = static_cast<AppliedOil>(net_packet->len >= 42 ? std::min<int>(net_packet->data[41], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
+		readIngredientCountsFromPacket(*newitem, net_packet->data, net_packet->len, 42);
+		readFamiliarPersistentStateFromPacket(*newitem, net_packet->data, net_packet->len, 58);
 		bool forceNewStack = net_packet->data[26] ? true : false;
 		if ( net_packet->data[27] == 0 )
 		{
@@ -9248,6 +9689,9 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[32]) : Item::RUNE_CREATOR_INVALID);
 		item->runeSetInstanceId(net_packet->len >= 37 ? SDLNet_Read32(&net_packet->data[33]) : 0);
 		item->runeSetCreatorIdentity(net_packet->len >= 41 ? SDLNet_Read32(&net_packet->data[37]) : 0);
+		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 42 ? std::min<int>(net_packet->data[41], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
+		readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 42);
+		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 58);
 
 		if ( net_packet->data[27] == 0 )
 		{
@@ -9664,6 +10108,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			? static_cast<Sint8>(net_packet->data[30]) : Item::RUNE_CREATOR_INVALID);
 		item->runeSetInstanceId(net_packet->len >= 35 ? SDLNet_Read32(&net_packet->data[31]) : 0);
 		item->runeSetCreatorIdentity(net_packet->len >= 39 ? SDLNet_Read32(&net_packet->data[35]) : 0);
+		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 40
+			? std::min<int>(net_packet->data[39], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
 		item_GolemConsume(item, player);
 		// GOLC reconstructs a one-item transient. Invalid or rejected client input
 		// must not leave that packet-created object in the authoritative inventory.
@@ -9743,6 +10189,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 				entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
 				entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
 				entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+				copyItemPersistentCustomStateToEntity(*entity, *item);
 				entity->parent = 0;
 				entity->itemOriginalOwner = 0;
 
@@ -10116,9 +10563,14 @@ void serverHandlePacket()
 		if ( net_packet->len >= offset + 4 )
 		{
 			const Uint32 command = SDLNet_Read32(&net_packet->data[offset]);
-			if ( command == 'FRST' || command == 'FRCP' || command == 'FJCP' )
+			if ( command == 'FRST' || command == 'FRCP' || command == 'FJCP'
+				|| command == 'STWS' || command == 'STWR' || command == 'STWX' )
 			{
-				if ( !safe || net_packet->len != offset + (command == 'FRST' ? 13 : 14) ) { return; }
+				int expectedLength = command == 'FRST' ? 13 : 14;
+				if ( command == 'STWS' ) { expectedLength = 9 + STEWING_RESOURCE_COUNT * 4; }
+				else if ( command == 'STWR' ) { expectedLength = 10 + STEWING_MAX_EDUCTS * 8; }
+				else if ( command == 'STWX' ) { expectedLength = 9; }
+				if ( !safe || net_packet->len != offset + expectedLength ) { return; }
 				const int player = net_packet->data[offset + 4];
 				if ( player <= 0 || player >= MAXPLAYERS || net_packet->data[4] != player
 					|| !players[player] || players[player]->isLocalPlayer() || client_disconnected[player] ) { return; }

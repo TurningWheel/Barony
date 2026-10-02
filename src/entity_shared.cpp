@@ -2100,7 +2100,8 @@ char monsterEditorNameStrings[NUMMONSTERS][32] =
 	"monster_unused_8",
 	"merrow",
 	"leonin",
-	"golem"
+	"golem",
+	"bat_familiar"
 };
 
 char tileEditorNameStrings[NUM_EDITOR_TILES][44] =

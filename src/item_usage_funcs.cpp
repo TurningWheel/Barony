@@ -7026,6 +7026,8 @@ void item_GolemConsume(Item*& item, int player)
 		survivingItem->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
 		survivingItem->runeSetInstanceId(item->runeGetInstanceId());
 		survivingItem->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+		survivingItem->appliedOil = item->appliedOil;
+		copyItemPersistentCustomState(*survivingItem, *item);
 	}
 
 	const Sint64 blessedCharge = (storedCharge * oldRatio + 5000) / 10000;

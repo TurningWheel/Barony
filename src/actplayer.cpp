@@ -170,6 +170,188 @@ bool playerCanInteractWhilePanicking(const Entity* target)
 	return target && (target->behavior == &actDoor || target->behavior == &actIronDoor);
 }
 
+static void updateBatFamiliarForPlayer(Entity* playerEntity, int player)
+{
+	if ( !playerEntity || player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return;
+	}
+	Item* familiarAmulet = stats[player]->amulet;
+	const bool equipped = stats[player]->HP > 0 && familiarAmulet
+		&& stats[player]->amulet->type == AMULET_FAMILIAR
+		&& stats[player]->amulet->status != BROKEN;
+	if ( players[player] && players[player]->isLocalPlayer() )
+	{
+		if ( equipped )
+		{
+			grantTemporaryEquipmentSpell(player, SPELL_POLYMORPH_FAMILIAR);
+		}
+		else
+		{
+			removeTemporaryEquipmentSpell(player, SPELL_POLYMORPH_FAMILIAR);
+		}
+	}
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	const Uint32 leaderUid = playerEntity->getUID();
+	std::vector<Uint32> familiarUids;
+	for ( node_t* node = map.creatures->first; node; node = node->next )
+	{
+		Entity* creature = static_cast<Entity*>(node->element);
+		Stat* creatureStats = creature ? creature->getStats() : nullptr;
+		if ( creatureStats && (isAmuletFamiliar(creature, creatureStats)
+				|| creatureStats->type == BAT_FAMILIAR)
+			&& creatureStats->leader_uid == leaderUid )
+		{
+			familiarUids.push_back(creature->getUID());
+		}
+	}
+
+	if ( !equipped )
+	{
+		for ( Uint32 uid : familiarUids )
+		{
+			Entity* familiar = uidToEntity(uid);
+			if ( familiar )
+			{
+				spawnAmuletFamiliarTransformParticles(familiar);
+				removeBatFamiliar(familiar);
+			}
+		}
+		return;
+	}
+	const Uint32 familiarInstanceId = familiarAmulet->familiarEnsureInstanceId();
+
+	Entity* familiar = nullptr;
+	for ( Uint32 uid : familiarUids )
+	{
+		Entity* candidate = uidToEntity(uid);
+		if ( candidate && candidate->familiarInstanceId == familiarInstanceId )
+		{
+			familiar = candidate;
+			break;
+		}
+	}
+	for ( Uint32 uid : familiarUids )
+	{
+		Entity* candidate = uidToEntity(uid);
+		if ( candidate && candidate != familiar )
+		{
+			removeBatFamiliar(candidate);
+		}
+	}
+	if ( !familiar )
+	{
+		const real_t tangent = playerEntity->yaw + PI / 2;
+		familiar = summonMonsterNoSmoke(BAT_FAMILIAR,
+			playerEntity->x + 12 * cos(tangent), playerEntity->y + 12 * sin(tangent), true);
+		if ( familiar && forceFollower(*playerEntity, *familiar) )
+		{
+			if ( Stat* familiarStats = familiar->getStats() )
+			{
+				familiarStats->setAttribute("AMULET_FAMILIAR", "1");
+				familiarStats->monsterNoDropItems = 1;
+				familiarStats->MAXHP = std::max<Sint32>(1, familiarStats->MAXHP);
+				familiarStats->HP = std::max<Sint32>(1, familiarStats->HP);
+				familiarStats->OLDHP = familiarStats->HP;
+				if ( familiarAmulet->familiarInitialized )
+				{
+					familiarStats->MAXHP = std::max<Sint32>(1, familiarAmulet->familiarMAXHP);
+					familiarStats->HP = std::max<Sint32>(1, std::min(familiarAmulet->familiarHP, familiarStats->MAXHP));
+					familiarStats->OLDHP = familiarStats->HP;
+					familiarStats->MAXMP = std::max<Sint32>(0, familiarAmulet->familiarMAXMP);
+					familiarStats->MP = std::max<Sint32>(0, std::min(familiarAmulet->familiarMP, familiarStats->MAXMP));
+					familiarStats->LVL = familiarAmulet->familiarLVL;
+					familiarStats->EXP = familiarAmulet->familiarEXP;
+					familiarStats->STR = familiarAmulet->familiarSTR;
+					familiarStats->DEX = familiarAmulet->familiarDEX;
+					familiarStats->CON = familiarAmulet->familiarCON;
+					familiarStats->INT = familiarAmulet->familiarINT;
+					familiarStats->PER = familiarAmulet->familiarPER;
+					familiarStats->CHR = familiarAmulet->familiarCHR;
+				}
+			}
+			familiar->familiarInstanceId = familiarInstanceId;
+			familiar->familiarIdentity = 1;
+			familiar->familiarForm = FAMILIAR_FORM_BAT;
+			familiar->familiarPendingForm = FAMILIAR_FORM_NONE;
+			familiar->monsterAllyIndex = player;
+			familiar->flags[PASSABLE] = true;
+			familiar->flags[BLOCKSIGHT] = false;
+			if ( multiplayer == SERVER )
+			{
+				serverUpdateEntitySkill(familiar, 57);
+				serverUpdateEntitySkill(familiar, 58);
+				serverUpdateEntitySkill(familiar, 42);
+				serverUpdateEntityFlag(familiar, PASSABLE);
+				serverUpdateEntityFlag(familiar, BLOCKSIGHT);
+			}
+			spawnAmuletFamiliarTransformParticles(familiar);
+		}
+		else if ( familiar )
+		{
+			removeBatFamiliar(familiar);
+			familiar = nullptr;
+		}
+	}
+	else
+	{
+		if ( Stat* familiarStats = familiar->getStats() )
+		{
+			familiarStats->setAttribute("AMULET_FAMILIAR", "1");
+			familiarStats->monsterNoDropItems = 1;
+			if ( familiarStats->type == BAT_FAMILIAR && familiarStats->HP <= 0 )
+			{
+				familiarStats->MAXHP = std::max<Sint32>(1, familiarStats->MAXHP);
+				familiarStats->HP = 1;
+				familiarStats->OLDHP = 1;
+			}
+		}
+		if ( familiar->familiarIdentity != 1 )
+		{
+			familiar->familiarIdentity = 1;
+			familiar->familiarForm = FAMILIAR_FORM_BAT;
+			familiar->familiarPendingForm = FAMILIAR_FORM_NONE;
+			if ( multiplayer == SERVER )
+			{
+				serverUpdateEntitySkill(familiar, 57);
+				serverUpdateEntitySkill(familiar, 58);
+			}
+		}
+		bool listedAsFollower = false;
+		for ( node_t* node = stats[player]->FOLLOWERS.first; node; node = node->next )
+		{
+			Uint32* uid = static_cast<Uint32*>(node->element);
+			if ( uid && *uid == familiar->getUID() )
+			{
+				listedAsFollower = true;
+				break;
+			}
+		}
+		if ( !listedAsFollower )
+		{
+			forceFollower(*playerEntity, *familiar);
+		}
+		if ( familiar->monsterAllyIndex != player )
+		{
+			familiar->monsterAllyIndex = player;
+			if ( multiplayer == SERVER )
+			{
+				serverUpdateEntitySkill(familiar, 42);
+			}
+		}
+	}
+
+	if ( familiar )
+	{
+		familiar->familiarInstanceId = familiarInstanceId;
+		syncAmuletFamiliarPersistentState(familiar, familiarAmulet, true);
+	}
+}
+
 static bool requestRuneHammerInscription(int player, Entity* target)
 {
 	if ( player < 0 || player >= MAXPLAYERS || !target || target->behavior != &actItem
@@ -1736,6 +1918,23 @@ void Player::Ghost_t::handleActions()
 				{
 					followerMenu.followerToCommand = selectedEntity[player.playernum];
 					//messagePlayer(0, "head");
+				}
+				if ( followerMenu.followerToCommand
+					&& isAmuletFamiliarMimic(followerMenu.followerToCommand) )
+				{
+					const bool commandFromWorldUI =
+						players[player.playernum]->worldUI.familiarMimicCommandInteraction
+						&& players[player.playernum]->worldUI.uidForActiveTooltip
+							== followerMenu.followerToCommand->getUID();
+
+					const bool commandFromHotkey =
+						input.binaryToggle("Show NPC Commands");
+
+					if ( !commandFromWorldUI && !commandFromHotkey )
+					{
+						// Ordinary Use on Familiar Mimic = open Void Chest.
+						followerMenu.followerToCommand = nullptr;
+					}
 				}
 
 				if ( followerMenu.followerToCommand )
@@ -9322,6 +9521,8 @@ void actPlayer(Entity* my)
 			stats[PLAYER_NUM]->mask = NULL;
 		}
 
+	updateBatFamiliarForPlayer(my, PLAYER_NUM);
+
 	if ( multiplayer != CLIENT )
 	{
 		my->effectTimes();
@@ -10727,6 +10928,23 @@ void actPlayer(Entity* my)
 							followerMenu.followerToCommand = selectedEntity[PLAYER_NUM];
 							//messagePlayer(0, "head");
 						}
+						if ( followerMenu.followerToCommand
+							&& isAmuletFamiliarMimic(followerMenu.followerToCommand) )
+						{
+							const bool commandFromWorldUI =
+								players[PLAYER_NUM]->worldUI.familiarMimicCommandInteraction
+								&& players[PLAYER_NUM]->worldUI.uidForActiveTooltip
+									== followerMenu.followerToCommand->getUID();
+
+							const bool commandFromHotkey =
+								input.binaryToggle("Show NPC Commands");
+
+							if ( !commandFromWorldUI && !commandFromHotkey )
+							{
+								// Ordinary Use on Familiar Mimic = open Void Chest.
+								followerMenu.followerToCommand = nullptr;
+							}
+						}
 
 						if ( followerMenu.followerToCommand )
 						{
@@ -11676,6 +11894,8 @@ void actPlayer(Entity* my)
 											entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
 											entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
 											entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+											entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+											copyItemPersistentCustomStateToEntity(*entity, *item);
 											entity->parent = achievementObserver.playerUids[PLAYER_NUM];
 										}
 									}
@@ -11735,6 +11955,8 @@ void actPlayer(Entity* my)
 											entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
 											entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
 											entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+											entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+											copyItemPersistentCustomStateToEntity(*entity, *item);
 										}
 										list_RemoveNode(node);
 									}

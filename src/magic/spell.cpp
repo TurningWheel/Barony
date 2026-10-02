@@ -344,6 +344,122 @@ spell_t spell_slime_tar;
 spell_t spell_slime_metal;
 std::map<int, spell_t> spellMap;
 
+bool grantTemporaryEquipmentSpell(int player, int spellID)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| !players[player]->isLocalPlayer() )
+	{
+		return false;
+	}
+	spell_t* definition = getSpellFromID(spellID);
+	if ( !definition )
+	{
+		return false;
+	}
+
+	bool changed = false;
+	bool foundSpell = false;
+	for ( node_t* node = players[player]->magic.spellList.first; node; node = node->next )
+	{
+		spell_t* spell = static_cast<spell_t*>(node->element);
+		if ( spell && spell->ID == spellID )
+		{
+			foundSpell = true;
+			break;
+		}
+	}
+	if ( !foundSpell )
+	{
+		spell_t* spell = copySpell(definition);
+		if ( !spell )
+		{
+			return false;
+		}
+		node_t* node = list_AddNodeLast(&players[player]->magic.spellList);
+		node->element = spell;
+		node->size = sizeof(spell_t);
+		node->deconstructor = &spellDeconstructor;
+		changed = true;
+	}
+
+	bool foundItem = false;
+	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->type == SPELL_ITEM && item->appearance == static_cast<Uint32>(spellID) )
+		{
+			foundItem = true;
+			break;
+		}
+	}
+	if ( !foundItem )
+	{
+		newItem(SPELL_ITEM, SERVICABLE, 0, 1, spellID, true, &stats[player]->inventory);
+		changed = true;
+	}
+	return changed;
+}
+
+void removeTemporaryEquipmentSpell(int player, int spellID)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| !players[player]->isLocalPlayer() )
+	{
+		return;
+	}
+
+	std::vector<Uint32> removedItemUids;
+	for ( node_t* node = stats[player]->inventory.first, *next = nullptr; node; node = next )
+	{
+		next = node->next;
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->type == SPELL_ITEM && item->appearance == static_cast<Uint32>(spellID) )
+		{
+			removedItemUids.push_back(item->uid);
+			list_RemoveNode(node);
+		}
+	}
+	auto clearRemovedHotbarItems = [&removedItemUids](auto& slots)
+	{
+		for ( auto& slot : slots )
+		{
+			if ( std::find(removedItemUids.begin(), removedItemUids.end(), slot.item) != removedItemUids.end() )
+			{
+				slot.item = 0;
+				slot.resetLastItem();
+			}
+		}
+	};
+	clearRemovedHotbarItems(players[player]->hotbar.slots());
+	for ( auto& slots : players[player]->hotbar.slotsAlternate() )
+	{
+		clearRemovedHotbarItems(slots);
+	}
+
+	for ( node_t* node = players[player]->magic.spellList.first, *next = nullptr; node; node = next )
+	{
+		next = node->next;
+		spell_t* spell = static_cast<spell_t*>(node->element);
+		if ( !spell || spell->ID != spellID )
+		{
+			continue;
+		}
+		if ( players[player]->magic.selectedSpell() == spell )
+		{
+			players[player]->magic.equipSpell(nullptr);
+			players[player]->magic.selected_spell_last_appearance = -1;
+		}
+		for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
+		{
+			if ( players[player]->magic.selected_spell_alternate[i] == spell )
+			{
+				players[player]->magic.selected_spell_alternate[i] = nullptr;
+			}
+		}
+		list_RemoveNode(node);
+	}
+}
+
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
 	node_t* node = nullptr;

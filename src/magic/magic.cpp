@@ -2173,6 +2173,8 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 					summonedStats->weapon->runeSetCreatorPlayer((*slot)->runeGetCreatorPlayer());
 					summonedStats->weapon->runeSetInstanceId((*slot)->runeGetInstanceId());
 					summonedStats->weapon->runeSetCreatorIdentity((*slot)->runeGetCreatorIdentity());
+					summonedStats->weapon->appliedOil = (*slot)->appliedOil;
+					copyItemPersistentCustomState(*summonedStats->weapon, **slot);
 				}
 			}
 
@@ -2186,6 +2188,8 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 				summonedStats->shield->runeSetCreatorPlayer((*slot)->runeGetCreatorPlayer());
 				summonedStats->shield->runeSetInstanceId((*slot)->runeGetInstanceId());
 				summonedStats->shield->runeSetCreatorIdentity((*slot)->runeGetCreatorIdentity());
+				summonedStats->shield->appliedOil = (*slot)->appliedOil;
+				copyItemPersistentCustomState(*summonedStats->shield, **slot);
 			}
 
 			// breastplate
@@ -2209,6 +2213,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 					summonedStats->breastplate->runeSetCreatorPlayer((*slot)->runeGetCreatorPlayer());
 					summonedStats->breastplate->runeSetInstanceId((*slot)->runeGetInstanceId());
 					summonedStats->breastplate->runeSetCreatorIdentity((*slot)->runeGetCreatorIdentity());
+					copyItemPersistentCustomState(*summonedStats->breastplate, **slot);
 				}
 			}
 
@@ -2222,6 +2227,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 				summonedStats->shoes->runeSetCreatorPlayer((*slot)->runeGetCreatorPlayer());
 				summonedStats->shoes->runeSetInstanceId((*slot)->runeGetInstanceId());
 				summonedStats->shoes->runeSetCreatorIdentity((*slot)->runeGetCreatorIdentity());
+				copyItemPersistentCustomState(*summonedStats->shoes, **slot);
 			}
 
 			// helm
@@ -2244,6 +2250,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 						summonedStats->helmet->runeSetCreatorPlayer((*slot)->runeGetCreatorPlayer());
 						summonedStats->helmet->runeSetInstanceId((*slot)->runeGetInstanceId());
 						summonedStats->helmet->runeSetCreatorIdentity((*slot)->runeGetCreatorIdentity());
+						copyItemPersistentCustomState(*summonedStats->helmet, **slot);
 					}
 					else
 					{
@@ -2262,6 +2269,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 					summonedStats->helmet->runeSetCreatorPlayer((*slot)->runeGetCreatorPlayer());
 					summonedStats->helmet->runeSetInstanceId((*slot)->runeGetInstanceId());
 					summonedStats->helmet->runeSetCreatorIdentity((*slot)->runeGetCreatorIdentity());
+					copyItemPersistentCustomState(*summonedStats->helmet, **slot);
 				}
 			}
 
@@ -2275,6 +2283,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 				summonedStats->amulet->runeSetCreatorPlayer((*slot)->runeGetCreatorPlayer());
 				summonedStats->amulet->runeSetInstanceId((*slot)->runeGetInstanceId());
 				summonedStats->amulet->runeSetCreatorIdentity((*slot)->runeGetCreatorIdentity());
+				copyItemPersistentCustomState(*summonedStats->amulet, **slot);
 			}
 
 			// ring
@@ -2287,6 +2296,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 				summonedStats->ring->runeSetCreatorPlayer((*slot)->runeGetCreatorPlayer());
 				summonedStats->ring->runeSetInstanceId((*slot)->runeGetInstanceId());
 				summonedStats->ring->runeSetCreatorIdentity((*slot)->runeGetCreatorIdentity());
+				copyItemPersistentCustomState(*summonedStats->ring, **slot);
 			}
 
 			// cloak
@@ -2299,6 +2309,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 				summonedStats->cloak->runeSetCreatorPlayer((*slot)->runeGetCreatorPlayer());
 				summonedStats->cloak->runeSetInstanceId((*slot)->runeGetInstanceId());
 				summonedStats->cloak->runeSetCreatorIdentity((*slot)->runeGetCreatorIdentity());
+				copyItemPersistentCustomState(*summonedStats->cloak, **slot);
 			}
 
 			// gloves
@@ -2322,6 +2333,7 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 					summonedStats->gloves->runeSetCreatorPlayer((*slot)->runeGetCreatorPlayer());
 					summonedStats->gloves->runeSetInstanceId((*slot)->runeGetInstanceId());
 					summonedStats->gloves->runeSetCreatorIdentity((*slot)->runeGetCreatorIdentity());
+					copyItemPersistentCustomState(*summonedStats->gloves, **slot);
 				}
 			}
 		}
@@ -2407,6 +2419,8 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 					copiedItem->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
 					copiedItem->runeSetInstanceId(item->runeGetInstanceId());
 					copiedItem->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+					copiedItem->appliedOil = item->appliedOil;
+					copyItemPersistentCustomState(*copiedItem, *item);
 				}
 				if ( item->node )
 				{

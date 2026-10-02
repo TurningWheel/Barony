@@ -2145,6 +2145,8 @@ public:
 		bool bTooltipActiveForPlayer(Entity& tooltip);
 		bool bTooltipInView = false;
 		Uint32 uidForActiveTooltip = 0;
+		bool familiarMimicCommandInteraction = false;
+		bool activeTooltipHasAlternateInteraction();
 		std::string interactText = "Interact";
 		void enable() { bEnabled = true; }
 		void disable() { 

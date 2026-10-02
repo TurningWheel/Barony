@@ -20,6 +20,9 @@
 #include "player.hpp"
 #include "prng.hpp"
 #include "mod_tools.hpp"
+#include "monster.hpp"
+
+static bool isVoidChestEndpoint(const Entity* entity);
 
 /*
  * Chest theme ideas:
@@ -1055,7 +1058,7 @@ void Entity::actChest()
 				{
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						if ( openedChest[i] && openedChest[i]->chestVoidState != 0 )
+						if ( isVoidChestEndpoint(openedChest[i]) )
 						{
 							voidChestInUse = true;
 						}
@@ -1101,9 +1104,12 @@ void Entity::actChest()
 							net_packet->data[32] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 							SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[33]);
 							SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[37]);
+							net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
+							writeIngredientCountsToPacket(*item, net_packet->data, 42);
+							writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
 							net_packet->address.host = net_clients[chestclicked - 1].host;
 							net_packet->address.port = net_clients[chestclicked - 1].port;
-							net_packet->len = 41;
+							net_packet->len = 114;
 							sendPacketSafe(net_sock, -1, net_packet, chestclicked - 1);
 						}
 					}
@@ -1238,6 +1244,145 @@ void actChestLid(Entity* my)
 	}
 }
 
+static bool isVoidChestEndpoint(const Entity* entity)
+{
+	return entity && ((entity->behavior == &actChest && entity->chestVoidState != 0)
+		|| (isAmuletFamiliar(entity, entity->getStats())
+			&& getAmuletFamiliarForm(entity) == FAMILIAR_FORM_MIMIC));
+}
+
+bool openAmuletFamiliarVoidChest(Entity* familiar, int player)
+{
+	if ( multiplayer == CLIENT || !familiar || player < 0 || player >= MAXPLAYERS
+		|| !players[player] || !players[player]->entity || !stats[0]
+		|| !isAmuletFamiliar(familiar, familiar->getStats())
+		|| getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_MIMIC )
+	{
+		return false;
+	}
+	Stat* familiarStats = familiar->getStats();
+	if ( !familiarStats || familiarStats->leader_uid != players[player]->entity->getUID() )
+	{
+		return false;
+	}
+	if ( openedChest[player] == familiar )
+	{
+		familiar->closeChest();
+		return true;
+	}
+	if ( openedChest[player] )
+	{
+		return false;
+	}
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( i != player && isVoidChestEndpoint(openedChest[i]) )
+		{
+			messagePlayer(player, MESSAGE_INTERACTION, Language::get(6565));
+			return false;
+		}
+	}
+
+	messagePlayer(player, MESSAGE_INTERACTION, Language::get(459));
+	openedChest[player] = familiar;
+	familiar->chestOpener = player;
+	if ( Entity* lid = getAmuletFamiliarMimicLid(familiar) )
+	{
+		lid->skill[FAMILIAR_MIMIC_CHEST_VISUAL_SKILL] = FAMILIAR_MIMIC_CHEST_OPEN;
+		if ( multiplayer == SERVER )
+		{
+			serverUpdateEntitySkill(lid, FAMILIAR_MIMIC_CHEST_VISUAL_SKILL);
+		}
+	}
+	playSoundEntity(familiar, 21, 64);
+	if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
+	{
+		strcpy((char*)net_packet->data, "CHST");
+		SDLNet_Write32(familiar->getUID(), &net_packet->data[4]);
+		net_packet->data[8] = 1;
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 9;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		for ( node_t* node = stats[0]->void_chest_inventory.first; node; node = node->next )
+		{
+			Item* item = static_cast<Item*>(node->element);
+			if ( !item ) { continue; }
+			strcpy((char*)net_packet->data, "CITM");
+			SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+			SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+			SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+			SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+			SDLNet_Write32(item->appearance, &net_packet->data[20]);
+			net_packet->data[24] = item->identified;
+			net_packet->data[25] = 1;
+			net_packet->data[26] = static_cast<Sint8>(item->x);
+			net_packet->data[27] = static_cast<Sint8>(item->y);
+			SDLNet_Write32(static_cast<Uint32>(item->runeGetStoredPWRRaw()), &net_packet->data[28]);
+			net_packet->data[32] = static_cast<Uint8>(item->runeGetCreatorPlayer());
+			SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[33]);
+			SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[37]);
+			net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
+			writeIngredientCountsToPacket(*item, net_packet->data, 42);
+			writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
+			net_packet->address.host = net_clients[player - 1].host;
+			net_packet->address.port = net_clients[player - 1].port;
+			net_packet->len = 114;
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		}
+	}
+	else
+	{
+		players[player]->openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_CHEST);
+		players[player]->inventoryUI.chestGUI.openChest(true);
+	}
+	return true;
+}
+
+void closeAmuletFamiliarVoidChest(Entity* familiar)
+{
+	if ( !familiar ) { return; }
+	bool wasOpen = false;
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( openedChest[player] == familiar )
+		{
+			wasOpen = true;
+			break;
+		}
+	}
+	if ( wasOpen )
+	{
+		if ( Entity* lid = getAmuletFamiliarMimicLid(familiar) )
+		{
+			lid->skill[FAMILIAR_MIMIC_CHEST_VISUAL_SKILL] = FAMILIAR_MIMIC_CHEST_CLOSING;
+			if ( multiplayer == SERVER )
+			{
+				serverUpdateEntitySkill(lid, FAMILIAR_MIMIC_CHEST_VISUAL_SKILL);
+			}
+		}
+		playSoundEntity(familiar, 22, 64);
+	}
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( openedChest[player] != familiar ) { continue; }
+		openedChest[player] = nullptr;
+		if ( multiplayer == SERVER && player > 0 && players[player] && !players[player]->isLocalPlayer() )
+		{
+			strcpy((char*)net_packet->data, "CCLS");
+			net_packet->address.host = net_clients[player - 1].host;
+			net_packet->address.port = net_clients[player - 1].port;
+			net_packet->len = 4;
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		}
+		else if ( players[player] )
+		{
+			players[player]->inventoryUI.chestGUI.closeChest();
+		}
+	}
+}
+
 int getChestOpenerFromEntity(const Entity& chest)
 {
 	for ( int i = 0; i < MAXPLAYERS; ++i )
@@ -1253,6 +1398,24 @@ int getChestOpenerFromEntity(const Entity& chest)
 void Entity::closeChest()
 {
 	int player = getChestOpenerFromEntity(*this);
+	if ( isAmuletFamiliar(this, getStats()) )
+	{
+		if ( multiplayer == CLIENT && players[player] && players[player]->isLocalPlayer() )
+		{
+			strcpy((char*)net_packet->data, "CCLS");
+			net_packet->data[4] = player;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 5;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+			closeChestClientside(player);
+		}
+		else
+		{
+			closeAmuletFamiliarVoidChest(this);
+		}
+		return;
+	}
 
 	if ( players[player]->isLocalPlayer() && multiplayer == CLIENT)
 	{
@@ -1306,12 +1469,42 @@ void Entity::closeChest()
 
 void Entity::closeChestServer()
 {
+	if ( isAmuletFamiliar(this, getStats()) )
+	{
+		closeAmuletFamiliarVoidChest(this);
+		return;
+	}
 	if (chestStatus)
 	{
 		chestStatus = 0;
 		openedChest[chestOpener] = NULL;
 		players[chestOpener]->inventoryUI.chestGUI.closeChest();
 	}
+}
+
+static Item* tryMergeIngredientBagIntoInventory(list_t& inventory, Item& source,
+	Item* specificDestinationStack)
+{
+	if ( !itemTypeIsIngredientBag(source.type) )
+	{
+		return nullptr;
+	}
+	const WitchIngredientCategory category = ingredientCategoryFromBag(source.type);
+	Item* destination = nullptr;
+	if ( specificDestinationStack
+		&& ingredientCategoryFromBag(specificDestinationStack->type) == category )
+	{
+		destination = specificDestinationStack;
+	}
+	else if ( !specificDestinationStack )
+	{
+		destination = findIngredientBagInInventory(inventory, category);
+	}
+	if ( destination && destination != &source && mergeIngredientBags(*destination, source) )
+	{
+		return destination;
+	}
+	return nullptr;
 }
 
 Item* Entity::addItemToVoidChest(int player, Item* item, bool forceNewStack, Item* specificDestinationStack)
@@ -1345,7 +1538,10 @@ Item* Entity::addItemToVoidChest(int player, Item* item, bool forceNewStack, Ite
 			net_packet->data[32] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 			SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[33]);
 			SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[37]);
-			net_packet->len = 41;
+			net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
+			writeIngredientCountsToPacket(*item, net_packet->data, 42);
+			writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
+			net_packet->len = 114;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 
 			return item;
@@ -1386,7 +1582,10 @@ Item* Entity::addItemToChest(Item* item, bool forceNewStack, Item* specificDesti
 		net_packet->data[32] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 		SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[33]);
 		SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[37]);
-		net_packet->len = 41;
+		net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
+		writeIngredientCountsToPacket(*item, net_packet->data, 42);
+		writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
+		net_packet->len = 114;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 
 		return addItemToChestClientside(player, item, forceNewStack, specificDestinationStack);
@@ -1400,6 +1599,11 @@ Item* Entity::addItemToChest(Item* item, bool forceNewStack, Item* specificDesti
 	node_t* t_node = NULL;
 	if ( !forceNewStack )
 	{
+		if ( Item* mergedBag = tryMergeIngredientBagIntoInventory(*inventory, *item,
+			specificDestinationStack) )
+		{
+			return mergedBag;
+		}
 		//If item's already in the chest, add it to a pre-existing stack.
 		for (t_node = inventory->first; t_node != NULL; t_node = t_node->next)
 		{
@@ -1443,9 +1647,12 @@ Item* Entity::addItemToChest(Item* item, bool forceNewStack, Item* specificDesti
 		net_packet->data[32] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 		SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[33]);
 		SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[37]);
+		net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
+		writeIngredientCountsToPacket(*item, net_packet->data, 42);
+		writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
 		net_packet->address.host = net_clients[chestOpener - 1].host;
 		net_packet->address.port = net_clients[chestOpener - 1].port;
-		net_packet->len = 41;
+		net_packet->len = 114;
 		sendPacketSafe(net_sock, -1, net_packet, chestOpener - 1);
 	}
 	return item;
@@ -1506,6 +1713,8 @@ Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bo
 	newitem->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
 	newitem->runeSetInstanceId(item->runeGetInstanceId());
 	newitem->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+	newitem->appliedOil = item->appliedOil;
+	copyItemPersistentCustomState(*newitem, *item);
 	Item** slot = itemSlot(stats[player], item);
 	if ( multiplayer == CLIENT )
 	{
@@ -1606,7 +1815,9 @@ Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bo
 		messagePlayer(player, MESSAGE_INVENTORY, Language::get(463), newitem->getName());
 	}
 
-	return addItemToChest(newitem, forceNewStack, specificDestinationStack);
+	return addItemToChest(newitem,
+		itemTypeIsIngredientBag(newitem->type) ? false : forceNewStack,
+		specificDestinationStack);
 }
 
 Item* Entity::getItemFromChest(Item* item, int amount, bool getInfoOnly)
@@ -1646,6 +1857,8 @@ Item* Entity::getItemFromChest(Item* item, int amount, bool getInfoOnly)
 		newitem->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
 		newitem->runeSetInstanceId(item->runeGetInstanceId());
 		newitem->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+		newitem->appliedOil = item->appliedOil;
+		copyItemPersistentCustomState(*newitem, *item);
 
 		//Tell the server.
 		if ( !getInfoOnly )
@@ -1667,7 +1880,10 @@ Item* Entity::getItemFromChest(Item* item, int amount, bool getInfoOnly)
 			net_packet->data[32] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 			SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[33]);
 			SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[37]);
-			net_packet->len = 41;
+			net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
+			writeIngredientCountsToPacket(*item, net_packet->data, 42);
+			writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
+			net_packet->len = 114;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 	}
@@ -1691,6 +1907,8 @@ Item* Entity::getItemFromChest(Item* item, int amount, bool getInfoOnly)
 		newitem->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
 		newitem->runeSetInstanceId(item->runeGetInstanceId());
 		newitem->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+		newitem->appliedOil = item->appliedOil;
+		copyItemPersistentCustomState(*newitem, *item);
 	}
 
 	if ( getInfoOnly )
@@ -1754,6 +1972,11 @@ list_t* Entity::getChestInventoryList()
 			}
 		}
 	}
+	if ( isAmuletFamiliar(this, getStats())
+		&& getAmuletFamiliarForm(this) == FAMILIAR_FORM_MIMIC && stats[0] )
+	{
+		return &stats[0]->void_chest_inventory;
+	}
 	return nullptr;
 }
 
@@ -1771,6 +1994,11 @@ Item* addItemToChestClientside(const int player, Item* item, bool forceNewStack,
 
 		if ( !forceNewStack )
 		{
+			if ( Item* mergedBag = tryMergeIngredientBagIntoInventory(chestInv[player], *item,
+				specificDestinationStack) )
+			{
+				return mergedBag;
+			}
 			for (node = chestInv[player].first; node != NULL; node = node->next)
 			{
 				item2 = (Item*) node->element;
@@ -1802,92 +2030,18 @@ Item* addItemToChestClientside(const int player, Item* item, bool forceNewStack,
 	return nullptr;
 }
 
-Item* Entity::addItemToVoidChestServer(int player, Item* item, bool forceNewStack, Item* specificDestinationStack)
+Item* Entity::tryAddItemToVoidChestServer(int player, Item* item, bool forceNewStack, Item* specificDestinationStack)
 {
-	if ( !item )
+	if ( !item || !stats[0] )
 	{
 		return nullptr;
 	}
+	if ( itemTypeIsIngredientBag(item->type) )
+	{
+		return mergeIngredientBagIntoVoidChest(*item);
+	}
 
-	Item* item2 = NULL;
-	node_t* t_node = NULL;
-
-	//Add the item to the chest's inventory.
 	list_t* inventory = &stats[0]->void_chest_inventory;
-
-	if ( !inventory )
-	{
-		return nullptr;
-	}
-
-	bool voidChestInUse = false;
-	for ( int i = 0; i < MAXPLAYERS; ++i )
-	{
-		if ( openedChest[i] && openedChest[i]->chestVoidState != 0 && i != player )
-		{
-			voidChestInUse = true;
-			break;
-		}
-	}
-	if ( voidChestInUse ) // someone already has a void chest open
-	{
-		if ( player >= 1 && player < MAXPLAYERS )
-		{
-			bool dropped = false;
-			if ( players[player]->entity )
-			{
-				auto item2 = newItem(item->type,
-					item->status,
-					item->beatitude,
-					item->count,
-					item->appearance,
-					item->identified,
-					&stats[player]->inventory);
-				item2->runeSetStoredPWRRaw(item->runeGetStoredPWRRaw());
-				item2->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
-				item2->runeSetInstanceId(item->runeGetInstanceId());
-				item2->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
-				dropped = dropItem(item2, player, true, true);
-			}
-			
-			if ( !dropped )
-			{
-				Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
-				entity->flags[INVISIBLE] = true;
-				entity->flags[UPDATENEEDED] = true;
-				entity->x = players[player]->player_last_x;
-				entity->y = players[player]->player_last_y;
-				entity->sizex = 4;
-				entity->sizey = 4;
-				entity->yaw = local_rng.rand() % 360 * (PI / 180.0);
-				entity->vel_x = 0.0;
-				entity->vel_y = 0.0;
-				entity->vel_z = (-10 - local_rng.rand() % 20) * .01;
-				entity->flags[PASSABLE] = true;
-				entity->behavior = &actItem;
-				entity->skill[10] = item->type;
-				entity->skill[11] = item->status;
-				entity->skill[12] = item->beatitude;
-				entity->skill[13] = item->count;
-				entity->skill[14] = item->appearance;
-				entity->skill[15] = item->identified;
-				entity->itemRuneStoredPWR = item->runeGetStoredPWRRaw();
-				entity->itemRuneStoredPWRValid = item->runeHasStoredPWR() ? 1 : 0;
-				entity->itemRuneCreatorPlayer = item->runeGetCreatorPlayer();
-				entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
-				entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
-				entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
-				entity->parent = 0;
-				entity->itemOriginalOwner = 0;
-
-				playSoundPos(players[player]->player_last_x, players[player]->player_last_y, 47 + local_rng.rand() % 3, 64);
-			}
-		}
-		messagePlayer(player, MESSAGE_INVENTORY, Language::get(6565));
-		return nullptr;
-	}
-
-	int originalQty = item->count;
 	if ( !forceNewStack )
 	{
 		while ( item->count > 0 )
@@ -1895,9 +2049,9 @@ Item* Entity::addItemToVoidChestServer(int player, Item* item, bool forceNewStac
 			bool anyItemsInserted = false;
 
 			//If item's already in the chest, add it to a pre-existing stack.
-			for ( t_node = inventory->first; t_node != NULL; t_node = t_node->next )
+			for ( node_t* t_node = inventory->first; t_node != NULL; t_node = t_node->next )
 			{
-				item2 = (Item*)t_node->element;
+				Item* item2 = (Item*)t_node->element;
 				if ( !specificDestinationStack )
 				{
 					if ( !itemCompare(item, item2, false) )
@@ -1941,23 +2095,195 @@ Item* Entity::addItemToVoidChestServer(int player, Item* item, bool forceNewStac
 	}
 
 	bool voidChestFull = list_Size(inventory) >= Player::Inventory_t::MAX_CHEST_X * Player::Inventory_t::MAX_CHEST_Y;
-	if ( voidChestFull ) // void chest is full
+	if ( voidChestFull )
 	{
-		bool dropped = false;
+		return nullptr;
+	}
+	bool foundSlot = item->x >= 0 && item->x < Player::Inventory_t::MAX_CHEST_X
+		&& item->y >= 0 && item->y < Player::Inventory_t::MAX_CHEST_Y;
+	if ( foundSlot )
+	{
+		for ( node_t* node = inventory->first; node; node = node->next )
+		{
+			Item* chestItem = static_cast<Item*>(node->element);
+			if ( chestItem && chestItem->x == item->x && chestItem->y == item->y )
+			{
+				foundSlot = false;
+				break;
+			}
+		}
+	}
+	for ( int y = 0; y < Player::Inventory_t::MAX_CHEST_Y && !foundSlot; ++y )
+	{
+		for ( int x = 0; x < Player::Inventory_t::MAX_CHEST_X; ++x )
+		{
+			bool occupied = false;
+			for ( node_t* node = inventory->first; node; node = node->next )
+			{
+				Item* chestItem = static_cast<Item*>(node->element);
+				if ( chestItem && chestItem->x == x && chestItem->y == y )
+				{
+					occupied = true;
+					break;
+				}
+			}
+			if ( !occupied )
+			{
+				item->x = x;
+				item->y = y;
+				foundSlot = true;
+				break;
+			}
+		}
+	}
+
+	item->node = list_AddNodeLast(inventory);
+	item->node->element = item;
+	item->node->deconstructor = &defaultDeconstructor;
+
+	return item;
+}
+
+void Entity::serverSendItemToOpenVoidChest(int player, const Item* item, bool forceNewStack)
+{
+	if ( multiplayer != SERVER || !item || player <= 0 || player >= MAXPLAYERS
+		|| !players[player] || players[player]->isLocalPlayer() || client_disconnected[player]
+		|| !isVoidChestEndpoint(openedChest[player]) )
+	{
+		return;
+	}
+	strcpy((char*)net_packet->data, "CITM");
+	SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+	SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+	SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+	SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+	SDLNet_Write32(item->appearance, &net_packet->data[20]);
+	net_packet->data[24] = item->identified;
+	net_packet->data[25] = forceNewStack ? 1 : 0;
+	net_packet->data[26] = static_cast<Sint8>(item->x);
+	net_packet->data[27] = static_cast<Sint8>(item->y);
+	SDLNet_Write32(static_cast<Uint32>(item->runeGetStoredPWRRaw()), &net_packet->data[28]);
+	net_packet->data[32] = static_cast<Uint8>(item->runeGetCreatorPlayer());
+	SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[33]);
+	SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[37]);
+	net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
+	writeIngredientCountsToPacket(*item, net_packet->data, 42);
+	writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 114;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
+void syncIngredientBagToOpenVoidChest(const Item& bag)
+{
+	if ( multiplayer != SERVER || !itemTypeIsIngredientBag(bag.type) ) { return; }
+	for ( int player = 1; player < MAXPLAYERS; ++player )
+	{
+		if ( client_disconnected[player] || !players[player] || players[player]->isLocalPlayer()
+			|| !isVoidChestEndpoint(openedChest[player]) )
+		{
+			continue;
+		}
+		strcpy((char*)net_packet->data, "IBAG");
+		SDLNet_Write32(static_cast<Uint32>(bag.type), &net_packet->data[4]);
+		writeIngredientCountsToPacket(bag, net_packet->data, 8);
+		net_packet->data[24] = static_cast<Uint8>(static_cast<Sint8>(bag.x));
+		net_packet->data[25] = static_cast<Uint8>(static_cast<Sint8>(bag.y));
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 26;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+}
+
+Item* mergeIngredientBagIntoVoidChest(const Item& source)
+{
+	if ( !stats[0] || !itemTypeIsIngredientBag(source.type) || ingredientBagIsEmpty(source) )
+	{
+		return nullptr;
+	}
+	list_t& inventory = stats[0]->void_chest_inventory;
+	const WitchIngredientCategory category = ingredientCategoryFromBag(source.type);
+	Item* destination = findIngredientBagInInventory(inventory, category);
+	if ( destination )
+	{
+		mergeIngredientBags(*destination, source);
+	}
+	else
+	{
+		destination = newItem(ingredientBagForCategory(category), EXCELLENT, 0, 1, 0, true, &inventory);
+		copyItemPersistentCustomState(*destination, source);
+		destination->count = 1;
+		destination->x = -1;
+		destination->y = -1;
+		bool foundSlot = false;
+		for ( int y = 0; y < Player::Inventory_t::MAX_CHEST_Y && !foundSlot; ++y )
+		{
+			for ( int x = 0; x < Player::Inventory_t::MAX_CHEST_X; ++x )
+			{
+				bool occupied = false;
+				for ( node_t* node = inventory.first; node; node = node->next )
+				{
+					Item* other = static_cast<Item*>(node->element);
+					if ( other != destination && other && other->x == x && other->y == y )
+					{
+						occupied = true;
+						break;
+					}
+				}
+				if ( !occupied )
+				{
+					destination->x = x;
+					destination->y = y;
+					foundSlot = true;
+					break;
+				}
+			}
+		}
+	}
+	syncIngredientBagToOpenVoidChest(*destination);
+	return destination;
+}
+
+Item* Entity::addItemToVoidChestServer(int player, Item* item, bool forceNewStack, Item* specificDestinationStack)
+{
+	if ( !item )
+	{
+		return nullptr;
+	}
+
+	bool voidChestInUse = false;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( isVoidChestEndpoint(openedChest[i]) && i != player )
+		{
+			voidChestInUse = true;
+			break;
+		}
+	}
+	if ( voidChestInUse ) // someone already has a void chest open
+	{
 		if ( player >= 1 && player < MAXPLAYERS )
 		{
-			auto item2 = newItem(item->type,
-				item->status,
-				item->beatitude,
-				item->count,
-				item->appearance,
-				item->identified,
-				&stats[player]->inventory);
-			item2->runeSetStoredPWRRaw(item->runeGetStoredPWRRaw());
-			item2->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
-			item2->runeSetInstanceId(item->runeGetInstanceId());
-			item2->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
-			dropped = dropItem(item2, player, true, true);
+			bool dropped = false;
+			if ( players[player]->entity )
+			{
+				auto item2 = newItem(item->type,
+					item->status,
+					item->beatitude,
+					item->count,
+					item->appearance,
+					item->identified,
+					&stats[player]->inventory);
+				item2->runeSetStoredPWRRaw(item->runeGetStoredPWRRaw());
+				item2->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
+				item2->runeSetInstanceId(item->runeGetInstanceId());
+				item2->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+				item2->appliedOil = item->appliedOil;
+				copyItemPersistentCustomState(*item2, *item);
+				dropped = dropItem(item2, player, true, true);
+			}
 
 			if ( !dropped )
 			{
@@ -1986,22 +2312,79 @@ Item* Entity::addItemToVoidChestServer(int player, Item* item, bool forceNewStac
 				entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
 				entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
 				entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+				entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+				copyItemPersistentCustomStateToEntity(*entity, *item);
 				entity->parent = 0;
 				entity->itemOriginalOwner = 0;
 
 				playSoundPos(players[player]->player_last_x, players[player]->player_last_y, 47 + local_rng.rand() % 3, 64);
 			}
 		}
-
-		messagePlayer(player, MESSAGE_INVENTORY, Language::get(6566));
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(6565));
 		return nullptr;
 	}
 
-	item->node = list_AddNodeLast(inventory);
-	item->node->element = item;
-	item->node->deconstructor = &defaultDeconstructor;
+	if ( Item* inserted = tryAddItemToVoidChestServer(player, item, forceNewStack, specificDestinationStack) )
+	{
+		return inserted;
+	}
 
-	return item;
+	bool dropped = false;
+	if ( player >= 1 && player < MAXPLAYERS )
+	{
+		auto item2 = newItem(item->type,
+			item->status,
+			item->beatitude,
+			item->count,
+			item->appearance,
+			item->identified,
+			&stats[player]->inventory);
+		item2->runeSetStoredPWRRaw(item->runeGetStoredPWRRaw());
+		item2->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
+		item2->runeSetInstanceId(item->runeGetInstanceId());
+		item2->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+		item2->appliedOil = item->appliedOil;
+		copyItemPersistentCustomState(*item2, *item);
+		dropped = dropItem(item2, player, true, true);
+
+		if ( !dropped )
+		{
+			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
+			entity->flags[INVISIBLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->x = players[player]->player_last_x;
+			entity->y = players[player]->player_last_y;
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->yaw = local_rng.rand() % 360 * (PI / 180.0);
+			entity->vel_x = 0.0;
+			entity->vel_y = 0.0;
+			entity->vel_z = (-10 - local_rng.rand() % 20) * .01;
+			entity->flags[PASSABLE] = true;
+			entity->behavior = &actItem;
+			entity->skill[10] = item->type;
+			entity->skill[11] = item->status;
+			entity->skill[12] = item->beatitude;
+			entity->skill[13] = item->count;
+			entity->skill[14] = item->appearance;
+			entity->skill[15] = item->identified;
+			entity->itemRuneStoredPWR = item->runeGetStoredPWRRaw();
+			entity->itemRuneStoredPWRValid = item->runeHasStoredPWR() ? 1 : 0;
+			entity->itemRuneCreatorPlayer = item->runeGetCreatorPlayer();
+			entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
+			entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
+			entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+			entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+			copyItemPersistentCustomStateToEntity(*entity, *item);
+			entity->parent = 0;
+			entity->itemOriginalOwner = 0;
+
+			playSoundPos(players[player]->player_last_x, players[player]->player_last_y, 47 + local_rng.rand() % 3, 64);
+		}
+	}
+
+	messagePlayer(player, MESSAGE_INVENTORY, Language::get(6566));
+	return nullptr;
 }
 
 Item* Entity::addItemToChestServer(Item* item, bool forceNewStack, Item* specificDestinationStack)
@@ -2024,6 +2407,11 @@ Item* Entity::addItemToChestServer(Item* item, bool forceNewStack, Item* specifi
 
 	if ( !forceNewStack )
 	{
+		if ( Item* mergedBag = tryMergeIngredientBagIntoInventory(*inventory, *item,
+			specificDestinationStack) )
+		{
+			return mergedBag;
+		}
 		//If item's already in the chest, add it to a pre-existing stack.
 		for (t_node = inventory->first; t_node != NULL; t_node = t_node->next)
 		{

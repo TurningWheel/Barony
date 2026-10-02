@@ -3209,6 +3209,19 @@ void Entity::setHP(int amount)
 	{
 		return;
 	}
+	if ( isAmuletFamiliar(this, entitystats)
+		&& getAmuletFamiliarForm(this) == FAMILIAR_FORM_MIMIC
+		&& amount <= 0 && amount < entitystats->HP )
+	{
+		setHP(1);
+		entitystats->OLDHP = 1;
+		transformAmuletFamiliar(this, FAMILIAR_FORM_BAT, true);
+		return;
+	}
+	if ( entitystats->type == BAT_FAMILIAR && amount < entitystats->HP )
+	{
+		return;
+	}
 
 	int healthDiff = entitystats->HP;
 
@@ -3285,6 +3298,10 @@ modifies the HP of the given entity
 void Entity::modHP(int amount)
 {
 	Stat* entitystats = this->getStats();
+	if ( entitystats && entitystats->type == BAT_FAMILIAR && amount < 0 )
+	{
+		return;
+	}
 
 	if ( this->behavior == &actPlayer )
 	{
@@ -4950,6 +4967,16 @@ void Entity::handleEffects(Stat* myStats)
 						break;
 				}
 			}
+
+			// Consume one stored affinity only for each stat that really increased.
+			for ( int stat = 0; stat < NUMSTATS; ++stat )
+			{
+				if ( statIncrease[stat] > 0 && myStats->tinctureStacks[stat] > 0 )
+				{
+					--myStats->tinctureStacks[stat];
+				}
+			}
+			serverSyncTinctureStacks(player);
 
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
@@ -8740,6 +8767,16 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeMod
 	{
 		return 0;
 	}
+	if ( my && isAmuletFamiliar(my, myStats)
+		&& getAmuletFamiliarForm(my) == FAMILIAR_FORM_MIMIC )
+	{
+		const Sint32 familiarAttack = 1 + std::max<Sint32>(0, myStats->LVL - 1) / 2;
+		if ( returnWeaponAttackValue )
+		{
+			*returnWeaponAttackValue = familiarAttack;
+		}
+		return familiarAttack;
+	}
 
 	attack = BASE_MELEE_DAMAGE; // base attack strength
 	bool shapeshifted = (my && my->behavior == &actPlayer && my->effectShapeshift != NOTHING);
@@ -10706,6 +10743,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 	{
 		return;
 	}
+	if ( myStats->type == BAT_FAMILIAR )
+	{
+		return;
+	}
 
 	// get the player number, if applicable
 	if ( behavior == &actPlayer )
@@ -11687,6 +11728,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					entity->setRangedProjectileAttack(*this, *myStats);
 				}
+				if ( myStats->shield && itemTypeIsQuiver(myStats->shield->type) )
+				{
+					entity->projectileAppliedOil = static_cast<Sint32>(myStats->shield->appliedOil);
+					entity->projectileOilSourceItemUID = static_cast<Sint32>(myStats->shield->uid);
+					entity->projectileOilSourceItemType = static_cast<Sint32>(myStats->shield->type);
+				}
 
 				if ( entity->arrowQuiverType != 0 && myStats->shield && itemTypeIsQuiver(myStats->shield->type) )
 				{
@@ -11813,6 +11860,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 					entity->skill[14] = myStats->weapon->appearance;
 					entity->skill[15] = myStats->weapon->identified;
 				}
+				entity->projectileAppliedOil = static_cast<Sint32>(myStats->weapon->appliedOil);
+				entity->projectileOilSourceItemUID = static_cast<Sint32>(myStats->weapon->uid);
+				entity->projectileOilSourceItemType = static_cast<Sint32>(myStats->weapon->type);
 
 				if ( itemCategory(myStats->weapon) == THROWN )
 				{
@@ -13912,6 +13962,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 						damage = 0;
 						spawnBang(hit.entity->x, hit.entity->y, hit.entity->z);
 					}
+					Item* oilWeapon = (!shapeshifted && itemCanReceiveOil(myStats->weapon))
+						? myStats->weapon : nullptr;
+					if ( oilWeapon && oilWeapon->appliedOil != APPLIED_OIL_NONE )
+					{
+						if ( damage > 0 && oilMatchesTarget(oilWeapon->appliedOil, hit.entity) )
+						{
+							damage += damage / 4;
+						}
+						rollOilWearOff(oilWeapon, player, false);
+					}
 
 					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage); // do the damage
@@ -15173,9 +15233,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( myStats->type == MIMIC && local_rng.rand() % 4 == 0 )
 					{
+						const bool familiarMimic = isAmuletFamiliar(this, myStats)
+							&& getAmuletFamiliarForm(this) == FAMILIAR_FORM_MIMIC;
+						const bool mayStealFromTarget = !familiarMimic || !checkFriend(hit.entity);
 						Item* armor = nullptr;
 						int armornum = 0;
-						if ( behavior == &actPlayer 
+						if ( !mayStealFromTarget )
+						{
+							armor = nullptr;
+						}
+						else if ( behavior == &actPlayer
 							|| (hit.entity->behavior == &actMonster
 								&& ((hit.entity->monsterAllySummonRank != 0 && hitstats->type == SKELETON)
 									|| hit.entity->monsterIsTinkeringCreation()
@@ -15202,15 +15269,51 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						if ( armor != nullptr )
 						{
-							bool mimicSentToVoid = false;
-							if ( myStats->getEffectActive(EFF_MIMIC_VOID) )
+							if ( armor->type == AMULET_FAMILIAR )
 							{
-								int qty = 1;
-								if ( itemTypeIsQuiver(armor->type) )
+								if ( Entity* activeFamiliar = findAmuletFamiliar(hit.entity) )
 								{
-									qty = armor->count;
+									syncAmuletFamiliarPersistentState(activeFamiliar, armor, true);
 								}
-
+							}
+							bool mimicSentToVoid = false;
+							int qty = 1;
+							if ( itemTypeIsQuiver(armor->type) )
+							{
+								qty = armor->count;
+							}
+							if ( familiarMimic )
+							{
+								Item* stolenArmor = newItemFromExistingItem(*armor, qty, nullptr);
+								stolenArmor->ownerUid = hit.entity->getUID();
+								stolenArmor->isDroppable = armor->isDroppable;
+								int ownerPlayer = monsterAllyIndex;
+								if ( ownerPlayer < 0 || ownerPlayer >= MAXPLAYERS || !players[ownerPlayer]
+									|| !players[ownerPlayer]->entity
+									|| players[ownerPlayer]->entity->getUID() != myStats->leader_uid )
+								{
+									ownerPlayer = -1;
+								}
+								if ( Item* chestItem = Entity::tryAddItemToVoidChestServer(
+									ownerPlayer, stolenArmor, true, nullptr) )
+								{
+									Entity::serverSendItemToOpenVoidChest(ownerPlayer, chestItem, true);
+									if ( chestItem != stolenArmor )
+									{
+										free(stolenArmor);
+									}
+									mimicSentToVoid = true;
+								}
+								else
+								{
+									// Familiar inventory is intentionally non-droppable. Passing no
+									// monster stats makes this explicit successful-steal fallback
+									// produce the world item beside the Mimic before freeing the copy.
+									dropItemMonster(stolenArmor, this, nullptr, stolenArmor->count);
+								}
+							}
+							else if ( myStats->getEffectActive(EFF_MIMIC_VOID) )
+							{
 								Item* stolenArmor = newItemFromExistingItem(*armor, qty, nullptr);
 								if ( Item* chestItem = Entity::addItemToVoidChestServer(-1, stolenArmor, true, nullptr) )
 								{
@@ -15228,7 +15331,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( armor )
 							{
-								int qty = 1;
 								int startCount = armor->count;
 								if ( itemTypeIsQuiver(armor->type) )
 								{
@@ -15243,7 +15345,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									steamStatisticUpdateClient(playerhit, STEAM_STAT_I_NEEDED_THAT, STEAM_STAT_INT, 1);
 								}
-								if ( !mimicSentToVoid )
+								if ( !mimicSentToVoid && !familiarMimic )
 								{
 									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6085), armor->getName());
 									Item* stolenArmor = newItemFromExistingItem(*armor, qty, &myStats->inventory);
@@ -15254,9 +15356,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 										dropItemMonster(stolenArmor, this, myStats, stolenArmor->count);
 									}
 								}
-								else
+								else if ( mimicSentToVoid )
 								{
 									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6567), armor->getName());
+								}
+								else
+								{
+									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6085), armor->getName());
 								}
 								if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
 								{
@@ -19018,6 +19124,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			}
 		}
 		destStats->EXP += gain;
+		if ( multiplayer != CLIENT && behavior == &actPlayer && gain > 0 )
+		{
+			spawnAmuletFamiliarIngredientBag(this, src);
+		}
 	}
 
 	if ( (srcStats->type == LICH || srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE) && root
@@ -19633,6 +19743,10 @@ bool Entity::checkEnemy(Entity* your)
 	Stat* yourStats = your->getStats();
 
 	if ( !myStats || !yourStats )
+	{
+		return false;
+	}
+	if ( myStats->type == BAT_FAMILIAR || yourStats->type == BAT_FAMILIAR )
 	{
 		return false;
 	}
@@ -25666,6 +25780,10 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	{
 		return;
 	}
+	if ( myStats->type == BAT_FAMILIAR )
+	{
+		return;
+	}
 
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
 	Sint32 oldMonsterState = monsterState;
@@ -28156,6 +28274,23 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 		{
 			//	            STR	DEX	CON	INT	PER	CHR
 			statWeights = { 1,	1,	1,	3,	1,	6 };
+		}
+	}
+	// Tinctures modify the class/form affinity baseline before the established
+	// race and equipment modifiers below. Native affinities above six are kept.
+	if ( behavior == &actPlayer )
+	{
+		if ( Stat* stat = getStats() )
+		{
+			for ( int i = 0; i < NUMSTATS; ++i )
+			{
+				const unsigned int nativeWeight = statWeights[i];
+				if ( nativeWeight < 6 && stat->tinctureStacks[i] > 0 )
+				{
+					const Uint64 boost = static_cast<Uint64>(stat->tinctureStacks[i]) * 2;
+					statWeights[i] = static_cast<unsigned int>(std::min<Uint64>(6, nativeWeight + boost));
+				}
+			}
 		}
 	}
 
@@ -33108,7 +33243,8 @@ bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
 	}
 	
 	if ( race == HUMAN || race == SENTRYBOT || race == NOTHING || race == SLIME
-		|| race == SPELLBOT || race == AUTOMATON || race == GYROBOT || race == DUMMYBOT || race == DUCK_SMALL )
+		|| race == SPELLBOT || race == AUTOMATON || race == GYROBOT || race == DUMMYBOT || race == DUCK_SMALL
+		|| race == BAT_FAMILIAR )
 	{
 		return false;
 	}

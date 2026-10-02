@@ -1044,6 +1044,15 @@ void actArrow(Entity* my)
 						firearmFirstHitCritApplied = true;
 					}
 					// mod add end
+					const AppliedOil projectileOil = static_cast<AppliedOil>(my->projectileAppliedOil);
+					if ( damage > 0 && oilMatchesTarget(projectileOil, hit.entity) )
+					{
+						damage += damage / 4;
+					}
+					if ( projectileOil != APPLIED_OIL_NONE )
+					{
+						rollProjectileOilWearOff(my);
+					}
 
 					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage);

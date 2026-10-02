@@ -77,6 +77,7 @@ enum Monster : int
 	MERROW, //mod add merrow
 	LEONIN, // mod add: Leonin
 	GOLEM, // mod add: standalone playable Golem identity
+	BAT_FAMILIAR, // mod add: Amulet of the Familiar companion
 	MAX_MONSTER
 };
 const int NUMMONSTERS = MAX_MONSTER;
@@ -131,6 +132,38 @@ static_assert(GOLEM_MODEL_B_ARM_BENT_LEFT == GOLEM_MODEL_B_ARM_LEFT + 2
 	&& GOLEM_MODEL_C_ARM_BENT_LEFT == GOLEM_MODEL_C_ARM_LEFT + 2
 	&& GOLEM_MODEL_C_ARM_BENT_RIGHT == GOLEM_MODEL_C_ARM_RIGHT + 2,
 	"Golem arm model ordering must preserve the humanoid +2 bent-arm convention.");
+
+enum BatFamiliarModel : Sint32
+{
+	BAT_FAMILIAR_MODEL_BODY = 2482,
+	BAT_FAMILIAR_MODEL_HEAD = 2483,
+	BAT_FAMILIAR_MODEL_WING_LEFT = 2484,
+	BAT_FAMILIAR_MODEL_WING_RIGHT = 2485,
+	BAT_FAMILIAR_MODEL_CAULDRON = 2504,
+	BAT_FAMILIAR_MODEL_MIMIC_LID = 2505,
+	BAT_FAMILIAR_MODEL_MIMIC_TRUNK = 2506
+};
+
+enum FamiliarForm : Sint32
+{
+	FAMILIAR_FORM_NONE = -1,
+	FAMILIAR_FORM_BAT = 0,
+	FAMILIAR_FORM_MIMIC,
+	FAMILIAR_FORM_CAULDRON
+};
+
+static constexpr Sint32 FAMILIAR_MIMIC_CHEST_VISUAL_SKILL = 7;
+enum FamiliarMimicChestVisualState : Sint32
+{
+	FAMILIAR_MIMIC_CHEST_NORMAL = 0,
+	FAMILIAR_MIMIC_CHEST_OPEN,
+	FAMILIAR_MIMIC_CHEST_CLOSING
+};
+
+static constexpr real_t FAMILIAR_MAX_FORM_DISTANCE = 8.0 * 16.0;
+static constexpr real_t FAMILIAR_BAT_MOVEMENT_SPEED_MULTIPLIER = 2.0;
+static constexpr real_t FAMILIAR_INGREDIENT_COLLECTION_SPEED_MULT = 2.0;
+static constexpr real_t FAMILIAR_INGREDIENT_PICKUP_RADIUS = 8.0;
 
 static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
     // NOTHING
@@ -247,7 +280,8 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
     // MIMIC
     {
 		1247,
-		1792
+		1792,
+		BAT_FAMILIAR_MODEL_MIMIC_TRUNK
     },
 
     // LICH
@@ -446,6 +480,12 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 		GOLEM_MODEL_C_ARM_BENT_LEFT, GOLEM_MODEL_C_ARM_BENT_RIGHT,
 		GOLEM_MODEL_C_HEAD, GOLEM_MODEL_C_LEG_LEFT,
 		GOLEM_MODEL_C_LEG_RIGHT, GOLEM_MODEL_C_TORSO
+	},
+	// BAT_FAMILIAR
+	{
+		BAT_FAMILIAR_MODEL_BODY, BAT_FAMILIAR_MODEL_HEAD,
+		BAT_FAMILIAR_MODEL_WING_LEFT, BAT_FAMILIAR_MODEL_WING_RIGHT,
+		BAT_FAMILIAR_MODEL_CAULDRON
 	}
 };
 
@@ -506,7 +546,8 @@ static char monstertypename[][32] =
 	"monster_unused_8",
 	"merrow", //mod add merrow
 	"leonin", // mod add: Leonin
-	"golem" // mod add: Golem
+	"golem", // mod add: Golem
+	"bat_familiar"
 };
 
 // body part focal points
@@ -573,7 +614,8 @@ static char gibtype[NUMMONSTERS] =
 	1,  //MONSTER_UNUSED_8
 	1,  //MERROW modd add
 	1,  // LEONIN: standard red blood
-	0   // GOLEM: construct
+	0,  // GOLEM: construct
+	0   // BAT_FAMILIAR: no blood/gibs
 };
 
 // columns go like this:
@@ -636,7 +678,8 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_8
 	{ 0.5, 1.f, 0.7, 1.2, 1.1, 1.4, 1.f }, // merrow mod add
 	{ 1.2, 0.8, 1.f, 1.3, 1.f, 0.6, 0.8 }, // leonin mod add
-	{ 1.f, 1.4, 1.f, 0.6, 0.8, 1.f, 1.2 }  // golem mod add
+	{ 1.f, 1.4, 1.f, 0.6, 0.8, 1.f, 1.2 }, // golem mod add
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.5 }  // bat familiar (immune; mirrors bat table)
 };
 
 enum DamageTableType : int
@@ -884,6 +927,34 @@ void initGyroBot(Entity* my, Stat* myStats);
 void initDummyBot(Entity* my, Stat* myStats);
 void initMimic(Entity* my, Stat* myStats);
 void initBat(Entity* my, Stat* myStats);
+static constexpr Uint16 SFX_CAULDRON_AMBIANCE = 866;
+static constexpr Uint16 SFX_STEW_BUBBLES = 867;
+void removeBatFamiliar(Entity* my);
+void spawnAmuletFamiliarTransformParticles(Entity* entity);
+bool syncAmuletFamiliarPersistentState(Entity* familiar, Item* amulet = nullptr, bool notifyOwner = true);
+bool isAmuletFamiliar(const Entity* entity, const Stat* stats = nullptr);
+FamiliarForm getAmuletFamiliarForm(const Entity* entity);
+bool familiarUsesBatCollisionSemantics(const Entity* entity);
+bool isAmuletFamiliarMimic(const Entity* entity);
+bool familiarFormHasCreatureCollision(const Entity* entity);
+bool familiarFormIsCombatTargetable(const Entity* entity);
+Entity* findAmuletFamiliar(Entity* owner);
+bool familiarCanBecomeMimicAtTile(int tilex, int tiley);
+bool amuletFamiliarPolymorphTargetIsValid(Entity* familiar, real_t targetX, real_t targetY);
+bool amuletFamiliarIsTooWeakToTransform(const Entity* familiar, const Stat* familiarStats = nullptr);
+bool requestAmuletFamiliarPolymorph(Entity* owner, real_t targetX, real_t targetY);
+bool updateAmuletFamiliarSpecialState(Entity* familiar, Stat* familiarStats);
+void transformAmuletFamiliar(Entity* familiar, FamiliarForm form, bool playEffect = true);
+void rebuildAmuletFamiliarVisuals(Entity* familiar);
+void animateAmuletFamiliarCauldron(Entity* familiar);
+void rebuildAmuletFamiliarCauldron(Entity* familiar);
+Entity* getAmuletFamiliarMimicLid(Entity* familiar);
+Item* mergeIngredientBagIntoVoidChest(const Item& source);
+void syncIngredientBagToOpenVoidChest(const Item& bag);
+void spawnAmuletFamiliarIngredientBag(Entity* recipient, Entity* source);
+void sweepAmuletFamiliarIngredientsOnLevelChange();
+void closeAmuletFamiliarVoidChest(Entity* familiar);
+bool openAmuletFamiliarVoidChest(Entity* familiar, int player);
 void initBugbear(Entity* my, Stat* myStats);
 void initMonsterD(Entity* my, Stat* myStats);
 void initMonsterM(Entity* my, Stat* myStats);

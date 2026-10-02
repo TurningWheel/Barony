@@ -26,6 +26,7 @@
 #include "../prng.hpp"
 #include "../mod_tools.hpp"
 #include "../paths.hpp"
+#include "../monster.hpp"
 
 bool isEntrenchDoorBarricade(const Entity* entity)
 {
@@ -65,7 +66,13 @@ bool entrenchBridgeSupportsTile(int tilex, int tiley)
 
 bool isEntrenchCarriedObject(const Entity* entity)
 {
-	return entity && entity->skill[ENTRENCH_CARRIED_OWNER_SKILL] > 0;
+	if ( !entity || entity->skill[ENTRENCH_CARRIED_OWNER_SKILL] <= 0 )
+	{
+		return false;
+	}
+	return entity->behavior == &actFurniture
+		|| entity->behavior == &actDoor
+		|| entity->behavior == &actColliderDecoration;
 }
 
 bool isEntrenchMovableObject(const Entity* entity)
@@ -245,6 +252,14 @@ static bool captureEntrenchStash(Entity* entity, EntrenchStash& result)
 				content.runeCreatorPlayer = child->itemRuneCreatorPlayerValid ? child->itemRuneCreatorPlayer : -1;
 				content.runeInstanceId = static_cast<Uint32>(child->itemRuneInstanceId);
 				content.runeCreatorIdentity = static_cast<Uint32>(child->itemRuneCreatorIdentity);
+				content.familiarInitialized = child->itemFamiliarInitialized != 0;
+				content.familiarInstanceId = static_cast<Uint32>(child->itemFamiliarInstanceId);
+				content.familiarHP = child->itemFamiliarHP; content.familiarMAXHP = child->itemFamiliarMAXHP;
+				content.familiarMP = child->itemFamiliarMP; content.familiarMAXMP = child->itemFamiliarMAXMP;
+				content.familiarLVL = child->itemFamiliarLVL; content.familiarEXP = child->itemFamiliarEXP;
+				content.familiarSTR = child->itemFamiliarSTR; content.familiarDEX = child->itemFamiliarDEX;
+				content.familiarCON = child->itemFamiliarCON; content.familiarINT = child->itemFamiliarINT;
+				content.familiarPER = child->itemFamiliarPER; content.familiarCHR = child->itemFamiliarCHR;
 			}
 			else if ( child->behavior == &actGoldBag && child->goldInContainer == entity->getUID() )
 			{
@@ -391,8 +406,17 @@ static Entity* createEntrenchStashedContent(const EntrenchStash::Content& conten
 		entity->itemRuneCreatorPlayerValid = content.runeCreatorPlayer >= 0 ? 1 : 0;
 		entity->itemRuneInstanceId = static_cast<Sint32>(content.runeInstanceId);
 		entity->itemRuneCreatorIdentity = static_cast<Sint32>(content.runeCreatorIdentity);
+		entity->itemFamiliarInitialized = content.familiarInitialized ? 1 : 0;
+		entity->itemFamiliarInstanceId = static_cast<Sint32>(content.familiarInstanceId);
+		entity->itemFamiliarHP = content.familiarHP; entity->itemFamiliarMAXHP = content.familiarMAXHP;
+		entity->itemFamiliarMP = content.familiarMP; entity->itemFamiliarMAXMP = content.familiarMAXMP;
+		entity->itemFamiliarLVL = content.familiarLVL; entity->itemFamiliarEXP = content.familiarEXP;
+		entity->itemFamiliarSTR = content.familiarSTR; entity->itemFamiliarDEX = content.familiarDEX;
+		entity->itemFamiliarCON = content.familiarCON; entity->itemFamiliarINT = content.familiarINT;
+		entity->itemFamiliarPER = content.familiarPER; entity->itemFamiliarCHR = content.familiarCHR;
 		reserveMagicRuneInstanceId(content.runeInstanceId);
 		reserveRuneCreatorIdentity(content.runeCreatorIdentity);
+		reserveFamiliarInstanceId(content.familiarInstanceId);
 		entity->itemContainer = container.getUID();
 		entity->flags[USERFLAG1] = true;
 	}
@@ -1058,6 +1082,23 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool 
 		return;
 	}
 
+	if ( player >= 0 && spell->ID == SPELL_POLYMORPH_FAMILIAR
+		&& stat->amulet && stat->amulet->type == AMULET_FAMILIAR
+		&& stat->amulet->status != BROKEN )
+	{
+		Entity* familiar = findAmuletFamiliar(caster);
+		if ( familiar && getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_BAT )
+		{
+			CastSpellProps_t props{};
+			props.caster_x = caster->x;
+			props.caster_y = caster->y;
+			props.target_x = familiar->x;
+			props.target_y = familiar->y;
+			castSpell(caster->getUID(), spell, false, false, false, &props);
+			return;
+		}
+	}
+
 	// Calculate the cost of the Spell for Singleplayer
 	//if ( spell->ID == SPELL_FORCEBOLT && skillCapstoneUnlocked(player, PRO_LEGACY_SPELLCASTING) )
 	//{
@@ -1627,6 +1668,51 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			player = i; //Set the player.
 		}
 	}
+	if ( spell->ID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		Entity* familiar = findAmuletFamiliar(caster);
+		if ( player < 0 || !stat || !stat->amulet || stat->amulet->type != AMULET_FAMILIAR
+			|| stat->amulet->status == BROKEN || !familiar )
+		{
+			return nullptr;
+		}
+		if ( getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_BAT )
+		{
+			requestAmuletFamiliarPolymorph(caster, familiar->x, familiar->y);
+			return nullptr;
+		}
+		if ( getAmuletFamiliarForm(familiar) == FAMILIAR_FORM_BAT )
+		{
+			if ( amuletFamiliarIsTooWeakToTransform(familiar, familiar->getStats()) )
+			{
+				messagePlayer(player, MESSAGE_MISC, "Your familiar is too weak to transform.");
+				playSoundPlayer(player, 163, 64);
+				return nullptr;
+			}
+			real_t targetX = 0.0;
+			real_t targetY = 0.0;
+			if ( castSpellProps )
+			{
+				targetX = castSpellProps->target_x;
+				targetY = castSpellProps->target_y;
+			}
+			else if ( player >= 0 && player < MAXPLAYERS )
+			{
+				targetX = cast_animation[player].target_x;
+				targetY = cast_animation[player].target_y;
+			}
+			else
+			{
+				return nullptr;
+			}
+			if ( !amuletFamiliarPolymorphTargetIsValid(familiar, targetX, targetY) )
+			{
+				messagePlayer(player, MESSAGE_MISC, "Your familiar cannot transform there.");
+				playSoundPlayer(player, 163, 64);
+				return nullptr;
+			}
+		}
+	}
 	if ( usingRune && player >= 0 )
 	{
 		spell->runeCasterPlayer = static_cast<Sint8>(player);
@@ -1659,6 +1745,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				allowedSkillup = true;
 			}
 		}
+	}
+	if ( spell->ID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		allowedSkillup = false;
 	}
 	Uint32 spellEventFlags = 0;
 	if ( using_magicstaff && !trap && !usingFoci )
@@ -2009,6 +2099,27 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	if ( spell->ID == SPELL_ENTRENCH )
 	{
 		castEntrench(caster, player, castSpellProps);
+		return nullptr;
+	}
+	if ( spell->ID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		CastSpellProps_t localTarget;
+		if ( !castSpellProps && player >= 0 && player < MAXPLAYERS )
+		{
+			// Local/host casts normally arrive with props from the floor-target
+			// animation. Retain a safe fallback so copied equipment spells cannot
+			// silently consume mana without issuing the familiar command.
+			localTarget.caster_x = caster->x;
+			localTarget.caster_y = caster->y;
+			localTarget.target_x = cast_animation[player].target_x;
+			localTarget.target_y = cast_animation[player].target_y;
+			castSpellProps = &localTarget;
+		}
+		if ( castSpellProps )
+		{
+			requestAmuletFamiliarPolymorph(caster,
+				castSpellProps->target_x, castSpellProps->target_y);
+		}
 		return nullptr;
 	}
 
@@ -10424,6 +10535,11 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity* caster, Stat& stat, int spellI
 	if ( caster && caster->behavior != &actPlayer )
 	{
 		return false;
+	}
+	if ( spellID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		return stat.amulet && stat.amulet->type == AMULET_FAMILIAR
+			&& stat.amulet->status != BROKEN;
 	}
 
 	// player races:

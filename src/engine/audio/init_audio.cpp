@@ -408,7 +408,8 @@ int loadSoundResources(real_t base_load_percent, real_t top_load_percent)
 		fp->gets2(name, 128);
 		completePath(full_path, name);
 		FMOD_MODE flags = FMOD_DEFAULT | FMOD_3D | FMOD_LOWMEM;
-		if ( c == 133 || c == 672 || c == 135 || c == 155 || c == 149 || c == 710 )
+		if ( c == 133 || c == 672 || c == 135 || c == 155 || c == 149 || c == 710
+			|| c == 866 ) // cauldron_ambiance.ogg
 		{
 			flags |= FMOD_LOOP_NORMAL;
 		}

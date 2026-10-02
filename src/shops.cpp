@@ -177,9 +177,12 @@ void startTradingServer(Entity* entity, int player)
 			net_packet->data[22] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 			SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[23]);
 			SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[27]);
+			net_packet->data[31] = static_cast<Uint8>(item->appliedOil);
+			writeIngredientCountsToPacket(*item, net_packet->data, 32);
+			writeFamiliarPersistentStateToPacket(*item, net_packet->data, 48);
 			net_packet->address.host = net_clients[player - 1].host;
 			net_packet->address.port = net_clients[player - 1].port;
-			net_packet->len = 31;
+			net_packet->len = 104;
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
 	}
@@ -230,6 +233,8 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 		itemToPickup->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
 		itemToPickup->runeSetInstanceId(item->runeGetInstanceId());
 		itemToPickup->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+		itemToPickup->appliedOil = item->appliedOil;
+		copyItemPersistentCustomState(*itemToPickup, *item);
 		if ( itemTypeIsQuiver(item->type) )
 		{
 			itemToPickup->count = item->count;
@@ -393,9 +398,12 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 			net_packet->data[34] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 			SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[35]);
 			SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[39]);
+			net_packet->data[43] = static_cast<Uint8>(item->appliedOil);
+			writeIngredientCountsToPacket(*item, net_packet->data, 44);
+			writeFamiliarPersistentStateToPacket(*item, net_packet->data, 60);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
-			net_packet->len = 43;
+			net_packet->len = 116;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 		if ( shopIsMysteriousShopkeeper(entity) )
@@ -661,6 +669,8 @@ bool sellItemToShop(const int player, Item* item)
 		sold->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
 		sold->runeSetInstanceId(item->runeGetInstanceId());
 		sold->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+		sold->appliedOil = item->appliedOil;
+		copyItemPersistentCustomState(*sold, *item);
 		if ( itemTypeIsQuiver(item->type) )
 		{
 			sold->count = item->count;
@@ -758,9 +768,12 @@ bool sellItemToShop(const int player, Item* item)
 		net_packet->data[34] = static_cast<Uint8>(item->runeGetCreatorPlayer());
 		SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[35]);
 		SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[39]);
+		net_packet->data[43] = static_cast<Uint8>(item->appliedOil);
+		writeIngredientCountsToPacket(*item, net_packet->data, 44);
+		writeFamiliarPersistentStateToPacket(*item, net_packet->data, 60);
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 43;
+		net_packet->len = 116;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
 	if ( itemTypeIsQuiver(item->type) )
