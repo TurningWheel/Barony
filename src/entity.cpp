@@ -129,7 +129,8 @@ const std::vector<ClassBaseGrowths::ClassHPMPValues> ClassBaseGrowths::classBase
 	{3,		3,		3,		3},  //CLASS_PALADIN,
 	{3,		1,		4,		1}, //CLASS_WHALER ------ mod add
 	{3,		4,		2,		4}, //CLASS_GUNSLINGER mod add
-	{3,		3,		3,		3}  //CLASS_RUNESMITH mod add
+	{3,		3,		3,		3}, //CLASS_RUNESMITH mod add
+	{3,		3,		3,		3}  //CLASS_WITCH mod add
 };
 
 Entity::~Entity()
@@ -29900,7 +29901,11 @@ get text string for the different player chosen classes.
 
 char const * playerClassLangEntry(int classnum, int playernum)
 {
-	if ( classnum == CLASS_RUNESMITH ) // mod add
+	if ( classnum == CLASS_WITCH ) // mod add
+	{
+		return "Witch";
+	}
+	else if ( classnum == CLASS_RUNESMITH ) // mod add
 	{
 		return "Runesmith";
 	}

@@ -10786,6 +10786,18 @@ void ClassHotbarConfig_t::init()
 	};
 	addRunesmithDefaultWeapon(ClassHotbarsDefault[CLASS_RUNESMITH].layoutClassic);
 	addRunesmithDefaultWeapon(ClassHotbarsDefault[CLASS_RUNESMITH].layoutModern);
+	// Preserve the normal starting-spell hotbar result when mounted hotbar data
+	// does not yet contain the appended Witch class.
+	auto addWitchDefaultSpell = [](ClassHotbar_t::ClassHotbarLayout_t& layout)
+	{
+		if ( !layout.hasData && !layout.hotbar.empty() )
+		{
+			layout.hotbar[0].itemTypes.push_back(SPELL_VOID_CHEST + 10000);
+			layout.hasData = true;
+		}
+	};
+	addWitchDefaultSpell(ClassHotbarsDefault[CLASS_WITCH].layoutClassic);
+	addWitchDefaultSpell(ClassHotbarsDefault[CLASS_WITCH].layoutModern);
 	readFromFile(HOTBAR_LAYOUT_CUSTOM_CONFIG);
 }
 

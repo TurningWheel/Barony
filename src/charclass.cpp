@@ -700,6 +700,25 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_POLEARM, 15);
 		stat->setProficiency(PRO_APPRAISAL, 30);
 	} //mod add end
+	// mod add: Witch
+	else if ( classnum == CLASS_WITCH )
+	{
+		stat->STR -= 1;
+		stat->DEX += 0;
+		stat->CON += 0;
+		stat->INT += 2;
+		stat->PER += 1;
+		stat->CHR += 1;
+
+		stat->MAXHP += 5;
+		stat->HP += 5;
+		stat->MAXMP += 10;
+		stat->MP += 10;
+
+		stat->setProficiency(PRO_ALCHEMY, 40);
+		stat->setProficiency(PRO_TRADING, 30);
+		stat->setProficiency(PRO_APPRAISAL, 25);
+	}
 	if ( gameModeManager.currentSession.challengeRun.isActive() )
 	{
 		if ( gameModeManager.currentSession.challengeRun.customBaseStats )
@@ -3713,6 +3732,68 @@ void initClass(const int player)
 			free(item);
 		}
 	}
+	else if ( client_classes[player] == CLASS_WITCH )
+	{
+		initClassStats(client_classes[player], stats[player]);
+
+		if ( !isLocalPlayer && multiplayer == CLIENT && intro == false )
+		{
+			// Do not construct inventory for players this client does not own.
+			return;
+		}
+
+		auto equipWitchItem = [&](ItemType type, Uint32 appearance)
+		{
+			item = newItem(type, SERVICABLE, 0, 1, appearance, true, nullptr);
+			if ( isLocalPlayer )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
+		};
+
+		equipWitchItem(AMULET_FAMILIAR, 0);
+		equipWitchItem(ROBE_CULTIST, 0);
+		equipWitchItem(HAT_HOOD_APPRENTICE, 1); // hood silver
+
+		if ( isLocalPlayer )
+		{
+			item = newItem(POTION_EMPTY, SERVICABLE, 0, 10, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(POTION_WATER, EXCELLENT, 0, 5, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 2, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+		}
+
+		if ( multiplayer != CLIENT )
+		{
+			for ( int category = INGREDIENT_CATEGORY_SLIME;
+				category <= INGREDIENT_CATEGORY_ANIMATIC; ++category )
+			{
+				for ( int slot = 0; slot < 4; ++slot )
+				{
+					const ItemType ingredient = ingredientForCategorySlot(
+						static_cast<WitchIngredientCategory>(category), slot);
+					if ( ingredient >= 0 && ingredient < NUMITEMS )
+					{
+						newItem(ingredient, SERVICABLE, 0, 1, 0, true,
+							&stats[player]->void_chest_inventory);
+					}
+				}
+			}
+		}
+	}
 	//mod add end
 	stats[player]->OLDHP = stats[player]->HP;
 
@@ -3809,6 +3890,27 @@ void initClass(const int player)
 			else
 			{
 				// bonus polymorph potions
+				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 0, true, nullptr);
+				item2 = itemPickup(player, item);
+				free(item);
+			}
+		}
+	}
+	if ( stats[player]->stat_appearance == 0
+		&& client_classes[player] == CLASS_WITCH
+		&& stats[player]->playerRace != RACE_HUMAN )
+	{
+		if ( isLocalPlayer )
+		{
+			if ( stats[player]->playerRace == RACE_DRYAD
+				|| stats[player]->playerRace == RACE_MYCONID
+				|| stats[player]->playerRace == RACE_GNOME
+				|| stats[player]->playerRace == RACE_SALAMANDER )
+			{
+				// These races retain the extended-class polymorph-potion exclusion.
+			}
+			else
+			{
 				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 0, true, nullptr);
 				item2 = itemPickup(player, item);
 				free(item);
@@ -3998,6 +4100,10 @@ void initClass(const int player)
 		{
 			addSpell(SPELL_ENTRENCH, player, true);
 			addSpell(SPELL_SALVAGE, player, true);
+		}
+		else if ( client_classes[player] == CLASS_WITCH )
+		{
+			addSpell(SPELL_VOID_CHEST, player, true);
 		}
 
 		//printlog("spell size: %d", list_Size(&spellList));

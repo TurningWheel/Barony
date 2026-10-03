@@ -13605,6 +13605,26 @@ failed:
 
 	constexpr int num_classes = sizeof(classes_in_order) / sizeof(classes_in_order[0]);
 	static_assert(num_classes == NUMCLASSES, "Class selection list must match NUMCLASSES"); // mod add
+	static bool classUsesBasePresentation(int classnum)
+	{
+		if ( classnum < CLASS_CONJURER )
+		{
+			return true;
+		}
+		if ( classnum == CLASS_GUNSLINGER )
+		{
+			return true;
+		}
+		if ( classnum == CLASS_RUNESMITH )
+		{
+			return true;
+		}
+		if ( classnum == CLASS_WITCH )
+		{
+			return true;
+		}
+		return false;
+	}
 
     constexpr Uint32 color_dlc0 = makeColorRGB(169, 185, 212);
     constexpr Uint32 color_dlc1 = makeColorRGB(241, 129, 78);
@@ -14066,6 +14086,10 @@ failed:
 	static bool race_button_challenge_check_fn(int race, int challengeClass)
 	{
 		bool allowPick = true;
+		if ( challengeClass == CLASS_WITCH )
+		{
+			return true;
+		}
 		if ( race == RACE_HUMAN )
 		{
 			return true;
@@ -16876,7 +16900,7 @@ failed:
   		    static auto class_desc_fn = [](Field& field, int index){
 			    const int i = std::min(std::max(0, client_classes[index]), NUMCLASSES - 1);
 				field.setText(ClassDescriptions::data[i].text.c_str());
-			    if (i == CLASS_GUNSLINGER || i == CLASS_RUNESMITH || i < CLASS_CONJURER) { // mod add: custom Base classes
+			    if (classUsesBasePresentation(i)) { // mod add: custom Base classes
 			        field.addColorToLine(0, color_dlc0);
 			    } else if (i < CLASS_MACHINIST) {
 			        field.addColorToLine(0, color_dlc1);
@@ -17093,11 +17117,15 @@ failed:
 				{
 					field.setText("Runesmith");
 				}
+				else if ( i == CLASS_WITCH )
+				{
+					field.setText("Witch");
+				}
 				else
 				{
 					field.setText(Language::get(playerClassLangEntryCapitalized(i)));
 				}
-			    if (i == CLASS_GUNSLINGER || i == CLASS_RUNESMITH || i < CLASS_CONJURER) { // mod add: custom Base classes
+			    if (classUsesBasePresentation(i)) { // mod add: custom Base classes
 			        field.setColor(color_dlc0);
 			    } else if (i < CLASS_MACHINIST) {
 			        field.setColor(color_dlc1);
@@ -18209,6 +18237,10 @@ failed:
 			else if ( i == CLASS_RUNESMITH )
 			{
 				field.setText("Runesmith");
+			}
+			else if ( i == CLASS_WITCH )
+			{
+				field.setText("Witch");
 			}
 			else
 			{
@@ -33413,9 +33445,7 @@ failed:
 						std::string s = playerClassLangEntry(e.scenarioInfo.classnum, 0);
 						camelCaseString(s);
 						txt->setText(s.c_str());
-						if ( e.scenarioInfo.classnum <= CLASS_MONK
-							|| e.scenarioInfo.classnum == CLASS_GUNSLINGER
-							|| e.scenarioInfo.classnum == CLASS_RUNESMITH )
+						if ( classUsesBasePresentation(e.scenarioInfo.classnum) )
 						{
 							txt->setColor(hudColors.characterBaseClassText);
 						}

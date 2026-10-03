@@ -99,7 +99,7 @@ extern real_t time_diff;
 extern real_t t, ot, frameval[AVERAGEFRAMES];
 extern Uint32 cycles, pingtime;
 extern real_t fps;
-static const int NUMCLASSES = 29; // mod add: append Runesmith
+static const int NUMCLASSES = 30; // mod add: append Witch
 #define NUMRACES 21 // mod edit: include Merrow, Leonin, and Golem race identities
 #define NUMPLAYABLERACES 15
 extern char address[64];
@@ -163,7 +163,8 @@ enum PlayerClasses : int
 	CLASS_PALADIN,
 	CLASS_WHALER, // mod add
 	CLASS_GUNSLINGER, // mod add
-	CLASS_RUNESMITH // mod add
+	CLASS_RUNESMITH, // mod add
+	CLASS_WITCH // mod add
 };
 
 static const std::vector<std::string> playerClassInternalNames = {
@@ -195,7 +196,8 @@ static const std::vector<std::string> playerClassInternalNames = {
 	"class_paladin",
 	"class_whaler", // mod add
 	"class_gunslinger", // mod add
-	"class_runesmith" // mod add
+	"class_runesmith", // mod add
+	"class_witch" // mod add
 };
 
 static const int CLASS_SHAMAN_NUM_STARTING_SPELLS = 15;

@@ -764,6 +764,10 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 	{
 		return VALID_OK_CHARACTER;
 	}
+	if ( characterClass == CLASS_WITCH )
+	{
+		return VALID_OK_CHARACTER;
+	}
 	// mod add: custom paired classes remain restricted even for aesthetic-only races.
 	if ( characterClass == CLASS_WHALER )
 	{
@@ -12037,7 +12041,8 @@ bool replayLastCharacter(const int index, int multiplayer)
 					stats[index]->playerRace = RACE_HUMAN;
 				}
 				if ( client_classes[index] > CLASS_MONK
-					&& client_classes[index] != CLASS_RUNESMITH )
+					&& client_classes[index] != CLASS_RUNESMITH
+					&& client_classes[index] != CLASS_WITCH )
 				{
 					client_classes[index] = CLASS_BARBARIAN;
 				}

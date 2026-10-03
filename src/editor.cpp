@@ -408,7 +408,11 @@ char wallButtonPropertyNames[2][49] =
 
 const char* playerClassLangEntry(int classnum, int playernum)
 {
-	if ( classnum == CLASS_RUNESMITH ) // mod add
+	if ( classnum == CLASS_WITCH ) // mod add
+	{
+		return "Witch";
+	}
+	else if ( classnum == CLASS_RUNESMITH ) // mod add
 	{
 		return "Runesmith";
 	}

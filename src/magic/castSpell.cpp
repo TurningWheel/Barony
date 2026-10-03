@@ -10660,6 +10660,13 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity* caster, Stat& stat, int spellI
 	{
 		return true;
 	}
+	else if ( client_classes[playernum] == CLASS_WITCH )
+	{
+		if ( spellID == SPELL_VOID_CHEST )
+		{
+			return true;
+		}
+	}
 		
 	if ( stat.getEffectActive(EFF_SHAPESHIFT) )
 	{

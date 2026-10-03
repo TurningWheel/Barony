@@ -7792,9 +7792,17 @@ int main(int argc, char** argv)
 					if (classtoquickstart[0] != '\0')
 					{
 						for ( c = 0; c < NUMCLASSES; c++ ) {
-							if ( c > CLASS_MONK && c != CLASS_RUNESMITH )
+							if ( c > CLASS_MONK )
 							{
-								continue;
+								bool allowCustomBaseClass = c == CLASS_RUNESMITH;
+								if ( c == CLASS_WITCH )
+								{
+									allowCustomBaseClass = true;
+								}
+								if ( !allowCustomBaseClass )
+								{
+									continue;
+								}
 							}
 							if ( !strcmp(classtoquickstart, playerClassLangEntry(c, 0)) ) {
 								client_classes[0] = c;

@@ -7359,6 +7359,10 @@ int SaveGameInfo::Player::isCharacterValidFromDLC()
 	{
 		return VALID_OK_CHARACTER;
 	}
+	if ( this->char_class == CLASS_WITCH )
+	{
+		return VALID_OK_CHARACTER;
+	}
 	// mod add: custom paired classes remain restricted even for aesthetic-only races.
 	if ( this->char_class == CLASS_WHALER )
 	{
