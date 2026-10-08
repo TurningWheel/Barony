@@ -2112,6 +2112,7 @@ void gameLogic(void)
 
 					// copy followers list
 					list_t tempFollowers[MAXPLAYERS];
+					Stat* tempWraithBodies[MAXPLAYERS] = {};
 					bool bCopyFollowers = true;
 					if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 					{
@@ -2152,6 +2153,14 @@ void gameLogic(void)
 						}
 
 						list_FreeAll(&stats[c]->FOLLOWERS);
+					}
+					if ( multiplayer != CLIENT )
+					{
+						for ( c = 0; c < MAXPLAYERS; ++c )
+						{
+							tempWraithBodies[c] =
+								captureWraithPossessedBodyForLevelTransition(c);
+						}
 					}
 
 					// unlock some steam achievements
@@ -2501,6 +2510,12 @@ void gameLogic(void)
 
 					for (c = 0; c < MAXPLAYERS; c++)
 					{
+						if ( tempWraithBodies[c] )
+						{
+							restoreWraithPossessedBodyAfterLevelTransition(
+								c, tempWraithBodies[c]);
+							tempWraithBodies[c] = nullptr; // consumed by restore
+						}
 						if (players[c] && players[c]->entity && !client_disconnected[c])
 						{
 							if ( stats[c] && stats[c]->getEffectActive(EFF_POLYMORPH) && stats[c]->playerPolymorphStorage != NOTHING )

@@ -38,6 +38,7 @@ struct EntrenchStash
 		Uint32 runeInstanceId = 0, runeCreatorIdentity = 0;
 		bool familiarInitialized = false;
 		Uint32 familiarInstanceId = 0;
+		Uint32 wraithLoreInstanceId = 0;
 		Sint32 familiarHP = 0, familiarMAXHP = 0, familiarMP = 0, familiarMAXMP = 0;
 		Sint32 familiarLVL = 0, familiarEXP = 0;
 		Sint32 familiarSTR = 0, familiarDEX = 0, familiarCON = 0;
@@ -55,6 +56,7 @@ struct EntrenchStash
 			fp->property("rune_creator_identity", runeCreatorIdentity);
 			fp->property("familiar_initialized", familiarInitialized);
 			fp->property("familiar_instance_id", familiarInstanceId);
+			fp->property("wraith_lore_instance_id", wraithLoreInstanceId);
 			fp->property("familiar_hp", familiarHP); fp->property("familiar_maxhp", familiarMAXHP);
 			fp->property("familiar_mp", familiarMP); fp->property("familiar_maxmp", familiarMAXMP);
 			fp->property("familiar_lvl", familiarLVL); fp->property("familiar_exp", familiarEXP);

@@ -2979,6 +2979,11 @@ void item_ScrollMail(Item*& item, int player)
 	result = result % NUM_SCROLL_MAIL_OPTIONS;
 	Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LORE_READ, SCROLL_MAIL, 1);
 	Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LORE_PERCENT_READ, SCROLL_MAIL, (1 << (result)));
+	if ( multiplayer != CLIENT )
+	{
+		processWraithItemLoreRead(player, item, WRAITH_LORE_MAIL,
+			getWraithCanonicalMailLoreId(item->appearance));
+	}
 }
 
 void item_ScrollIdentify(Item*& item, int player)
@@ -7125,6 +7130,12 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 
 void item_ToolLootBag(Item*& item, int player)
 {
+	if ( playerIsInWraithForm(player) )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY,
+			"You cannot open a death chest while in Wraith Form.");
+		return;
+	}
 	if ( multiplayer == CLIENT )
 	{
 		strcpy((char*)net_packet->data, "LOOT");

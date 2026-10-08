@@ -111,6 +111,7 @@ void actHudArm(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
+	my->flags[USERFLAG2] = playerIsInWraithForm(HUDARM_PLAYERNUM);
 
 
 	// sprite
@@ -121,13 +122,33 @@ void actHudArm(Entity* my)
 	my->x = parent->x;
 	my->y = parent->y;
 	my->z = parent->z - 2.5;
+	const bool stableWraithEmptyHand = playerIsInWraithForm(HUDARM_PLAYERNUM)
+		&& stats[HUDARM_PLAYERNUM]->weapon == nullptr
+		&& parent->skill[0] == 0;
+	if ( stableWraithEmptyHand )
+	{
+		// Keep camera/body movement intact, but cancel its passive vertical bob on
+		// the Wraith's intrinsic foreground hand.
+		my->z -= players[HUDARM_PLAYERNUM]->entity->fskill[0] * .5;
+	}
 
 	my->mistformGLRender = players[HUDARM_PLAYERNUM]->entity->mistformGLRender > 0.9 ? players[HUDARM_PLAYERNUM]->entity->mistformGLRender
 		: 0.0;
 
 	Monster playerRace = players[HUDARM_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HUDARM_PLAYERNUM]->playerRace);
 	int playerAppearance = stats[HUDARM_PLAYERNUM]->stat_appearance;
-	if ( players[HUDARM_PLAYERNUM]->entity->effectShapeshift != NOTHING )
+	const bool wraithPossessed = stats[HUDARM_PLAYERNUM]->playerRace == RACE_WRAITH
+		&& players[HUDARM_PLAYERNUM]->mechanics.wraith.initialized
+		&& players[HUDARM_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0;
+	if ( wraithPossessed )
+	{
+		playerRace = getWraithEffectiveMonsterType(HUDARM_PLAYERNUM);
+		if ( playerRace == RAT || playerRace == SPIDER )
+		{
+			HUD_SHAPESHIFT_HIDE = 1;
+		}
+	}
+	else if ( players[HUDARM_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HUDARM_PLAYERNUM]->entity->effectShapeshift);
 		if ( playerRace == RAT || playerRace == SPIDER )
@@ -146,6 +167,12 @@ void actHudArm(Entity* my)
 		{
 			playerRace = static_cast<Monster>(players[HUDARM_PLAYERNUM]->entity->effectPolymorph);
 		}
+	}
+	if ( wraithPossessed && !wraithPossessionHasFirstPersonModel(playerRace) )
+	{
+		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
+		return;
 	}
 
 	// when reverting form, render main limb as invisible for 1 tick as it's position needs to settle.
@@ -327,6 +354,9 @@ void actHudArm(Entity* my)
 			case LEONIN:
 				my->sprite = LEONIN_MODEL_HAND_RIGHT_FP;
 				break;
+			case WRAITH:
+				my->sprite = WRAITH_MODEL_HAND_RIGHT_FP;
+				break;
 			case GNOME:
 				my->sprite = 2322;
 				break;
@@ -356,6 +386,23 @@ void actHudArm(Entity* my)
 			//my->x += 0.5 * cos(parent->yaw);
 			//my->y += 0.5 * sin(parent->yaw);
 		}
+	}
+	const bool unsupportedWraithBareArm = wraithPossessed
+		&& (playerRace == SHADOW
+			|| playerRace == BUGBEAR
+			|| (playerRace == KOBOLD
+				&& stats[HUDARM_PLAYERNUM]->gloves == nullptr));
+	if ( unsupportedWraithBareArm )
+	{
+		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
+	}
+	else if ( wraithPossessed && playerRace == KOBOLD
+		&& stats[HUDARM_PLAYERNUM]->gloves != nullptr )
+	{
+		// Undo bare-arm suppression when a Kobold equips real gloves.
+		my->flags[INVISIBLE] = false;
+		my->flags[INVISIBLE_DITHER] = false;
 	}
 
 	// rotation
@@ -474,6 +521,25 @@ namespace FirearmHudAnimation
 	}
 }
 
+static Entity* createHudArm(Entity* hudWeapon, int player)
+{
+	if ( !hudWeapon || player < 0 || player >= MAXPLAYERS || !players[player] )
+	{
+		return nullptr;
+	}
+	Entity* arm = newEntity(109, 1, map.entities, nullptr); // malearmright.vox
+	arm->focalz = -1.5;
+	arm->parent = hudWeapon->getUID();
+	hudWeapon->parent = arm->getUID(); // easy bidirectional HUD reference
+	players[player]->hud.arm = arm;
+	arm->behavior = &actHudArm;
+	arm->skill[11] = player;
+	arm->flags[OVERDRAW] = true;
+	arm->flags[PASSABLE] = true;
+	arm->flags[NOUPDATE] = true;
+	return arm;
+}
+
 void actHudWeapon(Entity* my)
 {
 	double result = 0;
@@ -536,17 +602,7 @@ void actHudWeapon(Entity* my)
 	{
 		HUDWEAPON_INIT = 1;
 		playerHud.weapon = my;
-		entity = newEntity(109, 1, map.entities, nullptr); // malearmright.vox
-		entity->focalz = -1.5;
-		entity->parent = my->getUID();
-		my->parent = entity->getUID(); // just an easy way to refer to each other, doesn't mean much
-		playerHud.arm = entity;
-		parent = playerHud.arm;
-		entity->behavior = &actHudArm;
-		entity->skill[11] = HUDWEAPON_PLAYERNUM;
-		entity->flags[OVERDRAW] = true;
-		entity->flags[PASSABLE] = true;
-		entity->flags[NOUPDATE] = true;
+		parent = createHudArm(my, HUDWEAPON_PLAYERNUM);
 	}
 
 	if ( players[HUDWEAPON_PLAYERNUM] == nullptr || players[HUDWEAPON_PLAYERNUM]->entity == nullptr
@@ -555,6 +611,16 @@ void actHudWeapon(Entity* my)
 		playerHud.weapon = nullptr; //PLAYER DEAD. NULLIFY THIS.
 		list_RemoveNode(my->mynode);
 		return;
+	}
+	if ( HUDWEAPON_INIT && !playerHud.arm
+		&& stats[HUDWEAPON_PLAYERNUM] && stats[HUDWEAPON_PLAYERNUM]->HP > 0
+		&& players[HUDWEAPON_PLAYERNUM]->entity->playerCreatedDeathCam == 0 )
+	{
+		parent = createHudArm(my, HUDWEAPON_PLAYERNUM);
+	}
+	else
+	{
+		parent = playerHud.arm;
 	}
 
 	my->mistformGLRender = players[HUDWEAPON_PLAYERNUM]->entity->mistformGLRender > 0.9 ? players[HUDWEAPON_PLAYERNUM]->entity->mistformGLRender
@@ -597,7 +663,14 @@ void actHudWeapon(Entity* my)
 
 	Monster playerRace = players[HUDWEAPON_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HUDWEAPON_PLAYERNUM]->playerRace);
 	int playerAppearance = stats[HUDWEAPON_PLAYERNUM]->stat_appearance;
-	if ( players[HUDWEAPON_PLAYERNUM]->entity->effectShapeshift != NOTHING )
+	const bool wraithPossessed = stats[HUDWEAPON_PLAYERNUM]->playerRace == RACE_WRAITH
+		&& players[HUDWEAPON_PLAYERNUM]->mechanics.wraith.initialized
+		&& players[HUDWEAPON_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0;
+	if ( wraithPossessed )
+	{
+		playerRace = getWraithEffectiveMonsterType(HUDWEAPON_PLAYERNUM);
+	}
+	else if ( players[HUDWEAPON_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HUDWEAPON_PLAYERNUM]->entity->effectShapeshift);
 	}
@@ -628,7 +701,7 @@ void actHudWeapon(Entity* my)
 		hideWeapon = true;
 		if ( playerRace == CREATURE_IMP && stats[HUDWEAPON_PLAYERNUM]->weapon && itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == MAGICSTAFF )
 		{
-			hideWeapon = false;
+				hideWeapon = false;
 		}
 	}
 	else
@@ -637,6 +710,12 @@ void actHudWeapon(Entity* my)
 		{
 			--HUD_SHAPESHIFT_HIDE;
 		}
+	}
+	if ( wraithPossessed
+		&& (!wraithPossessionHasFirstPersonModel(playerRace)
+			|| !wraithPossessedBodyCanEquipSlot(HUDWEAPON_PLAYERNUM, 1)) )
+	{
+		hideWeapon = true;
 	}
 
 	if ( HUDWEAPON_CHOP >= 10 && HUDWEAPON_CHOP <= 12 ) // power strike charge
@@ -1240,7 +1319,7 @@ void actHudWeapon(Entity* my)
 				cast_animation[HUDWEAPON_PLAYERNUM].executeAttackSpell(swingweapon);
 			}
 		}
-		else if ( swingweapon && throwGimpTimer > 0 && stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon &&
+		if ( swingweapon && throwGimpTimer > 0 && stats[HUDWEAPON_PLAYERNUM]->weapon && !hideWeapon &&
 			( stats[HUDWEAPON_PLAYERNUM]->weapon->type == CROSSBOW
 				|| stats[HUDWEAPON_PLAYERNUM]->weapon->type == BLACKIRON_CROSSBOW
 				|| itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == POTION
@@ -4454,7 +4533,18 @@ void actHudShield(Entity* my)
 	}
 
 	Monster playerRace = players[HUDSHIELD_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HUDSHIELD_PLAYERNUM]->playerRace);
-	if ( players[HUDSHIELD_PLAYERNUM]->entity->effectShapeshift != NOTHING )
+	const bool wraithPossessed = stats[HUDSHIELD_PLAYERNUM]->playerRace == RACE_WRAITH
+		&& players[HUDSHIELD_PLAYERNUM]->mechanics.wraith.initialized
+		&& players[HUDSHIELD_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0;
+	if ( wraithPossessed )
+	{
+		playerRace = getWraithEffectiveMonsterType(HUDSHIELD_PLAYERNUM);
+		if ( playerRace == RAT || playerRace == SPIDER )
+		{
+			HUD_SHAPESHIFT_HIDE = 1;
+		}
+	}
+	else if ( players[HUDSHIELD_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HUDSHIELD_PLAYERNUM]->entity->effectShapeshift);
 		if ( playerRace == RAT || playerRace == SPIDER )
@@ -4507,7 +4597,6 @@ void actHudShield(Entity* my)
 	{
 		hideShield = true;
 	}
-
 	bool spellbook = false;
 	bool quiver = false;
 	bool foci = false;
@@ -4545,6 +4634,14 @@ void actHudShield(Entity* my)
 	else if ( stats[HUDSHIELD_PLAYERNUM]->shield && stats[HUDSHIELD_PLAYERNUM]->shield->type == TOOL_DUCK )
 	{
 		duck = true;
+	}
+	const bool spiderIntrinsicHudLimb = wraithPossessed && playerRace == SPIDER;
+	if ( wraithPossessed
+		&& (!wraithPossessionHasFirstPersonModel(playerRace)
+			|| (!spiderIntrinsicHudLimb
+				&& !wraithPossessedBodyCanEquipSlot(HUDSHIELD_PLAYERNUM, 2))) )
+	{
+		hideShield = true;
 	}
 
 	// when reverting form, render shield as invisible for 2 ticks as it's position needs to settle.

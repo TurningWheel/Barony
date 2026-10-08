@@ -41,6 +41,7 @@ public:
 extern BookParser_t bookParser_t;
 
 int getBook(std::string bookTitle);
+int getBookDisplayIndex(int index);
 std::string getBookDefaultNameFromIndex(int index, bool censored = true);
 std::string getBookLocalizedNameFromIndex(int index, bool censored = true);
 extern int numbooks;

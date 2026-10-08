@@ -69,6 +69,8 @@ Stat::Stat(Sint32 sprite) :
 	this->LVL = 1;
 	this->GOLD = 0;
 	this->HUNGER = 800;
+	this->wraithFormerPossessor = -1;
+	this->wraithBodyLootChestSpawned = false;
 	this->golemBlessedComposition = (this->sex == MALE) ? 10000 : 0;
 	this->runeCreatorIdentity = 0;
 	for ( int stat = 0; stat < NUMSTATS; ++stat )

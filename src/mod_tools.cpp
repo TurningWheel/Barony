@@ -1408,7 +1408,10 @@ void ItemTooltips_t::readItemsFromFile()
 		metadata.tpShortIndex = def.model;
 		metadata.category = "POTION";
 		metadata.equipSlot = wieldableBottle ? "weapon" : "none";
-		metadata.tooltip = "tooltip_potion";
+		if ( metadata.tooltip.empty() )
+		{
+			metadata.tooltip = "tooltip_potion";
+		}
 		metadata.imagePaths.clear();
 		metadata.imagePaths.push_back(resolvedImage);
 	}
@@ -1499,12 +1502,15 @@ void ItemTooltips_t::readItemsFromFile()
 		? "items/images/spells/entrench.png" : "items/images/null.png";
 	const char* familiarPolymorphIconPath = PHYSFS_getRealDir("items/images/spells/polymorph_familiar.png")
 		? "items/images/spells/polymorph_familiar.png" : "items/images/null.png";
-	while ( list_Size(&items[SPELL_ITEM].images) <= SPELL_POLYMORPH_FAMILIAR )
+	const char* possessIconPath = PHYSFS_getRealDir("items/images/spells/possess.png")
+		? "items/images/spells/possess.png" : "items/images/null.png";
+	while ( list_Size(&items[SPELL_ITEM].images) <= SPELL_POSSESS )
 	{
 		const int iconIndex = list_Size(&items[SPELL_ITEM].images);
 		const char* iconPath = iconIndex == SPELL_ENTRENCH
 			? entrenchIconPath : (iconIndex == SPELL_POLYMORPH_FAMILIAR
-				? familiarPolymorphIconPath : "items/images/null.png");
+				? familiarPolymorphIconPath : (iconIndex == SPELL_POSSESS
+					? possessIconPath : "items/images/null.png"));
 		string_t* string = static_cast<string_t*>(malloc(sizeof(string_t)));
 		const size_t len = 64;
 		string->data = static_cast<char*>(malloc(len));
@@ -1529,6 +1535,13 @@ void ItemTooltips_t::readItemsFromFile()
 		if ( string_t* string = static_cast<string_t*>(familiarIconNode->element) )
 		{
 			stringCopy(string->data, familiarPolymorphIconPath, 63, strlen(familiarPolymorphIconPath));
+		}
+	}
+	if ( node_t* possessIconNode = list_Node(&items[SPELL_ITEM].images, SPELL_POSSESS) )
+	{
+		if ( string_t* string = static_cast<string_t*>(possessIconNode->element) )
+		{
+			stringCopy(string->data, possessIconPath, 63, strlen(possessIconPath));
 		}
 	}
 
@@ -1783,6 +1796,25 @@ void ItemTooltips_t::readItemsFromFile()
 		assert(spellItems.find(t.id) == spellItems.end()); // check we haven't got duplicate key
 		spellItems.insert(std::make_pair(t.id, t));
 		++spellsRead;
+	}
+
+	// Possess is source-defined and may be absent from an older mounted items.json.
+	if ( spellItems.find(SPELL_POSSESS) == spellItems.end() )
+	{
+		spellItem_t possess;
+		possess.id = SPELL_POSSESS;
+		possess.internalName = "spell_possess";
+		possess.name = "Possess";
+		possess.name_lowercase = "possess";
+		possess.spellTypeStr = "TOUCH_ENEMY";
+		possess.spellType = SPELL_TYPE_TOUCH_ENEMY;
+		possess.skillID = PRO_MYSTICISM;
+		possess.difficulty = 0;
+		possess.mana = 0;
+		possess.distance = 128.0;
+		possess.spellTags.insert(SPELL_TAG_UTILITY);
+		spellNameStringToSpellID[possess.internalName] = possess.id;
+		spellItems.emplace(possess.id, possess);
 	}
 
 	//mod add: Entrench participates in the native spell-level system through
@@ -5501,6 +5533,19 @@ void ItemTooltips_t::formatItemDescription(const int player, std::string tooltip
 	ScopedSpellPowerOverride runePowerScope(item.runeHasStoredPWR(),
 		getMagicRuneEffectivePWR(item, player >= 0 && player < MAXPLAYERS && players[player]
 			? players[player]->entity : nullptr));
+#ifndef EDITOR
+	if ( item.type == SCROLL_MAIL
+		&& player >= 0 && player < MAXPLAYERS
+		&& players[player]
+		&& stats[player]
+		&& stats[player]->playerRace == RACE_WRAITH
+		&& getWraithCanonicalMailLoreId(item.appearance)
+			== getWraithAddressedMailLoreId(player) )
+	{
+		str = "A letter addressed to you";
+		return;
+	}
+#endif
 	if ( tooltipType.find("tooltip_spell_") != std::string::npos )
 	{
 		str = getSpellDescriptionText(player, item);
@@ -9301,6 +9346,26 @@ void MonsterData_t::loadMonsterDataJSON()
 			entry.keyToSpriteLookup["player male"] = { GOLEM_MODEL_B_HEAD };
 			entry.keyToSpriteLookup["player female"] = { GOLEM_MODEL_C_HEAD };
 		}
+		// Wraith player/ally portrait fallback for source-defined model IDs.
+		{
+			auto& entry = monsterDataEntries[WRAITH];
+			entry.monsterType = WRAITH;
+			entry.defaultShortDisplayName = "Wraith";
+			entry.defaultIconPath = baseIconPath + "basic/Icon_Wraith_00.png";
+			static constexpr int wraithModels[] = {
+				WRAITH_MODEL_ARM_LEFT, WRAITH_MODEL_ARM_BENT_LEFT,
+				WRAITH_MODEL_ARM_RIGHT, WRAITH_MODEL_ARM_BENT_RIGHT,
+				WRAITH_MODEL_HEAD, WRAITH_MODEL_TORSO
+			};
+			for ( const int model : wraithModels )
+			{
+				entry.modelIndexes.insert(model);
+			}
+			entry.playerModelIndexes.insert(WRAITH_MODEL_HEAD);
+			entry.iconSpritesAndPaths[WRAITH_MODEL_HEAD].key = "player";
+			entry.iconSpritesAndPaths[WRAITH_MODEL_HEAD].iconPath = entry.defaultIconPath;
+			entry.keyToSpriteLookup["player"] = { WRAITH_MODEL_HEAD };
+		}
 		// BAT_FAMILIAR data normally lives in the mounted monster_data.json. Keep
 		// the source-defined type usable when that data predates the mod entry.
 		{
@@ -10913,6 +10978,32 @@ void ClassHotbarConfig_t::assignHotbarSlots(const int player)
 			if ( matchingItems[itemAndSlot.first].item )
 			{
 				hotbar_t.slots()[matchingItems[itemAndSlot.first].slotnum].item = matchingItems[itemAndSlot.first].item->uid;
+			}
+		}
+	}
+	if ( stats[player]->playerRace == RACE_WRAITH && stats[player]->stat_appearance == 0 )
+	{
+		Item* possessItem = nullptr;
+		for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+		{
+			Item* item = static_cast<Item*>(node->element);
+			spell_t* spell = item && item->type == SPELL_ITEM
+				? getSpellFromItem(player, item, false) : nullptr;
+			if ( spell && spell->ID == SPELL_POSSESS )
+			{
+				possessItem = item;
+				break;
+			}
+		}
+		if ( possessItem )
+		{
+			for ( int slot = 0; slot < NUM_HOTBAR_SLOTS; ++slot )
+			{
+				if ( hotbar_t.slots()[slot].item == 0 )
+				{
+					hotbar_t.slots()[slot].item = possessItem->uid;
+					break;
+				}
 			}
 		}
 	}
@@ -13450,6 +13541,20 @@ void EquipmentModelOffsets_t::readBaseItemsFromFile()
 
 void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterType)
 {
+	static bool wraithFallbackLogged = false;
+	static bool wraithLoadedLogged = false;
+	auto useWraithSkeletonFallback = [&]()
+	{
+		if ( monsterType == WRAITH )
+		{
+			monsterModelsMap[WRAITH] = monsterModelsMap[SKELETON];
+			if ( !wraithFallbackLogged )
+			{
+				printlog("Wraith model_positions.json missing; using Skeleton equipment-position fallback");
+				wraithFallbackLogged = true;
+			}
+		}
+	};
 	if ( monsterType == NOTHING )
 	{
 		for ( int i = 0; i < NUMMONSTERS; ++i )
@@ -13478,6 +13583,7 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 		{
 			printlog("[MERROW]: Could not load required equipment position data %s", filename.c_str());
 		}
+		useWraithSkeletonFallback();
 		return;
 	}
 
@@ -13489,6 +13595,7 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 	if ( !fp )
 	{
 		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		useWraithSkeletonFallback();
 		return;
 	}
 
@@ -13502,11 +13609,13 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 	d.ParseStream(is);
 	if ( !d.IsObject() )
 	{
+		useWraithSkeletonFallback();
 		return;
 	}
 	if ( !d.HasMember("version") || !d.HasMember("items") )
 	{
 		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		useWraithSkeletonFallback();
 		return;
 	}
 
@@ -13797,6 +13906,11 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 		}
 	}
 
+	if ( monsterType == WRAITH && !wraithLoadedLogged )
+	{
+		printlog("Wraith model_positions.json loaded");
+		wraithLoadedLogged = true;
+	}
 	printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 }
 

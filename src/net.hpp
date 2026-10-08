@@ -55,6 +55,7 @@ void serverUpdatePlayerGameplayStats(int player, int gameplayStat, int changeval
 void serverUpdatePlayerConduct(int player, int conduct, int value);
 void serverUpdatePlayerLVL();
 void serverRemoveClientFollower(int player, Uint32 uidToRemove);
+void serverSendItemToPickup(int player, Item* item);
 void serverSendItemToPickupAndEquip(int player, Item* item);
 void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int MAXHP, int type);
 void serverUpdatePlayerSummonStrength(int player);

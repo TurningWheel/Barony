@@ -1402,9 +1402,42 @@ void serverSendItemToPickupAndEquip(int player, Item* item)
 	SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[38]);
 	net_packet->data[42] = static_cast<Uint8>(item->appliedOil);
 	writeFamiliarPersistentStateToPacket(*item, net_packet->data, 43);
+	writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+		43 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 	net_packet->address.host = net_clients[player - 1].host;
 	net_packet->address.port = net_clients[player - 1].port;
-	net_packet->len = 43 + FAMILIAR_PERSISTENT_PACKET_BYTES;
+	net_packet->len = 43 + FAMILIAR_PERSISTENT_PACKET_BYTES
+		+ WRAITH_LORE_INSTANCE_PACKET_BYTES;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
+void serverSendItemToPickup(int player, Item* item)
+{
+	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS || !item
+		|| client_disconnected[player] || players[player]->isLocalPlayer() )
+	{
+		return;
+	}
+	strcpy(reinterpret_cast<char*>(net_packet->data), "ITEM");
+	SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
+	SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
+	SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
+	SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
+	SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
+	SDLNet_Write32(static_cast<Uint32>(item->ownerUid), &net_packet->data[24]);
+	net_packet->data[28] = item->identified ? 1 : 0;
+	SDLNet_Write32(static_cast<Uint32>(item->runeGetStoredPWRRaw()), &net_packet->data[29]);
+	net_packet->data[33] = static_cast<Uint8>(item->runeGetCreatorPlayer());
+	SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[34]);
+	SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[38]);
+	net_packet->data[42] = static_cast<Uint8>(item->appliedOil);
+	writeIngredientCountsToPacket(*item, net_packet->data, 43);
+	writeFamiliarPersistentStateToPacket(*item, net_packet->data, 59);
+	writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+		59 + FAMILIAR_PERSISTENT_PACKET_BYTES);
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 115 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
@@ -4951,6 +4984,99 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 	}},
 
+	// Wraith possession state. Entry arrives before ITEM/ITEQ so the owning client
+	// accepts the transferred body inventory without Wraith Form restrictions.
+	{'WPST', [](){
+		if ( net_packet->len < 13 ) { return; }
+		const int player = net_packet->data[4];
+		if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player] ) { return; }
+		const bool owningClient = player == clientnum;
+		auto& wraith = players[player]->mechanics.wraith;
+		const Uint32 possessedUid = SDLNet_Read32(&net_packet->data[5]);
+		const Monster possessedType = wraithCanonicalPossessionType(
+			static_cast<Monster>(SDLNet_Read32(&net_packet->data[9])));
+		const bool savegameBodyRebind = owningClient && possessedUid != 0
+			&& wraith.possessionTransition
+			&& wraith.possessedEntityUid == UINT32_MAX;
+		bool paperDollUpdatedBeforeBodyRemoval = false;
+		if ( owningClient && possessedUid == 0 && wraith.possessedEntityUid != 0 )
+		{
+			clearWraithPossessionTemporarySpells(player);
+			Item* spiritRing = stats[player]->ring;
+			Item* spiritAmulet = stats[player]->amulet;
+			std::vector<Item*> bodyItems;
+			for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+			{
+				Item* item = static_cast<Item*>(node->element);
+				if ( item && item->type != SPELL_ITEM && item != spiritRing && item != spiritAmulet )
+				{
+					bodyItems.push_back(item);
+				}
+			}
+			clearWraithReturningBodyUIReferences(player, bodyItems);
+			stats[player]->helmet = nullptr;
+			stats[player]->breastplate = nullptr;
+			stats[player]->gloves = nullptr;
+			stats[player]->shoes = nullptr;
+			stats[player]->shield = nullptr;
+			stats[player]->weapon = nullptr;
+			stats[player]->cloak = nullptr;
+			stats[player]->mask = nullptr;
+			// Retire paper-doll UIDs before the local Item representations are freed.
+			players[player]->paperDoll.updateSlots();
+			paperDollUpdatedBeforeBodyRemoval = true;
+			for ( Item* item : bodyItems )
+			{
+				if ( item->node ) { list_RemoveNode(item->node); }
+				else { free(item); }
+			}
+		}
+		else if ( owningClient && possessedUid != 0 && !savegameBodyRebind )
+		{
+			// The Wraith hand becomes ordinary body inventory on entry.
+			stats[player]->weapon = nullptr;
+		}
+		wraith.possessedEntityUid = possessedUid;
+		wraith.possessedType = possessedType;
+		wraith.initialized = true;
+		stats[player]->type = possessedUid ? possessedType : WRAITH;
+		if ( owningClient && possessedUid != 0 && !savegameBodyRebind )
+		{
+			updateWraithPossessionTemporarySpells(player);
+		}
+		if ( savegameBodyRebind )
+		{
+			wraith.possessionTransition = false;
+		}
+		if ( owningClient && !paperDollUpdatedBeforeBodyRemoval )
+		{
+			players[player]->paperDoll.updateSlots();
+		}
+		players[player]->hud.weaponSwitch = true;
+		players[player]->hud.shieldSwitch = true;
+	}},
+
+	// Full authoritative acquired Wraith possession-knowledge set.
+	{'WKNO', [](){
+		if ( net_packet->len < 6 ) { return; }
+		const int player = net_packet->data[4];
+		const int count = net_packet->data[5];
+		if ( player < 0 || player >= MAXPLAYERS || player != clientnum
+			|| net_packet->len != 6 + count * static_cast<int>(sizeof(Uint32)) )
+		{
+			return;
+		}
+		std::vector<Monster> learned;
+		learned.reserve(count);
+		for ( int i = 0; i < count; ++i )
+		{
+			const Monster type = static_cast<Monster>(SDLNet_Read32(
+				&net_packet->data[6 + i * static_cast<int>(sizeof(Uint32))]));
+			if ( wraithPossessionTypeIsLearnable(type) ) { learned.push_back(type); }
+		}
+		replaceWraithLearnedPossessionTypes(player, learned);
+	}},
+
 	// get item
 	{'ITEM', [](){
 		Item* item = newItem(
@@ -4973,6 +5099,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			? std::min<int>(net_packet->data[42], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
 		readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 43);
 		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 59);
+		readWraithLoreInstanceIdFromPacket(*item, net_packet->data, net_packet->len,
+			59 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 		Item* pickedUp = itemPickup(clientnum, item);
 		free(item);
 		if ( players[clientnum] && players[clientnum]->entity )
@@ -5168,6 +5296,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				: APPLIED_OIL_NONE;
 			readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 32);
 			readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 48);
+			readWraithLoreInstanceIdFromPacket(*item, net_packet->data, net_packet->len,
+				48 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 			item->x = x;
 			item->y = y;
 			item->playerSoldItemToShop = buybackItem;
@@ -5292,9 +5422,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
 				writeIngredientCountsToPacket(*item, net_packet->data, 42);
 				writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
+				writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+					58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
-				net_packet->len = 114;
+				net_packet->len = 114 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
 		}
@@ -5337,9 +5469,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 					net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
 					writeIngredientCountsToPacket(*item, net_packet->data, 42);
 					writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
+					writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+						58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 					net_packet->address.host = net_server.host;
 					net_packet->address.port = net_server.port;
-					net_packet->len = 114;
+					net_packet->len = 114 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 					sendPacketSafe(net_sock, -1, net_packet, 0);
 					list_RemoveNode(node);
 				}
@@ -6212,6 +6346,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		newitem->appliedOil = static_cast<AppliedOil>(net_packet->len >= 42 ? std::min<int>(net_packet->data[41], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
 		readIngredientCountsFromPacket(*newitem, net_packet->data, net_packet->len, 42);
 		readFamiliarPersistentStateFromPacket(*newitem, net_packet->data, net_packet->len, 58);
+		readWraithLoreInstanceIdFromPacket(*newitem, net_packet->data, net_packet->len,
+			58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 		bool forceNewStack = net_packet->data[25] ? true : false;
 		newitem->x = (Sint8)net_packet->data[26];
 		newitem->y = (Sint8)net_packet->data[27];
@@ -6761,6 +6897,8 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 43
 			? std::min<int>(net_packet->data[42], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
 		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 43);
+		readWraithLoreInstanceIdFromPacket(*item, net_packet->data, net_packet->len,
+			43 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 		Item* pickedUp = itemPickup(clientnum, item);
 		free(item);
 		if ( players[clientnum] && players[clientnum]->entity && pickedUp )
@@ -8461,6 +8599,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			? std::min<int>(net_packet->data[39], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
 		readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 40);
 		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 56);
+		readWraithLoreInstanceIdFromPacket(*item, net_packet->data, net_packet->len,
+			56 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 		dropItem(item, player);
 	}},
 
@@ -8558,6 +8698,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 42 ? std::min<int>(net_packet->data[41], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
 		readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 42);
 		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 58);
+		readWraithLoreInstanceIdFromPacket(*item, net_packet->data, net_packet->len,
+			58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 
 		real_t x = net_packet->data[26];
 		x = (x * 16) + 8;
@@ -8716,6 +8858,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			: APPLIED_OIL_NONE;
 		readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 44);
 		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 60);
+		readWraithLoreInstanceIdFromPacket(*item, net_packet->data, net_packet->len,
+			60 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 		node_t* nextnode;
 		for ( auto node = entitystats->inventory.first; node != NULL; node = nextnode )
 		{
@@ -8901,6 +9045,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 			: APPLIED_OIL_NONE;
 		readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 44);
 		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 60);
+		readWraithLoreInstanceIdFromPacket(*item, net_packet->data, net_packet->len,
+			60 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 
 		Sint32 goldValue = item->sellValue(client);
 		int xout = Player::ShopGUI_t::MAX_SHOP_X;
@@ -9040,6 +9186,18 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 40
 			? std::min<int>(net_packet->data[39], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
 		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 41);
+		const int useItemLegacyLength = 41 + FAMILIAR_PERSISTENT_PACKET_BYTES;
+		const bool hasInventoryCoordinates = net_packet->len >= useItemLegacyLength + 8;
+		if ( hasInventoryCoordinates )
+		{
+			item->x = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[useItemLegacyLength]));
+			item->y = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[useItemLegacyLength + 4]));
+		}
+		if ( hasInventoryCoordinates
+			&& (item->type == READABLE_BOOK || item->type == SCROLL_MAIL) )
+		{
+			processWraithRemoteItemLoreRead(client, item);
+		}
 		useItem(item, client, nullptr, false, true, net_packet->len >= 41 && net_packet->data[40] != 0);
 	}},
 
@@ -9545,6 +9703,31 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		}
 	}},
 
+	// Minimal Wraith Possess/release request; all validation remains authoritative.
+	{'WREQ', [](){
+		const int player = std::min(net_packet->data[4], static_cast<Uint8>(MAXPLAYERS - 1));
+		if ( !players[player] || !players[player]->entity || !stats[player] ) { return; }
+		const Uint32 targetUid = SDLNet_Read32(&net_packet->data[5]);
+		if ( players[player]->mechanics.wraith.possessedEntityUid != 0 )
+		{
+			releaseWraithPossession(player);
+		}
+		else
+		{
+			beginWraithPossession(player, uidToEntity(targetUid));
+		}
+	}},
+
+	// Client request for the testing-only Wraith possession knowledge cheat.
+	{'WULK', [](){
+		if ( net_packet->len != 5 || !(svFlags & SV_FLAG_CHEATS) ) { return; }
+		const int player = std::min(net_packet->data[4], static_cast<Uint8>(MAXPLAYERS - 1));
+		if ( unlockAllWraithPossessions(player) )
+		{
+			messagePlayer(player, MESSAGE_MISC, "Unlocked all Wraith possession knowledge.");
+		}
+	}},
+
 	//The client cast a spell.
 	{'SPEL', [](){
 	    const int player = std::min(net_packet->data[4], (Uint8)(MAXPLAYERS - 1));
@@ -9648,6 +9831,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		newitem->appliedOil = static_cast<AppliedOil>(net_packet->len >= 42 ? std::min<int>(net_packet->data[41], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
 		readIngredientCountsFromPacket(*newitem, net_packet->data, net_packet->len, 42);
 		readFamiliarPersistentStateFromPacket(*newitem, net_packet->data, net_packet->len, 58);
+		readWraithLoreInstanceIdFromPacket(*newitem, net_packet->data, net_packet->len,
+			58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 		bool forceNewStack = net_packet->data[26] ? true : false;
 		if ( net_packet->data[27] == 0 )
 		{
@@ -9692,6 +9877,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		item->appliedOil = static_cast<AppliedOil>(net_packet->len >= 42 ? std::min<int>(net_packet->data[41], APPLIED_OIL_MAX - 1) : APPLIED_OIL_NONE);
 		readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 42);
 		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 58);
+		readWraithLoreInstanceIdFromPacket(*item, net_packet->data, net_packet->len,
+			58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 
 		if ( net_packet->data[27] == 0 )
 		{

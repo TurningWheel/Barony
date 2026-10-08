@@ -3203,7 +3203,7 @@ sets the HP of the given entity
 
 -------------------------------------------------------------------------------*/
 
-void Entity::setHP(int amount)
+void Entity::setHP(int amount, bool bypassWraithGainSuppression)
 {
 	Stat* entitystats = this->getStats();
 	if ( !entitystats )
@@ -3229,6 +3229,22 @@ void Entity::setHP(int amount)
 	if ( this->behavior == &actPlayer && godmode )
 	{
 		amount = entitystats->MAXHP;
+	}
+	if ( this->behavior == &actPlayer )
+	{
+		const int player = skill[2];
+		if ( playerIsInWraithForm(player) )
+		{
+			if ( amount > entitystats->HP && !bypassWraithGainSuppression )
+			{
+				return;
+			}
+			if ( amount < entitystats->HP
+				&& wraithNegatesIncomingDamage(this, entitystats->HP - amount) )
+			{
+				return;
+			}
+		}
 	}
 	if ( !entitystats || amount == entitystats->HP )
 	{
@@ -3395,13 +3411,24 @@ sets the MP of the given entity
 
 -------------------------------------------------------------------------------*/
 
-void Entity::setMP(int amount, bool updateClients)
+void Entity::setMP(int amount, bool updateClients, bool bypassWraithGainSuppression)
 {
 	Stat* entitystats = this->getStats();
 
 	if ( this->behavior == &actPlayer && godmode )
 	{
 		amount = entitystats->MAXMP;
+	}
+	if ( this->behavior == &actPlayer && amount > entitystats->MP
+		&& playerIsInWraithForm(skill[2]) && !bypassWraithGainSuppression )
+	{
+		const Sint32 reserve = std::min<Sint32>(
+			WRAITH_MIN_POSSESS_RESERVE, entitystats->MAXMP);
+		if ( entitystats->MP >= reserve )
+		{
+			return;
+		}
+		amount = std::min<Sint32>(amount, reserve);
 	}
 	if ( !entitystats || amount == entitystats->MP )
 	{
@@ -3854,6 +3881,63 @@ void Entity::monsterRollLevelUpStats(int increasestat[3])
 		r = local_rng.rand() % 6;
 	}
 	increasestat[2] = r;
+}
+
+void Entity::monsterApplyNormalLevelUpGrowth(Stat* myStats)
+{
+	if ( !myStats )
+	{
+		return;
+	}
+
+	int increasestat[3] = { 0, 0, 0 };
+	Entity::monsterRollLevelUpStats(increasestat);
+	for ( int i = 0; i < 3; ++i )
+	{
+		switch ( increasestat[i] )
+		{
+			case STAT_STR:
+				myStats->STR++;
+				break;
+			case STAT_DEX:
+				myStats->DEX++;
+				break;
+			case STAT_CON:
+				myStats->CON++;
+				break;
+			case STAT_INT:
+				myStats->INT++;
+				break;
+			case STAT_PER:
+				myStats->PER++;
+				break;
+			case STAT_CHR:
+				myStats->CHR++;
+				break;
+			default:
+				break;
+		}
+	}
+
+	const int hpMod = HP_MOD;
+	const int mpMod = MP_MOD;
+	myStats->MAXHP += hpMod;
+	const int hpRestore = Entity::getHPRestoreOnLevelUp(this, myStats, hpMod);
+	const int mpRestore = Entity::getMPRestoreOnLevelUp(this, myStats, mpMod);
+
+	modHP(hpRestore);
+	myStats->HP = std::min(myStats->HP, myStats->MAXHP);
+	myStats->MP += mpRestore;
+	if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+	{
+		myStats->MAXMP -= myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+	}
+	myStats->MAXMP += mpMod;
+	if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+	{
+		myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+	}
+	myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 }
 
 enum class GolemWildMagicSchool
@@ -4364,8 +4448,8 @@ void Entity::handleEffects(Stat* myStats)
 		// god mode and buddha mode
 		if ( godmode )
 		{
-			myStats->HP = myStats->MAXHP;
-			myStats->MP = myStats->MAXMP;
+			setHP(myStats->MAXHP);
+			setMP(myStats->MAXMP);
 		}
 		else if ( buddhamode )
 		{
@@ -4452,6 +4536,11 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			maxHPMod += 10;
 		}
+		if ( playerIsInWraithForm(player) )
+		{
+			maxHPMod = 0;
+			myStats->MAXHP = 5;
+		}
 
 		if ( maxHPMod != myStats->MISC_FLAGS[STAT_FLAG_HP_BONUS] )
 		{
@@ -4466,7 +4555,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			else
 			{
-				myStats->HP = myStats->OLDHP;
+				setHP(myStats->OLDHP);
 				updateHPMPForClients = true;
 			}
 		}
@@ -4596,6 +4685,7 @@ void Entity::handleEffects(Stat* myStats)
 
 		static ConsoleVariable<int> cvar_lvlup_ally_sfx("/lvlup_ally_sfx", 520);
 		bool alreadyProcessedMaxHPIncrease = false;
+		bool normalMonsterGrowthApplied = false;
 		// now pick three attributes to increase
 
 		if ( player >= 0 )
@@ -4740,35 +4830,8 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else
 		{
-			// monsters use this.
-			Entity::monsterRollLevelUpStats(increasestat);
-
-			for ( int i = 0; i < 3; i++ )
-			{
-				switch ( increasestat[i] )
-				{
-					case STAT_STR:
-						myStats->STR++;
-						break;
-					case STAT_DEX:
-						myStats->DEX++;
-						break;
-					case STAT_CON:
-						myStats->CON++;
-						break;
-					case STAT_INT:
-						myStats->INT++;
-						break;
-					case STAT_PER:
-						myStats->PER++;
-						break;
-					case STAT_CHR:
-						myStats->CHR++;
-						break;
-					default:
-						break;
-				}
-			}
+			monsterApplyNormalLevelUpGrowth(myStats);
+			normalMonsterGrowthApplied = true;
 		}
 
 		int hpMod = HP_MOD;
@@ -5007,45 +5070,77 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 
-		// increase MAXHP/MAXMP
-		if ( !alreadyProcessedMaxHPIncrease )
+		const bool wraithFormLevel = behavior == &actPlayer && playerIsInWraithForm(player);
+		const bool wraithPossessionLevel = behavior == &actPlayer
+			&& player >= 0 && player < MAXPLAYERS
+			&& players[player]
+			&& myStats->playerRace == RACE_WRAITH
+			&& myStats->stat_appearance == 0
+			&& players[player]->mechanics.wraith.initialized
+			&& players[player]->mechanics.wraith.possessedEntityUid != 0;
+		if ( normalMonsterGrowthApplied )
 		{
-			myStats->MAXHP += hpMod;
+			// Ordinary monster stat and resource growth was applied together above.
 		}
-		int hpRestore = Entity::getHPRestoreOnLevelUp(this, myStats, hpMod);
-		int mpRestore = Entity::getMPRestoreOnLevelUp(this, myStats, mpMod);
-
-		modHP(hpRestore);
-
-		myStats->HP = std::min(myStats->HP, myStats->MAXHP);
-		if ( !(behavior == &actMonster && monsterAllySummonRank != 0) )
+		else if ( wraithFormLevel )
 		{
-			Sint32 oldMP = myStats->MP;
-			myStats->MP += mpRestore;
-			Sint32 prevMaxMP = myStats->MAXMP;
-			if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
-			{
-				myStats->MAXMP -= myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
-			}
-			myStats->MAXMP += mpMod;
-
-			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
-			{
-				myStats->MAXMP = std::min(100, myStats->MAXMP);
-				if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
-				{
-					myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
-				}
-				this->playerInsectoidIncrementHungerToMP(myStats->MP - oldMP);
-			}
-			else
-			{
-				if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
-				{
-					myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
-				}
-			}
+			auto& wraith = players[player]->mechanics.wraith;
+			wraith.corporealMaxHP += hpMod;
+			wraith.corporealMaxMP += mpMod;
+			myStats->MAXHP = 5;
+			myStats->MAXMP += hpMod + mpMod;
+			myStats->HP = std::min(myStats->HP, myStats->MAXHP);
 			myStats->MP = std::min(myStats->MP, myStats->MAXMP);
+		}
+		else
+		{
+			// increase MAXHP/MAXMP
+			if ( !alreadyProcessedMaxHPIncrease )
+			{
+				myStats->MAXHP += hpMod;
+			}
+			int hpRestore = Entity::getHPRestoreOnLevelUp(this, myStats, hpMod);
+			int mpRestore = Entity::getMPRestoreOnLevelUp(this, myStats, mpMod);
+
+			modHP(hpRestore);
+
+			myStats->HP = std::min(myStats->HP, myStats->MAXHP);
+			if ( !(behavior == &actMonster && monsterAllySummonRank != 0) )
+			{
+				Sint32 oldMP = myStats->MP;
+				myStats->MP += mpRestore;
+				Sint32 prevMaxMP = myStats->MAXMP;
+				if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+				{
+					myStats->MAXMP -= myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+				}
+				myStats->MAXMP += mpMod;
+
+				if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
+				{
+					myStats->MAXMP = std::min(100, myStats->MAXMP);
+					if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+					{
+						myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+					}
+					this->playerInsectoidIncrementHungerToMP(myStats->MP - oldMP);
+				}
+				else
+				{
+					if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+					{
+						myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+					}
+				}
+				myStats->MP = std::min(myStats->MP, myStats->MAXMP);
+			}
+
+			if ( wraithPossessionLevel )
+			{
+				auto& wraith = players[player]->mechanics.wraith;
+				wraith.corporealMaxHP += hpMod;
+				wraith.corporealMaxMP += mpMod;
+			}
 		}
 
 		if ( behavior == &actMonster )
@@ -5164,9 +5259,13 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 	bool processHunger = (svFlags & SV_FLAG_HUNGER) && !MFLAG_DISABLEHUNGER; // check server flags if hunger is enabled.
+	const bool wraithFormNoHunger = player >= 0
+		&& behavior == &actPlayer
+		&& playerIsInWraithForm(player);
 	if ( player >= 0 )
 	{
-		if ( myStats->type == SKELETON || myStats->type == AUTOMATON )
+		if ( myStats->type == SKELETON || myStats->type == AUTOMATON
+			|| wraithFormNoHunger )
 		{
 			processHunger = false;
 		}
@@ -5213,7 +5312,11 @@ void Entity::handleEffects(Stat* myStats)
 	
 	if ( !processHunger && !playerAutomaton )
 	{
-		if ( behavior == &actMonster )
+		if ( wraithFormNoHunger )
+		{
+			// Preserve the player's stored hunger exactly while incorporeal.
+		}
+		else if ( behavior == &actMonster )
 		{
 			myStats->HUNGER = 500;
 		}
@@ -8400,7 +8503,7 @@ void Entity::handleEffects(Stat* myStats)
 
 					steamAchievementClient(player, "BARONY_ACH_BORN_AGAIN");
 					myStats->HUNGER = 800;
-					if ( myStats->MAXHP < 10 )
+					if ( myStats->MAXHP < 10 && !playerIsInWraithForm(player) )
 					{
 						myStats->MAXHP = 10;
 						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
@@ -8427,7 +8530,7 @@ void Entity::handleEffects(Stat* myStats)
 					}
 
 					real_t hpRestore = 100 * (0.5 + std::min(2, abs(myStats->amulet->beatitude)) * 0.5);
-					this->setHP(std::max((int)hpRestore, 5));
+					this->setHP(playerIsInWraithForm(player) ? 5 : std::max((int)hpRestore, 5), true);
 					for ( int c = 0; c < NUMEFFECTS; c++ )
 					{
 						if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) 
@@ -9311,6 +9414,18 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR += 15;
 		}
 	}
+	if ( my && my->behavior == &actPlayer && entitystats->type == BUGBEAR )
+	{
+		const int player = my->skill[2];
+		if ( player >= 0 && player < MAXPLAYERS && players[player]
+			&& entitystats->playerRace == RACE_WRAITH
+			&& players[player]->mechanics.wraith.initialized
+			&& players[player]->mechanics.wraith.possessedEntityUid != 0
+			&& STR >= 0 )
+		{
+			STR = static_cast<Sint32>(STR * 1.2);
+		}
+	}
 
 	return STR;
 }
@@ -9832,6 +9947,18 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 		if ( entitystats->getEffectActive(EFF_MIMIC_VOID) )
 		{
 			CON += 10;
+		}
+	}
+	if ( my && my->behavior == &actPlayer && entitystats->type == BUGBEAR )
+	{
+		const int player = my->skill[2];
+		if ( player >= 0 && player < MAXPLAYERS && players[player]
+			&& entitystats->playerRace == RACE_WRAITH
+			&& players[player]->mechanics.wraith.initialized
+			&& players[player]->mechanics.wraith.possessedEntityUid != 0
+			&& CON >= 0 )
+		{
+			CON = static_cast<Sint32>(CON * 1.5);
 		}
 	}
 
@@ -10746,6 +10873,17 @@ void Entity::attack(int pose, int charge, Entity* target)
 	}
 	if ( myStats->type == BAT_FAMILIAR )
 	{
+		return;
+	}
+	if ( behavior == &actMonster && monsterIsActiveWraithBody(this) )
+	{
+		// Native monster animation may transition through attack(), but gameplay
+		// belongs exclusively to the possessing actPlayer Entity.
+		monsterAttack = pose;
+		if ( pose != MONSTER_POSE_FLAIL_SWING )
+		{
+			monsterAttackTime = 0;
+		}
 		return;
 	}
 
@@ -17874,6 +18012,15 @@ int AC(Stat* stat)
 		}
 	}
 	int armor = statGetCON(stat, playerEntity);
+	const bool wraithPossessed = player >= 0
+		&& stats[player]->playerRace == RACE_WRAITH
+		&& players[player]
+		&& players[player]->mechanics.wraith.initialized
+		&& players[player]->mechanics.wraith.possessedEntityUid != 0;
+	auto bodyAllowsSlot = [player, wraithPossessed](int category)
+	{
+		return !wraithPossessed || wraithPossessedBodyCanEquipSlot(player, category);
+	};
 	if ( stat->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY) )
 	{
 		armor += getSpellDamageFromID(SPELL_FOCI_LIGHT_SANCTUARY, nullptr, nullptr, nullptr);
@@ -17893,43 +18040,43 @@ int AC(Stat* stat)
 		armor -= std::min((Uint8)3, stat->getEffectActive(EFF_DISRUPTED)) * 5;
 	}
 
-	if ( stat->helmet )
+	if ( stat->helmet && bodyAllowsSlot(0) )
 	{
 		armor += stat->helmet->armorGetAC(stat);
 	}
-	if ( stat->breastplate )
+	if ( stat->breastplate && bodyAllowsSlot(3) )
 	{
 		armor += stat->breastplate->armorGetAC(stat);
 	}
-	if ( stat->gloves )
+	if ( stat->gloves && bodyAllowsSlot(9) )
 	{
 		armor += stat->gloves->armorGetAC(stat);
 	}
-	if ( stat->shoes )
+	if ( stat->shoes && bodyAllowsSlot(4) )
 	{
 		armor += stat->shoes->armorGetAC(stat);
 	}
-	if ( !(stat->parrying && stat->weapon) )
+	if ( !(stat->parrying && stat->weapon) && stat->shield && bodyAllowsSlot(2) )
 	{
-		if ( stat->shield )
-		{
-			armor += stat->shield->armorGetAC(stat);
-		}
+		armor += stat->shield->armorGetAC(stat);
 	}
-	if ( stat->cloak )
+	if ( stat->cloak && bodyAllowsSlot(7) )
 	{
 		armor += stat->cloak->armorGetAC(stat);
+	}
+	if ( stat->mask && bodyAllowsSlot(8) )
+	{
+		armor += stat->mask->armorGetAC(stat);
 	}
 	if ( stat->ring )
 	{
 		armor += stat->ring->armorGetAC(stat);
 	}
-	if ( stat->mask )
-	{
-		armor += stat->mask->armorGetAC(stat);
-	}
 
-	if ( stat->type == TROLL || stat->type == RAT || stat->type == SPIDER || stat->type == CREATURE_IMP )
+	if ( stat->type == TROLL
+		|| stat->type == RAT
+		|| stat->type == SPIDER
+		|| stat->type == CREATURE_IMP )
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
@@ -17949,11 +18096,11 @@ int AC(Stat* stat)
 		}
 	}
 
-	if ( stat->parrying && stat->weapon )
+	if ( stat->parrying && stat->weapon && bodyAllowsSlot(1) )
 	{
 		armor += Stat::getParryingACBonus(stat, stat->weapon, true, false, getWeaponSkill(stat->weapon));
 	}
-	else if ( stat->shield )
+	else if ( stat->shield && bodyAllowsSlot(2) )
 	{
 		int shieldskill = stat->getPassiveShieldBonus(true, false);
 		armor += shieldskill;
@@ -19731,6 +19878,90 @@ Returns true if my and your are enemies, otherwise returns false
 
 -------------------------------------------------------------------------------*/
 
+static bool isActiveWraithPossessedPlayerForAlliance(const Entity* entity, const Stat* entityStats)
+{
+	if ( !entity || !entityStats || entity->behavior != &actPlayer )
+	{
+		return false;
+	}
+	const int player = entity->skill[2];
+	return player >= 0 && player < MAXPLAYERS
+		&& players[player]
+		&& players[player]->entity == entity
+		&& entityStats->playerRace == RACE_WRAITH
+		&& entityStats->stat_appearance == 0
+		&& players[player]->mechanics.wraith.initialized
+		&& players[player]->mechanics.wraith.possessedEntityUid != 0;
+}
+
+enum class WraithPossessionAllianceMode
+{
+	PLAYER_PROFILE,
+	SELF_NEUTRAL,
+	NO_ALLIANCES
+};
+
+struct WraithPossessionAllianceRule
+{
+	WraithPossessionAllianceMode mode;
+	Monster profileType;
+	Monster bodyType;
+};
+
+static WraithPossessionAllianceRule getWraithPossessionAllianceRule(Monster bodyType)
+{
+	bodyType = wraithCanonicalPossessionType(bodyType);
+	switch ( bodyType )
+	{
+		case HUMAN:
+		case SKELETON:
+		case GOBLIN:
+		case GNOME:
+		case SUCCUBUS:
+		case INCUBUS:
+		case VAMPIRE:
+		case INSECTOID:
+		case GOATMAN:
+		case AUTOMATON:
+		case RAT:
+		case SPIDER:
+		case TROLL:
+		case CREATURE_IMP:
+			return { WraithPossessionAllianceMode::PLAYER_PROFILE, bodyType, bodyType };
+		case GHOUL:
+		case SHADOW:
+			return { WraithPossessionAllianceMode::PLAYER_PROFILE, SKELETON, bodyType };
+		case DEMON:
+			return { WraithPossessionAllianceMode::PLAYER_PROFILE, INCUBUS, bodyType };
+		case CRYSTALGOLEM:
+			return { WraithPossessionAllianceMode::PLAYER_PROFILE, AUTOMATON, bodyType };
+		case SCORPION:
+		case SCARAB:
+			return { WraithPossessionAllianceMode::PLAYER_PROFILE, SPIDER, bodyType };
+		case BAT_SMALL:
+		case SLIME:
+		case BUGBEAR:
+			return { WraithPossessionAllianceMode::SELF_NEUTRAL, bodyType, bodyType };
+		case KOBOLD:
+		case COCKATRICE:
+		default:
+			return { WraithPossessionAllianceMode::NO_ALLIANCES, bodyType, bodyType };
+	}
+}
+
+static bool isIncorporealWraithPlayerForAlliance(const Entity* entity, const Stat* entityStats)
+{
+	if ( !entity || !entityStats || entity->behavior != &actPlayer )
+	{
+		return false;
+	}
+	const int player = entity->skill[2];
+	return player >= 0 && player < MAXPLAYERS
+		&& players[player]
+		&& players[player]->entity == entity
+		&& playerIsInWraithForm(player);
+}
+
 bool Entity::checkEnemy(Entity* your)
 {
 	if ( !your )
@@ -19747,6 +19978,20 @@ bool Entity::checkEnemy(Entity* your)
 	{
 		return false;
 	}
+	const bool myWraithBody = isActiveWraithPossessedPlayerForAlliance(this, myStats);
+	const bool yourWraithBody = isActiveWraithPossessedPlayerForAlliance(your, yourStats);
+	const auto myWraithAlliance = getWraithPossessionAllianceRule(myWraithBody
+		? getWraithEffectiveMonsterType(skill[2]) : NOTHING);
+	const auto yourWraithAlliance = getWraithPossessionAllianceRule(yourWraithBody
+		? getWraithEffectiveMonsterType(your->skill[2]) : NOTHING);
+	const Monster myPlayerAllianceType = myWraithBody
+		&& myWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE
+		? myWraithAlliance.profileType : myStats->type;
+	const Monster yourPlayerAllianceType = yourWraithBody
+		&& yourWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE
+		? yourWraithAlliance.profileType : yourStats->type;
+	const bool myWraithSpirit = isIncorporealWraithPlayerForAlliance(this, myStats);
+	const bool yourWraithSpirit = isIncorporealWraithPlayerForAlliance(your, yourStats);
 	if ( myStats->type == BAT_FAMILIAR || yourStats->type == BAT_FAMILIAR )
 	{
 		return false;
@@ -19827,8 +20072,8 @@ bool Entity::checkEnemy(Entity* your)
 		return false;
 	}
 
-	if ( (your->behavior == &actPlayer && monsterCanTradeWith(your->isEntityPlayer()))
-		|| (behavior == &actPlayer && your->monsterCanTradeWith(isEntityPlayer())) )
+	if ( (your->behavior == &actPlayer && !yourWraithSpirit && monsterCanTradeWith(your->isEntityPlayer()))
+		|| (behavior == &actPlayer && !myWraithSpirit && your->monsterCanTradeWith(isEntityPlayer())) )
 	{
 		return false;
 	}
@@ -19992,13 +20237,30 @@ bool Entity::checkEnemy(Entity* your)
 			result = swornenemies[myStats->type][yourStats->type];
 
 			// player exceptions to table go here.
-			if ( myStats->type == SHOPKEEPER && your->behavior == &actPlayer )
+			if ( (behavior == &actPlayer && myWraithSpirit)
+				|| (your->behavior == &actPlayer && yourWraithSpirit) )
+			{
+				result = true;
+			}
+			else if ( myStats->type == SHOPKEEPER && your->behavior == &actPlayer )
 			{
 				result = ShopkeeperPlayerHostility.isPlayerEnemy(your->skill[2]);
 			}
 			else if ( yourStats->type == SHOPKEEPER && behavior == &actPlayer )
 			{
 				result = ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
+			}
+			else if ( behavior == &actPlayer && your->behavior == &actMonster && myWraithBody
+				&& myWraithAlliance.mode != WraithPossessionAllianceMode::PLAYER_PROFILE )
+			{
+				result = myWraithAlliance.mode == WraithPossessionAllianceMode::SELF_NEUTRAL
+					? yourStats->type != myWraithAlliance.bodyType : true;
+			}
+			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourWraithBody
+				&& yourWraithAlliance.mode != WraithPossessionAllianceMode::PLAYER_PROFILE )
+			{
+				result = yourWraithAlliance.mode == WraithPossessionAllianceMode::SELF_NEUTRAL
+					? myStats->type != yourWraithAlliance.bodyType : true;
 			}
 			else if ( myStats->type == BAT_SMALL && your->behavior == &actPlayer )
 			{
@@ -20008,14 +20270,15 @@ bool Entity::checkEnemy(Entity* your)
 			{
 				result = true;
 			}
-			else if ( behavior == &actPlayer && myStats->type != HUMAN )
+			else if ( behavior == &actPlayer && myPlayerAllianceType != HUMAN
+				&& (!myWraithBody || myWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE) )
 			{
 				result = swornenemies[HUMAN][yourStats->type];
-				if ( myStats->type == LEONIN ) // mod add: use Human hostility unchanged
+				if ( myPlayerAllianceType == LEONIN ) // mod add: use Human hostility unchanged
 				{
 					result = yourStats->type == LEONIN ? false : result;
 				}
-				else if ( myStats->type == GOLEM )
+				else if ( myPlayerAllianceType == GOLEM )
 				{
 					const int alliance = getNaturalGolemAlliance(yourStats->type);
 					if ( alliance >= 0 )
@@ -20024,15 +20287,15 @@ bool Entity::checkEnemy(Entity* your)
 					}
 				}
 				else if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER)
-					&& !(myStats->type == AUTOMATON || myStats->type == DRYAD || myStats->type == MYCONID || myStats->type == SALAMANDER
-						|| myStats->type == GNOME) )
+					&& !(myPlayerAllianceType == AUTOMATON || myPlayerAllianceType == DRYAD || myPlayerAllianceType == MYCONID || myPlayerAllianceType == SALAMANDER
+						|| myPlayerAllianceType == GNOME) )
 				{
 					// enemies.
 					result = true;
 				}
 				else
 				{
-					switch ( myStats->type )
+					switch ( myPlayerAllianceType )
 					{
 						case SKELETON:
 							if ( yourStats->type == GHOUL )
@@ -20161,14 +20424,15 @@ bool Entity::checkEnemy(Entity* your)
 					}
 				}
 			}
-			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )
+			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourPlayerAllianceType != HUMAN
+				&& (!yourWraithBody || yourWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE) )
 			{
 				result = swornenemies[myStats->type][HUMAN];
-				if ( yourStats->type == LEONIN ) // mod add: use Human hostility unchanged
+				if ( yourPlayerAllianceType == LEONIN ) // mod add: use Human hostility unchanged
 				{
 					result = myStats->type == LEONIN ? false : result;
 				}
-				else if ( yourStats->type == GOLEM )
+				else if ( yourPlayerAllianceType == GOLEM )
 				{
 					const int alliance = your->getNaturalGolemAlliance(myStats->type);
 					if ( alliance >= 0 )
@@ -20177,15 +20441,15 @@ bool Entity::checkEnemy(Entity* your)
 					}
 				}
 				else if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER) &&
-					!(yourStats->type == AUTOMATON || yourStats->type == DRYAD || yourStats->type == MYCONID || yourStats->type == SALAMANDER
-						|| yourStats->type == GNOME) )
+					!(yourPlayerAllianceType == AUTOMATON || yourPlayerAllianceType == DRYAD || yourPlayerAllianceType == MYCONID || yourPlayerAllianceType == SALAMANDER
+						|| yourPlayerAllianceType == GNOME) )
 				{
 					// enemies.
 					result = true;
 				}
 				else
 				{
-					switch ( yourStats->type )
+					switch ( yourPlayerAllianceType )
 					{
 						case SKELETON:
 							if ( myStats->type == GHOUL )
@@ -20402,6 +20666,20 @@ bool Entity::checkFriend(Entity* your)
 	{
 		return false;
 	}
+	const bool myWraithBody = isActiveWraithPossessedPlayerForAlliance(this, myStats);
+	const bool yourWraithBody = isActiveWraithPossessedPlayerForAlliance(your, yourStats);
+	const auto myWraithAlliance = getWraithPossessionAllianceRule(myWraithBody
+		? getWraithEffectiveMonsterType(skill[2]) : NOTHING);
+	const auto yourWraithAlliance = getWraithPossessionAllianceRule(yourWraithBody
+		? getWraithEffectiveMonsterType(your->skill[2]) : NOTHING);
+	const Monster myPlayerAllianceType = myWraithBody
+		&& myWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE
+		? myWraithAlliance.profileType : myStats->type;
+	const Monster yourPlayerAllianceType = yourWraithBody
+		&& yourWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE
+		? yourWraithAlliance.profileType : yourStats->type;
+	const bool myWraithSpirit = isIncorporealWraithPlayerForAlliance(this, myStats);
+	const bool yourWraithSpirit = isIncorporealWraithPlayerForAlliance(your, yourStats);
 
 	// Spirit weapons produced by a Golem overload are hazards, not summons.
 	// They have no friendly faction on either side of this relationship.
@@ -20474,8 +20752,8 @@ bool Entity::checkFriend(Entity* your)
 		return false;
 	}
 
-	if ( (your->behavior == &actPlayer && monsterCanTradeWith(your->isEntityPlayer()))
-		|| (behavior == &actPlayer && your->monsterCanTradeWith(isEntityPlayer())) )
+	if ( (your->behavior == &actPlayer && !yourWraithSpirit && monsterCanTradeWith(your->isEntityPlayer()))
+		|| (behavior == &actPlayer && !myWraithSpirit && your->monsterCanTradeWith(isEntityPlayer())) )
 	{
 		return true;
 	}
@@ -20647,7 +20925,12 @@ bool Entity::checkFriend(Entity* your)
 			result = monsterally[myStats->type][yourStats->type];
 
 			// player exceptions to table go here.
-			if ( myStats->type == SHOPKEEPER && your->behavior == &actPlayer )
+			if ( (behavior == &actPlayer && myWraithSpirit)
+				|| (your->behavior == &actPlayer && yourWraithSpirit) )
+			{
+				result = false;
+			}
+			else if ( myStats->type == SHOPKEEPER && your->behavior == &actPlayer )
 			{
 				result = !ShopkeeperPlayerHostility.isPlayerEnemy(your->skill[2]);
 			}
@@ -20655,10 +20938,21 @@ bool Entity::checkFriend(Entity* your)
 			{
 				result = !ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
 			}
-			else if ( behavior == &actPlayer && myStats->type != HUMAN )
+			else if ( behavior == &actPlayer && your->behavior == &actMonster && myWraithBody
+				&& myWraithAlliance.mode != WraithPossessionAllianceMode::PLAYER_PROFILE )
+			{
+				result = false;
+			}
+			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourWraithBody
+				&& yourWraithAlliance.mode != WraithPossessionAllianceMode::PLAYER_PROFILE )
+			{
+				result = false;
+			}
+			else if ( behavior == &actPlayer && myPlayerAllianceType != HUMAN
+				&& (!myWraithBody || myWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE) )
 			{
 				result = monsterally[HUMAN][yourStats->type];
-				if ( myStats->type == LEONIN ) //mod add: retain Human alliances, but Human itself is neutral
+				if ( myPlayerAllianceType == LEONIN ) //mod add: retain Human alliances, but Human itself is neutral
 				{
 					if ( yourStats->type == HUMAN )
 					{
@@ -20669,21 +20963,21 @@ bool Entity::checkFriend(Entity* your)
 						result = monsterally[LEONIN][LEONIN];
 					}
 				}
-				else if ( myStats->type == GOLEM )
+				else if ( myPlayerAllianceType == GOLEM )
 				{
 					const int alliance = getNaturalGolemAlliance(yourStats->type);
 					result = alliance >= 0 && alliance != 0;
 				}
 				else if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER)
-					&& !(myStats->type == AUTOMATON || myStats->type == DRYAD || myStats->type == MYCONID || myStats->type == SALAMANDER
-						|| myStats->type == GNOME) )
+					&& !(myPlayerAllianceType == AUTOMATON || myPlayerAllianceType == DRYAD || myPlayerAllianceType == MYCONID || myPlayerAllianceType == SALAMANDER
+						|| myPlayerAllianceType == GNOME) )
 				{
 					result = false;
 				}
 				else
 				{
 					result = false;
-					switch ( myStats->type )
+					switch ( myPlayerAllianceType )
 					{
 						case SKELETON:
 							if ( yourStats->type == GHOUL )
@@ -20810,10 +21104,11 @@ bool Entity::checkFriend(Entity* your)
 					}
 				}
 			}
-			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )
+			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourPlayerAllianceType != HUMAN
+				&& (!yourWraithBody || yourWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE) )
 			{
 				result = monsterally[myStats->type][HUMAN];
-				if ( yourStats->type == LEONIN ) //mod add: retain Human alliances, but Human itself is neutral
+				if ( yourPlayerAllianceType == LEONIN ) //mod add: retain Human alliances, but Human itself is neutral
 				{
 					if ( myStats->type == HUMAN )
 					{
@@ -20824,20 +21119,20 @@ bool Entity::checkFriend(Entity* your)
 						result = monsterally[LEONIN][LEONIN];
 					}
 				}
-				else if ( yourStats->type == GOLEM )
+				else if ( yourPlayerAllianceType == GOLEM )
 				{
 					const int alliance = your->getNaturalGolemAlliance(myStats->type);
 					result = alliance >= 0 && alliance != 0;
 				}
 				else if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER)
-					&& !(yourStats->type == AUTOMATON || yourStats->type == DRYAD || yourStats->type == MYCONID || yourStats->type == SALAMANDER
-						|| yourStats->type == GNOME) )
+					&& !(yourPlayerAllianceType == AUTOMATON || yourPlayerAllianceType == DRYAD || yourPlayerAllianceType == MYCONID || yourPlayerAllianceType == SALAMANDER
+						|| yourPlayerAllianceType == GNOME) )
 				{
 					result = false;
 				}
 				else
 				{
-					switch ( yourStats->type )
+					switch ( yourPlayerAllianceType )
 					{
 						case SKELETON:
 							if ( myStats->type == GHOUL )
@@ -21818,6 +22113,14 @@ bool isLevitating(Stat* mystats)
 	if ( mystats == nullptr )
 	{
 		return false;
+	}
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( players[i] && players[i]->entity
+			&& players[i]->entity->getStats() == mystats && playerIsInWraithForm(i) )
+		{
+			return true;
+		}
 	}
 
 	// check levitating value
@@ -29968,6 +30271,10 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 	helm->scalez = 1.01;
 	// for non-armor helmets, they are rotated so focaly acts as up/down postion.
 	int monster = getMonsterTypeFromSprite();
+	if ( monster == WRAITH && behavior == &actPlayer )
+	{
+		monster = SKELETON;
+	}
 	if ( int resultMonsterSprite = EquipmentModelOffsets.modelOffsetExists(monster, helm->sprite, sprite) )
 	{
 		auto& entry = EquipmentModelOffsets.getModelOffset(resultMonsterSprite, helm->sprite);
@@ -31321,6 +31628,79 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				}
 			}
 			break;
+		case WRAITH:
+			if ( limbType == LIMB_HUMANOID_TORSO )
+			{
+				limb->x -= .25 * cos(this->yaw);
+				limb->y -= .25 * sin(this->yaw);
+				limb->z += 2;
+				limb->scalez = 1.f;
+
+				this->setTorsoLimbOffset(limb);
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->x += 1 * cos(this->yaw + PI / 2)
+					+ .25 * cos(this->yaw);
+				limb->y += 1 * sin(this->yaw + PI / 2)
+					+ .25 * sin(this->yaw);
+				limb->z += 4;
+
+				if ( this->z >= 1.9 && this->z <= 2.1 )
+				{
+					limb->yaw += PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+			{
+				limb->x -= 1 * cos(this->yaw + PI / 2)
+					- .25 * cos(this->yaw);
+				limb->y -= 1 * sin(this->yaw + PI / 2)
+					- .25 * sin(this->yaw);
+				limb->z += 4;
+
+				if ( this->z >= 1.9 && this->z <= 2.1 )
+				{
+					limb->yaw -= PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->x += 2.f * cos(this->yaw + PI / 2)
+					- .20 * cos(this->yaw);
+				limb->y += 2.f * sin(this->yaw + PI / 2)
+					- .20 * sin(this->yaw);
+				limb->z += .6;
+
+				if ( this->z >= 1.9 && this->z <= 2.1 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM )
+			{
+				limb->x -= 2.f * cos(this->yaw + PI / 2)
+					+ .20 * cos(this->yaw);
+				limb->y -= 2.f * sin(this->yaw + PI / 2)
+					+ .20 * sin(this->yaw);
+				limb->z += .6;
+
+				if ( this->z >= 1.9 && this->z <= 2.1 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			break;
 		// mod add: Leonin humanoid proportions
 		case LEONIN:
 		{
@@ -31885,14 +32265,14 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 	}
 }
 
-void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
+void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb, int raceOverride)
 {
 	if ( !shieldLimb || !shieldArmLimb )
 	{
 		return;
 	}
 
-	int race = this->getMonsterTypeFromSprite();
+	int race = raceOverride >= 0 ? raceOverride : this->getMonsterTypeFromSprite();
 	int player = -1;
 	if ( this->behavior == &actPlayer )
 	{
@@ -32815,6 +33195,7 @@ bool Entity::isSmiteWeakMonster()
 			case SHADOW:
 			case REVENANT_SKULL:
 			case MONSTER_ADORCISED_WEAPON:
+			case WRAITH:
 				return true;
 				break;
 			case MIMIC:
@@ -33029,6 +33410,10 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 		helm->scalez = 1.01;
 
 		int monster = getMonsterTypeFromSprite();
+		if ( monster == WRAITH && behavior == &actPlayer )
+		{
+			monster = SKELETON;
+		}
 		if ( int resultMonsterSprite = EquipmentModelOffsets.modelOffsetExists(monster, helm->sprite, sprite) )
 		{
 			auto& entry = EquipmentModelOffsets.getModelOffset(resultMonsterSprite, helm->sprite);
@@ -33050,6 +33435,10 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 	mask->scalez = 1.01;
 
 	int monster = getMonsterTypeFromSprite();
+	if ( monster == WRAITH && behavior == &actPlayer )
+	{
+		monster = SKELETON;
+	}
 
 	if ( helm->sprite == items[LEATHER_HELM].index
 		|| helm->sprite == items[IRON_HELM].index

@@ -78,6 +78,7 @@ enum Monster : int
 	LEONIN, // mod add: Leonin
 	GOLEM, // mod add: standalone playable Golem identity
 	BAT_FAMILIAR, // mod add: Amulet of the Familiar companion
+	WRAITH, // mod add: playable Wraith identity
 	MAX_MONSTER
 };
 const int NUMMONSTERS = MAX_MONSTER;
@@ -142,6 +143,18 @@ enum BatFamiliarModel : Sint32
 	BAT_FAMILIAR_MODEL_CAULDRON = 2504,
 	BAT_FAMILIAR_MODEL_MIMIC_LID = 2505,
 	BAT_FAMILIAR_MODEL_MIMIC_TRUNK = 2506
+};
+
+enum WraithModel : Sint32
+{
+	WRAITH_MODEL_ARM_LEFT = 2507,
+	WRAITH_MODEL_ARM_BENT_LEFT = 2508,
+	WRAITH_MODEL_ARM_RIGHT = 2509,
+	WRAITH_MODEL_ARM_BENT_RIGHT = 2510,
+	WRAITH_MODEL_HEAD = 2511,
+	WRAITH_MODEL_TORSO = 2512,
+	WRAITH_MODEL_HAND_RIGHT_FP = 2513,
+	WRAITH_MODEL_HAND_LEFT_FP = 2514
 };
 
 enum FamiliarForm : Sint32
@@ -486,6 +499,12 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 		BAT_FAMILIAR_MODEL_BODY, BAT_FAMILIAR_MODEL_HEAD,
 		BAT_FAMILIAR_MODEL_WING_LEFT, BAT_FAMILIAR_MODEL_WING_RIGHT,
 		BAT_FAMILIAR_MODEL_CAULDRON
+	},
+	// WRAITH
+	{
+		WRAITH_MODEL_ARM_LEFT, WRAITH_MODEL_ARM_BENT_LEFT,
+		WRAITH_MODEL_ARM_RIGHT, WRAITH_MODEL_ARM_BENT_RIGHT,
+		WRAITH_MODEL_HEAD, WRAITH_MODEL_TORSO
 	}
 };
 
@@ -547,7 +566,8 @@ static char monstertypename[][32] =
 	"merrow", //mod add merrow
 	"leonin", // mod add: Leonin
 	"golem", // mod add: Golem
-	"bat_familiar"
+	"bat_familiar",
+	"wraith"
 };
 
 // body part focal points
@@ -615,7 +635,8 @@ static char gibtype[NUMMONSTERS] =
 	1,  //MERROW modd add
 	1,  // LEONIN: standard red blood
 	0,  // GOLEM: construct
-	0   // BAT_FAMILIAR: no blood/gibs
+	0,  // BAT_FAMILIAR: no blood/gibs
+	5   // WRAITH: ethereal/undead gibs
 };
 
 // columns go like this:
@@ -679,7 +700,8 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 0.5, 1.f, 0.7, 1.2, 1.1, 1.4, 1.f }, // merrow mod add
 	{ 1.2, 0.8, 1.f, 1.3, 1.f, 0.6, 0.8 }, // leonin mod add
 	{ 1.f, 1.4, 1.f, 0.6, 0.8, 1.f, 1.2 }, // golem mod add
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.5 }  // bat familiar (immune; mirrors bat table)
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.5 }, // bat familiar (immune; mirrors bat table)
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }  // wraith: no generic resistances/weaknesses
 };
 
 enum DamageTableType : int
@@ -1066,7 +1088,7 @@ void mothDie(Entity* my);
 void earthElementalDie(Entity* my);
 void duckDie(Entity* my);
 
-void monsterAnimate(Entity* my, Stat* myStats, double dist);
+void monsterAnimate(Entity* my, Stat* myStats, double dist, bool visualOnly = false);
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void ratAnimate(Entity* my, double dist);

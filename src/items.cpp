@@ -45,6 +45,7 @@ namespace
 	Uint32 nextMagicRuneInstanceId = 1;
 	Uint32 nextRuneCreatorIdentity = 1;
 	Uint32 nextFamiliarInstanceId = 1;
+	Uint32 nextWraithLoreInstanceId = 1;
 
 	Uint32 allocateNonzeroId(Uint32& nextId)
 	{
@@ -62,6 +63,32 @@ void reserveFamiliarInstanceId(Uint32 familiarInstanceId)
 		nextFamiliarInstanceId = familiarInstanceId + 1;
 		if ( nextFamiliarInstanceId == 0 ) { nextFamiliarInstanceId = 1; }
 	}
+}
+
+void reserveWraithLoreInstanceId(Uint32 instanceId)
+{
+	if ( instanceId != 0 && instanceId >= nextWraithLoreInstanceId )
+	{
+		nextWraithLoreInstanceId = instanceId + 1;
+		if ( nextWraithLoreInstanceId == 0 ) { nextWraithLoreInstanceId = 1; }
+	}
+}
+
+void writeWraithLoreInstanceIdToPacket(const Item& item, Uint8* data, int offset)
+{
+	SDLNet_Write32(item.wraithLoreInstanceId, &data[offset]);
+}
+
+void readWraithLoreInstanceIdFromPacket(Item& item, const Uint8* data,
+	int packetLength, int offset)
+{
+	if ( data && offset >= 0
+		&& packetLength >= offset + WRAITH_LORE_INSTANCE_PACKET_BYTES )
+	{
+		item.wraithLoreInstanceId = SDLNet_Read32(&data[offset]);
+	}
+	reserveWraithLoreInstanceId(item.wraithLoreInstanceId);
+	item.wraithLoreEnsureInstanceId();
 }
 
 void reserveMagicRuneInstanceId(Uint32 runeInstanceId)
@@ -360,6 +387,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->ingredientCounts[3] = 0;
 	item->familiarInitialized = false;
 	item->familiarInstanceId = 0;
+	item->wraithLoreInstanceId = 0;
 	item->familiarHP = 0;
 	item->familiarMAXHP = 0;
 	item->familiarMP = 0;
@@ -372,6 +400,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->familiarINT = 0;
 	item->familiarPER = 0;
 	item->familiarCHR = 0;
+	item->wraithLoreEnsureInstanceId();
 	item->interactNPCUid = 0;
 	item->notifyIcon = false;
 	item->spellNotifyIcon = false;
@@ -443,6 +472,7 @@ void copyItemPersistentCustomState(Item& destination, const Item& source)
 	}
 	destination.familiarInitialized = source.familiarInitialized;
 	destination.familiarInstanceId = source.familiarInstanceId;
+	destination.wraithLoreInstanceId = source.wraithLoreInstanceId;
 	destination.familiarHP = source.familiarHP;
 	destination.familiarMAXHP = source.familiarMAXHP;
 	destination.familiarMP = source.familiarMP;
@@ -456,6 +486,8 @@ void copyItemPersistentCustomState(Item& destination, const Item& source)
 	destination.familiarPER = source.familiarPER;
 	destination.familiarCHR = source.familiarCHR;
 	reserveFamiliarInstanceId(destination.familiarInstanceId);
+	reserveWraithLoreInstanceId(destination.wraithLoreInstanceId);
+	destination.wraithLoreEnsureInstanceId();
 }
 
 void copyItemPersistentCustomStateToEntity(Entity& destination, const Item& source)
@@ -489,6 +521,7 @@ void copyItemPersistentCustomStateToEntity(Entity& destination, const Item& sour
 	destination.itemFamiliarINT = source.familiarINT;
 	destination.itemFamiliarPER = source.familiarPER;
 	destination.itemFamiliarCHR = source.familiarCHR;
+	destination.itemWraithLoreInstanceId = static_cast<Sint32>(source.wraithLoreInstanceId);
 }
 
 void copyItemPersistentCustomStateFromEntity(Item& destination, const Entity& source)
@@ -519,7 +552,10 @@ void copyItemPersistentCustomStateFromEntity(Item& destination, const Entity& so
 	destination.familiarINT = source.itemFamiliarINT;
 	destination.familiarPER = source.itemFamiliarPER;
 	destination.familiarCHR = source.itemFamiliarCHR;
+	destination.wraithLoreInstanceId = static_cast<Uint32>(source.itemWraithLoreInstanceId);
 	reserveFamiliarInstanceId(destination.familiarInstanceId);
+	reserveWraithLoreInstanceId(destination.wraithLoreInstanceId);
+	destination.wraithLoreEnsureInstanceId();
 }
 
 bool itemTypeIsTincture(ItemType type)
@@ -2147,6 +2183,10 @@ bool oilMatchesTarget(AppliedOil oil, Entity* target)
 	if ( oil <= APPLIED_OIL_NONE || oil >= APPLIED_OIL_MAX || !target ) { return false; }
 	Stat* targetStats = target->getStats();
 	if ( !targetStats ) { return false; }
+	if ( oil == APPLIED_OIL_AETHER && targetStats->type == WRAITH )
+	{
+		return true;
+	}
 	if ( oil == APPLIED_OIL_BASES )
 	{
 		return targetStats->type == SLIME;
@@ -3611,6 +3651,17 @@ Uint32 Item::familiarEnsureInstanceId()
 	return familiarInstanceId;
 }
 
+Uint32 Item::wraithLoreEnsureInstanceId()
+{
+	if ( type != READABLE_BOOK && type != SCROLL_MAIL ) { return 0; }
+	if ( wraithLoreInstanceId == 0 && multiplayer != CLIENT )
+	{
+		wraithLoreInstanceId = allocateNonzeroId(nextWraithLoreInstanceId);
+	}
+	reserveWraithLoreInstanceId(wraithLoreInstanceId);
+	return wraithLoreInstanceId;
+}
+
 Uint32 Item::runeGetCreatorIdentity() const
 {
 	return isMagicRune() ? runeCreatorIdentity : RUNE_CREATOR_IDENTITY_INVALID;
@@ -4203,6 +4254,47 @@ Sint32 itemModelFirstperson(const Item* const item)
 		return items[RUNE_HAMMER].fpindex;
 	}
 
+	if ( item->type == TOOL_PLAYER_LOOT_BAG )
+	{
+		const Sint32 index =
+			items[item->type].fpindex;
+
+		if ( colorblind_lobby )
+		{
+			const int playerOwner =
+				item->getLootBagPlayer();
+
+			Uint32 playerIndex = 4;
+
+			switch ( playerOwner )
+			{
+				case 0:
+					playerIndex = 2;
+					break;
+
+				case 1:
+					playerIndex = 3;
+					break;
+
+				case 2:
+					playerIndex = 1;
+					break;
+
+				case 3:
+					playerIndex = 4;
+					break;
+
+				default:
+					break;
+			}
+
+			return index + playerIndex;
+		}
+
+		return index
+			+ item->getLootBagPlayer();
+	}
+
 	if ( item->type == MAGICSTAFF_SCEPTER )
 	{
 		if ( item->appearance % MAGICSTAFF_SCEPTER_CHARGE_MAX == 0 )
@@ -4278,6 +4370,24 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 	}
 	if ( item1->isMagicRune() && (item1->runeGetInstanceId() != item2->runeGetInstanceId()
 		|| item1->runeGetCreatorIdentity() != item2->runeGetCreatorIdentity()) )
+	{
+		return 1;
+	}
+	auto loreItemOwnedByWraith = [](const Item* item)
+	{
+		for ( int player = 0; player < MAXPLAYERS; ++player )
+		{
+			if ( !stats[player] || stats[player]->playerRace != RACE_WRAITH ) { continue; }
+			for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+			{
+				if ( node->element == item ) { return true; }
+			}
+		}
+		return false;
+	};
+	if ( (item1->type == READABLE_BOOK || item1->type == SCROLL_MAIL)
+		&& item1 != item2
+		&& (loreItemOwnedByWraith(item1) || loreItemOwnedByWraith(item2)) )
 	{
 		return 1;
 	}
@@ -4671,9 +4781,11 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage, cons
 		net_packet->data[39] = static_cast<Uint8>(item->appliedOil);
 		writeIngredientCountsToPacket(*item, net_packet->data, 40);
 		writeFamiliarPersistentStateToPacket(*item, net_packet->data, 56);
+		writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+			56 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 112;
+		net_packet->len = 116;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		if ( item == players[player]->bookGUI.openBookItem )
 		{
@@ -5198,6 +5310,85 @@ void consumeItem(Item*& item, const int player)
 EquipItemResult equipItem(Item* const item, Item** const slot, const int player, bool checkInventorySpaceForPaperDoll)
 {
 	int oldcount;
+	if ( playerIsInWraithForm(player) )
+	{
+		const bool handSlot =
+			slot == &stats[player]->weapon;
+
+		const bool ringSlot =
+			slot == &stats[player]->ring;
+
+		const bool amuletSlot =
+			slot == &stats[player]->amulet;
+
+		if ( !handSlot && !ringSlot && !amuletSlot )
+		{
+			messagePlayer(
+				player,
+				MESSAGE_EQUIPMENT,
+				"Wraith Form cannot equip that.");
+
+			return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+		}
+
+		const bool alreadyInTargetSlot =
+			(*slot == item);
+
+		if ( !alreadyInTargetSlot
+			&& (ringSlot || amuletSlot) )
+		{
+			// New jewelry can only move from the Wraith hand.
+			if ( stats[player]->weapon != item )
+			{
+				return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+			}
+
+			// No swapping equipped jewelry.
+			if ( *slot != nullptr )
+			{
+				messagePlayer(
+					player,
+					MESSAGE_EQUIPMENT,
+					"Drop your worn jewelry first.");
+
+				return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+			}
+
+			// Remove it from the hand before normal equip logic assigns jewelry.
+			stats[player]->weapon = nullptr;
+		}
+
+		if ( !alreadyInTargetSlot
+			&& handSlot
+			&& stats[player]->weapon != nullptr )
+		{
+			return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+		}
+	}
+	else if ( !intro
+		&& player >= 0 && player < MAXPLAYERS && players[player] && stats[player]
+		&& stats[player]->playerRace == RACE_WRAITH
+		&& players[player]->mechanics.wraith.initialized
+		&& players[player]->mechanics.wraith.possessedEntityUid != 0
+		&& *slot != item )
+	{
+		int category = -1;
+		if ( slot == &stats[player]->helmet ) { category = 0; }
+		else if ( slot == &stats[player]->weapon ) { category = 1; }
+		else if ( slot == &stats[player]->shield ) { category = 2; }
+		else if ( slot == &stats[player]->breastplate ) { category = 3; }
+		else if ( slot == &stats[player]->shoes ) { category = 4; }
+		else if ( slot == &stats[player]->ring ) { category = 5; }
+		else if ( slot == &stats[player]->amulet ) { category = 6; }
+		else if ( slot == &stats[player]->cloak ) { category = 7; }
+		else if ( slot == &stats[player]->mask ) { category = 8; }
+		else if ( slot == &stats[player]->gloves ) { category = 9; }
+		if ( category >= 0 && !wraithPossessedBodyCanEquipSlot(player, category) )
+		{
+			messagePlayer(player, MESSAGE_EQUIPMENT, "This body cannot equip that.");
+			return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+		}
+	}
 
 	if ( players[player]->isLocalPlayer() && players[player]->hud.pickaxeGimpTimer > 0 && !intro )
 	{
@@ -5215,7 +5406,11 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 		return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 	}
 
-	if ( itemCompare(*slot, item, true) )
+	const bool exactSameItem =
+		(*slot == item);
+
+	if ( !exactSameItem
+		&& itemCompare(*slot, item, true) )
 	{
 		// if items are different... (excluding the quantity of both item nodes)
 		if ( *slot != nullptr )
@@ -5418,6 +5613,14 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 		}
 		if ( !players[player]->isLocalPlayer() && multiplayer == SERVER )
 		{
+			if ( exactSameItem )
+			{
+				// Authoritative systems may unequip the actual server inventory object.
+				// Keep that object/node alive; only the equipment pointer changes.
+				*slot = nullptr;
+				players[player]->paperDoll.updateSlots();
+				return EQUIP_ITEM_SUCCESS_UNEQUIP;
+			}
 			if ( item->node )
 			{
 				list_RemoveNode(item->node);
@@ -5680,6 +5883,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		Uint32 runeCreatorIdentity = 0;
 		AppliedOil appliedOil = APPLIED_OIL_NONE;
 		Item familiarState{};
+		Sint32 x = 0;
+		Sint32 y = 0;
 		bool alternateUse = false;
 		bool sendToServer = false;
 		void setItem(Item& item)
@@ -5695,6 +5900,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			runeInstanceId = item.runeGetInstanceId();
 			runeCreatorIdentity = item.runeGetCreatorIdentity();
 			appliedOil = item.appliedOil;
+			x = item.x;
+			y = item.y;
 			copyItemPersistentCustomState(familiarState, item);
 			sendToServer = true;
 		}
@@ -5716,9 +5923,13 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			net_packet->data[39] = static_cast<Uint8>(appliedOil);
 			net_packet->data[40] = alternateUse ? 1 : 0;
 			writeFamiliarPersistentStateToPacket(familiarState, net_packet->data, 41);
+			SDLNet_Write32(static_cast<Uint32>(x),
+				&net_packet->data[41 + FAMILIAR_PERSISTENT_PACKET_BYTES]);
+			SDLNet_Write32(static_cast<Uint32>(y),
+				&net_packet->data[45 + FAMILIAR_PERSISTENT_PACKET_BYTES]);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
-			net_packet->len = 41 + FAMILIAR_PERSISTENT_PACKET_BYTES;
+			net_packet->len = 49 + FAMILIAR_PERSISTENT_PACKET_BYTES;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 	};
@@ -5737,6 +5948,12 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		{
 			itemDetailsForServer.setItem(*item);
 		}
+	}
+	if ( multiplayer == CLIENT && players[player] && players[player]->entity
+		&& players[player]->entity->isBlind()
+		&& (item->type == READABLE_BOOK || item->type == SCROLL_MAIL) )
+	{
+		itemDetailsForServer.sendToServer = false;
 	}
 
 	bool drankPotion = false;
@@ -6948,6 +7165,16 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 	{
 		return nullptr;
 	}
+	const bool wraithPickup = playerIsInWraithForm(player) && item->type != SPELL_ITEM;
+	if ( wraithPickup && stats[player]->weapon )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY, "Your spectral hand is already occupied.");
+		return nullptr;
+	}
+	if ( wraithPickup )
+	{
+		forceNewStack = true;
+	}
 	if ( itemTypeIsWitchIngredient(item->type) )
 	{
 		const WitchIngredientCategory category = ingredientCategoryFromItem(item->type);
@@ -7011,26 +7238,14 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 
 	if ( player != 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
-		// send the client info on the item it just picked up
-		strcpy((char*)net_packet->data, "ITEM");
-		SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
-		SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
-		SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
-		SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
-		SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
-		SDLNet_Write32(static_cast<Uint32>(item->ownerUid), &net_packet->data[24]);
-		net_packet->data[28] = item->identified ? 1 : 0;
-		SDLNet_Write32(static_cast<Uint32>(item->runeGetStoredPWRRaw()), &net_packet->data[29]);
-		net_packet->data[33] = static_cast<Uint8>(item->runeGetCreatorPlayer());
-		SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[34]);
-		SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[38]);
-		net_packet->data[42] = static_cast<Uint8>(item->appliedOil);
-		writeIngredientCountsToPacket(*item, net_packet->data, 43);
-		writeFamiliarPersistentStateToPacket(*item, net_packet->data, 59);
-		net_packet->address.host = net_clients[player - 1].host;
-		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 115;
-		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		serverSendItemToPickup(player, item);
+		if ( wraithPickup )
+		{
+			Item* held = newItem(item->type, item->status, item->beatitude, item->count,
+				item->appearance, item->identified, nullptr);
+			copyItemPersistentCustomState(*held, *item);
+			setWraithHeldItem(player, held);
+		}
 	}
 	else
 	{
@@ -7202,6 +7417,17 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 		copyItemPersistentCustomState(*item2, *item);
 		item2->ownerUid = item->ownerUid;
 		item2->notifyIcon = item->notifyIcon;
+		if ( wraithPickup )
+		{
+			if ( !setWraithHeldItem(player, item2) )
+			{
+				if ( item2->node )
+				{
+					list_RemoveNode(item2->node);
+				}
+				return nullptr;
+			}
+		}
 
 		if ( item2->type == TOOL_DUCK && !stats[player]->shield )
 		{
@@ -7656,6 +7882,46 @@ Item** itemSlot(Stat* const myStats, Item* const item)
 	{
 		return nullptr;
 	}
+	if ( item == myStats->helmet )
+	{
+		return &myStats->helmet;
+	}
+	if ( item == myStats->breastplate )
+	{
+		return &myStats->breastplate;
+	}
+	if ( item == myStats->gloves )
+	{
+		return &myStats->gloves;
+	}
+	if ( item == myStats->shoes )
+	{
+		return &myStats->shoes;
+	}
+	if ( item == myStats->shield )
+	{
+		return &myStats->shield;
+	}
+	if ( item == myStats->weapon )
+	{
+		return &myStats->weapon;
+	}
+	if ( item == myStats->cloak )
+	{
+		return &myStats->cloak;
+	}
+	if ( item == myStats->amulet )
+	{
+		return &myStats->amulet;
+	}
+	if ( item == myStats->ring )
+	{
+		return &myStats->ring;
+	}
+	if ( item == myStats->mask )
+	{
+		return &myStats->mask;
+	}
 	if (!itemCompare(item, myStats->helmet, true))
 	{
 		return &myStats->helmet;
@@ -7716,6 +7982,19 @@ bool itemIsEquipped(const Item* const item, const int player)
 	if ( !item->node || item->node->list != &stats[player]->inventory )
 	{
 		return false;
+	}
+	if ( item == stats[player]->helmet
+		|| item == stats[player]->breastplate
+		|| item == stats[player]->gloves
+		|| item == stats[player]->shoes
+		|| item == stats[player]->shield
+		|| item == stats[player]->weapon
+		|| item == stats[player]->cloak
+		|| item == stats[player]->amulet
+		|| item == stats[player]->ring
+		|| item == stats[player]->mask )
+	{
+		return true;
 	}
 	if ( !itemCompare(item, stats[player]->helmet, true) )
 	{
@@ -10073,6 +10352,12 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* const armorAlrea
 
 bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 {
+	if ( (type == READABLE_BOOK || type == SCROLL_MAIL)
+		&& player >= 0 && player < MAXPLAYERS && stats[player]
+		&& stats[player]->playerRace == RACE_WRAITH )
+	{
+		return false;
+	}
 	if ( type == AMULET_FAMILIAR )
 	{
 		return false;
@@ -12096,7 +12381,9 @@ void Item::itemFindUniqueAppearance(Item* tempItem, std::unordered_set<Uint32>& 
 {
 	// MAGIC_RUNE appearance is structured persistent metadata, not disposable
 	// cosmetic uniqueness data. Separate Rune instances are distinguished by UID.
-	if ( !tempItem || tempItem->isMagicRune() )
+	// TOOL_PLAYER_LOOT_BAG appearance is its persistent loot-bag key, so it must
+	// never be rerolled as cosmetic uniqueness data.
+	if ( !tempItem || tempItem->isMagicRune() || tempItem->type == TOOL_PLAYER_LOOT_BAG )
 	{
 		return;
 	}

@@ -178,6 +178,13 @@ void actTorch(Entity* my)
 					}
 					else
 					{
+						if ( !wraithCanAcceptPhysicalPickup(i) )
+						{
+							messagePlayer(i, MESSAGE_INVENTORY,
+								"Your spectral hand is already occupied.");
+							free(item);
+							return;
+						}
 						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(589));
 						Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_TORCH_WALLS, TOOL_TORCH, 1);
 						list_RemoveNode(my->light->node);
@@ -349,6 +356,13 @@ void actCrystalShard(Entity* my)
 					}
 					else
 					{
+						if ( !wraithCanAcceptPhysicalPickup(i) )
+						{
+							messagePlayer(i, MESSAGE_INVENTORY,
+								"Your spectral hand is already occupied.");
+							free(item);
+							return;
+						}
 						messagePlayer(i, MESSAGE_INTERACTION | MESSAGE_INVENTORY, Language::get(589));
 						Compendium_t::Events_t::eventUpdate(i, Compendium_t::CPDM_TORCH_WALLS, TOOL_CRYSTALSHARD, 1);
 						list_RemoveNode(my->light->node);

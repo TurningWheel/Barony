@@ -248,7 +248,9 @@ static const int SPELL_HOLY_BEAM = 224;
 static const int SPELL_ENTRENCH = 225;
 // mod add: temporary equipment spell granted by the Amulet of the Familiar.
 static const int SPELL_POLYMORPH_FAMILIAR = 226;
-static const int NUM_SPELLS = 227;
+// mod add: Wraith innate spell. Append-only to preserve all existing spell IDs.
+static const int SPELL_POSSESS = 227;
+static const int NUM_SPELLS = 228;
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
 #define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
@@ -489,6 +491,8 @@ ParticleEmitterHit_t* getParticleEmitterHitProps(Uint32 emitterUid, Entity* hite
 bool addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 bool grantTemporaryEquipmentSpell(int player, int spellID);
 void removeTemporaryEquipmentSpell(int player, int spellID);
+bool grantTemporaryWraithPossessionSpell(int player, int spellID);
+void removeTemporaryWraithPossessionSpell(int player, int spellID);
 
 //TODO: Create a spell class which has the basic spell(s) involved, the mana to use etc. All of those important details. This should support vanilla spells and custom spells with just one data type. The addSpell function gives the player a vanilla spell if they don't already have it.
 
@@ -1247,6 +1251,7 @@ spell_t* getSpellFromItem(const int player, Item* item, bool usePlayerInventory)
 int getSpellIDFromSpellbook(int spellbookType);
 int getSpellIDFromFoci(int fociType);
 int canUseShapeshiftSpellInCurrentForm(const int player, Item& item);
+int canUseWraithPossessionSpellInCurrentBody(const int player, Item& item);
 
 //Spell implementation stuff.
 bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent, spell_t* spell = nullptr);

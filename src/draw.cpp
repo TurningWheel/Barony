@@ -2054,6 +2054,35 @@ void temporarilyDisableDithering() {
     ditherDisabledTime = ticks;
 }
 
+#ifndef EDITOR
+static bool shouldRenderWorldWraithFullbright(Entity* entity)
+{
+	if ( !entity || entity->flags[OVERDRAW] ) { return false; }
+	Entity* playerEntity = nullptr;
+	if ( entity->behavior == &actPlayer )
+	{
+		playerEntity = entity;
+	}
+	else if ( entity->behavior == &actPlayerLimb )
+	{
+		playerEntity = uidToEntity(entity->parent);
+		if ( !playerLimbIsIntrinsicWraithBodyPart(entity, playerEntity) )
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
+
+	const int player = playerEntity ? playerEntity->skill[2] : -1;
+	return player >= 0 && player < MAXPLAYERS
+		&& players[player] && players[player]->entity == playerEntity
+		&& playerIsInWraithForm(player);
+}
+#endif
+
 void drawEntities3D(view_t* camera, int mode)
 {
 #ifndef EDITOR
@@ -2085,6 +2114,22 @@ void drawEntities3D(view_t* camera, int mode)
 			break;
 		}
 	}
+	Entity* firstPersonWraithProxy = nullptr;
+#ifndef EDITOR
+	if ( !intro && currentPlayerViewport >= 0 && currentPlayerViewport < MAXPLAYERS
+		&& players[currentPlayerViewport] && players[currentPlayerViewport]->entity
+		&& stats[currentPlayerViewport]
+		&& stats[currentPlayerViewport]->playerRace == RACE_WRAITH
+		&& !players[currentPlayerViewport]->entity->skill[3] )
+	{
+		const auto& wraith = players[currentPlayerViewport]->mechanics.wraith;
+		if ( wraith.initialized && wraith.possessedEntityUid != 0
+			&& wraithPossessionUsesMonsterVisualProxy(wraith.possessedType) )
+		{
+			firstPersonWraithProxy = uidToEntity(wraith.possessedEntityUid);
+		}
+	}
+#endif
     
     const bool ditheringDisabled = ticks - ditherDisabledTime < TICKS_PER_SECOND;
 
@@ -2101,6 +2146,22 @@ void drawEntities3D(view_t* camera, int mode)
                 nextnode = map.worldUI->first;
             }
         }
+		if ( firstPersonWraithProxy )
+		{
+			bool isActiveProxyPart = entity == firstPersonWraithProxy;
+			if ( !isActiveProxyPart )
+			{
+				for ( Entity* bodypart : firstPersonWraithProxy->bodyparts )
+				{
+					if ( bodypart == entity )
+					{
+						isActiveProxyPart = true;
+						break;
+					}
+				}
+			}
+			if ( isActiveProxyPart ) { continue; }
+		}
         
         if ( entity->flags[INVISIBLE] && !entity->flags[INVISIBLE_DITHER] )
         {
@@ -2287,7 +2348,22 @@ void drawEntities3D(view_t* camera, int mode)
         
 		if ( entity->flags[SPRITE] == false )
 		{
+#ifndef EDITOR
+			const bool originalBright = entity->flags[BRIGHT];
+			const bool wraithWorldFullbright =
+				shouldRenderWorldWraithFullbright(entity);
+			if ( wraithWorldFullbright )
+			{
+				entity->flags[BRIGHT] = true;
+			}
+#endif
             GL_CHECK_ERR(glDrawVoxel(camera, entity, mode));
+#ifndef EDITOR
+			if ( wraithWorldFullbright )
+			{
+				entity->flags[BRIGHT] = originalBright;
+			}
+#endif
 		}
 		else
 		{

@@ -33607,6 +33607,7 @@ void GenericGUIMenu::AssistShrineGUI_t::changeCurrentView(GenericGUIMenu::Assist
 
 	raceSlots.push_back(RACE_HUMAN);
 	raceSlots.push_back(RACE_GOLEM);
+	raceSlots.push_back(RACE_WRAITH);
 	if ( enabledDLCPack1 )
 	{
 		raceSlots.push_back(RACE_SKELETON);

@@ -2101,7 +2101,8 @@ char monsterEditorNameStrings[NUMMONSTERS][32] =
 	"merrow",
 	"leonin",
 	"golem",
-	"bat_familiar"
+	"bat_familiar",
+	"wraith"
 };
 
 char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
@@ -2377,7 +2378,6 @@ int canWearEquip(Entity* entity, int category)
 		if ( stats != NULL )
 		{
 			type = stats->type;
-
 			switch ( type )
 			{
 				//monsters that don't wear equipment (only rings/amulets)

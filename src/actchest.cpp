@@ -1107,9 +1107,11 @@ void Entity::actChest()
 							net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
 							writeIngredientCountsToPacket(*item, net_packet->data, 42);
 							writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
+							writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+								58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 							net_packet->address.host = net_clients[chestclicked - 1].host;
 							net_packet->address.port = net_clients[chestclicked - 1].port;
-							net_packet->len = 114;
+							net_packet->len = 114 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 							sendPacketSafe(net_sock, -1, net_packet, chestclicked - 1);
 						}
 					}
@@ -1325,9 +1327,11 @@ bool openAmuletFamiliarVoidChest(Entity* familiar, int player)
 			net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
 			writeIngredientCountsToPacket(*item, net_packet->data, 42);
 			writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
+			writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+				58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 			net_packet->address.host = net_clients[player - 1].host;
 			net_packet->address.port = net_clients[player - 1].port;
-			net_packet->len = 114;
+			net_packet->len = 114 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
 	}
@@ -1517,6 +1521,11 @@ Item* Entity::addItemToVoidChest(int player, Item* item, bool forceNewStack, Ite
 	{
 		return nullptr;
 	}
+	if ( stats[player] && stats[player]->playerRace == RACE_WRAITH
+		&& (item->type == READABLE_BOOK || item->type == SCROLL_MAIL) )
+	{
+		forceNewStack = true;
+	}
 	if ( multiplayer == CLIENT )
 	{
 		if ( players[player]->isLocalPlayer() )
@@ -1541,7 +1550,9 @@ Item* Entity::addItemToVoidChest(int player, Item* item, bool forceNewStack, Ite
 			net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
 			writeIngredientCountsToPacket(*item, net_packet->data, 42);
 			writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
-			net_packet->len = 114;
+			writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+				58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
+			net_packet->len = 114 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 
 			return item;
@@ -1585,7 +1596,9 @@ Item* Entity::addItemToChest(Item* item, bool forceNewStack, Item* specificDesti
 		net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
 		writeIngredientCountsToPacket(*item, net_packet->data, 42);
 		writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
-		net_packet->len = 114;
+		writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+			58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
+		net_packet->len = 114 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 
 		return addItemToChestClientside(player, item, forceNewStack, specificDestinationStack);
@@ -1650,9 +1663,11 @@ Item* Entity::addItemToChest(Item* item, bool forceNewStack, Item* specificDesti
 		net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
 		writeIngredientCountsToPacket(*item, net_packet->data, 42);
 		writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
+		writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+			58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 		net_packet->address.host = net_clients[chestOpener - 1].host;
 		net_packet->address.port = net_clients[chestOpener - 1].port;
-		net_packet->len = 114;
+		net_packet->len = 114 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 		sendPacketSafe(net_sock, -1, net_packet, chestOpener - 1);
 	}
 	return item;
@@ -1664,10 +1679,14 @@ Item* Entity::addItemToChestFromInventory(int player, Item* item, int amount, bo
 	{
 		return nullptr;
 	}
-
 	if (itemCategory(item) == SPELL_CAT)
 	{
 		return nullptr;
+	}
+	if ( stats[player] && stats[player]->playerRace == RACE_WRAITH
+		&& (item->type == READABLE_BOOK || item->type == SCROLL_MAIL) )
+	{
+		forceNewStack = true;
 	}
 
 	if ( amount <= 0 )
@@ -1883,7 +1902,9 @@ Item* Entity::getItemFromChest(Item* item, int amount, bool getInfoOnly)
 			net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
 			writeIngredientCountsToPacket(*item, net_packet->data, 42);
 			writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
-			net_packet->len = 114;
+			writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+				58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
+			net_packet->len = 114 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 	}
@@ -2169,9 +2190,11 @@ void Entity::serverSendItemToOpenVoidChest(int player, const Item* item, bool fo
 	net_packet->data[41] = static_cast<Uint8>(item->appliedOil);
 	writeIngredientCountsToPacket(*item, net_packet->data, 42);
 	writeFamiliarPersistentStateToPacket(*item, net_packet->data, 58);
+	writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+		58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 	net_packet->address.host = net_clients[player - 1].host;
 	net_packet->address.port = net_clients[player - 1].port;
-	net_packet->len = 114;
+	net_packet->len = 114 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 

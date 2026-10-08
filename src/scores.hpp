@@ -599,7 +599,8 @@ struct SaveGameInfo {
 					Sint32 _familiarLVL = 0, Sint32 _familiarEXP = 0,
 					Sint32 _familiarSTR = 0, Sint32 _familiarDEX = 0,
 					Sint32 _familiarCON = 0, Sint32 _familiarINT = 0,
-					Sint32 _familiarPER = 0, Sint32 _familiarCHR = 0)
+					Sint32 _familiarPER = 0, Sint32 _familiarCHR = 0,
+					Uint32 _wraithLoreInstanceId = 0)
 				{
 					type = _type;
 					status = _status;
@@ -626,6 +627,7 @@ struct SaveGameInfo {
 					familiarSTR = _familiarSTR; familiarDEX = _familiarDEX;
 					familiarCON = _familiarCON; familiarINT = _familiarINT;
 					familiarPER = _familiarPER; familiarCHR = _familiarCHR;
+					wraithLoreInstanceId = _wraithLoreInstanceId;
 				}
 
 				Uint32 type = 0;
@@ -649,6 +651,7 @@ struct SaveGameInfo {
 				Sint32 familiarLVL = 0, familiarEXP = 0;
 				Sint32 familiarSTR = 0, familiarDEX = 0, familiarCON = 0;
 				Sint32 familiarINT = 0, familiarPER = 0, familiarCHR = 0;
+				Uint32 wraithLoreInstanceId = 0;
 				bool serialize(FileInterface* fp) {
 					if ( fp->isReading() )
 					{
@@ -662,6 +665,7 @@ struct SaveGameInfo {
 						familiarLVL = familiarEXP = 0;
 						familiarSTR = familiarDEX = familiarCON = 0;
 						familiarINT = familiarPER = familiarCHR = 0;
+						wraithLoreInstanceId = 0;
 					}
 					fp->property("type", type);
 					fp->property("status", status);
@@ -694,6 +698,7 @@ struct SaveGameInfo {
 					fp->property("familiar_int", familiarINT);
 					fp->property("familiar_per", familiarPER);
 					fp->property("familiar_chr", familiarCHR);
+					fp->property("wraith_lore_instance_id", wraithLoreInstanceId);
 					return true;
 				}
 				void computeHash(Uint32& hash, Uint32& shift);

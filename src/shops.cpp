@@ -108,6 +108,11 @@ void startTradingServer(Entity* entity, int player)
 	{
 		return;
 	}
+	if ( playerIsInWraithForm(player) )
+	{
+		messagePlayer(player, MESSAGE_INTERACTION, "The shopkeeper refuses to trade with a Wraith.");
+		return;
+	}
 
 	Stat* stats = entity->getStats();
 	if ( stats == NULL )
@@ -180,9 +185,11 @@ void startTradingServer(Entity* entity, int player)
 			net_packet->data[31] = static_cast<Uint8>(item->appliedOil);
 			writeIngredientCountsToPacket(*item, net_packet->data, 32);
 			writeFamiliarPersistentStateToPacket(*item, net_packet->data, 48);
+			writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+				48 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 			net_packet->address.host = net_clients[player - 1].host;
 			net_packet->address.port = net_clients[player - 1].port;
-			net_packet->len = 104;
+			net_packet->len = 104 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
 	}
@@ -401,9 +408,11 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 			net_packet->data[43] = static_cast<Uint8>(item->appliedOil);
 			writeIngredientCountsToPacket(*item, net_packet->data, 44);
 			writeFamiliarPersistentStateToPacket(*item, net_packet->data, 60);
+			writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+				60 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
-			net_packet->len = 116;
+			net_packet->len = 116 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 		if ( shopIsMysteriousShopkeeper(entity) )
@@ -771,9 +780,11 @@ bool sellItemToShop(const int player, Item* item)
 		net_packet->data[43] = static_cast<Uint8>(item->appliedOil);
 		writeIngredientCountsToPacket(*item, net_packet->data, 44);
 		writeFamiliarPersistentStateToPacket(*item, net_packet->data, 60);
+		writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+			60 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 116;
+		net_packet->len = 116 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
 	if ( itemTypeIsQuiver(item->type) )

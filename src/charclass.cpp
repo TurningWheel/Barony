@@ -21,6 +21,127 @@
 #include "player.hpp"
 #include "mod_tools.hpp"
 
+void initializeWraithPlayerForNewGame(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| stats[player]->playerRace != RACE_WRAITH
+		|| stats[player]->stat_appearance != 0 )
+	{
+		return;
+	}
+	auto& wraith = players[player]->mechanics.wraith;
+	if ( wraith.initialized )
+	{
+		return;
+	}
+
+	const Sint32 oldHP = stats[player]->HP;
+	const Sint32 oldMaxHP = stats[player]->MAXHP;
+	const Sint32 oldMP = stats[player]->MP;
+	const Sint32 oldMaxMP = stats[player]->MAXMP;
+	wraith.corporealMaxHP = oldMaxHP;
+	wraith.corporealMaxMP = oldMaxMP;
+	wraith.possessedEntityUid = 0;
+	wraith.possessionTransition = false;
+	wraith.possessedType = NOTHING;
+	wraith.possessionStartPlayerLevel = 0;
+	wraith.possessionLastPlayerLevel = 0;
+	wraith.possessedBodyOriginalInvisible = false;
+	wraith.possessedBodyOriginalPassable = false;
+	wraith.possessedBodyOriginalBlocksSight = false;
+	wraith.possessedBodyOriginalUnclickable = false;
+	wraith.suspendedWraithEffects.fill(false);
+	wraith.suspendedWraithEffectTimers.fill(0);
+	wraith.temporaryInnateSpellIds.clear();
+	wraith.possessionOriginalEquipmentUids.fill(0);
+	wraith.learnedPossessionTypes.clear();
+	wraith.seenBookLoreIds.clear();
+	wraith.seenGravestoneLoreIds.clear();
+	wraith.seenMailLoreIds.clear();
+	wraith.readBookObjectIds.clear();
+	wraith.readMailObjectIds.clear();
+	wraith.readGravestoneObjectIds.clear();
+	stats[player]->HP = 5;
+	stats[player]->MAXHP = 5;
+	stats[player]->MP = oldMP + std::max(0, oldHP - 5);
+	stats[player]->MAXMP = oldMaxMP + std::max(0, oldMaxHP - 5);
+	stats[player]->MAXMP = std::max<Sint32>(stats[player]->MAXMP,
+		WRAITH_MIN_POSSESS_RESERVE);
+	stats[player]->MP = std::max<Sint32>(stats[player]->MP,
+		WRAITH_MIN_POSSESS_RESERVE);
+	stats[player]->MP = std::min(stats[player]->MP, stats[player]->MAXMP);
+
+	std::unordered_set<Item*> packed;
+	std::vector<Item*> inventoryItems;
+	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+	{
+		if ( auto item = static_cast<Item*>(node->element) )
+		{
+			inventoryItems.push_back(item);
+		}
+	}
+	for ( Item* item : inventoryItems )
+	{
+		if ( !item || item == stats[player]->ring || item == stats[player]->amulet
+			|| item->type == SPELL_ITEM )
+		{
+			continue;
+		}
+		stats[player]->addItemToLootingBag(player, 0.0, 0.0, *item, false);
+		packed.insert(item);
+	}
+
+	Item** equipment[] = {
+		&stats[player]->helmet, &stats[player]->breastplate, &stats[player]->gloves,
+		&stats[player]->shoes, &stats[player]->shield, &stats[player]->weapon,
+		&stats[player]->cloak, &stats[player]->mask
+	};
+	for ( Item** slot : equipment )
+	{
+		Item* item = *slot;
+		*slot = nullptr;
+		if ( item && packed.find(item) == packed.end() )
+		{
+			stats[player]->addItemToLootingBag(player, 0.0, 0.0, *item, false);
+			packed.insert(item);
+		}
+	}
+	for ( Item* item : packed )
+	{
+		if ( item->node )
+		{
+			list_RemoveNode(item->node);
+		}
+		else
+		{
+			free(item);
+		}
+	}
+
+	const Uint32 bagKey = stats[player]->getLootingBagKey(player);
+	Item* chest = newItem(TOOL_PLAYER_LOOT_BAG, WORN, 0, 1, bagKey, true,
+		&stats[player]->inventory);
+	wraith.initialized = true;
+
+	if ( !setWraithHeldItem(player, chest) )
+	{
+		printlog(
+			"[WRAITH]: ERROR failed to place starting loot chest in hand");
+	}
+
+	assert(stats[player]->weapon);
+	assert(stats[player]->weapon->type == TOOL_PLAYER_LOOT_BAG);
+	assert(itemSlot(stats[player], stats[player]->weapon)
+		== &stats[player]->weapon);
+	assert(itemIsEquipped(stats[player]->weapon, player));
+
+	if ( players[player]->isLocalPlayer() )
+	{
+		assert(players[player]->paperDoll.getSlotForItem(
+			*stats[player]->weapon) == Player::PaperDoll_t::SLOT_WEAPON);
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	initClass
@@ -3778,18 +3899,32 @@ void initClass(const int player)
 
 		if ( multiplayer != CLIENT )
 		{
+			int bagX = 0;
+
 			for ( int category = INGREDIENT_CATEGORY_SLIME;
 				category <= INGREDIENT_CATEGORY_ANIMATIC; ++category )
 			{
-				for ( int slot = 0; slot < 4; ++slot )
+				const auto ingredientCategory =
+					static_cast<WitchIngredientCategory>(category);
+
+				Item* bag = newItem(
+					ingredientBagForCategory(ingredientCategory),
+					EXCELLENT,
+					0,
+					1,
+					0,
+					true,
+					&stats[player]->void_chest_inventory);
+
+				if ( bag )
 				{
-					const ItemType ingredient = ingredientForCategorySlot(
-						static_cast<WitchIngredientCategory>(category), slot);
-					if ( ingredient >= 0 && ingredient < NUMITEMS )
+					for ( int slot = 0; slot < 4; ++slot )
 					{
-						newItem(ingredient, SERVICABLE, 0, 1, 0, true,
-							&stats[player]->void_chest_inventory);
+						bag->ingredientCounts[slot] = 1;
 					}
+
+					bag->x = bagX++;
+					bag->y = 0;
 				}
 			}
 		}
@@ -4005,6 +4140,10 @@ void initClass(const int player)
 		else if ( stats[player]->playerRace == RACE_GNOME && stats[player]->stat_appearance == 0 )
 		{
 			addSpell(SPELL_FORGE_JEWEL, player, true);
+		}
+		else if ( stats[player]->playerRace == RACE_WRAITH && stats[player]->stat_appearance == 0 )
+		{
+			addSpell(SPELL_POSSESS, player, true);
 		}
 
 		if ( stats[player]->getProficiency(PRO_ALCHEMY) >= 0 )

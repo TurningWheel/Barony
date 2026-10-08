@@ -137,6 +137,9 @@ void actHeadstone(Entity* my)
 
 					Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_GRAVE_EPITAPHS_READ, "gravestone", 1);
 					Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_GRAVE_EPITAPHS_PERCENT, "gravestone", (1 << (HEADSTONE_MESSAGE % 17)));
+					const int graveTextId = HEADSTONE_MESSAGE % 17;
+					processWraithLoreRead(i, WRAITH_LORE_GRAVESTONE, graveTextId,
+						getWraithGravestoneLoreObjectId(my, graveTextId));
 
 					triggeredPlayer = i;
 

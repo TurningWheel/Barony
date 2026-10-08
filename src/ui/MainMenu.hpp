@@ -196,6 +196,8 @@ namespace MainMenu {
 				return "leonin";
 			case RACE_GOLEM:
 				return "golem";
+			case RACE_WRAITH:
+				return "wraith";
 			default:
 				break;
 			}

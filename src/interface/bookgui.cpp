@@ -513,18 +513,14 @@ void Player::BookGUI_t::closeBookGUI()
 
 void Player::BookGUI_t::openBook(int index, Item* item)
 {
-	if ( getBookDefaultNameFromIndex(index) == "" )
+	index = getBookDisplayIndex(index);
+	if ( index < 0 )
 	{
 		return;
 	}
-
-	for (int c = 0; c < num_banned_books; ++c) {
-		const char* banned_book = banned_books[c];
-		if ( !spawn_blood && getBookDefaultNameFromIndex(index, false) == banned_book )
-		{
-			openBook((index + 1) % numbooks, item);
-			return;
-		}
+	if ( getBookDefaultNameFromIndex(index) == "" )
+	{
+		return;
 	}
 
 	player.GUI.previousModule = player.GUI.activeModule;
@@ -571,6 +567,10 @@ void Player::BookGUI_t::openBook(int index, Item* item)
 		{
 			Compendium_t::Events_t::eventUpdate(player.playernum, Compendium_t::CPDM_LORE_PERCENT_READ, READABLE_BOOK, (1 << (index % numbooks)));
 		}
+	}
+	if ( multiplayer != CLIENT )
+	{
+		processWraithItemLoreRead(player.playernum, item, WRAITH_LORE_BOOK, index);
 	}
 
 	// activate the steam achievement

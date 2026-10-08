@@ -3241,6 +3241,7 @@ void Player::init() // for use on new/restart game, UI related
 	levelUpAnimation[playernum].lvlUps.clear();
 	skillUpAnimation[playernum].skillUps.clear();
 	mechanics.itemDegradeRng.clear();
+	mechanics.wraith = PlayerMechanics_t::WraithPlayerState();
 	// mod add: Clear any firearm action left over from the previous run.
 	cancelFirearmReload(playernum, true);
 	mechanics.firearmReloadLastToken = 0;
@@ -4206,38 +4207,48 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		{
 			int monsterType = parent->getMonsterTypeFromSprite();
 			Stat* parentStats = parent->getStats();
-				const bool ownedFamiliarMimic =
-					isAmuletFamiliarMimic(parent)
-					&& parentStats
-					&& player.entity
-					&& parentStats->leader_uid == player.entity->getUID();
+			const bool ownedFamiliarCauldron =
+				parentStats
+				&& player.entity
+				&& isAmuletFamiliar(parent, parentStats)
+				&& getAmuletFamiliarForm(parent) == FAMILIAR_FORM_CAULDRON
+				&& parentStats->leader_uid == player.entity->getUID();
+			const bool ownedFamiliarMimic =
+				isAmuletFamiliarMimic(parent)
+				&& parentStats
+				&& player.entity
+				&& parentStats->leader_uid == player.entity->getUID();
 
-				if ( ownedFamiliarMimic )
+			if ( ownedFamiliarCauldron )
+			{
+				interactText = "Stew brews";
+			}
+			else if ( ownedFamiliarMimic )
+			{
+				// Keep C / follower-command hotkeys pointed at this familiar.
+				FollowerMenu[player.playernum].recentEntity = parent;
+
+				if ( familiarMimicCommandInteraction )
 				{
-					// Keep C / follower-command hotkeys pointed at this familiar.
-					FollowerMenu[player.playernum].recentEntity = parent;
-
-					if ( familiarMimicCommandInteraction )
+					std::string name = Language::get(4011); // follower
+					if ( strcmp(parentStats->name, "") )
 					{
-						std::string name = Language::get(4011); // follower
-						if ( strcmp(parentStats->name, "") )
-						{
-							name = parentStats->name;
-						}
-						else
-						{
-							name = getMonsterLocalizedName(
-								static_cast<Monster>(monsterType));
-						}
-
-						interactText = Language::get(4012) + name; // "Command ..."
+						name = parentStats->name;
 					}
 					else
 					{
-						interactText = Language::get(4005); // "Open chest"
+						name = getMonsterLocalizedName(
+							static_cast<Monster>(monsterType));
 					}
+
+					interactText = Language::get(4012) + name; // "Command ..."
 				}
-				else if ( parent->isInertMimic() )
+				else
+				{
+					interactText = Language::get(4005); // "Open chest"
+				}
+			}
+			else if ( parent->isInertMimic() )
 			{
 				interactText = Language::get(4005); // "Open chest" 
 			}
@@ -5054,6 +5065,78 @@ void Player::WorldUI_t::handleTooltips()
 				{
 					continue;
 				}
+
+				// An owned Familiar Cauldron on an active
+				// Campfire does not need its own interaction
+				// tooltip. The Campfire is the sole interaction
+				// target there and actCampfire() already forwards
+				// the click to openStewingCauldron().
+				//
+				// Over lava there is no Campfire Entity, so this
+				// filter does nothing and the Cauldron's own
+				// "Stew brews" tooltip remains available.
+				if ( parent
+					&& parent->behavior == &actMonster
+					&& playerEntity )
+				{
+					Stat* parentStats =
+						parent->getStats();
+
+					if ( parentStats
+						&& isAmuletFamiliar(
+							parent,
+							parentStats)
+						&& getAmuletFamiliarForm(parent)
+							== FAMILIAR_FORM_CAULDRON
+						&& parentStats->leader_uid
+							== playerEntity->getUID() )
+					{
+						const int tilex =
+							static_cast<int>(
+								floor(parent->x / 16.0));
+
+						const int tiley =
+							static_cast<int>(
+								floor(parent->y / 16.0));
+
+						list_t* entities =
+							TileEntityList.getTileList(
+								tilex,
+								tiley);
+
+						bool activeCampfireOnTile =
+							false;
+
+						for ( node_t* entityNode =
+								entities
+									? entities->first
+									: nullptr;
+							entityNode;
+							entityNode =
+								entityNode->next )
+						{
+							Entity* tileEntity =
+								static_cast<Entity*>(
+									entityNode->element);
+
+							if ( tileEntity
+								&& tileEntity->behavior
+									== &actCampfire
+								&& tileEntity->skill[3] > 0 )
+							{
+								activeCampfireOnTile =
+									true;
+								break;
+							}
+						}
+
+						if ( activeCampfireOnTile )
+						{
+							continue;
+						}
+					}
+				}
+
 				real_t newDist = players[player]->worldUI.tooltipInRange(*tooltip);
 				if ( newDist > 0.01 )
 				{
@@ -6004,9 +6087,15 @@ const bool Player::Inventory_t::bItemInventoryHasFreeSlot() const
 {
 	int numSlots = freeVisibleInventorySlots();
 	int itemCount = 0;
+
 	if ( !stats[player.playernum] || !player.isLocalPlayer() )
 	{
 		return false;
+	}
+
+	if ( playerIsInWraithForm(player.playernum) )
+	{
+		return stats[player.playernum]->weapon == nullptr;
 	}
 	for ( node_t* node = stats[player.playernum]->inventory.first; node; node = node->next )
 	{

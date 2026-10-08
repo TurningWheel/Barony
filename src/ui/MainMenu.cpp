@@ -8617,7 +8617,7 @@ bind_failed:
 	}
 
 	// number of player selectable races
-	constexpr int num_races = 17; // mod add: include Golem selectable race
+	constexpr int num_races = 18; // mod add: include Wraith selectable race
 
 /******************************************************************************/
 	int getLangEntryForMainMenuRaceName(int race)
@@ -8660,6 +8660,10 @@ bind_failed:
 		{
 			return "Golem";
 		}
+		if ( race == 17 ) // mod add: Wraith's visible menu index
+		{
+			return "Wraith";
+		}
 
 		return Language::get(getLangEntryForMainMenuRaceName(race));
 	}
@@ -8677,6 +8681,10 @@ bind_failed:
 		if ( race == RACE_GOLEM )
 		{
 			return "Golem";
+		}
+		if ( race == RACE_WRAITH )
+		{
+			return "Wraith";
 		}
 
 		return Language::get(getLangEntryForPlayerRaceName(race));
@@ -13925,14 +13933,17 @@ failed:
 					? RaceDescriptions::getMonsterDescriptionData(LEONIN)
 				: (race == RACE_GOLEM)
 					? RaceDescriptions::getMonsterDescriptionData(GOLEM)
+				: (race == RACE_WRAITH)
+					? RaceDescriptions::getMonsterDescriptionData(WRAITH)
 				: RaceDescriptions::getRaceDescriptionData(race);
 		// mod add end
 
 	    auto details_title = card.findField("details_title");
 	    if (details_title) {
 	        details_title->clearLinesToColor();
-	        details_title->setText(race == RACE_GOLEM ? "Golem"
-				: (race == RACE_LEONIN ? "Leonin" : raceDescriptionData.title.c_str()));
+	        details_title->setText(race == RACE_WRAITH ? "Wraith"
+				: (race == RACE_GOLEM ? "Golem"
+				: (race == RACE_LEONIN ? "Leonin" : raceDescriptionData.title.c_str())));
             details_title->setColor(color_race);
 	    }
 
@@ -13974,7 +13985,8 @@ failed:
 	static void race_achievement_required_error(int classnum)
 	{
 		// mod add: custom race / class unlocks
-		if ( classnum == CLASS_WHALER || classnum == CLASS_GUNSLINGER || classnum == CLASS_RUNESMITH)
+		if ( classnum == CLASS_WHALER || classnum == CLASS_GUNSLINGER
+			|| classnum == CLASS_RUNESMITH || classnum == CLASS_WITCH )
 		{
 			const char* pairedRace = "";
 			const char* pairedClass = "";
@@ -13993,6 +14005,11 @@ failed:
 			{
 				pairedRace = "Golem";
 				pairedClass = "Runesmith";
+			}
+			else if ( classnum == CLASS_WITCH )
+			{
+				pairedRace = "Wraith";
+				pairedClass = "Witch";
 			}
 			char customPrompt[128] = "";
 			snprintf(customPrompt, sizeof(customPrompt),
@@ -14088,7 +14105,8 @@ failed:
 		bool allowPick = true;
 		if ( challengeClass == CLASS_WITCH )
 		{
-			return true;
+			return race == 0 || race == RACE_WRAITH - 4
+				|| isAchievementUnlockedForClassUnlock(RACE_WRAITH);
 		}
 		if ( race == RACE_HUMAN )
 		{
@@ -17599,6 +17617,28 @@ failed:
 		if (!lobby) {
 		    return;
 		}
+		if ( !loadingsavegame && index >= 0 && index < MAXPLAYERS
+			&& players[index] && stats[index]
+			&& stats[index]->playerRace == RACE_WRAITH
+			&& players[index]->mechanics.wraith.initialized )
+		{
+			const int savedRace = stats[index]->playerRace;
+			const sex_t savedSex = stats[index]->sex;
+			const int savedAppearance = stats[index]->stat_appearance;
+			const int savedClass = client_classes[index];
+			const std::string savedName = stats[index]->name;
+
+			players[index]->mechanics.wraith =
+				Player::PlayerMechanics_t::WraithPlayerState();
+			stats[index]->clearStats();
+			stats[index]->playerRace = savedRace;
+			stats[index]->sex = savedSex;
+			stats[index]->stat_appearance = savedAppearance;
+			client_classes[index] = savedClass;
+			stringCopy(stats[index]->name, savedName.c_str(),
+				sizeof(Stat::name), savedName.size());
+			initClass(index);
+		}
 
 		if (multiplayer == CLIENT) {
 			sendSvFlagsOverNet();
@@ -18138,6 +18178,7 @@ failed:
 					}
 					chances[RACE_LEONIN] = 1; // mod add: Leonin is a no-DLC selectable race
 					chances[RACE_GOLEM] = 1; // mod add: Golem is a no-DLC selectable race
+					chances[RACE_WRAITH] = 1; // mod add: Wraith is a no-DLC selectable race
 					stats[index]->playerRace = RNG.discrete(chances.data(), chances.size());
 				}
 			}

@@ -1417,10 +1417,10 @@ static void spellcastingAnimationManager_cancelForPanicking(int player,
 	if ( player >= 0 && player < MAXPLAYERS && players[player]
 		&& players[player]->entity && stats[player] )
 	{
-		stats[player]->MP = std::min(stats[player]->MAXMP,
-			stats[player]->MP + animation_manager->panickingRefundMP);
-		stats[player]->HP = std::min(stats[player]->MAXHP,
-			stats[player]->HP + animation_manager->panickingRefundHP);
+		players[player]->entity->setMP(std::min(stats[player]->MAXMP,
+			stats[player]->MP + animation_manager->panickingRefundMP));
+		players[player]->entity->setHP(std::min(stats[player]->MAXHP,
+			stats[player]->HP + animation_manager->panickingRefundHP));
 		stats[player]->HUNGER += animation_manager->panickingRefundHunger;
 	}
 	animation_manager->panickingRefundMP = 0;
@@ -1646,6 +1646,7 @@ void actLeftHandMagic(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
+	my->flags[USERFLAG2] = playerIsInWraithForm(HANDMAGIC_PLAYERNUM);
 	if ( (cast_animation[HANDMAGIC_PLAYERNUM].active
 		|| cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook)
 		&& playerIsPanicking(HANDMAGIC_PLAYERNUM) )
@@ -1675,7 +1676,13 @@ void actLeftHandMagic(Entity* my)
 	//Sprite
 	Monster playerRace = players[HANDMAGIC_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HANDMAGIC_PLAYERNUM]->playerRace);
 	int playerAppearance = stats[HANDMAGIC_PLAYERNUM]->stat_appearance;
-	if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
+	if ( stats[HANDMAGIC_PLAYERNUM]->playerRace == RACE_WRAITH
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.initialized
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0 )
+	{
+		playerRace = getWraithEffectiveMonsterType(HANDMAGIC_PLAYERNUM);
+	}
+	else if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift);
 	}
@@ -1691,6 +1698,10 @@ void actLeftHandMagic(Entity* my)
 			playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectPolymorph);
 		}
 	}
+	const bool hideWraithPossessionHand = stats[HANDMAGIC_PLAYERNUM]->playerRace == RACE_WRAITH
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.initialized
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0
+		&& !wraithPossessionHasFirstPersonModel(playerRace);
 
 	if ( playerRace == GREMLIN )
 	{
@@ -1721,7 +1732,8 @@ void actLeftHandMagic(Entity* my)
 		|| playerRace == SPIDER
 		|| playerRace == RAT
 		|| playerRace == CREATURE_IMP
-		|| playerRace == TROLL )
+		|| playerRace == TROLL
+		|| playerRace == WRAITH  )
 	{
 		noGloves = true;
 	}
@@ -1870,6 +1882,9 @@ void actLeftHandMagic(Entity* my)
 				break;
 			case LEONIN:
 				my->sprite = LEONIN_MODEL_HAND_LEFT_FP;
+				break;
+			case WRAITH:
+				my->sprite = WRAITH_MODEL_HAND_LEFT_FP;
 				break;
 			case GNOME:
 				my->sprite = 2321;
@@ -2402,7 +2417,22 @@ void actLeftHandMagic(Entity* my)
 			float z = my->z - 0.0;
 
 			Monster playerRace = players[HANDMAGIC_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HANDMAGIC_PLAYERNUM]->playerRace);
-			if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
+			if ( stats[HANDMAGIC_PLAYERNUM]->playerRace == RACE_WRAITH
+				&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.initialized
+				&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0 )
+			{
+				playerRace = getWraithEffectiveMonsterType(HANDMAGIC_PLAYERNUM);
+				if ( playerRace == RAT )
+				{
+					y = 0.0;
+				}
+				else if ( playerRace == SPIDER )
+				{
+					y = 0.0;
+					z -= 2;
+				}
+			}
+			else if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 			{
 				playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift);
 				if ( playerRace == RAT )
@@ -2478,6 +2508,11 @@ void actLeftHandMagic(Entity* my)
 	{
 		cast_animation[HANDMAGIC_PLAYERNUM].active_count = 0;
 	}
+	if ( hideWraithPossessionHand )
+	{
+		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
+	}
 }
 
 void actRightHandMagic(Entity* my)
@@ -2503,6 +2538,7 @@ void actRightHandMagic(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
+	my->flags[USERFLAG2] = playerIsInWraithForm(HANDMAGIC_PLAYERNUM);
 
 	my->mistformGLRender = players[HANDMAGIC_PLAYERNUM]->entity->mistformGLRender;
 
@@ -2522,7 +2558,13 @@ void actRightHandMagic(Entity* my)
 	//Sprite
 	Monster playerRace = players[HANDMAGIC_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HANDMAGIC_PLAYERNUM]->playerRace);
 	int playerAppearance = stats[HANDMAGIC_PLAYERNUM]->stat_appearance;
-	if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
+	if ( stats[HANDMAGIC_PLAYERNUM]->playerRace == RACE_WRAITH
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.initialized
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0 )
+	{
+		playerRace = getWraithEffectiveMonsterType(HANDMAGIC_PLAYERNUM);
+	}
+	else if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift);
 	}
@@ -2538,6 +2580,10 @@ void actRightHandMagic(Entity* my)
 			playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectPolymorph);
 		}
 	}
+	const bool hideWraithPossessionHand = stats[HANDMAGIC_PLAYERNUM]->playerRace == RACE_WRAITH
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.initialized
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0
+		&& !wraithPossessionHasFirstPersonModel(playerRace);
 
 	if ( playerRace == GREMLIN )
 	{
@@ -2577,7 +2623,8 @@ void actRightHandMagic(Entity* my)
 		|| playerRace == SPIDER 
 		|| playerRace == RAT 
 		|| playerRace == CREATURE_IMP
-		|| playerRace == TROLL )
+		|| playerRace == TROLL
+		|| playerRace == WRAITH  )
 	{
 		noGloves = true;
 	}
@@ -2724,6 +2771,9 @@ void actRightHandMagic(Entity* my)
 				break;
 			case LEONIN:
 				my->sprite = LEONIN_MODEL_HAND_RIGHT_FP;
+				break;
+			case WRAITH:
+				my->sprite = WRAITH_MODEL_HAND_RIGHT_FP;
 				break;
 			case GNOME:
 				my->sprite = 2322;
@@ -2914,6 +2964,11 @@ void actRightHandMagic(Entity* my)
 	my->x += cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movex;
 	my->y -= cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movey;
 	if ( cast_animation[HANDMAGIC_PLAYERNUM].usingRune ) { my->flags[INVISIBLE] = true; }
+	if ( hideWraithPossessionHand )
+	{
+		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
+	}
 }
 
 #define HANDMAGIC_RANGEFINDER_ALPHA my->fskill[0]

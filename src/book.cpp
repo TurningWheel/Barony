@@ -54,6 +54,30 @@ int getBook(std::string bookTitle)
 	return 0;
 }
 
+int getBookDisplayIndex(int index)
+{
+	if ( allBooks.empty() || index < 0 || index >= static_cast<int>(allBooks.size()) )
+	{
+		return -1;
+	}
+	if ( spawn_blood ) { return index; }
+	for ( size_t attempts = 0; attempts < allBooks.size(); ++attempts )
+	{
+		bool banned = false;
+		for ( int c = 0; c < num_banned_books; ++c )
+		{
+			if ( allBooks[index].default_name == banned_books[c] )
+			{
+				banned = true;
+				break;
+			}
+		}
+		if ( !banned ) { return index; }
+		index = (index + 1) % static_cast<int>(allBooks.size());
+	}
+	return -1;
+}
+
 std::string getBookDefaultNameFromIndex(int index, bool censored)
 {
 	if (allBooks.empty() || index < 0 || index >= allBooks.size()) {

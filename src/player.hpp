@@ -31,6 +31,59 @@ extern Entity* lastSelectedEntity[MAXPLAYERS];
 bool playerIsPanicking(int player);
 bool playerCanInteractWhilePanicking(const Entity* target);
 bool playerDarkvisionSuppressed(int player);
+bool playerIsInWraithForm(int player);
+bool isWraithPhysicalHandItem(int player, const Item* item);
+bool playerShouldRenderAsWraithSpirit(int player);
+bool playerLimbIsIntrinsicWraithBodyPart(const Entity* limb,
+	const Entity* parent, int* bodypartIndex = nullptr);
+bool wraithCanAcceptPhysicalPickup(int player);
+bool setWraithHeldItem(int player, Item* item);
+bool wraithNegatesIncomingDamage(Entity* target, Sint32 damage);
+enum WraithLoreKind : Uint8
+{
+	WRAITH_LORE_BOOK,
+	WRAITH_LORE_GRAVESTONE,
+	WRAITH_LORE_MAIL
+};
+bool wraithPossessionTypeIsLearnable(Monster type);
+Monster wraithCanonicalPossessionType(Monster type);
+std::vector<Monster> getWraithLearnablePossessionTypes();
+bool wraithKnowsPossessionType(int player, Monster type);
+std::vector<Monster> getWraithKnownPossessionTypes(int player);
+void sanitizeWraithPossessionKnowledge(int player);
+bool processWraithLoreRead(int player, WraithLoreKind kind, int textId,
+	Uint64 physicalObjectId);
+bool processWraithItemLoreRead(int player, Item* item, WraithLoreKind kind, int textId);
+bool processWraithRemoteItemLoreRead(int player, Item* requestItem);
+int getWraithCanonicalMailLoreId(Uint32 appearance);
+int getWraithAddressedMailLoreId(int player);
+Uint64 getWraithGravestoneLoreObjectId(const Entity* gravestone, int textId);
+void syncWraithPossessionKnowledge(int player);
+void replaceWraithLearnedPossessionTypes(int player, const std::vector<Monster>& types);
+bool unlockAllWraithPossessions(int player);
+void initializeWraithPlayerForNewGame(int player);
+constexpr Sint32 WRAITH_MIN_POSSESS_RESERVE = 26;
+Sint32 getWraithPossessManaCost(const Entity* target);
+bool wraithMonsterTypeCanEverBePossessed(const Entity* monster);
+bool wraithCanPossessTarget(int player, Entity* target,
+	std::string* failureReason = nullptr);
+bool beginWraithPossession(int player, Entity* target);
+bool releaseWraithPossession(int player);
+bool handleWraithPossessedBodyDeath(int player);
+void updateWraithPossession(int player);
+Stat* createWraithPossessedBodySnapshot(int player);
+Stat* captureWraithPossessedBodyForLevelTransition(int player);
+bool restoreWraithPossessedBodyAfterLevelTransition(int player, Stat* savedBodyStats);
+void clearWraithReturningBodyUIReferences(int player, const std::vector<Item*>& returningBodyItems);
+bool monsterIsActiveWraithBody(const Entity* monster);
+bool spawnWraithBodyDeathChest(Entity* monster);
+Monster getWraithEffectiveMonsterType(int player);
+std::vector<int> getWraithPossessionInnateSpells(Monster type);
+bool wraithPossessedBodyCanEquipSlot(int player, int category);
+bool wraithPossessionUsesMonsterVisualProxy(Monster type);
+bool wraithPossessionHasFirstPersonModel(Monster type);
+void updateWraithPossessionTemporarySpells(int player);
+void clearWraithPossessionTemporarySpells(int player);
 
 /*
  * TODO: Will need to make messages work for each hotseat player.
@@ -2409,6 +2462,32 @@ public:
 	{
 		Player& player;
 	public:
+		struct WraithPlayerState
+		{
+			bool initialized = false;
+			Sint32 corporealMaxHP = 0;
+			Sint32 corporealMaxMP = 0;
+			Uint32 possessedEntityUid = 0;
+			bool possessionTransition = false;
+			Monster possessedType = NOTHING;
+			Sint32 possessionStartPlayerLevel = 0;
+			Sint32 possessionLastPlayerLevel = 0;
+			bool possessedBodyOriginalInvisible = false;
+			bool possessedBodyOriginalPassable = false;
+			bool possessedBodyOriginalBlocksSight = false;
+			bool possessedBodyOriginalUnclickable = false;
+			std::array<bool, NUMEFFECTS> suspendedWraithEffects{};
+			std::array<Sint32, NUMEFFECTS> suspendedWraithEffectTimers{};
+			std::set<int> temporaryInnateSpellIds;
+			std::array<Uint32, 10> possessionOriginalEquipmentUids{};
+			std::set<Monster> learnedPossessionTypes;
+			std::set<int> seenBookLoreIds;
+			std::set<int> seenGravestoneLoreIds;
+			std::set<int> seenMailLoreIds;
+			std::set<Uint32> readBookObjectIds;
+			std::set<Uint32> readMailObjectIds;
+			std::set<Uint64> readGravestoneObjectIds;
+		} wraith;
 		std::map<int, int> itemDegradeRng;
 		std::set<int> learnedSpells;
 		std::vector<std::pair<int, int>> ducksInARow;

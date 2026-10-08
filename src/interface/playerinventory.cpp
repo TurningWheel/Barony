@@ -62,6 +62,16 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item, bool dropp
 		printlog("Warning: executed paper doll menu on spell");
 		return false;
 	}
+	if ( isWraithPhysicalHandItem(player, item) )
+	{
+		// The Wraith hand can only be emptied by the real item action or drop path.
+		return false;
+	}
+	if ( playerIsInWraithForm(player)
+		&& !droppingAndUnequipping )
+	{
+		return false;
+	}
 
 	if ( !droppingAndUnequipping && !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 	{
@@ -2480,7 +2490,6 @@ Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificI
 		// item isn't a part of this chest?
 		return nullptr;
 	}
-
 	Item* checkExists = openedChest[player]->getItemFromChest(item, amount, true);
 	if ( !checkExists )
 	{
@@ -8392,12 +8401,43 @@ bool Player::Inventory_t::paperDollContextMenuActive()
 }
 
 bool blitInventorySlotFramesToSurf = false;
+static void setWraithBlockedInventorySlot(Frame* slotFrame)
+{
+	if ( !slotFrame )
+	{
+		return;
+	}
+
+	slotFrame->setDisabled(false);
+
+	static const char* framesToDisable[] = {
+		"beatitude status frame",
+		"broken status frame",
+		"item sprite frame",
+		"appraisal frame",
+		"quantity frame",
+		"equipped icon frame",
+		"broken icon frame"
+	};
+
+	for ( const char* name : framesToDisable )
+	{
+		if ( Frame* frame = slotFrame->findFrame(name) )
+		{
+			frame->setDisabled(true);
+		}
+	}
+
+	if ( Frame* unusable = slotFrame->findFrame("unusable item frame") )
+	{
+		unusable->setDisabled(false);
+	}
+}
 void Player::Inventory_t::updateInventory()
 {
 	const int player = this->player.playernum;
 	assert(frame);
 	assert(tooltipFrame);
-
 	auto& shopGUI = this->player.shopGUI;
 	auto& tinkerGUI = GenericGUI[player].tinkerGUI;
 	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
@@ -9587,7 +9627,6 @@ void Player::Inventory_t::updateInventory()
 		nextnode = node->next;
 		Item* item = (Item*)node->element;
 		if ( !item ) { continue; }
-
 		if ( item == selectedItem )
 		{
 			bool interactable = true;
@@ -9835,6 +9874,48 @@ void Player::Inventory_t::updateInventory()
 		}
 	}
 
+
+	if ( playerIsInWraithForm(player) )
+	{
+		// Grey all normal backpack/inventory cells.
+		for ( int x = 0; x < getSizeX(); ++x )
+		{
+			for ( int y = 0; y < getSizeY(); ++y )
+			{
+				setWraithBlockedInventorySlot(getInventorySlotFrame(x, y));
+			}
+		}
+
+		// Query Barony's paper-doll layout; only jewelry and the hand stay usable.
+		int amuletX = 0;
+		int amuletY = 0;
+		int ringX = 0;
+		int ringY = 0;
+		int weaponX = 0;
+		int weaponY = 0;
+		players[player]->paperDoll.getCoordinatesFromSlotType(
+			Player::PaperDoll_t::SLOT_AMULET, amuletX, amuletY);
+		players[player]->paperDoll.getCoordinatesFromSlotType(
+			Player::PaperDoll_t::SLOT_RING, ringX, ringY);
+		players[player]->paperDoll.getCoordinatesFromSlotType(
+			Player::PaperDoll_t::SLOT_WEAPON, weaponX, weaponY);
+
+		for ( int x = Player::Inventory_t::DOLL_COLUMN_LEFT;
+			x <= Player::Inventory_t::DOLL_COLUMN_RIGHT; ++x )
+		{
+			for ( int y = Player::Inventory_t::DOLL_ROW_1;
+				y <= Player::Inventory_t::DOLL_ROW_5; ++y )
+			{
+				const bool allowed = (x == amuletX && y == amuletY)
+					|| (x == ringX && y == ringY)
+					|| (x == weaponX && y == weaponY);
+				if ( !allowed )
+				{
+					setWraithBlockedInventorySlot(getInventorySlotFrame(x, y));
+				}
+			}
+		}
+	}
 	//DebugStats.gui11 = std::chrono::high_resolution_clock::now();
 
 	// autosort button
@@ -10229,7 +10310,9 @@ void Player::Inventory_t::updateInventory()
 									break;
 								}
 
-								if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
+								if ( option == ItemContextMenuPrompts::PROMPT_DROP
+									&& players[player]->paperDoll.isItemOnDoll(*item)
+									&& !isWraithPhysicalHandItem(player, item) )
 								{
 									// need to unequip
 									players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
@@ -10391,7 +10474,6 @@ void Player::Inventory_t::updateInventory()
 			{
 				continue;
 			}
-
 			if ( GenericGUI[player].isGUIOpen() )
 			{
 				if ( !GenericGUI[player].isNodeFromPlayerInventory(item->node) )
@@ -10726,7 +10808,9 @@ void Player::Inventory_t::updateInventory()
 								break;
 							}
 
-							if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
+							if ( option == ItemContextMenuPrompts::PROMPT_DROP
+								&& players[player]->paperDoll.isItemOnDoll(*item)
+								&& !isWraithPhysicalHandItem(player, item) )
 							{
 								// need to unequip
 								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
@@ -10834,7 +10918,8 @@ void Player::Inventory_t::updateInventory()
 					{
 						if ( guiAllowDropItems(item) )
 						{
-							if ( players[player]->paperDoll.isItemOnDoll(*item) )
+							if ( players[player]->paperDoll.isItemOnDoll(*item)
+								&& !isWraithPhysicalHandItem(player, item) )
 							{
 								// need to unequip
 								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
@@ -10846,7 +10931,7 @@ void Player::Inventory_t::updateInventory()
 								}
 							}
 
-							if ( Input::inputs[player].binaryToggle("MenuLeftClick") /*keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]*/ )
+							if ( item && Input::inputs[player].binaryToggle("MenuLeftClick") /*keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]*/ )
 							{
 								// drop all.
 								int qty = item->count;
@@ -11237,7 +11322,6 @@ void Player::Inventory_t::updateInventory()
 				nextnode = node->next;
 				Item* item = (Item*)node->element;
 				if ( !item ) { continue; }
-
 				int itemx = item->x;
 				int itemy = item->y;
 
@@ -11662,6 +11746,13 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 		case PROMPT_EQUIP:
 		case PROMPT_UNEQUIP:
 		case PROMPT_SPELL_EQUIP:
+			if ( isWraithPhysicalHandItem(player, &item)
+				&& (itemCategory(&item) == RING || itemCategory(&item) == AMULET) )
+			{
+				// A physical item in the Wraith's hand is pointer-equipped as the
+				// weapon, but jewelry's available action here is still Equip.
+				return Language::get(326);
+			}
 			return itemEquipString(player, item);
 		case PROMPT_INTERACT:
 		case PROMPT_INTERACT_SPELLBOOK_HOTBAR:
@@ -11714,6 +11805,10 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 
 std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, int useDropdownMenu, bool hotbarItem)
 {
+	if ( !item )
+	{
+		return std::vector<ItemContextMenuPrompts>();
+	}
 	if ( (stats[player] && stats[player]->HP <= 0) || players[player]->ghost.isActive() )
 	{
 		// ded, cant do anything with items
@@ -11778,7 +11873,6 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		return options;
 	}
-
 	bool playerOwnedItem = false;
 	if ( item->node )
 	{
@@ -11786,6 +11880,23 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		{
 			playerOwnedItem = true;
 		}
+	}
+	const bool wraithPhysicalHandItem = isWraithPhysicalHandItem(player, item);
+	const bool actuallyEquipped = itemIsEquipped(item, player);
+	const bool contextTreatAsEquipped = actuallyEquipped && !wraithPhysicalHandItem;
+	if ( playerIsInWraithForm(player)
+		&& stats[player]
+		&& playerOwnedItem
+		&& itemCategory(item) != SPELL_CAT
+		&& !wraithPhysicalHandItem )
+	{
+		if ( stats[player]->ring == item || stats[player]->amulet == item )
+		{
+			options.push_back(PROMPT_DROP);
+			return options;
+		}
+		options.push_back(PROMPT_DROP);
+		return options;
 	}
 
 	if ( openedChest[player] && itemCategory(item) != SPELL_CAT )
@@ -11823,7 +11934,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 
 	if ( itemTypeIsTincture(item->type) )
 	{
-		if ( !itemIsEquipped(item, player) )
+		if ( !contextTreatAsEquipped )
 		{
 			options.push_back(PROMPT_EAT);
 		}
@@ -11850,7 +11961,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		if ( is_potion_bad )
 		{
 			options.push_back(PROMPT_EQUIP);
-			if ( !itemIsEquipped(item, player) )
+			if ( !contextTreatAsEquipped )
 			{
 				options.push_back(PROMPT_EAT);
 			}
@@ -11859,7 +11970,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		else
 		{
-			if ( !itemIsEquipped(item, player) )
+			if ( !contextTreatAsEquipped )
 			{
 				options.push_back(PROMPT_EAT);
 			}
@@ -11904,7 +12015,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	}
 	else if ( item->type == FOOD_CREAMPIE )
 	{
-		if ( !itemIsEquipped(item, player) )
+		if ( !contextTreatAsEquipped )
 		{
 			if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) )
 			{
@@ -11930,7 +12041,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		else if ( itemCategory(item) == FOOD )
 		{
-			if ( !itemIsEquipped(item, player) )
+			if ( !contextTreatAsEquipped )
 			{
 				options.push_back(PROMPT_CONSUME);
 			}
@@ -11940,7 +12051,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		else if ( itemCategory(item) == GEM )
 		{
 			options.push_back(PROMPT_EQUIP);
-			if ( !itemIsEquipped(item, player) )
+			if ( !contextTreatAsEquipped )
 			{
 				options.push_back(PROMPT_CONSUME);
 			}
@@ -11958,7 +12069,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	else if ( itemCategory(item) == SPELLBOOK )
 	{
 		bool learnedSpell = playerLearnedSpellbook(player, item);
-		if ( itemIsEquipped(item, player) )
+		if ( contextTreatAsEquipped )
 		{
 			learnedSpell = true; // equipped spellbook will unequip on use.
 		}
@@ -12004,7 +12115,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 
 	// Golem consumption is an additional action: never replace the item's normal
 	// equip/use entry, and never offer it for equipped or pseudo-spell items.
-	if ( playerOwnedItem && !itemIsEquipped(item, player)
+	if ( playerOwnedItem && !contextTreatAsEquipped
 		&& players[player] && players[player]->entity
 		&& players[player]->entity->isNaturalGolemPlayer()
 		&& itemIsConsumableByGolem(*item) )
@@ -12049,6 +12160,15 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 
 	for ( auto it = options.begin(); it != options.end(); )
 	{
+		if ( wraithPhysicalHandItem
+			&& (*it == PROMPT_EQUIP
+				|| *it == PROMPT_UNEQUIP
+				|| *it == PROMPT_UNEQUIP_FOR_DROP
+				|| *it == PROMPT_SPELL_EQUIP) )
+		{
+			it = options.erase(it);
+			continue;
+		}
 		if ( sellingToShop || tinkerOpen || alembicOpen || featherOpen || itemfxOpen || mailboxOpen )
 		{
 			if ( getContextMenuOptionBindingName(player, *it) == "MenuConfirm"
@@ -12085,7 +12205,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		if ( *it == PROMPT_EQUIP )
 		{
-			if ( itemIsEquipped(item, player) )
+			if ( contextTreatAsEquipped )
 			{
 				*it = PROMPT_UNEQUIP;
 			}
@@ -12433,6 +12553,24 @@ void autosortInventory(int player, bool sortPaperDoll)
 
 bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
 {
+	if ( !item )
+	{
+		return false;
+	}
+	if ( playerIsInWraithForm(player.playernum)
+		&& item->type != SPELL_ITEM )
+	{
+		if ( isWraithPhysicalHandItem(player.playernum, item) )
+		{
+			item->x =
+				Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE;
+			item->y =
+				Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE;
+			return true;
+		}
+
+		return false;
+	}
 	bool notfree = false;
 	bool is_spell = itemCategory(item) == SPELL_CAT;
 	bool foundaspot = false;

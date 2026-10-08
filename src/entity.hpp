@@ -686,6 +686,9 @@ public:
 	Sint32& itemFamiliarINT = skill[56];
 	Sint32& itemFamiliarPER = skill[57];
 	Sint32& itemFamiliarCHR = skill[58];
+	// actItem-only Wraith lore identity. Other behavior aliases of skill[59]
+	// remain unchanged and are never interpreted through this name.
+	Sint32& itemWraithLoreInstanceId = skill[59];
 	real_t& itemWaterBob; //fskill[2]
 	real_t& itemLevitate = fskill[3];
 	real_t& itemLevitateStartZ = fskill[4];
@@ -981,11 +984,11 @@ public:
 
 	Stat* getStats() const;
 
-	void setHP(int amount);
+	void setHP(int amount, bool bypassWraithGainSuppression = false);
 	void modHP(int amount); //Adds amount to HP.
 	int getHP();
 
-	void setMP(int amount, bool updateClients = true);
+	void setMP(int amount, bool updateClients = true, bool bypassWraithGainSuppression = false);
 	int modMP(int amount, bool updateClients = true); //Adds amount to MP.
 	int getMP();
 
@@ -1207,7 +1210,7 @@ public:
 	Uint32 getMonsterFootstepSound(int footstepType, int bootSprite);
 	// handle humanoid weapon arm animation/sprite offsets
 	void handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb);
-	void handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb);
+	void handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb, int raceOverride = -1);
 	void handleQuiverThirdPersonModel(Stat& myStats, int mySprite = -1);
 	// server only function to set boot sprites on monsters.
 	bool setBootSprite(Entity* leg, int spriteOffset, bool forceShort = false);
@@ -1495,6 +1498,7 @@ public:
 	int getColliderSfxOnBreak() const;
 	int getColliderLangName() const;
 	static void monsterRollLevelUpStats(int increasestat[3]);
+	void monsterApplyNormalLevelUpGrowth(Stat* myStats);
 	bool disturbMimic(Entity* touched, bool takenDamage, bool doMessage);
 	bool disturbBat(Entity* touched, bool takenDamage, bool doMessage);
 	bool isInertMimic() const;

@@ -100,7 +100,7 @@ extern real_t t, ot, frameval[AVERAGEFRAMES];
 extern Uint32 cycles, pingtime;
 extern real_t fps;
 static const int NUMCLASSES = 30; // mod add: append Witch
-#define NUMRACES 21 // mod edit: include Merrow, Leonin, and Golem race identities
+#define NUMRACES 22 // mod edit: include Merrow, Leonin, Golem, and Wraith race identities
 #define NUMPLAYABLERACES 15
 extern char address[64];
 extern bool loadnextlevel;
@@ -225,6 +225,7 @@ enum PlayerRaces : int
 	RACE_MERROW, //mod add merrow
 	RACE_LEONIN, // mod add: Leonin
 	RACE_GOLEM, // mod add: Golem
+	RACE_WRAITH, // mod add: Wraith (append-only for save compatibility)
 	RACE_ENUM_END
 };
 

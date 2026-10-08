@@ -254,6 +254,7 @@ static bool captureEntrenchStash(Entity* entity, EntrenchStash& result)
 				content.runeCreatorIdentity = static_cast<Uint32>(child->itemRuneCreatorIdentity);
 				content.familiarInitialized = child->itemFamiliarInitialized != 0;
 				content.familiarInstanceId = static_cast<Uint32>(child->itemFamiliarInstanceId);
+				content.wraithLoreInstanceId = static_cast<Uint32>(child->itemWraithLoreInstanceId);
 				content.familiarHP = child->itemFamiliarHP; content.familiarMAXHP = child->itemFamiliarMAXHP;
 				content.familiarMP = child->itemFamiliarMP; content.familiarMAXMP = child->itemFamiliarMAXMP;
 				content.familiarLVL = child->itemFamiliarLVL; content.familiarEXP = child->itemFamiliarEXP;
@@ -408,6 +409,7 @@ static Entity* createEntrenchStashedContent(const EntrenchStash::Content& conten
 		entity->itemRuneCreatorIdentity = static_cast<Sint32>(content.runeCreatorIdentity);
 		entity->itemFamiliarInitialized = content.familiarInitialized ? 1 : 0;
 		entity->itemFamiliarInstanceId = static_cast<Sint32>(content.familiarInstanceId);
+		entity->itemWraithLoreInstanceId = static_cast<Sint32>(content.wraithLoreInstanceId);
 		entity->itemFamiliarHP = content.familiarHP; entity->itemFamiliarMAXHP = content.familiarMAXHP;
 		entity->itemFamiliarMP = content.familiarMP; entity->itemFamiliarMAXMP = content.familiarMAXMP;
 		entity->itemFamiliarLVL = content.familiarLVL; entity->itemFamiliarEXP = content.familiarEXP;
@@ -417,6 +419,7 @@ static Entity* createEntrenchStashedContent(const EntrenchStash::Content& conten
 		reserveMagicRuneInstanceId(content.runeInstanceId);
 		reserveRuneCreatorIdentity(content.runeCreatorIdentity);
 		reserveFamiliarInstanceId(content.familiarInstanceId);
+		reserveWraithLoreInstanceId(content.wraithLoreInstanceId);
 		entity->itemContainer = container.getUID();
 		entity->flags[USERFLAG1] = true;
 	}
@@ -972,6 +975,27 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool 
 	if ( player >= 0 && playerIsPanicking(player) )
 	{
 		return;
+	}
+	if ( player >= 0 && spell && spell->ID == SPELL_POSSESS )
+	{
+		if ( players[player]->mechanics.wraith.possessedEntityUid != 0 )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				strcpy(reinterpret_cast<char*>(net_packet->data), "WREQ");
+				net_packet->data[4] = static_cast<Uint8>(player);
+				SDLNet_Write32(0, &net_packet->data[5]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				releaseWraithPossession(player);
+			}
+			return;
+		}
 	}
 
 	if ( player >= 0 && players[player]->hud.weapon )
@@ -1566,6 +1590,35 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	{
 		//Need a spell and caster to cast a spell.
 		return NULL;
+	}
+	if ( spell->ID == SPELL_POSSESS )
+	{
+		if ( caster->behavior != &actPlayer ) { return nullptr; }
+		const int possessPlayer = caster->skill[2];
+		if ( possessPlayer < 0 || possessPlayer >= MAXPLAYERS || !players[possessPlayer] )
+		{
+			return nullptr;
+		}
+		const Uint32 targetUid = castSpellProps ? castSpellProps->targetUID : 0;
+		if ( multiplayer == CLIENT )
+		{
+			strcpy(reinterpret_cast<char*>(net_packet->data), "WREQ");
+			net_packet->data[4] = static_cast<Uint8>(possessPlayer);
+			SDLNet_Write32(targetUid, &net_packet->data[5]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 9;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		else if ( players[possessPlayer]->mechanics.wraith.possessedEntityUid != 0 )
+		{
+			releaseWraithPossession(possessPlayer);
+		}
+		else
+		{
+			beginWraithPossession(possessPlayer, uidToEntity(targetUid));
+		}
+		return nullptr;
 	}
 	ScopedSpellPowerOverride spellPowerScope(spell);
 	// mod add: authoritative spell rejection for a Panicking player. Monster,
@@ -10540,6 +10593,24 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity* caster, Stat& stat, int spellI
 	{
 		return stat.amulet && stat.amulet->type == AMULET_FAMILIAR
 			&& stat.amulet->status != BROKEN;
+	}
+	if ( stat.playerRace == RACE_WRAITH && stat.stat_appearance == 0
+		&& spellID == SPELL_POSSESS )
+	{
+		return true;
+	}
+	const int wraithPlayer = caster ? caster->skill[2] : player;
+	if ( stat.playerRace == RACE_WRAITH && stat.stat_appearance == 0
+		&& wraithPlayer >= 0 && wraithPlayer < MAXPLAYERS && players[wraithPlayer]
+		&& players[wraithPlayer]->mechanics.wraith.initialized
+		&& players[wraithPlayer]->mechanics.wraith.possessedEntityUid != 0 )
+	{
+		const auto innate = getWraithPossessionInnateSpells(
+			getWraithEffectiveMonsterType(wraithPlayer));
+		if ( std::find(innate.begin(), innate.end(), spellID) != innate.end() )
+		{
+			return true;
+		}
 	}
 
 	// player races:

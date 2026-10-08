@@ -5710,6 +5710,7 @@ bool StatusEffectQueue_t::insertEffect(int effectID, int spellID)
 		|| effectID == kEffectBloodHunger
 		|| effectID == kEffectAutomatonHunger
 		|| effectID == kEffectGolemHunger
+		|| effectID == kEffectWraithTether
 		|| (effectID <= kEffectTinctureStart && effectID >= kEffectTinctureEnd)
 		|| effectID >= kSpellEffectOffset )
 	{
@@ -6140,6 +6141,9 @@ void StatusEffectQueue_t::loadStatusEffectsJSON()
 		"Recharge by consuming enchanted items.\n"
 		"\x1E Overcharging causes wild magic.\n"
 		"\x1E Blessed to Cursed core ratio determines CON and CHR and item destruction chance.", "");
+	registerCustomEffect(kEffectWraithTether, "wraith_tether", "TETHER TO THIS REALM",
+		"You have learned to possess:",
+		"images/ui/HUD/statusfx/wraith_tether.png");
 }
 
 int StatusEffectQueue_t::getBaseEffectPosX()
@@ -7917,6 +7921,15 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 		currentTooltipVariable = entry.customVariable * 2
 			+ (players[player]->entity->isBlessedGolemPlayer() ? 1 : 0);
 	}
+	else if ( entry.effect == kEffectWraithTether )
+	{
+		Uint32 knowledgeHash = 17;
+		for ( Monster type : getWraithKnownPossessionTypes(player) )
+		{
+			knowledgeHash = knowledgeHash * 31u + static_cast<Uint32>(type);
+		}
+		currentTooltipVariable = static_cast<Sint32>(knowledgeHash);
+	}
 	bool refreshTooltip = (tooltipShowingEffectID != entry.effect)
 		|| (tooltipShowingEffectVariable != currentTooltipVariable);
 	if ( refreshTooltip )
@@ -7927,9 +7940,17 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 				"STRENGTH AFFINITY", "DEXTERITY AFFINITY", "CONSTITUTION AFFINITY",
 				"INTELLIGENCE AFFINITY", "PERCEPTION AFFINITY", "CHARISMA AFFINITY"
 			};
+			static const char* descriptions[NUMSTATS] = {
+				"Increases chances to level up [Strength].",
+				"Increases chances to level up [Dexterity].",
+				"Increases chances to level up [Constitution].",
+				"Increases chances to level up [Intelligence].",
+				"Increases chances to level up [Perception].",
+				"Increases chances to level up [Charisma]."
+			};
 			const int stat = kEffectTinctureStart - entry.effect;
 			tooltipHeader->setText(names[stat]);
-			tooltipDesc->setText("Raises this stat's level-up weight by +2 per stored tincture, up to the tincture affinity cap. One stack is consumed when this stat increases on level-up.");
+			tooltipDesc->setText(descriptions[stat]);
 			tooltipInnerWidth = 260;
 		}
 		else if ( entry.effect >= StatusEffectQueue_t::kSpellEffectOffset )
@@ -8050,6 +8071,23 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 						tooltipDesc->setText(definition.getDesc(-1).c_str());
 					}
 					tooltipInnerWidth = definition.tooltipWidth;
+				}
+				else if ( effectID == StatusEffectQueue_t::kEffectWraithTether )
+				{
+					tooltipHeader->setText("TETHER TO THIS REALM");
+					std::string description = "You have learned to possess:";
+					for ( Monster type : getWraithKnownPossessionTypes(player) )
+					{
+						description += "\n- ";
+						std::string name = getMonsterLocalizedName(type);
+						if ( !name.empty() )
+						{
+							name[0] = static_cast<char>(toupper(name[0]));
+						}
+						description += name;
+					}
+					tooltipDesc->setText(description.c_str());
+					tooltipInnerWidth = 220;
 				}
 				else if ( effectID == EFF_SALAMANDER_HEART )
 				{
@@ -8449,6 +8487,7 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 
 				if ( effectID != StatusEffectQueue_t::kEffectAutomatonHunger
 					&& effectID != StatusEffectQueue_t::kEffectGolemHunger
+					&& effectID != StatusEffectQueue_t::kEffectWraithTether
 					&& effectID != StatusEffectQueue_t::kEffectWanted
 					&& effectID != StatusEffectQueue_t::kEffectWantedInShop
 					&& effectID != StatusEffectQueue_t::kEffectBountyTarget
@@ -8533,6 +8572,7 @@ const int StatusEffectQueue_t::kEffectBread = -2;
 const int StatusEffectQueue_t::kEffectBloodHunger = -3;
 const int StatusEffectQueue_t::kEffectAutomatonHunger = -4;
 const int StatusEffectQueue_t::kEffectGolemHunger = -32;
+const int StatusEffectQueue_t::kEffectWraithTether = -33;
 const int StatusEffectQueue_t::kEffectTinctureStart = -100;
 const int StatusEffectQueue_t::kEffectTinctureEnd = -105;
 const int StatusEffectQueue_t::kEffectWanted = -5;
@@ -9364,6 +9404,22 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				}
 			}
 		}
+	}
+
+	// Tether is a permanent race presentation, intentionally keyed to playerRace
+	// rather than the current Wraith body/form.
+	const bool showWraithTether = effectsEnabled && stats[player]
+		&& stats[player]->playerRace == RACE_WRAITH;
+	if ( showWraithTether )
+	{
+		if ( effectSet.find(kEffectWraithTether) == effectSet.end() )
+		{
+			insertEffect(kEffectWraithTether, -1);
+		}
+	}
+	else if ( effectSet.find(kEffectWraithTether) != effectSet.end() )
+	{
+		deleteEffect(kEffectWraithTether);
 	}
 
 	// Tincture affinities are persistent counters, not timed effects. Mirror
@@ -16938,7 +16994,8 @@ void Player::GUIDropdown_t::process()
 				if ( item && dropDownOptionSelected < contextOptions.size() )
 				{
 					if ( contextOptions[dropDownOptionSelected] == ItemContextMenuPrompts::PROMPT_DROP 
-						&& player.paperDoll.isItemOnDoll(*item) )
+						&& player.paperDoll.isItemOnDoll(*item)
+						&& !isWraithPhysicalHandItem(player.playernum, item) )
 					{
 						// need to unequip
 						player.inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
@@ -25891,6 +25948,25 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 	//TempTexture* minimapTexture = new TempTexture();
 	auto playerEntity = Player::getPlayerInteractEntity(player);
+	bool wraithMonsterProxyPreview = false;
+	if ( playerEntity && playerEntity->behavior == &actPlayer
+		&& stats[player] && stats[player]->playerRace == RACE_WRAITH
+		&& players[player] && players[player]->mechanics.wraith.initialized )
+	{
+		const auto& wraith = players[player]->mechanics.wraith;
+		if ( wraith.possessedEntityUid != 0
+			&& wraithPossessionUsesMonsterVisualProxy(wraith.possessedType) )
+		{
+			if ( Entity* proxy = uidToEntity(wraith.possessedEntityUid) )
+			{
+				if ( proxy->behavior == &actMonster )
+				{
+					playerEntity = proxy;
+					wraithMonsterProxyPreview = true;
+				}
+			}
+		}
+	}
 	if ( playerEntity && playerEntity->behavior == &actDeathGhost )
 	{
 		if ( playerEntity->skill[10] != 0 ) // cosmetic ghost
@@ -25925,7 +26001,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				}
 			}
 		}
-		else if ( playerEntity->behavior == &actPlayer )
+		else if ( playerEntity->behavior == &actPlayer || wraithMonsterProxyPreview )
 		{
 			real_t nominalHeight = 0.0;
 			view.z = std::min(nominalHeight, view.z);
@@ -25961,7 +26037,33 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 			playerEntity->dithering[&view].value = oldDither;
 		}
 		int c = 0;
-		if ( multiplayer != CLIENT )
+		if ( playerEntity->behavior == &actMonster )
+		{
+			for ( Entity* entity : playerEntity->bodyparts )
+			{
+				if ( !entity ) { continue; }
+				if ( !entity->flags[INVISIBLE]
+					|| (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER]) )
+				{
+					const bool bright = entity->flags[BRIGHT];
+					if ( !dark ) { entity->flags[BRIGHT] = true; }
+
+					const int oldDither = entity->dithering[&view].value;
+					if ( entity->ditheringOverride >= 0 )
+					{
+						entity->dithering[&view].value = entity->ditheringOverride;
+					}
+					else if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+					{
+						entity->dithering[&view].value = ditherVal;
+					}
+					glDrawVoxel(&view, entity, REALCOLORS);
+					entity->flags[BRIGHT] = bright;
+					entity->dithering[&view].value = oldDither;
+				}
+			}
+		}
+		else if ( multiplayer != CLIENT )
 		{
 			for ( node_t* node = playerEntity->children.first; node != nullptr; node = node->next )
 			{
@@ -29682,7 +29784,8 @@ void Player::Inventory_t::updateItemContextMenu()
 		if ( itemMenuSelected >= 0 && itemMenuSelected < options.size() )
 		{
 			if ( options[itemMenuSelected] == ItemContextMenuPrompts::PROMPT_DROP
-				&& player.paperDoll.isItemOnDoll(*item) )
+				&& player.paperDoll.isItemOnDoll(*item)
+				&& !isWraithPhysicalHandItem(player.playernum, item) )
 			{
 				// need to unequip
 				player.inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);

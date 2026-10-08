@@ -177,6 +177,12 @@ void actCampfire(Entity* my)
 					}
 					if ( CAMPFIRE_HEALTH > 0 )
 					{
+						if ( !wraithCanAcceptPhysicalPickup(i) )
+						{
+							messagePlayer(i, MESSAGE_INVENTORY,
+								"Your spectral hand is already occupied.");
+							continue;
+						}
 						messagePlayer(i, MESSAGE_INTERACTION, Language::get(457));
 						CAMPFIRE_HEALTH--;
 						if ( CAMPFIRE_HEALTH <= 0 )

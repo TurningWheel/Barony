@@ -343,6 +343,9 @@ public:
 	Sint32 STR, DEX, CON, INT, PER, CHR;
 	Sint32 EXP, LVL;
 	Sint32 GOLD, HUNGER;
+	// Runtime ownership for a released/dead Wraith possession body.
+	Sint8 wraithFormerPossessor = -1;
+	bool wraithBodyLootChestSpawned = false;
 	// Natural Golem alignment, fixed point: 0 = fully cursed, 10000 = fully blessed.
 	Sint32 golemBlessedComposition = 10000;
 	// Stable identity for Rune creator credit. Persisted with the character so a
@@ -512,8 +515,10 @@ public:
 	void setAttribute(std::string key, std::string value);
 	bool statusEffectRemovedByCureAilment(const int effect, Entity* my);
 	int numShillelaghDebuffsActive(Entity* my);
-	void addItemToLootingBag(const int player, const real_t x, const real_t y, Item& item);
+	void addItemToLootingBag(const int player, const real_t x, const real_t y, Item& item,
+		bool spawnOnGround = true);
 	Uint32 getLootingBagKey(const int player);
+	static bool allocateUniqueLootingBagKey(int player, Uint32& outKey);
 	static bool emptyLootingBag(const int player, Uint32 key);
 	static int maxEquipmentBonusToSkill;
 	enum EnsembleEffectsBonusType

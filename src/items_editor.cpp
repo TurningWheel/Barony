@@ -63,6 +63,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->runeCreatorPlayer = Item::RUNE_CREATOR_INVALID;
 	item->runeInstanceId = Item::RUNE_INSTANCE_ID_INVALID;
 	item->runeCreatorIdentity = Item::RUNE_CREATOR_IDENTITY_INVALID;
+	item->wraithLoreInstanceId = 0;
 	item->uid = itemuids;
 	if ( inventory )
 	{

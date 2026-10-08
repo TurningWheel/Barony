@@ -900,6 +900,8 @@ public:
 	// The summoned monster is only a temporary manifestation of this state.
 	bool familiarInitialized = false;
 	Uint32 familiarInstanceId = 0;
+	// Save/network-stable physical identity for readable Wraith lore objects.
+	Uint32 wraithLoreInstanceId = 0;
 	Sint32 familiarHP = 0;
 	Sint32 familiarMAXHP = 0;
 	Sint32 familiarMP = 0;
@@ -960,6 +962,7 @@ public:
 	void runeSetCreatorIdentity(Uint32 identity);
 	bool runeCreatorMatchesPlayer(int player) const;
 	Uint32 familiarEnsureInstanceId();
+	Uint32 wraithLoreEnsureInstanceId();
 
 	//General Functions.
 	Sint32 weaponGetAttack(const Stat* wielder = nullptr) const; //Returns the tohit of the weapon.
@@ -1196,6 +1199,11 @@ Item* findMagicRuneByInstanceId(Uint32 runeInstanceId, int* ownerOut = nullptr,
 bool breakMagicRune(Uint32 runeInstanceId, const char* message = nullptr);
 void reserveMagicRuneInstanceId(Uint32 runeInstanceId);
 void reserveFamiliarInstanceId(Uint32 familiarInstanceId);
+void reserveWraithLoreInstanceId(Uint32 instanceId);
+static constexpr int WRAITH_LORE_INSTANCE_PACKET_BYTES = 4;
+void writeWraithLoreInstanceIdToPacket(const Item& item, Uint8* data, int offset);
+void readWraithLoreInstanceIdFromPacket(Item& item, const Uint8* data,
+	int packetLength, int offset);
 Uint32 ensureRuneCreatorIdentity(int player);
 void reserveRuneCreatorIdentity(Uint32 creatorIdentity);
 Item* uidToItem(Uint32 uid);

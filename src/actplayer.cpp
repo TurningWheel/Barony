@@ -30,6 +30,9 @@
 #include "classdescriptions.hpp"
 #include "ui/MainMenu.hpp"
 #include "interface/consolecommand.hpp"
+#include "book.hpp"
+#include "scrolls.hpp"
+#include <cassert>
 #ifdef USE_PLAYFAB
 #include "playfab.hpp"
 #endif
@@ -46,6 +49,2229 @@ static ConsoleVariable<float> cvar_calloutStartZLimit("/callout_start_z_limit", 
 static ConsoleVariable<float> cvar_followerStartZ("/follower_start_z", -2.5);
 static ConsoleVariable<float> cvar_followerMoveTo("/follower_moveto_z", 0.1);
 static ConsoleVariable<float> cvar_followerStartZLimit("/follower_start_z_limit", 7.5);
+
+static bool playerHasIncorporealWraithRuntimeState(int player)
+{
+	return player >= 0 && player < MAXPLAYERS
+		&& players[player] && stats[player]
+		&& stats[player]->playerRace == RACE_WRAITH
+		&& stats[player]->stat_appearance == 0
+		&& players[player]->mechanics.wraith.initialized
+		&& players[player]->mechanics.wraith.possessedEntityUid == 0;
+}
+
+bool playerIsInWraithForm(int player)
+{
+	return !intro
+		&& playerHasIncorporealWraithRuntimeState(player);
+}
+
+bool isWraithPhysicalHandItem(int player, const Item* item)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !item || !stats[player] )
+	{
+		return false;
+	}
+
+	return playerIsInWraithForm(player)
+		&& stats[player]->weapon == item;
+}
+
+bool playerShouldRenderAsWraithSpirit(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| stats[player]->playerRace != RACE_WRAITH
+		|| stats[player]->stat_appearance != 0 )
+	{
+		return false;
+	}
+	return intro || playerIsInWraithForm(player);
+}
+
+bool playerLimbIsIntrinsicWraithBodyPart(const Entity* limb,
+	const Entity* parent, int* bodypartIndex)
+{
+	if ( bodypartIndex ) { *bodypartIndex = -1; }
+	if ( !limb || !parent )
+	{
+		return false;
+	}
+	int bodypart = 0;
+	for ( node_t* node = parent->children.first; node; node = node->next, ++bodypart )
+	{
+		if ( node->element == limb )
+		{
+			if ( bodypartIndex ) { *bodypartIndex = bodypart; }
+			return bodypart >= 1 && bodypart <= 5;
+		}
+	}
+	return false;
+}
+
+static real_t getWraithVisualBob()
+{
+	constexpr real_t amplitude = 0.15;
+	constexpr real_t periodSeconds = 5.0;
+	const real_t phase = (ticks / static_cast<real_t>(TICKS_PER_SECOND))
+		* (2.0 * PI / periodSeconds);
+	return amplitude * sin(phase);
+}
+
+bool wraithCanAcceptPhysicalPickup(int player)
+{
+	return !playerIsInWraithForm(player)
+		|| (stats[player] && stats[player]->weapon == nullptr);
+}
+
+bool setWraithHeldItem(int player, Item* item)
+{
+	if ( !playerHasIncorporealWraithRuntimeState(player) )
+	{
+		return false;
+	}
+
+	if ( item && item->type == SPELL_ITEM )
+	{
+		return false;
+	}
+	if ( item
+		&& stats[player]->weapon
+		&& stats[player]->weapon != item )
+	{
+		return false;
+	}
+
+	stats[player]->weapon = item;
+
+	if ( players[player]->isLocalPlayer() )
+	{
+		if ( item )
+		{
+			item->x =
+				Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE;
+			item->y =
+				Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE;
+		}
+
+		players[player]->paperDoll.updateSlots();
+		players[player]->hud.weaponSwitch = true;
+	}
+
+	return true;
+}
+
+bool wraithNegatesIncomingDamage(Entity* target, Sint32 damage)
+{
+	if ( !target || target->behavior != &actPlayer || damage <= 0 || multiplayer == CLIENT )
+	{
+		return false;
+	}
+	const int player = target->skill[2];
+	return playerIsInWraithForm(player) && players[player]->entity == target
+		&& local_rng.rand() % 2 == 0;
+}
+
+static constexpr std::array<Monster, 25> kWraithLearnablePossessionTypes = {
+	HUMAN,
+	RAT,
+	GOBLIN,
+	SLIME,
+	TROLL,
+	BAT_SMALL,
+	SPIDER,
+	GHOUL,
+	SKELETON,
+	SCORPION,
+	CREATURE_IMP,
+	GNOME,
+	DEMON,
+	SUCCUBUS,
+	KOBOLD,
+	SCARAB,
+	CRYSTALGOLEM,
+	INCUBUS,
+	VAMPIRE,
+	SHADOW,
+	COCKATRICE,
+	INSECTOID,
+	GOATMAN,
+	AUTOMATON,
+	BUGBEAR
+};
+
+Monster wraithCanonicalPossessionType(Monster type)
+{
+	switch ( type )
+	{
+		case CRAB:
+			return SPIDER;
+		default:
+			return type;
+	}
+}
+
+static bool wraithPossessionTypeIsNative(Monster type)
+{
+	type = wraithCanonicalPossessionType(type);
+	return type == HUMAN || type == SKELETON || type == RAT;
+}
+
+bool wraithPossessionTypeIsLearnable(Monster type)
+{
+	type = wraithCanonicalPossessionType(type);
+	return std::find(kWraithLearnablePossessionTypes.begin(),
+		kWraithLearnablePossessionTypes.end(), type)
+		!= kWraithLearnablePossessionTypes.end();
+}
+
+std::vector<Monster> getWraithLearnablePossessionTypes()
+{
+	return std::vector<Monster>(kWraithLearnablePossessionTypes.begin(),
+		kWraithLearnablePossessionTypes.end());
+}
+
+void sanitizeWraithPossessionKnowledge(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] ) { return; }
+	auto& learned = players[player]->mechanics.wraith.learnedPossessionTypes;
+	std::set<Monster> sanitized;
+	for ( Monster type : learned )
+	{
+		type = wraithCanonicalPossessionType(type);
+		if ( !wraithPossessionTypeIsNative(type)
+			&& wraithPossessionTypeIsLearnable(type) )
+		{
+			sanitized.insert(type);
+		}
+	}
+	learned.swap(sanitized);
+}
+
+bool wraithKnowsPossessionType(int player, Monster type)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player]
+		|| !players[player] || stats[player]->playerRace != RACE_WRAITH )
+	{
+		return false;
+	}
+	type = wraithCanonicalPossessionType(type);
+	if ( wraithPossessionTypeIsNative(type) ) { return true; }
+	return players[player]->mechanics.wraith.learnedPossessionTypes.find(type)
+		!= players[player]->mechanics.wraith.learnedPossessionTypes.end();
+}
+
+std::vector<Monster> getWraithKnownPossessionTypes(int player)
+{
+	std::vector<Monster> result;
+	for ( Monster type : { HUMAN, SKELETON, RAT } )
+	{
+		if ( wraithKnowsPossessionType(player, type) )
+		{
+			result.push_back(type);
+		}
+	}
+	if ( player >= 0 && player < MAXPLAYERS && players[player] && stats[player]
+		&& stats[player]->playerRace == RACE_WRAITH )
+	{
+		sanitizeWraithPossessionKnowledge(player);
+		for ( Monster type : kWraithLearnablePossessionTypes )
+		{
+			if ( !wraithPossessionTypeIsNative(type)
+				&& wraithKnowsPossessionType(player, type) )
+			{
+				result.push_back(type);
+			}
+		}
+	}
+	return result;
+}
+
+int getWraithCanonicalMailLoreId(Uint32 appearance)
+{
+	const int content = static_cast<int>(appearance % 25u);
+	return content <= 21 ? content : 22;
+}
+
+int getWraithAddressedMailLoreId(int player)
+{
+	Uint32 hash = uniqueGameKey ^ 0x574C4F52u;
+	hash ^= static_cast<Uint32>(player + 1) * 0x9e3779b9u;
+	hash ^= hash >> 16;
+	hash *= 0x7feb352du;
+	hash ^= hash >> 15;
+	hash *= 0x846ca68bu;
+	hash ^= hash >> 16;
+	return static_cast<int>(hash % NUM_SCROLL_MAIL_OPTIONS);
+}
+
+void syncWraithPossessionKnowledge(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] )
+	{
+		return;
+	}
+	sanitizeWraithPossessionKnowledge(player);
+	if ( multiplayer != SERVER || player == 0
+		|| players[player]->isLocalPlayer() || client_disconnected[player] )
+	{
+		return;
+	}
+	const auto& learned = players[player]->mechanics.wraith.learnedPossessionTypes;
+	strcpy(reinterpret_cast<char*>(net_packet->data), "WKNO");
+	net_packet->data[4] = static_cast<Uint8>(player);
+	net_packet->data[5] = static_cast<Uint8>(std::min<size_t>(learned.size(), 255));
+	int offset = 6;
+	for ( Monster type : learned )
+	{
+		if ( offset >= NET_PACKET_SIZE - static_cast<int>(sizeof(Uint32)) ) { break; }
+		SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[offset]);
+		offset += sizeof(Uint32);
+	}
+	net_packet->address = net_clients[player - 1];
+	net_packet->len = offset;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
+void replaceWraithLearnedPossessionTypes(int player, const std::vector<Monster>& types)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] ) { return; }
+	auto& learned = players[player]->mechanics.wraith.learnedPossessionTypes;
+	learned.clear();
+	for ( Monster type : types )
+	{
+		type = wraithCanonicalPossessionType(type);
+		if ( !wraithPossessionTypeIsNative(type)
+			&& wraithPossessionTypeIsLearnable(type) )
+		{
+			learned.insert(type);
+		}
+	}
+	sanitizeWraithPossessionKnowledge(player);
+}
+
+bool unlockAllWraithPossessions(int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS
+		|| !players[player] || !stats[player] || stats[player]->playerRace != RACE_WRAITH )
+	{
+		return false;
+	}
+	auto& learned = players[player]->mechanics.wraith.learnedPossessionTypes;
+	sanitizeWraithPossessionKnowledge(player);
+	for ( Monster type : getWraithLearnablePossessionTypes() )
+	{
+		type = wraithCanonicalPossessionType(type);
+		if ( !wraithPossessionTypeIsNative(type) ) { learned.insert(type); }
+	}
+	syncWraithPossessionKnowledge(player);
+	return true;
+}
+
+bool processWraithLoreRead(int player, WraithLoreKind kind, int textId, Uint64 physicalObjectId)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS
+		|| !players[player] || !stats[player] || stats[player]->playerRace != RACE_WRAITH
+		|| physicalObjectId == 0 )
+	{
+		return false;
+	}
+	sanitizeWraithPossessionKnowledge(player);
+	auto& wraith = players[player]->mechanics.wraith;
+	bool seenBefore = false;
+	int chance = 0;
+	switch ( kind )
+	{
+		case WRAITH_LORE_BOOK:
+			if ( textId < 0 || textId >= numbooks || physicalObjectId > UINT32_MAX ) { return false; }
+			if ( wraith.readBookObjectIds.find(static_cast<Uint32>(physicalObjectId))
+				!= wraith.readBookObjectIds.end() ) { return false; }
+			seenBefore = wraith.seenBookLoreIds.find(textId) != wraith.seenBookLoreIds.end();
+			wraith.readBookObjectIds.insert(static_cast<Uint32>(physicalObjectId));
+			wraith.seenBookLoreIds.insert(textId);
+			chance = seenBefore ? 5 : 100;
+			break;
+		case WRAITH_LORE_GRAVESTONE:
+			if ( textId < 0 || textId >= 17 ) { return false; }
+			if ( wraith.readGravestoneObjectIds.find(physicalObjectId)
+				!= wraith.readGravestoneObjectIds.end() ) { return false; }
+			seenBefore = wraith.seenGravestoneLoreIds.find(textId)
+				!= wraith.seenGravestoneLoreIds.end();
+			wraith.readGravestoneObjectIds.insert(physicalObjectId);
+			wraith.seenGravestoneLoreIds.insert(textId);
+			chance = seenBefore ? 1 : 50;
+			break;
+		case WRAITH_LORE_MAIL:
+			if ( textId < 0 || textId >= NUM_SCROLL_MAIL_OPTIONS
+				|| physicalObjectId > UINT32_MAX ) { return false; }
+			if ( wraith.readMailObjectIds.find(static_cast<Uint32>(physicalObjectId))
+				!= wraith.readMailObjectIds.end() ) { return false; }
+			seenBefore = wraith.seenMailLoreIds.find(textId) != wraith.seenMailLoreIds.end();
+			wraith.readMailObjectIds.insert(static_cast<Uint32>(physicalObjectId));
+			wraith.seenMailLoreIds.insert(textId);
+			chance = seenBefore ? 1 : (textId == getWraithAddressedMailLoreId(player) ? 100 : 50);
+			break;
+		default:
+			return false;
+	}
+
+	if ( chance < 100 && local_rng.rand() % 100 >= chance ) { return false; }
+	std::vector<Monster> candidates;
+	for ( Monster type : getWraithLearnablePossessionTypes() )
+	{
+		if ( !wraithKnowsPossessionType(player, type) ) { candidates.push_back(type); }
+	}
+	if ( candidates.empty() ) { return false; }
+	const Monster learnedType = wraithCanonicalPossessionType(
+		candidates[local_rng.rand() % candidates.size()]);
+	if ( !wraith.learnedPossessionTypes.insert(learnedType).second ) { return false; }
+	messagePlayer(player, MESSAGE_STATUS, "You learn to possess %s.",
+		getMonsterLocalizedName(learnedType).c_str());
+	printlog("[WRAITH] player %d learned possession type %d", player, static_cast<int>(learnedType));
+	syncWraithPossessionKnowledge(player);
+	return true;
+}
+
+bool processWraithItemLoreRead(int player, Item* item, WraithLoreKind kind, int textId)
+{
+	if ( !item || (item->type != READABLE_BOOK && item->type != SCROLL_MAIL) ) { return false; }
+	const Uint32 instanceId = item->wraithLoreEnsureInstanceId();
+	return instanceId != 0 && processWraithLoreRead(player, kind, textId, instanceId);
+}
+
+bool processWraithRemoteItemLoreRead(int player, Item* requestItem)
+{
+	if ( multiplayer != SERVER || !requestItem || player <= 0 || player >= MAXPLAYERS
+		|| !players[player] || players[player]->isLocalPlayer() || !stats[player]
+		|| !players[player]->entity || players[player]->entity->isBlind()
+		|| (requestItem->type != READABLE_BOOK && requestItem->type != SCROLL_MAIL) )
+	{
+		return false;
+	}
+	Item* realItem = nullptr;
+	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+	{
+		Item* candidate = static_cast<Item*>(node->element);
+		if ( !candidate || candidate == requestItem || candidate->type != requestItem->type
+			|| candidate->appearance != requestItem->appearance || candidate->x != requestItem->x
+			|| candidate->y != requestItem->y || candidate->status != requestItem->status
+			|| candidate->beatitude != requestItem->beatitude )
+		{
+			continue;
+		}
+		if ( realItem ) { return false; }
+		realItem = candidate;
+	}
+	if ( !realItem ) { return false; }
+	if ( realItem->type == READABLE_BOOK )
+	{
+		if ( numbooks <= 0 ) { return false; }
+		return processWraithItemLoreRead(player, realItem, WRAITH_LORE_BOOK,
+			getBookDisplayIndex(static_cast<int>(realItem->appearance % numbooks)));
+	}
+	return processWraithItemLoreRead(player, realItem, WRAITH_LORE_MAIL,
+		getWraithCanonicalMailLoreId(realItem->appearance));
+}
+
+Uint64 getWraithGravestoneLoreObjectId(const Entity* gravestone, int textId)
+{
+	if ( !gravestone ) { return 0; }
+	Uint64 hash = 1469598103934665603ull;
+	auto mix = [&hash](Uint64 value)
+	{
+		for ( int byte = 0; byte < 8; ++byte )
+		{
+			hash ^= (value >> (byte * 8)) & 0xffu;
+			hash *= 1099511628211ull;
+		}
+	};
+	mix(mapseed);
+	mix(static_cast<Uint32>(currentlevel));
+	mix(static_cast<Sint64>(std::floor(gravestone->x / 16.0)));
+	mix(static_cast<Sint64>(std::floor(gravestone->y / 16.0)));
+	mix(static_cast<Uint32>(textId));
+	for ( const unsigned char ch : std::string(map.name) )
+	{
+		hash ^= ch;
+		hash *= 1099511628211ull;
+	}
+	return hash == 0 ? 1 : hash;
+}
+
+Monster getWraithEffectiveMonsterType(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return HUMAN;
+	}
+	if ( stats[player]->playerRace == RACE_WRAITH
+		&& stats[player]->stat_appearance == 0
+		&& players[player] && players[player]->mechanics.wraith.initialized )
+	{
+		const auto& wraith = players[player]->mechanics.wraith;
+		return wraith.possessedEntityUid != 0
+			? wraithCanonicalPossessionType(wraith.possessedType) : WRAITH;
+	}
+	return stats[player]->type;
+}
+
+Sint32 getWraithPossessManaCost(const Entity* target)
+{
+	const Stat* targetStats = target ? target->getStats() : nullptr;
+	return targetStats ? 21 + std::max<Sint32>(0, targetStats->HP) : 0;
+}
+
+bool wraithMonsterTypeCanEverBePossessed(const Entity* monster)
+{
+	const Stat* monsterStats = monster ? monster->getStats() : nullptr;
+	if ( !monster || !monsterStats || monster->monsterCanTradeWith(-1) )
+	{
+		return false;
+	}
+	if ( !wraithPossessionTypeIsLearnable(monsterStats->type) )
+	{
+		return false;
+	}
+	return true;
+}
+
+bool wraithCanPossessTarget(int player, Entity* target, std::string* failureReason)
+{
+	auto fail = [failureReason](const char* reason)
+	{
+		if ( failureReason ) { *failureReason = reason; }
+		return false;
+	};
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] ) { return fail("This creature cannot be possessed."); }
+	if ( !stats[player] || !players[player]->entity ) { return fail("This creature cannot be possessed."); }
+	if ( stats[player]->playerRace != RACE_WRAITH || stats[player]->stat_appearance != 0 ) { return fail("This creature cannot be possessed."); }
+	if ( !playerIsInWraithForm(player) ) { return fail("This creature cannot be possessed."); }
+	if ( !target ) { return fail("This creature cannot be possessed."); }
+	if ( target->behavior != &actMonster ) { return fail("This creature cannot be possessed."); }
+	if ( target->behavior == &actPlayer ) { return fail("This creature cannot be possessed."); }
+	Stat* targetStats = target->getStats();
+	if ( !targetStats || targetStats->HP <= 0 ) { return fail("This creature cannot be possessed."); }
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( i != player && players[i]
+			&& players[i]->mechanics.wraith.possessedEntityUid == target->getUID() )
+		{
+			return fail("Another spirit already inhabits this creature.");
+		}
+	}
+	if ( !wraithMonsterTypeCanEverBePossessed(target) ) { return fail("This creature cannot be possessed."); }
+	if ( !wraithKnowsPossessionType(player, targetStats->type) ) { return fail("You have not learned to possess this creature."); }
+	const Sint32 cost = getWraithPossessManaCost(target);
+	if ( stats[player]->MP < cost )
+	{
+		if ( failureReason )
+		{
+			*failureReason = "You need " + std::to_string(cost) + " MP to possess this creature.";
+		}
+		return false;
+	}
+	return true;
+}
+
+std::vector<int> getWraithPossessionInnateSpells(Monster type)
+{
+	type = wraithCanonicalPossessionType(type);
+	switch ( type )
+	{
+		case RAT: return { SPELL_DETECT_FOOD, SPELL_SPEED };
+		case SPIDER: return { SPELL_POISON, SPELL_SPRAY_WEB };
+		case TROLL: return { SPELL_STRIKE, SPELL_FEAR, SPELL_TROLLS_BLOOD };
+		case CREATURE_IMP: return { SPELL_LIGHTNING, SPELL_CONFUSE, SPELL_AMPLIFY_MAGIC };
+		case VAMPIRE: return { SPELL_LEVITATION, SPELL_BLEED };
+		case SUCCUBUS: return { SPELL_TELEPORTATION, SPELL_SELF_POLYMORPH };
+		case INCUBUS: return { SPELL_TELEPORTATION, SPELL_SHADOW_TAG };
+		case INSECTOID: return { SPELL_FLUTTER, SPELL_DASH, SPELL_ACID_SPRAY };
+		case AUTOMATON: return { SPELL_SALVAGE };
+		case GNOME: return { SPELL_FORGE_JEWEL };
+		default: return {};
+	}
+}
+
+bool wraithPossessionUsesMonsterVisualProxy(Monster type)
+{
+	type = wraithCanonicalPossessionType(type);
+	switch ( type )
+	{
+		case HUMAN:
+		case SKELETON:
+		case GOBLIN:
+		case CREATURE_IMP:
+		case INCUBUS:
+		case SUCCUBUS:
+		case VAMPIRE:
+		case INSECTOID:
+		case GOATMAN:
+		case AUTOMATON:
+		case TROLL:
+		case GNOME:
+			return false;
+		default:
+			return true;
+	}
+}
+
+bool wraithPossessionHasFirstPersonModel(Monster type)
+{
+	type = wraithCanonicalPossessionType(type);
+	// Rat/Spider reuse Shaman presentation; equipped-item HUD models are safe for
+	// Kobold, Bugbear, and Shadow (whose unsupported bare arm remains hidden).
+	return !wraithPossessionUsesMonsterVisualProxy(type)
+		|| type == RAT || type == SPIDER
+		|| type == KOBOLD || type == BUGBEAR || type == SHADOW;
+}
+
+bool wraithPossessedBodyCanEquipSlot(int player, int category)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| !players[player]->entity || stats[player]->playerRace != RACE_WRAITH
+		|| stats[player]->stat_appearance != 0
+		|| !players[player]->mechanics.wraith.initialized
+		|| players[player]->mechanics.wraith.possessedEntityUid == 0 )
+	{
+		return false;
+	}
+	const Monster possessedType = getWraithEffectiveMonsterType(player);
+	if ( possessedType == DEMON )
+	{
+		// Native Demon hand-equipment presentation is not supported for Wraith
+		// possession. Preserve only spirit jewelry permissions.
+		return category == 5 || category == 6;
+	}
+	if ( possessedType == BUGBEAR )
+	{
+		// Possessed Bugbears may use hand items and spirit jewelry, but no
+		// worn armor. Vanilla Bugbear permissions remain unchanged.
+		return category == 1 || category == 2 || category == 5 || category == 6;
+	}
+	return canWearEquip(players[player]->entity, category) != 0;
+}
+
+static bool wraithPlayerPermanentlyKnowsSpell(int player, int spellID)
+{
+	if ( players[player]->mechanics.learnedSpells.find(spellID)
+		!= players[player]->mechanics.learnedSpells.end() )
+	{
+		return true;
+	}
+	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+	{
+		const Item* item = static_cast<const Item*>(node->element);
+		if ( item && item->type == SPELL_ITEM
+			&& item->appearance == static_cast<Uint32>(spellID) )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void clearWraithPossessionTemporarySpells(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player] ) { return; }
+	auto& temporary = players[player]->mechanics.wraith.temporaryInnateSpellIds;
+	const std::vector<int> toRemove(temporary.begin(), temporary.end());
+	for ( int spellID : toRemove )
+	{
+		removeTemporaryWraithPossessionSpell(player, spellID);
+	}
+	temporary.clear();
+	players[player]->hud.weaponSwitch = true;
+	players[player]->hud.shieldSwitch = true;
+}
+
+void updateWraithPossessionTemporarySpells(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player] ) { return; }
+	clearWraithPossessionTemporarySpells(player);
+	auto& wraith = players[player]->mechanics.wraith;
+	if ( wraith.possessedEntityUid == 0 ) { return; }
+	for ( int spellID : getWraithPossessionInnateSpells(wraith.possessedType) )
+	{
+		if ( wraithPlayerPermanentlyKnowsSpell(player, spellID) ) { continue; }
+		wraith.temporaryInnateSpellIds.insert(spellID);
+		grantTemporaryWraithPossessionSpell(player, spellID);
+	}
+	players[player]->hud.weaponSwitch = true;
+	players[player]->hud.shieldSwitch = true;
+}
+
+static bool wraithEffectIsSpiritBound(int effectIndex)
+{
+	// Witchbrew Tinctures use Stat::tinctureStacks[], not EFFECTS[].
+	// The Accursed's permanent curse is the only spirit-bound EFFECTS entry.
+	return effectIndex == EFF_VAMPIRICAURA;
+}
+
+static bool moveWraithItemNode(Item* item, list_t& destination)
+{
+	if ( !item ) { return false; }
+	node_t* newNode = list_AddNodeLast(&destination);
+	if ( !newNode )
+	{
+		printlog("[WRAITH]: ERROR failed to create inventory node for body item");
+		return false;
+	}
+	if ( item->node )
+	{
+		node_t* oldNode = item->node;
+		oldNode->element = nullptr;
+		oldNode->deconstructor = &emptyDeconstructor;
+		item->node = nullptr;
+		list_RemoveNode(oldNode);
+	}
+	newNode->element = item;
+	newNode->deconstructor = &defaultDeconstructor;
+	newNode->size = sizeof(Item);
+	item->node = newNode;
+	return true;
+}
+
+static void setWraithBodyLimbsInvisible(Entity* monster, bool invisible)
+{
+	if ( !monster ) { return; }
+	int bodypart = 0;
+	for ( node_t* node = monster->children.first; node; node = node->next, ++bodypart )
+	{
+		Entity* limb = static_cast<Entity*>(node->element);
+		if ( bodypart < 2 || !limb ) { continue; }
+		if ( limb->flags[INVISIBLE] != invisible || limb->flags[INVISIBLE_DITHER] )
+		{
+			limb->flags[INVISIBLE] = invisible;
+			limb->flags[INVISIBLE_DITHER] = false;
+			if ( multiplayer == SERVER ) { serverUpdateEntityBodypart(monster, bodypart); }
+		}
+	}
+}
+
+static void detachWraithBodyFollower(Entity* monster, Stat* monsterStats)
+{
+	if ( !monster || !monsterStats ) { return; }
+	if ( monsterStats->leader_uid != 0 )
+	{
+		Entity* oldLeader = uidToEntity(monsterStats->leader_uid);
+		Stat* oldLeaderStats = oldLeader ? oldLeader->getStats() : nullptr;
+		if ( oldLeaderStats )
+		{
+			list_RemoveNodeWithElement<Uint32>(oldLeaderStats->FOLLOWERS, monster->getUID());
+			const int leaderPlayer = oldLeader->isEntityPlayer();
+			if ( leaderPlayer > 0 && multiplayer == SERVER && !players[leaderPlayer]->isLocalPlayer() )
+			{
+				serverRemoveClientFollower(leaderPlayer, monster->getUID());
+			}
+		}
+	}
+	monsterStats->leader_uid = 0;
+	monsterStats->monsterIsCharmed = 0;
+	monsterStats->setEffectValueUnsafe(EFF_COMMAND, 0);
+	monsterStats->EFFECTS_TIMERS[EFF_COMMAND] = 0;
+	monsterStats->setEffectValueUnsafe(EFF_PENANCE, 0);
+	monsterStats->EFFECTS_TIMERS[EFF_PENANCE] = 0;
+	if ( monsterStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_ALLY
+		|| monsterStats->monsterForceAllegiance == Stat::MONSTER_FORCE_PLAYER_RECRUITABLE )
+	{
+		monsterStats->monsterForceAllegiance = Stat::MONSTER_FORCE_ALLEGIANCE_NONE;
+	}
+	monster->monsterAllyIndex = -1;
+	monster->flags[USERFLAG2] = false;
+	int bodypart = 0;
+	for ( node_t* node = monster->children.first; node; node = node->next, ++bodypart )
+	{
+		Entity* limb = static_cast<Entity*>(node->element);
+		if ( bodypart >= 2 && limb )
+		{
+			limb->flags[USERFLAG2] = false;
+			if ( multiplayer == SERVER ) { serverUpdateEntityBodypart(monster, bodypart); }
+		}
+	}
+	if ( multiplayer == SERVER )
+	{
+		serverUpdateEntitySkill(monster, 42);
+		serverUpdateEntityFlag(monster, USERFLAG2);
+	}
+}
+
+static void syncWraithPossessionState(int player)
+{
+	if ( multiplayer != SERVER || player < 0 || player >= MAXPLAYERS || !players[player] )
+	{
+		return;
+	}
+	const auto& wraith = players[player]->mechanics.wraith;
+	strcpy(reinterpret_cast<char*>(net_packet->data), "WPST");
+	net_packet->data[4] = static_cast<Uint8>(player);
+	SDLNet_Write32(wraith.possessedEntityUid, &net_packet->data[5]);
+	SDLNet_Write32(static_cast<Uint32>(wraith.possessedType), &net_packet->data[9]);
+	net_packet->len = 13;
+	for ( int client = 1; client < MAXPLAYERS; ++client )
+	{
+		if ( client_disconnected[client] || !players[client]
+			|| players[client]->isLocalPlayer() ) { continue; }
+		net_packet->address.host = net_clients[client - 1].host;
+		net_packet->address.port = net_clients[client - 1].port;
+		sendPacketSafe(net_sock, -1, net_packet, client - 1);
+	}
+}
+
+static void updateWraithPlayerColorRemap(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player]
+		|| !players[player]->entity || !stats[player] )
+	{
+		return;
+	}
+
+	Entity* playerEntity = players[player]->entity;
+	const bool enabled = playerShouldRenderAsWraithSpirit(player);
+
+	if ( playerEntity->flags[USERFLAG2] != enabled )
+	{
+		playerEntity->flags[USERFLAG2] = enabled;
+		if ( multiplayer == SERVER )
+		{
+			serverUpdateEntityFlag(playerEntity, USERFLAG2);
+		}
+	}
+
+	// Wraith's intrinsic player limbs copy USERFLAG2 from the parent.
+	// The menu reuses the same player/limb entities when changing race,
+	// so explicitly clear those stale Wraith-only limb flags once the
+	// Wraith spectral render state is no longer active.
+	if ( !enabled )
+	{
+		int bodypart = 0;
+		for ( node_t* node = playerEntity->children.first;
+			node;
+			node = node->next, ++bodypart )
+		{
+			// Same intrinsic Wraith bodypart range used by
+			// playerLimbIsIntrinsicWraithBodyPart().
+			if ( bodypart < 1 || bodypart > 5 )
+			{
+				continue;
+			}
+
+			Entity* limb = static_cast<Entity*>(node->element);
+			if ( !limb || !limb->flags[USERFLAG2] )
+			{
+				continue;
+			}
+
+			limb->flags[USERFLAG2] = false;
+			if ( multiplayer == SERVER )
+			{
+				serverUpdateEntityBodypart(playerEntity, bodypart);
+			}
+		}
+	}
+}
+
+static void setWraithFormResources(Stat& playerStats, const Player::PlayerMechanics_t::WraithPlayerState& wraith,
+	Sint32 bodyCurrentHP, Sint32 bodyCurrentMP, bool bodyDied)
+{
+	const Sint32 transferHP = bodyDied ? 0 : std::max<Sint32>(0, bodyCurrentHP - 5);
+	playerStats.MAXHP = 5;
+	playerStats.HP = 5;
+	playerStats.MAXMP = std::max<Sint32>(WRAITH_MIN_POSSESS_RESERVE,
+		wraith.corporealMaxMP + std::max<Sint32>(0, wraith.corporealMaxHP - 5));
+	playerStats.MP = std::min<Sint32>(playerStats.MAXMP, bodyCurrentMP + transferHP);
+	playerStats.MP = std::max<Sint32>(WRAITH_MIN_POSSESS_RESERVE, playerStats.MP);
+	playerStats.MP = std::min(playerStats.MP, playerStats.MAXMP);
+}
+
+static void suspendWraithEffects(Stat& playerStats, Player::PlayerMechanics_t::WraithPlayerState& wraith,
+	const Stat& targetStats)
+{
+	for ( int effect = 0; effect < NUMEFFECTS; ++effect )
+	{
+		if ( wraithEffectIsSpiritBound(effect) ) { continue; }
+		wraith.suspendedWraithEffects[effect] = playerStats.getEffectActive(effect) != 0;
+		wraith.suspendedWraithEffectTimers[effect] = playerStats.EFFECTS_TIMERS[effect];
+		playerStats.setEffectValueUnsafe(effect, targetStats.getEffectActive(effect));
+		playerStats.EFFECTS_TIMERS[effect] = targetStats.EFFECTS_TIMERS[effect];
+	}
+}
+
+static void restoreWraithEffects(Stat& playerStats,
+	Player::PlayerMechanics_t::WraithPlayerState& wraith, Stat* targetStats, bool bodyDied)
+{
+	for ( int effect = 0; effect < NUMEFFECTS; ++effect )
+	{
+		if ( wraithEffectIsSpiritBound(effect) ) { continue; }
+		if ( targetStats && !bodyDied )
+		{
+			targetStats->setEffectValueUnsafe(effect, playerStats.getEffectActive(effect));
+			targetStats->EFFECTS_TIMERS[effect] = playerStats.EFFECTS_TIMERS[effect];
+		}
+		playerStats.setEffectValueUnsafe(effect, wraith.suspendedWraithEffects[effect] ? 1 : 0);
+		playerStats.EFFECTS_TIMERS[effect] = wraith.suspendedWraithEffectTimers[effect];
+		wraith.suspendedWraithEffects[effect] = false;
+		wraith.suspendedWraithEffectTimers[effect] = 0;
+	}
+}
+
+static std::vector<Item*> collectUniqueWraithBodyItems(Stat& bodyStats)
+{
+	std::vector<Item*> result;
+	std::unordered_set<Item*> seen;
+	Item* equipment[] = { bodyStats.helmet, bodyStats.breastplate, bodyStats.gloves,
+		bodyStats.shoes, bodyStats.shield, bodyStats.weapon, bodyStats.cloak,
+		bodyStats.amulet, bodyStats.ring, bodyStats.mask };
+	for ( Item* item : equipment )
+	{
+		if ( item && seen.insert(item).second ) { result.push_back(item); }
+	}
+	for ( node_t* node = bodyStats.inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && seen.insert(item).second ) { result.push_back(item); }
+	}
+	return result;
+}
+
+static bool wraithItemIsShadowMimicCopy(const Stat& bodyStats, const Item* item)
+{
+	return bodyStats.type == SHADOW
+		&& item
+		&& item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
+}
+
+static const char* wraithEquipmentSlotName(const Stat& itemOwner, const Item* item)
+{
+	if ( itemOwner.helmet == item ) { return "helmet"; }
+	if ( itemOwner.breastplate == item ) { return "breastplate"; }
+	if ( itemOwner.gloves == item ) { return "gloves"; }
+	if ( itemOwner.shoes == item ) { return "shoes"; }
+	if ( itemOwner.shield == item ) { return "shield"; }
+	if ( itemOwner.weapon == item ) { return "weapon"; }
+	if ( itemOwner.cloak == item ) { return "cloak"; }
+	if ( itemOwner.amulet == item ) { return "amulet"; }
+	if ( itemOwner.ring == item ) { return "ring"; }
+	if ( itemOwner.mask == item ) { return "mask"; }
+	return nullptr;
+}
+
+static void normalizeWraithPossessedInventory(int player)
+{
+	Stat& playerStats = *stats[player];
+	std::vector<Item*> unequippedPhysicalItems;
+	for ( node_t* node = playerStats.inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( !item || item->type == SPELL_ITEM ) { continue; }
+		if ( wraithEquipmentSlotName(playerStats, item) )
+		{
+			item->x = Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE;
+			item->y = Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE;
+		}
+		else
+		{
+			item->x = Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE;
+			item->y = Player::PaperDoll_t::ITEM_RETURN_TO_INVENTORY_COORDINATE;
+			unequippedPhysicalItems.push_back(item);
+		}
+	}
+	for ( Item* item : unequippedPhysicalItems )
+	{
+		if ( !players[player]->inventoryUI.moveItemToFreeInventorySlot(item) )
+		{
+			printlog("[WRAITH]: ERROR unable to place possessed body item uid=%u in player inventory",
+				item->uid);
+		}
+	}
+#ifndef NDEBUG
+	for ( node_t* node = playerStats.inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( !item || item->type == SPELL_ITEM ) { continue; }
+		if ( const char* slot = wraithEquipmentSlotName(playerStats, item) )
+		{
+			printlog("[WRAITH] ENTRY item uid=%u -> player inventory/equipment %s", item->uid, slot);
+		}
+		else
+		{
+			printlog("[WRAITH] ENTRY item uid=%u -> player inventory/equipment grid(%d,%d)",
+				item->uid, item->x, item->y);
+		}
+	}
+#endif
+}
+
+#ifndef NDEBUG
+static void assertWraithPossessionEntryOwnership(int player, const Stat& targetStats,
+	const std::vector<Item*>& transferredItems)
+{
+	const Stat& playerStats = *stats[player];
+	std::unordered_set<Item*> transferred(transferredItems.begin(), transferredItems.end());
+	std::unordered_set<Sint64> occupiedCoordinates;
+	for ( node_t* node = playerStats.inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		assert(item);
+		assert(item->node == node);
+		assert(item->node->list == &playerStats.inventory);
+		if ( item->type == SPELL_ITEM ) { continue; }
+		if ( wraithEquipmentSlotName(playerStats, item) )
+		{
+			assert(item->x == Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE);
+			assert(item->y == Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE);
+		}
+		else
+		{
+			assert(item->x >= 0 && item->x < players[player]->inventoryUI.getSizeX());
+			assert(item->y >= 0 && item->y < players[player]->inventoryUI.getSizeY());
+			const Sint64 coordinate = (static_cast<Sint64>(item->x) << 32)
+				| static_cast<Uint32>(item->y);
+			assert(occupiedCoordinates.insert(coordinate).second);
+		}
+	}
+	Item* playerEquipment[] = { playerStats.helmet, playerStats.breastplate, playerStats.gloves,
+		playerStats.shoes, playerStats.shield, playerStats.weapon, playerStats.cloak,
+		playerStats.amulet, playerStats.ring, playerStats.mask };
+	for ( Item* item : playerEquipment )
+	{
+		if ( !item ) { continue; }
+		assert(item->node && item->node->list == &playerStats.inventory);
+		assert(item->x == Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE);
+		assert(item->y == Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE);
+	}
+	Item* targetEquipment[] = { targetStats.helmet, targetStats.breastplate, targetStats.gloves,
+		targetStats.shoes, targetStats.shield, targetStats.weapon, targetStats.cloak,
+		targetStats.amulet, targetStats.ring, targetStats.mask };
+	for ( Item* item : targetEquipment ) { assert(!item); }
+	for ( node_t* node = targetStats.inventory.first; node; node = node->next )
+	{
+		assert(transferred.find(static_cast<Item*>(node->element)) == transferred.end());
+	}
+	for ( Item* item : transferred )
+	{
+		assert(item && item->node && item->node->list == &playerStats.inventory);
+	}
+}
+
+static void assertWraithPossessionReleaseOwnership(int player, const Stat& targetStats)
+{
+	const Stat& playerStats = *stats[player];
+	assert(!playerStats.helmet && !playerStats.breastplate && !playerStats.gloves);
+	assert(!playerStats.shoes && !playerStats.shield && !playerStats.weapon);
+	assert(!playerStats.cloak && !playerStats.mask);
+	std::unordered_set<Item*> playerPhysicalItems;
+	for ( node_t* node = playerStats.inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		assert(item && item->node == node && item->node->list == &playerStats.inventory);
+		if ( item->type != SPELL_ITEM )
+		{
+			assert(item == playerStats.ring || item == playerStats.amulet);
+			playerPhysicalItems.insert(item);
+		}
+	}
+	std::unordered_set<Item*> targetItems;
+	for ( node_t* node = targetStats.inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		assert(item && item->node == node && item->node->list == &targetStats.inventory);
+		assert(playerPhysicalItems.find(item) == playerPhysicalItems.end());
+		assert(targetItems.insert(item).second);
+	}
+	Item* targetEquipment[] = { targetStats.helmet, targetStats.breastplate, targetStats.gloves,
+		targetStats.shoes, targetStats.shield, targetStats.weapon, targetStats.cloak,
+		targetStats.amulet, targetStats.ring, targetStats.mask };
+	for ( Item* item : targetEquipment )
+	{
+		if ( !item ) { continue; }
+		assert(targetItems.find(item) != targetItems.end());
+		assert(item->node && item->node->list == &targetStats.inventory);
+		assert(playerPhysicalItems.find(item) == playerPhysicalItems.end());
+	}
+}
+#endif
+
+static void clearWraithBodyEquipment(Stat& bodyStats)
+{
+	bodyStats.helmet = nullptr;
+	bodyStats.breastplate = nullptr;
+	bodyStats.gloves = nullptr;
+	bodyStats.shoes = nullptr;
+	bodyStats.shield = nullptr;
+	bodyStats.weapon = nullptr;
+	bodyStats.cloak = nullptr;
+	bodyStats.amulet = nullptr;
+	bodyStats.ring = nullptr;
+	bodyStats.mask = nullptr;
+}
+
+static void putWraithBodyInStasis(int player, Entity& body)
+{
+	auto& wraith = players[player]->mechanics.wraith;
+	const Stat* bodyStats = body.getStats();
+	const bool visualProxy = bodyStats
+		&& wraithPossessionUsesMonsterVisualProxy(bodyStats->type);
+	wraith.possessedBodyOriginalInvisible = body.flags[INVISIBLE];
+	wraith.possessedBodyOriginalPassable = body.flags[PASSABLE];
+	wraith.possessedBodyOriginalBlocksSight = body.flags[BLOCKSIGHT];
+	wraith.possessedBodyOriginalUnclickable = body.flags[UNCLICKABLE];
+	body.flags[INVISIBLE] = !visualProxy;
+	body.flags[PASSABLE] = true;
+	body.flags[BLOCKSIGHT] = false;
+	body.flags[UNCLICKABLE] = true;
+	body.monsterAttack = 0;
+	body.monsterAttackTime = 0;
+	if ( multiplayer == SERVER )
+	{
+		serverUpdateEntityFlag(&body, INVISIBLE);
+		serverUpdateEntityFlag(&body, PASSABLE);
+		serverUpdateEntityFlag(&body, BLOCKSIGHT);
+		serverUpdateEntityFlag(&body, UNCLICKABLE);
+	}
+	if ( !visualProxy ) { setWraithBodyLimbsInvisible(&body, true); }
+}
+
+static void restoreWraithBodyStasisFlags(int player, Entity& body)
+{
+	auto& wraith = players[player]->mechanics.wraith;
+	body.flags[INVISIBLE] = wraith.possessedBodyOriginalInvisible;
+	body.flags[PASSABLE] = wraith.possessedBodyOriginalPassable;
+	body.flags[BLOCKSIGHT] = wraith.possessedBodyOriginalBlocksSight;
+	body.flags[UNCLICKABLE] = wraith.possessedBodyOriginalUnclickable;
+	if ( multiplayer == SERVER )
+	{
+		serverUpdateEntityFlag(&body, INVISIBLE);
+		serverUpdateEntityFlag(&body, PASSABLE);
+		serverUpdateEntityFlag(&body, BLOCKSIGHT);
+		serverUpdateEntityFlag(&body, UNCLICKABLE);
+	}
+	setWraithBodyLimbsInvisible(&body, wraith.possessedBodyOriginalInvisible);
+}
+
+static void reactivateWraithBody(int player, Entity& body)
+{
+	Entity* playerEntity = players[player]->entity;
+	if ( playerEntity )
+	{
+		body.x = playerEntity->x;
+		body.y = playerEntity->y;
+		body.z = playerEntity->z;
+		body.yaw = playerEntity->yaw;
+		body.pitch = playerEntity->pitch;
+	}
+	restoreWraithBodyStasisFlags(player, body);
+}
+
+bool beginWraithPossession(int player, Entity* target)
+{
+	if ( multiplayer == CLIENT ) { return false; }
+	std::string failureReason;
+	if ( !wraithCanPossessTarget(player, target, &failureReason) )
+	{
+		if ( player >= 0 && player < MAXPLAYERS && !failureReason.empty() )
+		{
+			messagePlayer(player, MESSAGE_STATUS, "%s", failureReason.c_str());
+		}
+		return false;
+	}
+	auto& wraith = players[player]->mechanics.wraith;
+	if ( wraith.possessionTransition ) { return false; }
+	clearWraithPossessionTemporarySpells(player);
+	Stat* playerStats = stats[player];
+	Stat* targetStats = target->getStats();
+	Entity* playerEntity = players[player]->entity;
+	const Sint32 cost = getWraithPossessManaCost(target);
+	const Sint32 targetCurrentHP = targetStats->HP;
+	const Monster targetType = wraithCanonicalPossessionType(targetStats->type);
+	const real_t targetX = target->x;
+	const real_t targetY = target->y;
+	const real_t targetZ = target->z;
+	const real_t targetYaw = target->yaw;
+	const real_t playerOriginalYaw = playerEntity->yaw;
+	Item* wraithHeldItem = playerStats->weapon;
+	Item* targetHelmet = targetStats->helmet;
+	Item* targetBreastplate = targetStats->breastplate;
+	Item* targetGloves = targetStats->gloves;
+	Item* targetShoes = targetStats->shoes;
+	Item* targetShield = targetStats->shield;
+	Item* targetWeapon = targetStats->weapon;
+	Item* targetCloak = targetStats->cloak;
+	Item* targetAmulet = targetStats->amulet;
+	Item* targetRing = targetStats->ring;
+	Item* targetMask = targetStats->mask;
+	std::vector<Item*> shadowMimicItems;
+	std::vector<Item*> bodyItems;
+	for ( Item* item : collectUniqueWraithBodyItems(*targetStats) )
+	{
+		if ( wraithItemIsShadowMimicCopy(*targetStats, item) )
+		{
+			shadowMimicItems.push_back(item);
+		}
+		else
+		{
+			bodyItems.push_back(item);
+		}
+	}
+	auto removeShadowMimicEquipment = [targetStats](Item*& item)
+	{
+		if ( wraithItemIsShadowMimicCopy(*targetStats, item) )
+		{
+			item = nullptr;
+		}
+	};
+	removeShadowMimicEquipment(targetHelmet);
+	removeShadowMimicEquipment(targetBreastplate);
+	removeShadowMimicEquipment(targetGloves);
+	removeShadowMimicEquipment(targetShoes);
+	removeShadowMimicEquipment(targetShield);
+	removeShadowMimicEquipment(targetWeapon);
+	removeShadowMimicEquipment(targetCloak);
+	removeShadowMimicEquipment(targetAmulet);
+	removeShadowMimicEquipment(targetRing);
+	removeShadowMimicEquipment(targetMask);
+#ifndef NDEBUG
+	{
+		std::unordered_set<Item*> bodyItemSet(bodyItems.begin(), bodyItems.end());
+		Item* targetEquipment[] = { targetHelmet, targetBreastplate, targetGloves, targetShoes,
+			targetShield, targetWeapon, targetCloak, targetAmulet, targetRing, targetMask };
+		for ( Item* item : targetEquipment )
+		{
+			assert(!item || bodyItemSet.find(item) != bodyItemSet.end());
+		}
+		for ( Item* item : bodyItems )
+		{
+			assert(!wraithItemIsShadowMimicCopy(*targetStats, item));
+		}
+	}
+#endif
+
+	if ( playerStats->weapon
+		&& equipItem(playerStats->weapon, &playerStats->weapon, player, false)
+			== EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+	{
+		return false;
+	}
+	struct OriginalBodyItemOwnership
+	{
+		Item* item;
+		list_t* inventory;
+	};
+	std::vector<OriginalBodyItemOwnership> originalBodyItemOwnership;
+	originalBodyItemOwnership.reserve(bodyItems.size());
+	for ( Item* item : bodyItems )
+	{
+		originalBodyItemOwnership.push_back({ item, item->node ? item->node->list : nullptr });
+	}
+	auto restoreOriginalBodyItemOwnership = [&]()
+	{
+		for ( const auto& ownership : originalBodyItemOwnership )
+		{
+			Item* item = ownership.item;
+			if ( ownership.inventory )
+			{
+				if ( !item->node || item->node->list != ownership.inventory )
+				{
+					moveWraithItemNode(item, *ownership.inventory);
+				}
+			}
+			else if ( item->node )
+			{
+				node_t* node = item->node;
+				node->element = nullptr;
+				node->deconstructor = &emptyDeconstructor;
+				item->node = nullptr;
+				list_RemoveNode(node);
+			}
+		}
+	};
+	for ( Item* item : bodyItems )
+	{
+		if ( !moveWraithItemNode(item, playerStats->inventory) )
+		{
+			printlog("[WRAITH]: ERROR failed to transfer body item into player inventory");
+			restoreOriginalBodyItemOwnership();
+			if ( wraithHeldItem )
+			{
+				setWraithHeldItem(player, wraithHeldItem);
+			}
+			return false;
+		}
+	}
+
+	wraith.possessionTransition = true;
+	if ( targetType == DEMON )
+	{
+		target->pitch = 0.0;
+		target->roll = 0.0;
+	}
+	putWraithBodyInStasis(player, *target);
+	playerEntity->yaw = targetYaw;
+	if ( !playerEntity->teleport(static_cast<int>(std::floor(targetX)) >> 4,
+		static_cast<int>(std::floor(targetY)) >> 4) )
+	{
+		playerEntity->yaw = playerOriginalYaw;
+		restoreWraithBodyStasisFlags(player, *target);
+		restoreOriginalBodyItemOwnership();
+		if ( wraithHeldItem )
+		{
+			setWraithHeldItem(player, wraithHeldItem);
+		}
+		wraith.possessionTransition = false;
+		return false;
+	}
+	playerEntity->z = targetZ;
+
+	for ( Item* item : shadowMimicItems )
+	{
+		if ( targetStats->helmet == item ) { targetStats->helmet = nullptr; }
+		if ( targetStats->breastplate == item ) { targetStats->breastplate = nullptr; }
+		if ( targetStats->gloves == item ) { targetStats->gloves = nullptr; }
+		if ( targetStats->shoes == item ) { targetStats->shoes = nullptr; }
+		if ( targetStats->shield == item ) { targetStats->shield = nullptr; }
+		if ( targetStats->weapon == item ) { targetStats->weapon = nullptr; }
+		if ( targetStats->cloak == item ) { targetStats->cloak = nullptr; }
+		if ( targetStats->amulet == item ) { targetStats->amulet = nullptr; }
+		if ( targetStats->ring == item ) { targetStats->ring = nullptr; }
+		if ( targetStats->mask == item ) { targetStats->mask = nullptr; }
+	}
+#ifndef NDEBUG
+	{
+		Item* targetEquipment[] = { targetStats->helmet, targetStats->breastplate,
+			targetStats->gloves, targetStats->shoes, targetStats->shield,
+			targetStats->weapon, targetStats->cloak, targetStats->amulet,
+			targetStats->ring, targetStats->mask };
+		for ( Item* item : targetEquipment )
+		{
+			assert(!item || std::find(shadowMimicItems.begin(),
+				shadowMimicItems.end(), item) == shadowMimicItems.end());
+		}
+	}
+#endif
+	for ( Item* item : shadowMimicItems )
+	{
+		if ( item->node )
+		{
+			list_RemoveNode(item->node);
+		}
+		else
+		{
+			free(item);
+		}
+	}
+
+	wraith.possessedEntityUid = target->getUID();
+	wraith.possessedType = targetType;
+	updateWraithPlayerColorRemap(player);
+	wraith.possessionStartPlayerLevel = playerStats->LVL;
+	wraith.possessionLastPlayerLevel = playerStats->LVL;
+	wraith.possessionOriginalEquipmentUids = {
+		targetHelmet ? targetHelmet->uid : 0,
+		targetWeapon ? targetWeapon->uid : 0,
+		targetShield ? targetShield->uid : 0,
+		targetBreastplate ? targetBreastplate->uid : 0,
+		targetShoes ? targetShoes->uid : 0,
+		targetRing ? targetRing->uid : 0,
+		targetAmulet ? targetAmulet->uid : 0,
+		targetCloak ? targetCloak->uid : 0,
+		targetMask ? targetMask->uid : 0,
+		targetGloves ? targetGloves->uid : 0
+	};
+	targetStats->wraithFormerPossessor = -1;
+	targetStats->wraithBodyLootChestSpawned = false;
+	playerStats->MP -= cost;
+	const Sint32 mpAfterCost = playerStats->MP;
+	detachWraithBodyFollower(target, targetStats);
+
+	clearWraithBodyEquipment(*targetStats);
+	playerStats->helmet = targetHelmet;
+	playerStats->breastplate = targetBreastplate;
+	playerStats->gloves = targetGloves;
+	playerStats->shoes = targetShoes;
+	playerStats->shield = targetShield;
+	playerStats->weapon = targetWeapon;
+	playerStats->cloak = targetCloak;
+	playerStats->mask = targetMask;
+	auto unequipForbiddenBodySlot = [player](Item*& slot, int category)
+	{
+		if ( slot && !wraithPossessedBodyCanEquipSlot(player, category) ) { slot = nullptr; }
+	};
+	unequipForbiddenBodySlot(playerStats->helmet, 0);
+	unequipForbiddenBodySlot(playerStats->weapon, 1);
+	unequipForbiddenBodySlot(playerStats->shield, 2);
+	unequipForbiddenBodySlot(playerStats->breastplate, 3);
+	unequipForbiddenBodySlot(playerStats->shoes, 4);
+	unequipForbiddenBodySlot(playerStats->cloak, 7);
+	unequipForbiddenBodySlot(playerStats->mask, 8);
+	unequipForbiddenBodySlot(playerStats->gloves, 9);
+	normalizeWraithPossessedInventory(player);
+#ifndef NDEBUG
+	assertWraithPossessionEntryOwnership(player, *targetStats, bodyItems);
+#endif
+
+	suspendWraithEffects(*playerStats, wraith, *targetStats);
+	playerStats->MAXHP = wraith.corporealMaxHP;
+	playerStats->HP = targetCurrentHP;
+	playerStats->MAXMP = wraith.corporealMaxMP;
+	playerStats->MP = std::min(mpAfterCost, playerStats->MAXMP);
+	playerStats->type = targetType;
+	updateWraithPossessionTemporarySpells(player);
+	syncWraithPossessionState(player);
+
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+	{
+		std::unordered_set<Item*> equipped = { playerStats->helmet, playerStats->breastplate,
+			playerStats->gloves, playerStats->shoes, playerStats->shield, playerStats->weapon,
+			playerStats->cloak, playerStats->mask };
+		for ( Item* item : bodyItems )
+		{
+			if ( equipped.find(item) != equipped.end() ) { serverSendItemToPickupAndEquip(player, item); }
+			else { serverSendItemToPickup(player, item); }
+		}
+	}
+	serverUpdateEffects(player);
+	wraith.possessionTransition = false;
+	return true;
+}
+
+static void clearWraithReturningBodyUIReferenceSets(int player,
+	const std::unordered_set<Item*>& returningItems, const std::unordered_set<Uint32>& returningUids)
+{
+	if ( !players[player]->isLocalPlayer() ) { return; }
+	auto* ui = inputs.getUIInteraction(player);
+	if ( ui->selectedItem && returningItems.find(ui->selectedItem) != returningItems.end() )
+	{
+#ifndef NDEBUG
+		printlog("[WRAITH] clearing player selected reference to body item uid=%u",
+			ui->selectedItem->uid);
+#endif
+		ui->selectedItem = nullptr;
+		ui->selectedItemFromHotbar = -1;
+		ui->selectedItemFromChest = 0;
+		ui->toggleclick = false;
+	}
+	else if ( ui->selectedItemFromChest != 0
+		&& returningUids.find(ui->selectedItemFromChest) != returningUids.end() )
+	{
+#ifndef NDEBUG
+		printlog("[WRAITH] clearing player selected reference to body item uid=%u",
+			ui->selectedItemFromChest);
+#endif
+		ui->selectedItemFromChest = 0;
+		ui->selectedItemFromHotbar = -1;
+		ui->toggleclick = false;
+	}
+	if ( ui->itemMenuItem != 0 && returningUids.find(ui->itemMenuItem) != returningUids.end() )
+	{
+#ifndef NDEBUG
+		printlog("[WRAITH] clearing player context reference to body item uid=%u", ui->itemMenuItem);
+#endif
+		ui->itemMenuOpen = false;
+		ui->itemMenuFromHotbar = false;
+		ui->itemMenuSelected = 0;
+		ui->itemMenuItem = 0;
+		ui->itemMenuOffsetDetectionY = 0;
+		ui->toggleclick = false;
+		players[player]->inventoryUI.updateItemContextMenu();
+	}
+	if ( players[player]->GUI.dropdownMenu.dropDownItem != 0
+		&& returningUids.find(players[player]->GUI.dropdownMenu.dropDownItem) != returningUids.end() )
+	{
+#ifndef NDEBUG
+		printlog("[WRAITH] clearing player context reference to body item uid=%u",
+			players[player]->GUI.dropdownMenu.dropDownItem);
+#endif
+		players[player]->GUI.dropdownMenu.close();
+	}
+	if ( ui->selectedItemFromHotbar >= 0
+		&& ui->selectedItemFromHotbar < static_cast<int>(players[player]->hotbar.slots().size()) )
+	{
+		const Uint32 selectedHotbarUid =
+			players[player]->hotbar.slots()[ui->selectedItemFromHotbar].item;
+		if ( selectedHotbarUid != 0 && returningUids.find(selectedHotbarUid) != returningUids.end() )
+		{
+#ifndef NDEBUG
+			printlog("[WRAITH] clearing player selected reference to body item uid=%u",
+				selectedHotbarUid);
+#endif
+			ui->selectedItemFromHotbar = -1;
+			ui->selectedItemFromChest = 0;
+			ui->toggleclick = false;
+		}
+	}
+
+	auto clearHotbarSlots = [&](auto& slots)
+	{
+		for ( auto& slot : slots )
+		{
+			if ( slot.item != 0 && returningUids.find(slot.item) != returningUids.end() )
+			{
+#ifndef NDEBUG
+				printlog("[WRAITH] clearing player hotbar reference to body item uid=%u", slot.item);
+#endif
+				slot.item = 0;
+				slot.resetLastItem();
+			}
+		}
+	};
+	clearHotbarSlots(players[player]->hotbar.slots());
+	for ( auto& alternate : players[player]->hotbar.slotsAlternate() )
+	{
+		clearHotbarSlots(alternate);
+	}
+	for ( const auto& slot : players[player]->paperDoll.dollSlots )
+	{
+		if ( slot.item != 0 && returningUids.find(slot.item) != returningUids.end() )
+		{
+#ifndef NDEBUG
+			printlog("[WRAITH] clearing player paperdoll reference to body item uid=%u", slot.item);
+#endif
+		}
+	}
+}
+
+void clearWraithReturningBodyUIReferences(int player, const std::vector<Item*>& returningBodyItems)
+{
+	std::unordered_set<Item*> returningItems(returningBodyItems.begin(), returningBodyItems.end());
+	std::unordered_set<Uint32> returningUids;
+	for ( Item* item : returningBodyItems )
+	{
+		if ( item ) { returningUids.insert(item->uid); }
+	}
+	clearWraithReturningBodyUIReferenceSets(player, returningItems, returningUids);
+}
+
+#ifndef NDEBUG
+static void assertWraithNoReturningUIReferences(int player,
+	const std::unordered_set<Item*>& returningItems, const std::unordered_set<Uint32>& returningUids)
+{
+	if ( !players[player]->isLocalPlayer() ) { return; }
+	const auto* ui = inputs.getUIInteraction(player);
+	assert(!ui->selectedItem || returningItems.find(ui->selectedItem) == returningItems.end());
+	assert(ui->selectedItemFromChest == 0
+		|| returningUids.find(ui->selectedItemFromChest) == returningUids.end());
+	assert(ui->itemMenuItem == 0 || returningUids.find(ui->itemMenuItem) == returningUids.end());
+	assert(players[player]->GUI.dropdownMenu.dropDownItem == 0
+		|| returningUids.find(players[player]->GUI.dropdownMenu.dropDownItem) == returningUids.end());
+	for ( const auto& slot : players[player]->hotbar.slots() )
+	{
+		assert(slot.item == 0 || returningUids.find(slot.item) == returningUids.end());
+	}
+	for ( const auto& alternate : players[player]->hotbar.slotsAlternate() )
+	{
+		for ( const auto& slot : alternate )
+		{
+			assert(slot.item == 0 || returningUids.find(slot.item) == returningUids.end());
+		}
+	}
+	for ( const auto& slot : players[player]->paperDoll.dollSlots )
+	{
+		assert(slot.item == 0 || returningUids.find(slot.item) == returningUids.end());
+	}
+}
+#endif
+
+static int getReleasedWraithBodyEquipCategory(const Item& item)
+{
+	if ( itemCategory(&item) == WEAPON )
+	{
+		return 1;
+	}
+
+	if ( itemCategory(&item) != ARMOR )
+	{
+		return -1;
+	}
+
+	switch ( checkEquipType(&item) )
+	{
+		case TYPE_HAT:
+		case TYPE_HELM:
+			return 0;
+
+		case TYPE_SHIELD:
+		case TYPE_OFFHAND:
+			return 2;
+
+		case TYPE_BREASTPIECE:
+			return 3;
+
+		case TYPE_BOOTS:
+			return 4;
+
+		case TYPE_CLOAK:
+			return 7;
+
+		case TYPE_GLOVES:
+			return 9;
+
+		default:
+			return -1;
+	}
+}
+
+static bool releasedWraithBodyCanAutoEquipItem(
+	Entity& body,
+	Stat& bodyStats,
+	const Item& item,
+	int equipCategory)
+{
+	if ( equipCategory < 0 || !canWearEquip(&body, equipCategory) )
+	{
+		return false;
+	}
+
+	switch ( bodyStats.type )
+	{
+		case GOBLIN:
+			return body.goblinCanWieldItem(item);
+
+		case HUMAN:
+			return body.humanCanWieldItem(item);
+
+		case GOATMAN:
+			return body.goatmanCanWieldItem(item);
+
+		case AUTOMATON:
+			return body.automatonCanWieldItem(item);
+
+		case SHADOW:
+			return body.shadowCanWieldItem(item);
+
+		case INSECTOID:
+			return body.insectoidCanWieldItem(item);
+
+		default:
+			break;
+	}
+
+	return true;
+}
+
+static void autoEquipReleasedWraithBody(Entity& body, Stat& bodyStats)
+{
+	Item* bestWeapon = nullptr;
+	Item* bestHelmet = nullptr;
+	Item* bestShield = nullptr;
+	Item* bestBreastplate = nullptr;
+	Item* bestShoes = nullptr;
+	Item* bestCloak = nullptr;
+	Item* bestGloves = nullptr;
+
+	auto chooseBetterArmor = [](Item*& best, Item* candidate)
+	{
+		if ( !candidate )
+		{
+			return;
+		}
+
+		if ( !best || candidate->armorGetAC() > best->armorGetAC() )
+		{
+			best = candidate;
+		}
+	};
+
+	for ( node_t* node = bodyStats.inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( !item || item->status == BROKEN )
+		{
+			continue;
+		}
+
+		const int equipCategory = getReleasedWraithBodyEquipCategory(*item);
+		if ( equipCategory < 0
+			|| !releasedWraithBodyCanAutoEquipItem(body, bodyStats, *item, equipCategory) )
+		{
+			continue;
+		}
+
+		if ( itemCategory(item) == WEAPON )
+		{
+			// Preserve the existing mod rule that non-player monster AI
+			// must not move a Musket into its weapon slot.
+			if ( item->type == MUSKET )
+			{
+				continue;
+			}
+
+			if ( !bestWeapon
+				|| item->weaponGetAttack() > bestWeapon->weaponGetAttack() )
+			{
+				bestWeapon = item;
+			}
+			continue;
+		}
+
+		if ( itemCategory(item) != ARMOR )
+		{
+			continue;
+		}
+
+		switch ( checkEquipType(item) )
+		{
+			case TYPE_HAT:
+			case TYPE_HELM:
+				chooseBetterArmor(bestHelmet, item);
+				break;
+
+			case TYPE_SHIELD:
+			case TYPE_OFFHAND:
+				chooseBetterArmor(bestShield, item);
+				break;
+
+			case TYPE_BREASTPIECE:
+				chooseBetterArmor(bestBreastplate, item);
+				break;
+
+			case TYPE_BOOTS:
+				chooseBetterArmor(bestShoes, item);
+				break;
+
+			case TYPE_CLOAK:
+				chooseBetterArmor(bestCloak, item);
+				break;
+
+			case TYPE_GLOVES:
+				chooseBetterArmor(bestGloves, item);
+				break;
+
+			default:
+				break;
+		}
+	}
+
+	// Use the game's existing native replacement rules. Items remain owned by
+	// bodyStats.inventory; only the equipment pointers are updated.
+	if ( bestWeapon && body.shouldMonsterEquipThisWeapon(*bestWeapon) )
+	{
+		bodyStats.weapon = bestWeapon;
+	}
+
+	auto equipArmor = [&body](Item* item)
+	{
+		if ( !item )
+		{
+			return;
+		}
+
+		if ( Item** slot = body.shouldMonsterEquipThisArmor(*item) )
+		{
+			*slot = item;
+		}
+	};
+
+	equipArmor(bestHelmet);
+	equipArmor(bestShield);
+	equipArmor(bestBreastplate);
+	equipArmor(bestShoes);
+	equipArmor(bestCloak);
+	equipArmor(bestGloves);
+}
+
+static void returnWraithBodyItems(int player, Stat& targetStats)
+{
+	Stat& playerStats = *stats[player];
+	Item* spiritRing = playerStats.ring;
+	Item* spiritAmulet = playerStats.amulet;
+	std::vector<Item*> toReturn;
+	std::unordered_set<Item*> returningItems;
+	std::unordered_set<Uint32> returningUids;
+	for ( node_t* node = playerStats.inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->type != SPELL_ITEM && item != spiritRing && item != spiritAmulet )
+		{
+			toReturn.push_back(item);
+			returningItems.insert(item);
+			returningUids.insert(item->uid);
+		}
+	}
+	clearWraithReturningBodyUIReferenceSets(player, returningItems, returningUids);
+	Item* bodyHelmet = playerStats.helmet;
+	Item* bodyBreastplate = playerStats.breastplate;
+	Item* bodyGloves = playerStats.gloves;
+	Item* bodyShoes = playerStats.shoes;
+	Item* bodyShield = playerStats.shield;
+	Item* bodyWeapon = playerStats.weapon;
+	Item* bodyCloak = playerStats.cloak;
+	Item* bodyMask = playerStats.mask;
+	playerStats.helmet = nullptr;
+	playerStats.breastplate = nullptr;
+	playerStats.gloves = nullptr;
+	playerStats.shoes = nullptr;
+	playerStats.shield = nullptr;
+	playerStats.weapon = nullptr;
+	playerStats.cloak = nullptr;
+	playerStats.mask = nullptr;
+	if ( players[player]->isLocalPlayer() )
+	{
+		// Retire old equipment UIDs while the Items are still valid and player-owned.
+		players[player]->paperDoll.updateSlots();
+	}
+#ifndef NDEBUG
+	assertWraithNoReturningUIReferences(player, returningItems, returningUids);
+#endif
+	for ( Item* item : toReturn )
+	{
+		if ( !moveWraithItemNode(item, targetStats.inventory) )
+		{
+			printlog("[WRAITH]: ERROR failed to return body item uid=%u to monster inventory",
+				item->uid);
+			continue;
+		}
+		item->x = 0;
+		item->y = 0;
+	}
+	targetStats.helmet = bodyHelmet;
+	targetStats.breastplate = bodyBreastplate;
+	targetStats.gloves = bodyGloves;
+	targetStats.shoes = bodyShoes;
+	targetStats.shield = bodyShield;
+	targetStats.weapon = bodyWeapon;
+	targetStats.cloak = bodyCloak;
+	targetStats.mask = bodyMask;
+	auto findReturnedItem = [&targetStats](Uint32 uid) -> Item*
+	{
+		if ( uid == 0 ) { return nullptr; }
+		for ( node_t* node = targetStats.inventory.first; node; node = node->next )
+		{
+			Item* item = static_cast<Item*>(node->element);
+			if ( item && item->uid == uid ) { return item; }
+		}
+		return nullptr;
+	};
+	const auto& original = players[player]->mechanics.wraith.possessionOriginalEquipmentUids;
+	if ( !wraithPossessedBodyCanEquipSlot(player, 0) ) { targetStats.helmet = findReturnedItem(original[0]); }
+	if ( !wraithPossessedBodyCanEquipSlot(player, 1) ) { targetStats.weapon = findReturnedItem(original[1]); }
+	if ( !wraithPossessedBodyCanEquipSlot(player, 2) ) { targetStats.shield = findReturnedItem(original[2]); }
+	if ( !wraithPossessedBodyCanEquipSlot(player, 3) ) { targetStats.breastplate = findReturnedItem(original[3]); }
+	if ( !wraithPossessedBodyCanEquipSlot(player, 4) ) { targetStats.shoes = findReturnedItem(original[4]); }
+	if ( !wraithPossessedBodyCanEquipSlot(player, 7) ) { targetStats.cloak = findReturnedItem(original[7]); }
+	if ( !wraithPossessedBodyCanEquipSlot(player, 8) ) { targetStats.mask = findReturnedItem(original[8]); }
+	if ( !wraithPossessedBodyCanEquipSlot(player, 9) ) { targetStats.gloves = findReturnedItem(original[9]); }
+	targetStats.ring = findReturnedItem(original[5]);
+	targetStats.amulet = findReturnedItem(original[6]);
+#ifndef NDEBUG
+	for ( Item* item : toReturn )
+	{
+		const char* slot = wraithEquipmentSlotName(targetStats, item);
+		printlog("[WRAITH] RELEASE item uid=%u -> monster inventory/equipment %s",
+			item->uid, slot ? slot : "inventory");
+	}
+#endif
+}
+
+static void clearWraithPossessionState(int player, Sint32 bodyCurrentHP,
+	Sint32 bodyCurrentMP, bool bodyDied)
+{
+	auto& wraith = players[player]->mechanics.wraith;
+	Stat& playerStats = *stats[player];
+	clearWraithPossessionTemporarySpells(player);
+	playerStats.type = WRAITH;
+	wraith.possessedEntityUid = 0;
+	wraith.possessedType = NOTHING;
+	updateWraithPlayerColorRemap(player);
+	wraith.possessionStartPlayerLevel = 0;
+	wraith.possessionLastPlayerLevel = 0;
+	wraith.possessedBodyOriginalInvisible = false;
+	wraith.possessedBodyOriginalPassable = false;
+	wraith.possessedBodyOriginalBlocksSight = false;
+	wraith.possessedBodyOriginalUnclickable = false;
+	wraith.possessionOriginalEquipmentUids.fill(0);
+	setWraithFormResources(playerStats, wraith, bodyCurrentHP, bodyCurrentMP, bodyDied);
+	serverUpdateEffects(player);
+	syncWraithPossessionState(player);
+}
+
+bool releaseWraithPossession(int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !players[player]
+		|| !stats[player] || !players[player]->entity ) { return false; }
+	auto& wraith = players[player]->mechanics.wraith;
+	if ( wraith.possessedEntityUid == 0 || wraith.possessionTransition ) { return false; }
+	Entity* target = uidToEntity(wraith.possessedEntityUid);
+	Stat* targetStats = target ? target->getStats() : nullptr;
+	if ( !target || !targetStats )
+	{
+		updateWraithPossession(player);
+		return wraith.possessedEntityUid == 0;
+	}
+	wraith.possessionTransition = true;
+	const Sint32 bodyCurrentHP = stats[player]->HP;
+	const Sint32 bodyCurrentMP = stats[player]->MP;
+	restoreWraithEffects(*stats[player], wraith, targetStats, false);
+	returnWraithBodyItems(player, *targetStats);
+	autoEquipReleasedWraithBody(*target, *targetStats);
+#ifndef NDEBUG
+	assertWraithPossessionReleaseOwnership(player, *targetStats);
+#endif
+	targetStats->HP = std::max<Sint32>(1, std::min(bodyCurrentHP, targetStats->MAXHP));
+	targetStats->wraithFormerPossessor = static_cast<Sint8>(player);
+	targetStats->wraithBodyLootChestSpawned = false;
+	reactivateWraithBody(player, *target);
+	if ( wraithCanonicalPossessionType(targetStats->type) == DEMON )
+	{
+		target->pitch = 0.0;
+		target->roll = 0.0;
+	}
+	detachWraithBodyFollower(target, targetStats);
+	target->setEffect(EFF_ASLEEP, true, 2 * TICKS_PER_SECOND, true);
+	if ( !players[player]->entity->teleportAroundEntity(target, 1, 0) )
+	{
+		printlog("[WRAITH]: no free release position found; leaving player at body position");
+	}
+	target->monsterAcquireAttackTarget(*players[player]->entity, MONSTER_STATE_PATH);
+	clearWraithPossessionState(player, bodyCurrentHP, bodyCurrentMP, false);
+	wraith.possessionTransition = false;
+	return true;
+}
+
+bool handleWraithPossessedBodyDeath(int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !players[player]
+		|| !stats[player] || !players[player]->entity ) { return false; }
+	auto& wraith = players[player]->mechanics.wraith;
+	if ( wraith.possessedEntityUid == 0 || wraith.possessionTransition ) { return false; }
+	Entity* target = uidToEntity(wraith.possessedEntityUid);
+	Stat* targetStats = target ? target->getStats() : nullptr;
+	if ( !target || !targetStats )
+	{
+		updateWraithPossession(player);
+		return wraith.possessedEntityUid == 0;
+	}
+	wraith.possessionTransition = true;
+	const Sint32 bodyCurrentMP = stats[player]->MP;
+	restoreWraithEffects(*stats[player], wraith, targetStats, true);
+	returnWraithBodyItems(player, *targetStats);
+	targetStats->wraithFormerPossessor = static_cast<Sint8>(player);
+	targetStats->wraithBodyLootChestSpawned = false;
+	reactivateWraithBody(player, *target);
+	targetStats->HP = 0;
+	clearWraithPossessionState(player, 0, bodyCurrentMP, true);
+	wraith.possessionTransition = false;
+	return true;
+}
+
+static void forceRecoverWraithFromMissingBody(int player)
+{
+	printlog("[WRAITH]: possessed body UID missing, forcing safe recovery");
+	auto& wraith = players[player]->mechanics.wraith;
+	Stat& playerStats = *stats[player];
+	const Sint32 bodyCurrentMP = playerStats.MP;
+	Item* spiritRing = playerStats.ring;
+	Item* spiritAmulet = playerStats.amulet;
+	std::vector<Item*> bodyItems;
+	for ( node_t* node = playerStats.inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->type != SPELL_ITEM && item != spiritRing && item != spiritAmulet )
+		{
+			bodyItems.push_back(item);
+		}
+	}
+	std::unordered_set<Item*> returningItems(bodyItems.begin(), bodyItems.end());
+	std::unordered_set<Uint32> returningUids;
+	for ( Item* item : bodyItems ) { returningUids.insert(item->uid); }
+	clearWraithReturningBodyUIReferenceSets(player, returningItems, returningUids);
+	playerStats.helmet = nullptr;
+	playerStats.breastplate = nullptr;
+	playerStats.gloves = nullptr;
+	playerStats.shoes = nullptr;
+	playerStats.shield = nullptr;
+	playerStats.weapon = nullptr;
+	playerStats.cloak = nullptr;
+	playerStats.mask = nullptr;
+	if ( players[player]->isLocalPlayer() )
+	{
+		players[player]->paperDoll.updateSlots();
+	}
+#ifndef NDEBUG
+	assertWraithNoReturningUIReferences(player, returningItems, returningUids);
+#endif
+	for ( Item* item : bodyItems )
+	{
+		stats[0]->addItemToLootingBag(player, players[player]->entity->x,
+			players[player]->entity->y, *item, true);
+		if ( item->node ) { list_RemoveNode(item->node); }
+		else { free(item); }
+	}
+	restoreWraithEffects(playerStats, wraith, nullptr, true);
+	clearWraithPossessionState(player, 0, bodyCurrentMP, true);
+}
+
+Stat* createWraithPossessedBodySnapshot(int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS
+		|| client_disconnected[player] || !players[player] || !stats[player]
+		|| !players[player]->entity )
+	{
+		return nullptr;
+	}
+	auto& wraith = players[player]->mechanics.wraith;
+	if ( !wraith.initialized || wraith.possessedEntityUid == 0
+		|| wraith.possessionTransition )
+	{
+		return nullptr;
+	}
+	Entity* body = uidToEntity(wraith.possessedEntityUid);
+	Stat* bodyStats = body ? body->getStats() : nullptr;
+	if ( !body || !bodyStats )
+	{
+		printlog("[WRAITH]: ERROR could not create possessed-body snapshot");
+		return nullptr;
+	}
+
+	Stat* snapshot = bodyStats->copyStats();
+	if ( !snapshot )
+	{
+		printlog("[WRAITH]: ERROR could not allocate possessed-body snapshot");
+		return nullptr;
+	}
+
+	// The body's physical Items remain player-owned throughout possession. Strip
+	// any copied pointers so the transition snapshot cannot duplicate ownership.
+	std::vector<Item*> copiedItems = collectUniqueWraithBodyItems(*snapshot);
+	clearWraithBodyEquipment(*snapshot);
+	for ( Item* item : copiedItems )
+	{
+		if ( item->node ) { list_RemoveNode(item->node); }
+		else { free(item); }
+	}
+
+	return snapshot;
+}
+
+Stat* captureWraithPossessedBodyForLevelTransition(int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS
+		|| client_disconnected[player] || !players[player] || !stats[player]
+		|| !players[player]->entity )
+	{
+		return nullptr;
+	}
+	auto& wraith = players[player]->mechanics.wraith;
+	if ( !wraith.initialized || wraith.possessedEntityUid == 0
+		|| wraith.possessionTransition )
+	{
+		return nullptr;
+	}
+	Stat* snapshot = createWraithPossessedBodySnapshot(player);
+	if ( !snapshot )
+	{
+		printlog("[WRAITH]: ERROR could not capture possessed body for level transition");
+		wraith.possessionTransition = true;
+		forceRecoverWraithFromMissingBody(player);
+		wraith.possessionTransition = false;
+		return nullptr;
+	}
+	wraith.possessionTransition = true;
+	return snapshot;
+}
+
+bool restoreWraithPossessedBodyAfterLevelTransition(int player, Stat* savedBodyStats)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS
+		|| !players[player] || !stats[player] || !players[player]->entity
+		|| !savedBodyStats )
+	{
+		if ( multiplayer != CLIENT && player >= 0 && player < MAXPLAYERS
+			&& players[player] && stats[player] && players[player]->entity )
+		{
+			printlog("[WRAITH]: ERROR cannot restore possessed body after level transition");
+			auto& wraith = players[player]->mechanics.wraith;
+			if ( wraith.possessedEntityUid != 0 )
+			{
+				forceRecoverWraithFromMissingBody(player);
+			}
+			wraith.possessionTransition = false;
+		}
+		delete savedBodyStats;
+		return false;
+	}
+	auto& wraith = players[player]->mechanics.wraith;
+	if ( !wraith.initialized || wraith.possessedEntityUid == 0
+		|| !wraith.possessionTransition || savedBodyStats->type <= NOTHING
+		|| savedBodyStats->type >= MAX_MONSTER )
+	{
+		printlog("[WRAITH]: ERROR invalid possessed-body level-transition restore state");
+		delete savedBodyStats;
+		if ( wraith.possessedEntityUid != 0 )
+		{
+			forceRecoverWraithFromMissingBody(player);
+		}
+		wraith.possessionTransition = false;
+		return false;
+	}
+
+	Entity* body = summonMonster(savedBodyStats->type,
+		players[player]->entity->x, players[player]->entity->y);
+	if ( !body || !body->children.last )
+	{
+		printlog("[WRAITH]: ERROR failed to recreate possessed body after level transition");
+		if ( body ) { list_RemoveNode(body->mynode); }
+		delete savedBodyStats;
+		forceRecoverWraithFromMissingBody(player);
+		wraith.possessionTransition = false;
+		return false;
+	}
+
+	body->skill[3] = 1; // partially initialized; replace the summoned default Stat
+	body->z = players[player]->entity->z;
+	body->yaw = players[player]->entity->yaw;
+	body->pitch = players[player]->entity->pitch;
+	list_RemoveNode(body->children.last);
+	node_t* statNode = list_AddNodeLast(&body->children);
+	savedBodyStats->attributes.erase("wraith_possessed_body");
+	statNode->element = savedBodyStats;
+	statNode->deconstructor = &statDeconstructor;
+	statNode->size = sizeof(Stat);
+
+	const Monster effectiveType =
+		wraithCanonicalPossessionType(savedBodyStats->type);
+	wraith.possessedEntityUid = body->getUID();
+	wraith.possessedType = effectiveType;
+	stats[player]->type = effectiveType;
+	putWraithBodyInStasis(player, *body);
+	wraith.possessionTransition = false;
+	syncWraithPossessionState(player);
+	return true;
+}
+
+void updateWraithPossession(int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !players[player]
+		|| !stats[player] || !players[player]->entity ) { return; }
+	auto& wraith = players[player]->mechanics.wraith;
+	if ( wraith.possessedEntityUid == 0 || wraith.possessionTransition ) { return; }
+	Entity* target = uidToEntity(wraith.possessedEntityUid);
+	Stat* targetStats = target ? target->getStats() : nullptr;
+	if ( !target || !targetStats )
+	{
+		wraith.possessionTransition = true;
+		forceRecoverWraithFromMissingBody(player);
+		wraith.possessionTransition = false;
+		return;
+	}
+	Entity* playerEntity = players[player]->entity;
+	const bool visualProxy = wraithPossessionUsesMonsterVisualProxy(wraith.possessedType);
+	const Monster targetType = wraithCanonicalPossessionType(targetStats->type);
+	target->x = playerEntity->x;
+	target->y = playerEntity->y;
+	target->z = playerEntity->z;
+	target->yaw = playerEntity->yaw;
+	if ( targetType == DEMON )
+	{
+		target->pitch = 0.0;
+		target->roll = 0.0;
+	}
+	else if ( visualProxy )
+	{
+		target->pitch = 0.0;
+		target->roll = 0.0;
+	}
+	else
+	{
+		target->pitch = playerEntity->pitch;
+	}
+	while ( wraith.possessionLastPlayerLevel < stats[player]->LVL )
+	{
+		targetStats->LVL++;
+		target->monsterApplyNormalLevelUpGrowth(targetStats);
+		wraith.possessionLastPlayerLevel++;
+	}
+	if ( target->flags[INVISIBLE] == visualProxy )
+	{
+		target->flags[INVISIBLE] = !visualProxy;
+		if ( multiplayer == SERVER ) { serverUpdateEntityFlag(target, INVISIBLE); }
+	}
+	if ( !visualProxy ) { setWraithBodyLimbsInvisible(target, true); }
+	if ( !target->flags[PASSABLE] )
+	{
+		target->flags[PASSABLE] = true;
+		if ( multiplayer == SERVER ) { serverUpdateEntityFlag(target, PASSABLE); }
+	}
+	if ( target->flags[BLOCKSIGHT] )
+	{
+		target->flags[BLOCKSIGHT] = false;
+		if ( multiplayer == SERVER ) { serverUpdateEntityFlag(target, BLOCKSIGHT); }
+	}
+	if ( !target->flags[UNCLICKABLE] )
+	{
+		target->flags[UNCLICKABLE] = true;
+		if ( multiplayer == SERVER ) { serverUpdateEntityFlag(target, UNCLICKABLE); }
+	}
+}
+
+bool monsterIsActiveWraithBody(const Entity* monster)
+{
+	if ( !monster ) { return false; }
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( players[player] && players[player]->mechanics.wraith.possessedEntityUid == monster->getUID() )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool spawnWraithBodyDeathChest(Entity* monster)
+{
+	Stat* monsterStats = monster ? monster->getStats() : nullptr;
+	if ( !monster || !monsterStats || monsterStats->wraithFormerPossessor < 0
+		|| monsterStats->wraithFormerPossessor >= MAXPLAYERS || !stats[0] )
+	{
+		return false;
+	}
+	const int owner = monsterStats->wraithFormerPossessor;
+	Uint32 bagKey = 0;
+	if ( !Stat::allocateUniqueLootingBagKey(owner, bagKey) )
+	{
+		printlog("[WRAITH]: ERROR failed to allocate unique former-body loot-bag key for player %d", owner);
+		return false;
+	}
+
+	auto& loot = stats[0]->player_lootbags[bagKey];
+	loot.spawn_x = monster->x;
+	loot.spawn_y = monster->y;
+	loot.spawnedOnGround = true;
+	loot.looted = false;
+	std::vector<Item*> bodyItems = collectUniqueWraithBodyItems(*monsterStats);
+	for ( Item* item : bodyItems )
+	{
+		loot.items.push_back(Item());
+		copyItem(&loot.items.back(), item);
+	}
+
+	Entity* entity = newEntity(-1, 1, map.entities, nullptr);
+	entity->flags[INVISIBLE] = true;
+	entity->flags[UPDATENEEDED] = true;
+	entity->x = monster->x;
+	entity->y = monster->y;
+	entity->sizex = 4;
+	entity->sizey = 4;
+	entity->yaw = (local_rng.rand() % 360) * (PI / 180.f);
+	entity->vel_x = 0.0;
+	entity->vel_y = 0.0;
+	entity->vel_z = -0.5;
+	entity->flags[PASSABLE] = true;
+	entity->flags[USERFLAG1] = true;
+	entity->behavior = &actItem;
+	entity->skill[10] = TOOL_PLAYER_LOOT_BAG;
+	entity->skill[11] = WORN;
+	entity->skill[12] = 0;
+	entity->skill[13] = 1;
+	entity->skill[14] = static_cast<Sint32>(bagKey);
+	entity->skill[15] = true;
+
+	clearWraithBodyEquipment(*monsterStats);
+	for ( Item* item : bodyItems )
+	{
+		if ( item->node ) { list_RemoveNode(item->node); }
+		else { free(item); }
+	}
+	monsterStats->wraithBodyLootChestSpawned = true;
+	return true;
+}
 
 bool runeHammerHasAttachedOffhand(const Stat* playerStats)
 {
@@ -1919,21 +4145,32 @@ void Player::Ghost_t::handleActions()
 					followerMenu.followerToCommand = selectedEntity[player.playernum];
 					//messagePlayer(0, "head");
 				}
-				if ( followerMenu.followerToCommand
-					&& isAmuletFamiliarMimic(followerMenu.followerToCommand) )
+				if ( followerMenu.followerToCommand )
 				{
-					const bool commandFromWorldUI =
-						players[player.playernum]->worldUI.familiarMimicCommandInteraction
-						&& players[player.playernum]->worldUI.uidForActiveTooltip
-							== followerMenu.followerToCommand->getUID();
-
-					const bool commandFromHotkey =
-						input.binaryToggle("Show NPC Commands");
-
-					if ( !commandFromWorldUI && !commandFromHotkey )
+					Entity* familiar = followerMenu.followerToCommand;
+					Stat* familiarStats = familiar->getStats();
+					if ( isAmuletFamiliar(familiar, familiarStats)
+						&& getAmuletFamiliarForm(familiar) == FAMILIAR_FORM_CAULDRON )
 					{
-						// Ordinary Use on Familiar Mimic = open Void Chest.
+						// Retarget limb clicks so actMonster() receives the root interaction.
+						selectedEntity[player.playernum] = familiar;
 						followerMenu.followerToCommand = nullptr;
+					}
+					else if ( isAmuletFamiliarMimic(familiar) )
+					{
+						const bool commandFromWorldUI =
+							players[player.playernum]->worldUI.familiarMimicCommandInteraction
+							&& players[player.playernum]->worldUI.uidForActiveTooltip
+								== familiar->getUID();
+
+						const bool commandFromHotkey =
+							input.binaryToggle("Show NPC Commands");
+
+						if ( !commandFromWorldUI && !commandFromHotkey )
+						{
+							// Ordinary Use on Familiar Mimic = open Void Chest.
+							followerMenu.followerToCommand = nullptr;
+						}
 					}
 				}
 
@@ -6314,6 +8551,9 @@ int playerHeadSprite(Monster race, sex_t sex, int appearance, int frame, int pla
 	else if ( race == GOLEM ) {
 		return sex == FEMALE ? GOLEM_MODEL_C_HEAD : GOLEM_MODEL_B_HEAD;
 	}
+	else if ( race == WRAITH ) {
+		return WRAITH_MODEL_HEAD;
+	}
 	else if ( race == DRYAD ) {
 		return sex == FEMALE ? 1992 : 1963;
 	}
@@ -7753,8 +9993,23 @@ void actPlayer(Entity* my)
 	int spriteArmRight = 109 + 12 * stats[PLAYER_NUM]->sex;
 	int spriteArmLeft = 110 + 12 * stats[PLAYER_NUM]->sex;
 	int playerAppearance = stats[PLAYER_NUM]->stat_appearance;
-	
-	if ( my->effectShapeshift != NOTHING )
+	const bool wraithMenuSpiritVisual = intro
+		&& stats[PLAYER_NUM]->playerRace == RACE_WRAITH
+		&& stats[PLAYER_NUM]->stat_appearance == 0;
+
+	if ( wraithMenuSpiritVisual )
+	{
+		playerRace = WRAITH;
+	}
+	else if ( stats[PLAYER_NUM]->playerRace == RACE_WRAITH
+		&& stats[PLAYER_NUM]->stat_appearance == 0
+		&& players[PLAYER_NUM]->mechanics.wraith.initialized
+		&& players[PLAYER_NUM]->mechanics.wraith.possessedEntityUid != 0 )
+	{
+		playerRace = getWraithEffectiveMonsterType(PLAYER_NUM);
+		stats[PLAYER_NUM]->type = playerRace;
+	}
+	else if ( my->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(my->effectShapeshift);
 		stats[PLAYER_NUM]->type = playerRace;
@@ -7787,6 +10042,24 @@ void actPlayer(Entity* my)
 	{
 		stats[PLAYER_NUM]->type = HUMAN;
 	}
+	const bool wraithFormVisual =
+		playerIsInWraithForm(PLAYER_NUM);
+	const bool wraithSpiritVisual =
+		playerShouldRenderAsWraithSpirit(PLAYER_NUM);
+	if ( wraithMenuSpiritVisual )
+	{
+		// Menu previews can reuse an Entity whose proxy limbs were hidden in-game.
+		my->flags[INVISIBLE] = false;
+		my->flags[INVISIBLE_DITHER] = false;
+	}
+	const real_t wraithVisualBob = wraithSpiritVisual ? getWraithVisualBob() : 0.0;
+	updateWraithPlayerColorRemap(PLAYER_NUM);
+	const bool wraithMonsterVisualProxy = !intro
+		&& stats[PLAYER_NUM]->playerRace == RACE_WRAITH
+		&& players[PLAYER_NUM]->mechanics.wraith.initialized
+		&& players[PLAYER_NUM]->mechanics.wraith.possessedEntityUid != 0
+		&& wraithPossessionUsesMonsterVisualProxy(playerRace);
+	const Monster positionalRace = playerRace == WRAITH ? SKELETON : playerRace;
 
 
 	// mod add: Merrow cannot wear boots while racial features are enabled
@@ -7807,14 +10080,31 @@ void actPlayer(Entity* my)
 		}
 	}
 	// mod add end
-	if ( stats[PLAYER_NUM]->type == RAT || stats[PLAYER_NUM]->type == SPIDER )
+	if ( wraithMenuSpiritVisual )
 	{
-		isHumanoid = false;
+		// Saved possession state must not select a monster animation path in menus.
+		isHumanoid = true;
+		showEquipment = true;
 	}
-	else if ( stats[PLAYER_NUM]->type == TROLL || stats[PLAYER_NUM]->type == CREATURE_IMP )
+	else
 	{
-		showEquipment = false;
+		if ( stats[PLAYER_NUM]->type == RAT || stats[PLAYER_NUM]->type == SPIDER )
+		{
+			isHumanoid = false;
+		}
+		else if ( stats[PLAYER_NUM]->type == TROLL || stats[PLAYER_NUM]->type == CREATURE_IMP )
+		{
+			showEquipment = false;
+		}
+		if ( wraithMonsterVisualProxy )
+		{
+			isHumanoid = false;
+			showEquipment = false;
+		}
 	}
+	const bool wraithMenuShowsBoots = wraithMenuSpiritVisual
+		&& showEquipment
+		&& stats[PLAYER_NUM]->shoes != nullptr;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -7874,9 +10164,9 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	my->focalx = limbs[playerRace][0][0];
-	my->focaly = limbs[playerRace][0][1];
-	my->focalz = limbs[playerRace][0][2];
+	my->focalx = limbs[positionalRace][0][0];
+	my->focaly = limbs[positionalRace][0][1];
+	my->focalz = limbs[positionalRace][0][2] + wraithVisualBob;
 	if ( playerRace == LEONIN )
 	{
 		// mod add: Leonin male and female heads use the same geometry correction.
@@ -7886,7 +10176,7 @@ void actPlayer(Entity* my)
 
 	if ( playerRace == GOATMAN && my->sprite == 768 )
 	{
-		my->focalz = limbs[playerRace][0][2] - 0.25; // minor head position fix to match male variant.
+		my->focalz = limbs[positionalRace][0][2] - 0.25; // minor head position fix to match male variant.
 	}
 
 	if ( playerRace == TROLL )
@@ -8093,9 +10383,9 @@ void actPlayer(Entity* my)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
-		entity->focalx = limbs[playerRace][1][0];
-		entity->focaly = limbs[playerRace][1][1];
-		entity->focalz = limbs[playerRace][1][2];
+		entity->focalx = limbs[positionalRace][1][0];
+		entity->focaly = limbs[positionalRace][1][1];
+		entity->focalz = limbs[positionalRace][1][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -8113,9 +10403,9 @@ void actPlayer(Entity* my)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
-		entity->focalx = limbs[playerRace][2][0];
-		entity->focaly = limbs[playerRace][2][1];
-		entity->focalz = limbs[playerRace][2][2];
+		entity->focalx = limbs[positionalRace][2][0];
+		entity->focaly = limbs[positionalRace][2][1];
+		entity->focalz = limbs[positionalRace][2][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -8133,9 +10423,9 @@ void actPlayer(Entity* my)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
-		entity->focalx = limbs[playerRace][3][0];
-		entity->focaly = limbs[playerRace][3][1];
-		entity->focalz = limbs[playerRace][3][2];
+		entity->focalx = limbs[positionalRace][3][0];
+		entity->focaly = limbs[positionalRace][3][1];
+		entity->focalz = limbs[positionalRace][3][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -8153,9 +10443,9 @@ void actPlayer(Entity* my)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
-		entity->focalx = limbs[playerRace][4][0];
-		entity->focaly = limbs[playerRace][4][1];
-		entity->focalz = limbs[playerRace][4][2];
+		entity->focalx = limbs[positionalRace][4][0];
+		entity->focaly = limbs[positionalRace][4][1];
+		entity->focalz = limbs[positionalRace][4][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -8173,9 +10463,9 @@ void actPlayer(Entity* my)
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
-		entity->focalx = limbs[playerRace][5][0];
-		entity->focaly = limbs[playerRace][5][1];
-		entity->focalz = limbs[playerRace][5][2];
+		entity->focalx = limbs[positionalRace][5][0];
+		entity->focaly = limbs[positionalRace][5][1];
+		entity->focalz = limbs[positionalRace][5][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -8194,9 +10484,9 @@ void actPlayer(Entity* my)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
 		entity->flags[INVISIBLE] = true;
-		entity->focalx = limbs[playerRace][6][0];
-		entity->focaly = limbs[playerRace][6][1];
-		entity->focalz = limbs[playerRace][6][2];
+		entity->focalx = limbs[positionalRace][6][0];
+		entity->focaly = limbs[positionalRace][6][1];
+		entity->focalz = limbs[positionalRace][6][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -8214,9 +10504,9 @@ void actPlayer(Entity* my)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
 		entity->flags[INVISIBLE] = true;
-		entity->focalx = limbs[playerRace][7][0];
-		entity->focaly = limbs[playerRace][7][1];
-		entity->focalz = limbs[playerRace][7][2];
+		entity->focalx = limbs[positionalRace][7][0];
+		entity->focaly = limbs[positionalRace][7][1];
+		entity->focalz = limbs[positionalRace][7][2];
 		entity->behavior = &actPlayerLimb;
 		entity->skill[4] = 1; // shield denote
 		entity->parent = my->getUID();
@@ -8239,9 +10529,9 @@ void actPlayer(Entity* my)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
 		entity->flags[INVISIBLE] = true;
-		entity->focalx = limbs[playerRace][8][0];
-		entity->focaly = limbs[playerRace][8][1];
-		entity->focalz = limbs[playerRace][8][2];
+		entity->focalx = limbs[positionalRace][8][0];
+		entity->focaly = limbs[positionalRace][8][1];
+		entity->focalz = limbs[positionalRace][8][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -8262,9 +10552,9 @@ void actPlayer(Entity* my)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
 		entity->flags[INVISIBLE] = true;
-		entity->focalx = limbs[playerRace][9][0];
-		entity->focaly = limbs[playerRace][9][1];
-		entity->focalz = limbs[playerRace][9][2];
+		entity->focalx = limbs[positionalRace][9][0];
+		entity->focaly = limbs[positionalRace][9][1];
+		entity->focalz = limbs[positionalRace][9][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -8285,9 +10575,9 @@ void actPlayer(Entity* my)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
 		entity->flags[INVISIBLE] = true;
-		entity->focalx = limbs[playerRace][10][0];
-		entity->focaly = limbs[playerRace][10][1];
-		entity->focalz = limbs[playerRace][10][2];
+		entity->focalx = limbs[positionalRace][10][0];
+		entity->focaly = limbs[positionalRace][10][1];
+		entity->focalz = limbs[positionalRace][10][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -8305,9 +10595,9 @@ void actPlayer(Entity* my)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
 		entity->flags[INVISIBLE] = true;
-		entity->focalx = limbs[playerRace][11][0];
-		entity->focaly = limbs[playerRace][11][1];
-		entity->focalz = limbs[playerRace][11][2];
+		entity->focalx = limbs[positionalRace][11][0];
+		entity->focaly = limbs[positionalRace][11][1];
+		entity->focalz = limbs[positionalRace][11][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -8325,9 +10615,9 @@ void actPlayer(Entity* my)
 		entity->flags[NOUPDATE] = true;
 		entity->flags[GENIUS] = true;
 		entity->flags[INVISIBLE] = true;
-		entity->focalx = limbs[playerRace][12][0];
-		entity->focaly = limbs[playerRace][12][1];
-		entity->focalz = limbs[playerRace][12][2];
+		entity->focalx = limbs[positionalRace][12][0];
+		entity->focaly = limbs[positionalRace][12][1];
+		entity->focalz = limbs[positionalRace][12][2];
 		entity->behavior = &actPlayerLimb;
 		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
@@ -8348,9 +10638,9 @@ void actPlayer(Entity* my)
 			entity->flags[NOUPDATE] = true;
 			entity->flags[GENIUS] = true;
 			entity->flags[INVISIBLE] = true;
-			entity->focalx = limbs[playerRace][11][0];
-			entity->focaly = limbs[playerRace][11][1];
-			entity->focalz = limbs[playerRace][11][2];
+			entity->focalx = limbs[positionalRace][11][0];
+			entity->focaly = limbs[positionalRace][11][1];
+			entity->focalz = limbs[positionalRace][11][2];
 			entity->behavior = &actPlayerLimb;
 			entity->parent = my->getUID();
 			node = list_AddNodeLast(&my->children);
@@ -8367,9 +10657,9 @@ void actPlayer(Entity* my)
 			entity->flags[NOUPDATE] = true;
 			entity->flags[GENIUS] = true;
 			entity->flags[INVISIBLE] = true;
-			entity->focalx = limbs[playerRace][12][0];
-			entity->focaly = limbs[playerRace][12][1];
-			entity->focalz = limbs[playerRace][12][2];
+			entity->focalx = limbs[positionalRace][12][0];
+			entity->focaly = limbs[positionalRace][12][1];
+			entity->focalz = limbs[positionalRace][12][2];
 			entity->behavior = &actPlayerLimb;
 			entity->parent = my->getUID();
 			node = list_AddNodeLast(&my->children);
@@ -9603,7 +11893,11 @@ void actPlayer(Entity* my)
 						entity = (Entity*)node->element;
 						if ( entity->flags[INVISIBLE] )
 						{
-							if ( stats[PLAYER_NUM]->type == RAT )
+							if ( wraithMonsterVisualProxy )
+							{
+								entity->flags[INVISIBLE_DITHER] = false;
+							}
+							else if ( stats[PLAYER_NUM]->type == RAT )
 							{
 								if ( i == 1 )
 								{
@@ -9678,6 +11972,8 @@ void actPlayer(Entity* my)
 		switch ( playerRace )
 		{
 			case RAT:
+			case SCARAB:
+			case SCORPION:
 				zOffset = 6;
 				break;
 			case TROLL:
@@ -9978,7 +12274,7 @@ void actPlayer(Entity* my)
 						{
 							Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_PITS_DEATHS, "pits", 1);
 						}
-						stats[PLAYER_NUM]->HP = 0; // kill me instantly
+						my->setHP(0); // centralized Wraith avoidance also governs pit damage
 						if (stats[PLAYER_NUM]->type == AUTOMATON)
 						{
 							my->playerAutomatonDeathCounter = TICKS_PER_SECOND * 5; // set the death timer to immediately pop for players.
@@ -9993,7 +12289,7 @@ void actPlayer(Entity* my)
 					{
 						Compendium_t::Events_t::eventUpdateWorld(PLAYER_NUM, Compendium_t::CPDM_PITS_DEATHS, "pits", 1);
 					}
-					stats[PLAYER_NUM]->HP = 0; // kill me instantly
+					my->setHP(0); // centralized Wraith avoidance also governs pit damage
 					if (stats[PLAYER_NUM]->type == AUTOMATON)
 					{
 						my->playerAutomatonDeathCounter = TICKS_PER_SECOND * 5; // set the death timer to immediately pop for players.
@@ -10928,21 +13224,32 @@ void actPlayer(Entity* my)
 							followerMenu.followerToCommand = selectedEntity[PLAYER_NUM];
 							//messagePlayer(0, "head");
 						}
-						if ( followerMenu.followerToCommand
-							&& isAmuletFamiliarMimic(followerMenu.followerToCommand) )
+						if ( followerMenu.followerToCommand )
 						{
-							const bool commandFromWorldUI =
-								players[PLAYER_NUM]->worldUI.familiarMimicCommandInteraction
-								&& players[PLAYER_NUM]->worldUI.uidForActiveTooltip
-									== followerMenu.followerToCommand->getUID();
-
-							const bool commandFromHotkey =
-								input.binaryToggle("Show NPC Commands");
-
-							if ( !commandFromWorldUI && !commandFromHotkey )
+							Entity* familiar = followerMenu.followerToCommand;
+							Stat* familiarStats = familiar->getStats();
+							if ( isAmuletFamiliar(familiar, familiarStats)
+								&& getAmuletFamiliarForm(familiar) == FAMILIAR_FORM_CAULDRON )
 							{
-								// Ordinary Use on Familiar Mimic = open Void Chest.
+								// Retarget limb clicks so actMonster() receives the root interaction.
+								selectedEntity[PLAYER_NUM] = familiar;
 								followerMenu.followerToCommand = nullptr;
+							}
+							else if ( isAmuletFamiliarMimic(familiar) )
+							{
+								const bool commandFromWorldUI =
+									players[PLAYER_NUM]->worldUI.familiarMimicCommandInteraction
+									&& players[PLAYER_NUM]->worldUI.uidForActiveTooltip
+										== familiar->getUID();
+
+								const bool commandFromHotkey =
+									input.binaryToggle("Show NPC Commands");
+
+								if ( !commandFromWorldUI && !commandFromHotkey )
+								{
+									// Ordinary Use on Familiar Mimic = open Void Chest.
+									followerMenu.followerToCommand = nullptr;
+								}
 							}
 						}
 
@@ -11293,7 +13600,11 @@ void actPlayer(Entity* my)
 					{
 						range_bonus += static_cast<int>(stats[PLAYER_NUM]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER_2));
 					}
-					if ( stats[PLAYER_NUM]->sneaking ) {
+					if ( wraithFormVisual )
+					{
+						light_type = "player_ambient_wraith";
+					}
+					else if ( stats[PLAYER_NUM]->sneaking ) {
 						light_type = "player_sneaking";
 						range_bonus += equipmentBonus;
 					}
@@ -11315,7 +13626,11 @@ void actPlayer(Entity* my)
 					range_bonus += static_cast<int>(stats[PLAYER_NUM]->getEnsembleEffectBonus(Stat::ENSEMBLE_LYRE_TIER_2));
 				}
                 // carrying no light source
-                if (playerRace == RAT) {
+				if ( wraithFormVisual )
+				{
+					light_type = "player_ambient_wraith";
+				}
+				else if (playerRace == RAT) {
 					if ( stats[PLAYER_NUM]->sneaking )
 					{
 						light_type = "player_ambient_rat_sneaking";
@@ -11369,15 +13684,21 @@ void actPlayer(Entity* my)
             }
         }
 	}
-    if (*cvar_playerLight) {
-		if (my->flags[BURNING] ) {
-            my->light = addLight(my->x / 16, my->y / 16, "player_burning");
-        }
-		else if ( my->mistformGLRender > 0.9 )
-		{
-			my->light = addLight(my->x / 16, my->y / 16, "mistform_glow", range_bonus);
-		}
-		else if ( playerRace == SALAMANDER && (my->sprite == 2016 || my->sprite == 2017) )
+	if ( my->flags[BURNING] )
+	{
+		my->light = addLight(my->x / 16, my->y / 16, "player_burning");
+	}
+	else if ( my->mistformGLRender > 0.9 )
+	{
+		my->light = addLight(my->x / 16, my->y / 16, "mistform_glow", range_bonus);
+	}
+	else if ( wraithFormVisual && !players[PLAYER_NUM]->isLocalPlayer() )
+	{
+		my->light = addLight(my->x / 16, my->y / 16, "summoned_skeleton_glow");
+	}
+	else if ( *cvar_playerLight )
+	{
+		if ( playerRace == SALAMANDER && (my->sprite == 2016 || my->sprite == 2017) )
 		{
 			my->light = addLight(my->x / 16, my->y / 16, "magic_foci_idle_red");
 		}
@@ -11395,8 +13716,8 @@ void actPlayer(Entity* my)
 				my->light = addLight(my->x / 16, my->y / 16, light_type,
 					range_bonus, ambientLight ? PLAYER_NUM + 1 : 0);
 			}
-        }
-    }
+		}
+	}
 
 	if ( !intro && PLAYER_NUM == clientnum )
 	{
@@ -11453,15 +13774,22 @@ void actPlayer(Entity* my)
 	if ( players[PLAYER_NUM]->isLocalPlayer() || multiplayer == SERVER || StatueManager.activeEditing )
 	{
 		// set head model
-        my->sprite = playerHeadSprite(playerRace, stats[PLAYER_NUM]->sex,
-            playerAppearance, PLAYER_ATTACK ? PLAYER_ATTACKTIME : 0, PLAYER_NUM);
+		my->sprite = playerHeadSprite(playerRace, stats[PLAYER_NUM]->sex,
+			playerAppearance, PLAYER_ATTACK ? PLAYER_ATTACKTIME : 0, PLAYER_NUM);
+		if ( wraithMonsterVisualProxy ) { my->sprite = -1; }
 	}
 	if ( multiplayer != CLIENT )
 	{
 		// remove client entities that should no longer exist
 		if ( !intro )
 		{
+			updateWraithPossession(PLAYER_NUM);
 			my->handleEffects(stats[PLAYER_NUM]); // hunger, regaining hp/mp, poison, etc.
+			if ( !client_disconnected[PLAYER_NUM] && stats[PLAYER_NUM]->HP <= 0
+				&& players[PLAYER_NUM]->mechanics.wraith.possessedEntityUid != 0 )
+			{
+				handleWraithPossessedBodyDeath(PLAYER_NUM);
+			}
 
 			if ( client_disconnected[PLAYER_NUM] || stats[PLAYER_NUM]->HP <= 0 )
 			{
@@ -12687,11 +15015,42 @@ void actPlayer(Entity* my)
 	{
 		additionalLimb = (Entity*)node->element;
 	}
+	if ( wraithMonsterVisualProxy )
+	{
+		int proxyBodypart = 0;
+		for ( node_t* proxyNode = my->children.first; proxyNode;
+			proxyNode = proxyNode->next, ++proxyBodypart )
+		{
+			if ( proxyBodypart == 0 ) { continue; }
+			Entity* proxyLimb = static_cast<Entity*>(proxyNode->element);
+			if ( !proxyLimb ) { continue; }
+			const bool changed = !proxyLimb->flags[INVISIBLE]
+				|| proxyLimb->flags[INVISIBLE_DITHER];
+			proxyLimb->flags[INVISIBLE] = true;
+			proxyLimb->flags[INVISIBLE_DITHER] = false;
+			if ( changed && multiplayer == SERVER )
+			{
+				serverUpdateEntityBodypart(my, proxyBodypart);
+			}
+		}
+	}
 
 
 	// move bodyparts
 	if ( isHumanoid )
 	{
+		auto returnArmPitchToNeutral = [](Entity& arm, double limbSpeed)
+		{
+			const double step = 1 / fmax(limbSpeed * .1, 10.0);
+			if ( arm.pitch < 0 )
+			{
+				arm.pitch = std::min<real_t>(0.0, arm.pitch + step);
+			}
+			else if ( arm.pitch > 0 )
+			{
+				arm.pitch = std::max<real_t>(0.0, arm.pitch - step);
+			}
+		};
 		for ( bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++ )
 		{
 			if ( bodypart == 0 )
@@ -12774,7 +15133,12 @@ void actPlayer(Entity* my)
 						bendArm = false;
 					}
 
-					if ( insectoidLevitating )
+					if ( wraithFormVisual && bodypart == 5
+						&& PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0 )
+					{
+						returnArmPitchToNeutral(*entity, limbSpeed);
+					}
+					else if ( insectoidLevitating )
 					{
 						// hands stationary, legs pitched back and little swing.
 						limbSpeed = 0.03;
@@ -13376,7 +15740,13 @@ void actPlayer(Entity* my)
 					entity->pitch = entity->fskill[0];
 				}
 
-				if ( insectoidLevitating )
+				if ( wraithFormVisual && bodypart == 4
+					&& PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0 )
+				{
+					entity->skill[0] = rightbody->skill[0];
+					returnArmPitchToNeutral(*entity, dist);
+				}
+				else if ( insectoidLevitating )
 				{
 					// hands stationary, legs pitched back and little swing.
 					double limbSpeed = 0.03;
@@ -13536,13 +15906,13 @@ void actPlayer(Entity* my)
 				entity->scalex = 1.0;
 				entity->scaley = 1.0;
 				entity->scalez = 1.0;
-				entity->focalx = limbs[playerRace][1][0];
-				entity->focaly = limbs[playerRace][1][1];
-				entity->focalz = limbs[playerRace][1][2];
+				entity->focalx = limbs[positionalRace][1][0];
+				entity->focaly = limbs[positionalRace][1][1];
+				entity->focalz = limbs[positionalRace][1][2];
 				entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
 				if ( multiplayer != CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->breastplate == NULL || !showEquipment )
+					if ( stats[PLAYER_NUM]->breastplate == NULL || !showEquipment || wraithFormVisual )
 					{
 						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_TORSO, my->sprite);
 					}
@@ -13584,14 +15954,14 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_TORSO);
+				my->setHumanoidLimbOffset(entity, positionalRace, LIMB_HUMANOID_TORSO);
 				break;
 				// right leg
 			case 2:
 			{
-				entity->focalx = limbs[playerRace][2][0];
-				entity->focaly = limbs[playerRace][2][1];
-				entity->focalz = limbs[playerRace][2][2];
+				entity->focalx = limbs[positionalRace][2][0];
+				entity->focaly = limbs[positionalRace][2][1];
+				entity->focalz = limbs[positionalRace][2][2];
 				entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
 				bool shortSprite = (torso->sprite == items[ROBE_WIZARD].index
 					|| torso->sprite == items[ROBE_HEALER].index
@@ -13601,7 +15971,8 @@ void actPlayer(Entity* my)
 
 				// Merrow legs must be hidden before ENTB is sent, otherwise remote
 				// clients can receive a bodypart update that explicitly makes them visible.
-				if ( playerRace == MERROW )
+				if ( playerRace == MERROW
+					|| (wraithSpiritVisual && !wraithMenuShowsBoots) )
 				{
 					entity->flags[INVISIBLE] = true;
 					entity->flags[INVISIBLE_DITHER] = false;
@@ -13614,7 +15985,7 @@ void actPlayer(Entity* my)
 
 				if ( multiplayer != CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment )
+					if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment || wraithFormVisual )
 					{
 						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTLEG, my->sprite);
 					}
@@ -13648,15 +16019,15 @@ void actPlayer(Entity* my)
 				{
 					entity->z += 0.75;
 				}
-				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTLEG);
+				my->setHumanoidLimbOffset(entity, positionalRace, LIMB_HUMANOID_RIGHTLEG);
 				break;
 			}
 			// left leg
 			case 3:
 			{
-				entity->focalx = limbs[playerRace][3][0];
-				entity->focaly = limbs[playerRace][3][1];
-				entity->focalz = limbs[playerRace][3][2];
+				entity->focalx = limbs[positionalRace][3][0];
+				entity->focaly = limbs[positionalRace][3][1];
+				entity->focalz = limbs[positionalRace][3][2];
 				entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
 				bool shortSprite = (torso->sprite == items[ROBE_WIZARD].index
 					|| torso->sprite == items[ROBE_HEALER].index
@@ -13666,7 +16037,8 @@ void actPlayer(Entity* my)
 
 				// Merrow legs must be hidden before ENTB is sent, otherwise remote
 				// clients can receive a bodypart update that explicitly makes them visible.
-				if ( playerRace == MERROW )
+				if ( playerRace == MERROW
+					|| (wraithSpiritVisual && !wraithMenuShowsBoots) )
 				{
 					entity->flags[INVISIBLE] = true;
 					entity->flags[INVISIBLE_DITHER] = false;
@@ -13679,7 +16051,7 @@ void actPlayer(Entity* my)
 
 				if ( multiplayer != CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment )
+					if ( stats[PLAYER_NUM]->shoes == NULL || !showEquipment || wraithFormVisual )
 					{
 						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTLEG, my->sprite);
 					}
@@ -13713,7 +16085,7 @@ void actPlayer(Entity* my)
 				{
 					entity->z += 0.75;
 				}
-				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTLEG);
+				my->setHumanoidLimbOffset(entity, positionalRace, LIMB_HUMANOID_LEFTLEG);
 				break;
 			}
 			// right arm
@@ -13722,7 +16094,7 @@ void actPlayer(Entity* my)
 				entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
 				if ( multiplayer != CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment )
+					if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment || wraithFormVisual )
 					{
 						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_RIGHTARM, my->sprite);
 					}
@@ -13737,12 +16109,13 @@ void actPlayer(Entity* my)
 						|| ((PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2) && showEquipment)
 						|| (insectoidLevitating && PLAYER_ATTACK == 0 && PLAYER_ATTACKTIME == 0) )
 					{
-						entity->sprite += 2 * (stats[PLAYER_NUM]->weapon != NULL);
+						entity->sprite += (playerRace == WRAITH ? 1 : 2)
+							* (stats[PLAYER_NUM]->weapon != NULL);
 
 						if ( stats[PLAYER_NUM]->weapon == nullptr
 							&& (insectoidLevitating || ((PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || PLAYER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2) && showEquipment)) )
 						{
-							entity->sprite += 2;
+							entity->sprite += playerRace == WRAITH ? 1 : 2;
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -13783,15 +16156,15 @@ void actPlayer(Entity* my)
 					{
 						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
 						{
-							entity->focalx = limbs[playerRace][4][0] - 0.25;
-							entity->focaly = limbs[playerRace][4][1] - 0.25;
-							entity->focalz = limbs[playerRace][4][2];
+							entity->focalx = limbs[positionalRace][4][0] - 0.25;
+							entity->focaly = limbs[positionalRace][4][1] - 0.25;
+							entity->focalz = limbs[positionalRace][4][2];
 						}
 						else if ( playerRace == DRYAD )
 						{
-							entity->focalx = limbs[playerRace][4][0];
-							entity->focaly = limbs[playerRace][4][1] - 0.25;
-							entity->focalz = limbs[playerRace][4][2];
+							entity->focalx = limbs[positionalRace][4][0];
+							entity->focaly = limbs[positionalRace][4][1] - 0.25;
+							entity->focalz = limbs[positionalRace][4][2];
 
 							if ( entity->sprite == 1966
 								|| entity->sprite == 1970 )
@@ -13801,9 +16174,9 @@ void actPlayer(Entity* my)
 						}
 						else if ( playerRace == MYCONID )
 						{
-							entity->focalx = limbs[playerRace][4][0];
-							entity->focaly = limbs[playerRace][4][1];
-							entity->focalz = limbs[playerRace][4][2];
+							entity->focalx = limbs[positionalRace][4][0];
+							entity->focaly = limbs[positionalRace][4][1];
+							entity->focalz = limbs[positionalRace][4][2];
 
 							if ( entity->sprite == 2000 )
 							{
@@ -13812,36 +16185,36 @@ void actPlayer(Entity* my)
 						}
 						else
 						{
-							entity->focalx = limbs[playerRace][4][0]; // 0
-							entity->focaly = limbs[playerRace][4][1]; // 0
-							entity->focalz = limbs[playerRace][4][2]; // 1.5
+							entity->focalx = limbs[positionalRace][4][0]; // 0
+							entity->focaly = limbs[positionalRace][4][1]; // 0
+							entity->focalz = limbs[positionalRace][4][2]; // 1.5
 						}
 					}
 					else
 					{
 						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
 						{
-							entity->focalx = limbs[playerRace][4][0];
-							entity->focaly = limbs[playerRace][4][1];
-							entity->focalz = limbs[playerRace][4][2];
+							entity->focalx = limbs[positionalRace][4][0];
+							entity->focaly = limbs[positionalRace][4][1];
+							entity->focalz = limbs[positionalRace][4][2];
 						}
 						else if ( playerRace == AUTOMATON )
 						{
-							entity->focalx = limbs[playerRace][4][0] + 1.5; // 1
-							entity->focaly = limbs[playerRace][4][1] + 0.25; // 0
-							entity->focalz = limbs[playerRace][4][2] - 1; // 1
+							entity->focalx = limbs[positionalRace][4][0] + 1.5; // 1
+							entity->focaly = limbs[positionalRace][4][1] + 0.25; // 0
+							entity->focalz = limbs[positionalRace][4][2] - 1; // 1
 						}
 						else if ( playerRace == GOLEM )
 						{
-							entity->focalx = limbs[playerRace][4][0] + 0.75;
-							entity->focaly = limbs[playerRace][4][1] + 0.25;
-							entity->focalz = limbs[playerRace][4][2] - 0.75;
+							entity->focalx = limbs[positionalRace][4][0] + 0.75;
+							entity->focaly = limbs[positionalRace][4][1] + 0.25;
+							entity->focalz = limbs[positionalRace][4][2] - 0.75;
 						}
 						else if ( playerRace == MYCONID || playerRace == SALAMANDER )
 						{
-							entity->focalx = limbs[playerRace][4][0] + 0.75;
-							entity->focaly = limbs[playerRace][4][1] + 0.25;
-							entity->focalz = limbs[playerRace][4][2] - 0.75;
+							entity->focalx = limbs[positionalRace][4][0] + 0.75;
+							entity->focaly = limbs[positionalRace][4][1] + 0.25;
+							entity->focalz = limbs[positionalRace][4][2] - 0.75;
 						}
 						// mod add: Leonin right-arm equipment offsets
 						else if ( playerRace == LEONIN )
@@ -13852,25 +16225,25 @@ void actPlayer(Entity* my)
 						}
 						else if ( playerRace == GREMLIN )
 						{
-							entity->focalx = limbs[playerRace][4][0] + 1;
-							entity->focaly = limbs[playerRace][4][1] + 0.25;
-							entity->focalz = limbs[playerRace][4][2] - 0.75;
+							entity->focalx = limbs[positionalRace][4][0] + 1;
+							entity->focaly = limbs[positionalRace][4][1] + 0.25;
+							entity->focalz = limbs[positionalRace][4][2] - 0.75;
 						}
 						else if ( playerRace == GNOME )
 						{
-							entity->focalx = limbs[playerRace][4][0] + 1;
-							entity->focaly = limbs[playerRace][4][1] + 0.25;
-							entity->focalz = limbs[playerRace][4][2] - 0.75;
+							entity->focalx = limbs[positionalRace][4][0] + 1;
+							entity->focaly = limbs[positionalRace][4][1] + 0.25;
+							entity->focalz = limbs[positionalRace][4][2] - 0.75;
 						}
 						else
 						{
-							entity->focalx = limbs[playerRace][4][0] + 0.75;
-							entity->focaly = limbs[playerRace][4][1];
-							entity->focalz = limbs[playerRace][4][2] - 0.75;
+							entity->focalx = limbs[positionalRace][4][0] + 0.75;
+							entity->focaly = limbs[positionalRace][4][1];
+							entity->focalz = limbs[positionalRace][4][2] - 0.75;
 						}
 					}
 				}
-				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_RIGHTARM);
+				my->setHumanoidLimbOffset(entity, positionalRace, LIMB_HUMANOID_RIGHTARM);
 				entity->yaw += PLAYER_WEAPONYAW;
 				break;
 			}
@@ -13880,7 +16253,7 @@ void actPlayer(Entity* my)
 				entity->flags[INVISIBLE_DITHER] = my->flags[INVISIBLE_DITHER];
 				if ( multiplayer != CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment )
+					if ( stats[PLAYER_NUM]->gloves == NULL || !showEquipment || wraithFormVisual )
 					{
 						entity->setDefaultPlayerModel(PLAYER_NUM, playerRace, LIMB_HUMANOID_LEFTARM, my->sprite);
 					}
@@ -13909,7 +16282,7 @@ void actPlayer(Entity* my)
 								bendArm = true;
 							}
 						}
-						entity->sprite += 2 * (bendArm);
+						entity->sprite += (playerRace == WRAITH ? 1 : 2) * bendArm;
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -13973,15 +16346,15 @@ void actPlayer(Entity* my)
 					{
 						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
 						{
-							entity->focalx = limbs[playerRace][5][0] - 0.25;
-							entity->focaly = limbs[playerRace][5][1] + 0.25;
-							entity->focalz = limbs[playerRace][5][2];
+							entity->focalx = limbs[positionalRace][5][0] - 0.25;
+							entity->focaly = limbs[positionalRace][5][1] + 0.25;
+							entity->focalz = limbs[positionalRace][5][2];
 						}
 						else if ( playerRace == DRYAD )
 						{
-							entity->focalx = limbs[playerRace][5][0]; // 0
-							entity->focaly = limbs[playerRace][5][1] + .25; // 0
-							entity->focalz = limbs[playerRace][5][2]; // 2
+							entity->focalx = limbs[positionalRace][5][0]; // 0
+							entity->focaly = limbs[positionalRace][5][1] + .25; // 0
+							entity->focalz = limbs[positionalRace][5][2]; // 2
 
 							if ( entity->sprite == 1965
 								|| entity->sprite == 1969 )
@@ -13991,9 +16364,9 @@ void actPlayer(Entity* my)
 						}
 						else if ( playerRace == MYCONID )
 						{
-							entity->focalx = limbs[playerRace][5][0];
-							entity->focaly = limbs[playerRace][5][1];
-							entity->focalz = limbs[playerRace][5][2];
+							entity->focalx = limbs[positionalRace][5][0];
+							entity->focaly = limbs[positionalRace][5][1];
+							entity->focalz = limbs[positionalRace][5][2];
 
 							if ( entity->sprite == 1999 )
 							{
@@ -14002,36 +16375,36 @@ void actPlayer(Entity* my)
 						}
 						else
 						{
-							entity->focalx = limbs[playerRace][5][0]; // 0
-							entity->focaly = limbs[playerRace][5][1]; // 0
-							entity->focalz = limbs[playerRace][5][2]; // 1.5
+							entity->focalx = limbs[positionalRace][5][0]; // 0
+							entity->focaly = limbs[positionalRace][5][1]; // 0
+							entity->focalz = limbs[positionalRace][5][2]; // 1.5
 						}
 					}
 					else
 					{
 						if ( playerRace == INCUBUS || playerRace == SUCCUBUS )
 						{
-							entity->focalx = limbs[playerRace][5][0];
-							entity->focaly = limbs[playerRace][5][1];
-							entity->focalz = limbs[playerRace][5][2];
+							entity->focalx = limbs[positionalRace][5][0];
+							entity->focaly = limbs[positionalRace][5][1];
+							entity->focalz = limbs[positionalRace][5][2];
 						}
 						else if ( playerRace == AUTOMATON )
 						{
-							entity->focalx = limbs[playerRace][5][0] + 1.5; // 1
-							entity->focaly = limbs[playerRace][5][1] - 0.25; // 0
-							entity->focalz = limbs[playerRace][5][2] - 1; // 1
+							entity->focalx = limbs[positionalRace][5][0] + 1.5; // 1
+							entity->focaly = limbs[positionalRace][5][1] - 0.25; // 0
+							entity->focalz = limbs[positionalRace][5][2] - 1; // 1
 						}
 						else if ( playerRace == GOLEM )
 						{
-							entity->focalx = limbs[playerRace][5][0] + 0.75;
-							entity->focaly = limbs[playerRace][5][1] - 0.25;
-							entity->focalz = limbs[playerRace][5][2] - 0.75;
+							entity->focalx = limbs[positionalRace][5][0] + 0.75;
+							entity->focaly = limbs[positionalRace][5][1] - 0.25;
+							entity->focalz = limbs[positionalRace][5][2] - 0.75;
 						}
 						else if ( playerRace == MYCONID || playerRace == SALAMANDER )
 						{
-							entity->focalx = limbs[playerRace][5][0] + 0.75;
-							entity->focaly = limbs[playerRace][5][1] - 0.25;
-							entity->focalz = limbs[playerRace][5][2] - 0.75;
+							entity->focalx = limbs[positionalRace][5][0] + 0.75;
+							entity->focaly = limbs[positionalRace][5][1] - 0.25;
+							entity->focalz = limbs[positionalRace][5][2] - 0.75;
 						}
 						// mod add: Leonin left-arm equipment offsets
 						else if ( playerRace == LEONIN )
@@ -14042,25 +16415,25 @@ void actPlayer(Entity* my)
 						}
 						else if ( playerRace == GREMLIN )
 						{
-							entity->focalx = limbs[playerRace][5][0] + 1;
-							entity->focaly = limbs[playerRace][5][1] - 0.25;
-							entity->focalz = limbs[playerRace][5][2] - 0.75;
+							entity->focalx = limbs[positionalRace][5][0] + 1;
+							entity->focaly = limbs[positionalRace][5][1] - 0.25;
+							entity->focalz = limbs[positionalRace][5][2] - 0.75;
 						}
 						else if ( playerRace == GNOME )
 						{
-							entity->focalx = limbs[playerRace][5][0] + 1; // 1
-							entity->focaly = limbs[playerRace][5][1] - 0.25; // 0
-							entity->focalz = limbs[playerRace][5][2] - 0.75; // 1
+							entity->focalx = limbs[positionalRace][5][0] + 1; // 1
+							entity->focaly = limbs[positionalRace][5][1] - 0.25; // 0
+							entity->focalz = limbs[positionalRace][5][2] - 0.75; // 1
 						}
 						else
 						{
-							entity->focalx = limbs[playerRace][5][0] + 0.75;
-							entity->focaly = limbs[playerRace][5][1];
-							entity->focalz = limbs[playerRace][5][2] - 0.75;
+							entity->focalx = limbs[positionalRace][5][0] + 0.75;
+							entity->focaly = limbs[positionalRace][5][1];
+							entity->focalz = limbs[positionalRace][5][2] - 0.75;
 						}
 					}
 				}
-				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_LEFTARM);
+				my->setHumanoidLimbOffset(entity, positionalRace, LIMB_HUMANOID_LEFTARM);
 				if ( multiplayer != CLIENT )
 				{
 					real_t prevYaw = PLAYER_SHIELDYAW;
@@ -14109,7 +16482,10 @@ void actPlayer(Entity* my)
 						}
 						else
 						{
-							entity->sprite = itemModel(stats[PLAYER_NUM]->weapon);
+							entity->sprite = wraithFormVisual
+								&& stats[PLAYER_NUM]->weapon->type == TOOL_PLAYER_LOOT_BAG
+								? items[TOOL_PLAYER_LOOT_BAG].index
+								: itemModel(stats[PLAYER_NUM]->weapon);
 							if ( itemCategory(stats[PLAYER_NUM]->weapon) == SPELLBOOK )
 							{
 								entity->flags[INVISIBLE] = true;
@@ -14163,6 +16539,14 @@ void actPlayer(Entity* my)
 					}
 				}
 				my->handleHumanoidWeaponLimb(entity, weaponarm);
+				if ( wraithFormVisual && stats[PLAYER_NUM]->weapon
+					&& stats[PLAYER_NUM]->weapon->type == TOOL_PLAYER_LOOT_BAG )
+				{
+					// Keep the Wraith's carried death chest visibly forward, right, and low.
+					entity->x += 0.5 * cos(my->yaw) + 0.35 * cos(my->yaw + PI / 2);
+					entity->y += 0.5 * sin(my->yaw) + 0.35 * sin(my->yaw + PI / 2);
+					entity->z += 0.75;
+				}
 				if ( runeHammerVisualWeapon(my, PLAYER_NUM) )
 				{
 					const bool meleeAnimating = PLAYER_ATTACK > 0
@@ -14276,7 +16660,7 @@ void actPlayer(Entity* my)
 						entity->flags[INVISIBLE_DITHER] = false;
 					}
 				}
-				my->handleHumanoidShieldLimb(entity, shieldarm);
+				my->handleHumanoidShieldLimb(entity, shieldarm, positionalRace);
 				if ( runeHammerVisualOffhand(my, PLAYER_NUM, true)
 					&& !runeHammerVisualWeapon(my, PLAYER_NUM) )
 				{
@@ -14301,9 +16685,9 @@ void actPlayer(Entity* my)
 				break;
 				// cloak
 			case 8:
-				entity->focalx = limbs[playerRace][8][0];
-				entity->focaly = limbs[playerRace][8][1];
-				entity->focalz = limbs[playerRace][8][2];
+				entity->focalx = limbs[positionalRace][8][0];
+				entity->focaly = limbs[positionalRace][8][1];
+				entity->focalz = limbs[positionalRace][8][2];
 				entity->scalex = 1.01;
 				entity->scaley = 1.01;
 				if ( multiplayer != CLIENT )
@@ -14366,29 +16750,29 @@ void actPlayer(Entity* my)
 					// human
 					if ( playerRace == HUMAN || playerRace == VAMPIRE )
 					{
-						entity->focaly = limbs[playerRace][8][1] + 0.25;
-						entity->focalz = limbs[playerRace][8][2] - 0.3;
+						entity->focaly = limbs[positionalRace][8][1] + 0.25;
+						entity->focalz = limbs[positionalRace][8][2] - 0.3;
 					}
 					else if ( playerRace == SUCCUBUS || playerRace == INCUBUS )
 					{
 						// succubus/incubus
-						entity->focaly = limbs[playerRace][8][1] + 0.25;
-						entity->focalz = limbs[playerRace][8][2] - 0.7;
+						entity->focaly = limbs[positionalRace][8][1] + 0.25;
+						entity->focalz = limbs[positionalRace][8][2] - 0.7;
 					}
 					else if ( playerRace == SKELETON )
 					{
-						entity->focaly = limbs[playerRace][8][1] + 0.25;
-						entity->focalz = limbs[playerRace][8][2] - 0.5;
+						entity->focaly = limbs[positionalRace][8][1] + 0.25;
+						entity->focalz = limbs[positionalRace][8][2] - 0.5;
 					}
 					else if ( playerRace == AUTOMATON )
 					{
-						entity->focaly = limbs[playerRace][8][1] - 0.25;
-						entity->focalz = limbs[playerRace][8][2] - 0.5;
+						entity->focaly = limbs[positionalRace][8][1] - 0.25;
+						entity->focalz = limbs[positionalRace][8][2] - 0.5;
 					}
 					else if ( playerRace == GOATMAN || playerRace == INSECTOID || playerRace == GOBLIN || playerRace == MERROW ) //mod add merrow
 					{
-						entity->focaly = limbs[playerRace][8][1] - 0.25;
-						entity->focalz = limbs[playerRace][8][2] - 0.5;
+						entity->focaly = limbs[positionalRace][8][1] - 0.25;
+						entity->focalz = limbs[positionalRace][8][2] - 0.5;
 					}
 
 					entity->scalex = 0.99;
@@ -14405,15 +16789,15 @@ void actPlayer(Entity* my)
 				entity->x -= cos(my->yaw);
 				entity->y -= sin(my->yaw);
 				entity->yaw += PI / 2;
-				my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_CLOAK);
+				my->setHumanoidLimbOffset(entity, positionalRace, LIMB_HUMANOID_CLOAK);
 				break;
 				// helm
 			case 9:
 			{
 				helmet = entity;
-				entity->focalx = limbs[playerRace][9][0]; // 0
-				entity->focaly = limbs[playerRace][9][1]; // 0
-				entity->focalz = limbs[playerRace][9][2]; // -1.75
+				entity->focalx = limbs[positionalRace][9][0]; // 0
+				entity->focaly = limbs[positionalRace][9][1]; // 0
+				entity->focalz = limbs[positionalRace][9][2]; // -1.75
 				entity->pitch = my->pitch;
 				entity->roll = 0;
 				static int lastHelmSprite[MAXPLAYERS] = { 0 };
@@ -14667,9 +17051,9 @@ void actPlayer(Entity* my)
 					// mask
 			case 10:
 			{
-				entity->focalx = limbs[playerRace][10][0]; // 0
-				entity->focaly = limbs[playerRace][10][1]; // 0
-				entity->focalz = limbs[playerRace][10][2]; // .5
+				entity->focalx = limbs[positionalRace][10][0]; // 0
+				entity->focaly = limbs[positionalRace][10][1]; // 0
+				entity->focalz = limbs[positionalRace][10][2]; // .5
 				entity->pitch = my->pitch;
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
@@ -14754,7 +17138,7 @@ void actPlayer(Entity* my)
 					helmscalez = helmet->scalez;
 				}
 
-				if ( EquipmentModelOffsets.modelOffsetExists(playerRace, entity->sprite, my->sprite) )
+				if ( EquipmentModelOffsets.modelOffsetExists(positionalRace, entity->sprite, my->sprite) )
 				{
 					my->setHelmetLimbOffset(entity);
 					my->setHelmetLimbOffsetWithMask(helmet, entity);
@@ -14767,9 +17151,9 @@ void actPlayer(Entity* my)
 				}
 				else if ( entity->sprite == 165 || entity->sprite == 1196 )
 				{
-					entity->focalx = limbs[playerRace][10][0] + .25; // .25
-					entity->focaly = limbs[playerRace][10][1] - 2.5; // -2.25
-					entity->focalz = limbs[playerRace][10][2]; // .5
+					entity->focalx = limbs[positionalRace][10][0] + .25; // .25
+					entity->focaly = limbs[positionalRace][10][1] - 2.5; // -2.25
+					entity->focalz = limbs[positionalRace][10][2]; // .5
 					if ( entity->sprite == 1196 ) // MonocleWorn.vox
 					{
 						switch ( playerRace )
@@ -14832,9 +17216,9 @@ void actPlayer(Entity* my)
 						|| entity->sprite == items[TOOL_BLINDFOLD_FOCUS].index
 						|| entity->sprite == items[TOOL_BLINDFOLD_TELEPATHY].index) )
 				{
-					entity->focalx = limbs[playerRace][10][0] + .35; // .35
-					entity->focaly = limbs[playerRace][10][1] - 2.5; // -2
-					entity->focalz = limbs[playerRace][10][2]; // .5
+					entity->focalx = limbs[positionalRace][10][0] + .35; // .35
+					entity->focaly = limbs[positionalRace][10][1] - 2.5; // -2
+					entity->focalz = limbs[positionalRace][10][2]; // .5
 				}
 				else if ( playerRace == MERROW
 					&& (entity->sprite == items[TOOL_BLINDFOLD].index
@@ -14854,9 +17238,9 @@ void actPlayer(Entity* my)
 				}
 				else
 				{
-					entity->focalx = limbs[playerRace][10][0] + .35; // .35
-					entity->focaly = limbs[playerRace][10][1] - 2; // -2
-					entity->focalz = limbs[playerRace][10][2]; // .5
+					entity->focalx = limbs[positionalRace][10][0] + .35; // .35
+					entity->focaly = limbs[positionalRace][10][1] - 2; // -2
+					entity->focalz = limbs[positionalRace][10][2]; // .5
 				}
 
 				if ( ignoreHelmetOffsetFromMask && helmet )
@@ -14869,9 +17253,9 @@ void actPlayer(Entity* my)
 				}
 				case 11:
 					additionalLimb = entity;
-					entity->focalx = limbs[playerRace][11][0];
-					entity->focaly = limbs[playerRace][11][1];
-					entity->focalz = limbs[playerRace][11][2];
+					entity->focalx = limbs[positionalRace][11][0];
+					entity->focaly = limbs[positionalRace][11][1];
+					entity->focalz = limbs[positionalRace][11][2];
 					entity->flags[INVISIBLE] = true;
 					entity->flags[INVISIBLE_DITHER] = false;
 
@@ -15054,12 +17438,12 @@ void actPlayer(Entity* my)
 					}
 					if ( playerRace == DRYAD )
 					{
-						entity->focalx = limbs[playerRace][11][0];
-						entity->focaly = limbs[playerRace][11][1];
-						entity->focalz = limbs[playerRace][11][2];
-						entity->x += limbs[playerRace][12][0] * cos(my->yaw + PI / 2) + limbs[playerRace][12][1] * cos(my->yaw);
-						entity->y += limbs[playerRace][12][0] * sin(my->yaw + PI / 2) + limbs[playerRace][12][1] * sin(my->yaw);
-						entity->z += limbs[playerRace][12][2];
+						entity->focalx = limbs[positionalRace][11][0];
+						entity->focaly = limbs[positionalRace][11][1];
+						entity->focalz = limbs[positionalRace][11][2];
+						entity->x += limbs[positionalRace][12][0] * cos(my->yaw + PI / 2) + limbs[positionalRace][12][1] * cos(my->yaw);
+						entity->y += limbs[positionalRace][12][0] * sin(my->yaw + PI / 2) + limbs[positionalRace][12][1] * sin(my->yaw);
+						entity->z += limbs[positionalRace][12][2];
 
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
@@ -15122,9 +17506,9 @@ void actPlayer(Entity* my)
 					}
 					else if ( playerRace == MYCONID )
 					{
-						entity->x += limbs[playerRace][12][0] * cos(my->yaw + PI / 2) + limbs[playerRace][12][1] * cos(my->yaw);
-						entity->y += limbs[playerRace][12][0] * sin(my->yaw + PI / 2) + limbs[playerRace][12][1] * sin(my->yaw);
-						entity->z += limbs[playerRace][12][2];
+						entity->x += limbs[positionalRace][12][0] * cos(my->yaw + PI / 2) + limbs[positionalRace][12][1] * cos(my->yaw);
+						entity->y += limbs[positionalRace][12][0] * sin(my->yaw + PI / 2) + limbs[positionalRace][12][1] * sin(my->yaw);
+						entity->z += limbs[positionalRace][12][2];
 
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
@@ -15211,9 +17595,9 @@ void actPlayer(Entity* my)
 						else if ( playerRace == CREATURE_IMP )
 						{
 							entity->sprite = 833;
-							entity->focalx = limbs[playerRace][7][0];
-							entity->focaly = limbs[playerRace][7][1];
-							entity->focalz = limbs[playerRace][7][2];
+							entity->focalx = limbs[positionalRace][7][0];
+							entity->focaly = limbs[positionalRace][7][1];
+							entity->focalz = limbs[positionalRace][7][2];
 							entity->x -= 1 * cos(my->yaw + PI / 2) + 2.5 * cos(my->yaw);
 							entity->y -= 1 * sin(my->yaw + PI / 2) + 2.5 * sin(my->yaw);
 							entity->z += 1;
@@ -15445,9 +17829,9 @@ void actPlayer(Entity* my)
 					// mod add end
 					break;
 				case 12:
-					entity->focalx = limbs[playerRace][12][0];
-					entity->focaly = limbs[playerRace][12][1];
-					entity->focalz = limbs[playerRace][12][2];
+					entity->focalx = limbs[positionalRace][12][0];
+					entity->focaly = limbs[positionalRace][12][1];
+					entity->focalz = limbs[positionalRace][12][2];
 					entity->flags[INVISIBLE] = true;
 					entity->flags[INVISIBLE_DITHER] = false;
 
@@ -15470,12 +17854,12 @@ void actPlayer(Entity* my)
 					}
 					else if ( playerRace == DRYAD )
 					{
-						entity->focalx = limbs[playerRace][13][0];
-						entity->focaly = limbs[playerRace][13][1];
-						entity->focalz = limbs[playerRace][13][2];
-						entity->x += limbs[playerRace][14][0] * cos(my->yaw + PI / 2) + limbs[playerRace][14][1] * cos(my->yaw);
-						entity->y += limbs[playerRace][14][0] * sin(my->yaw + PI / 2) + limbs[playerRace][14][1] * sin(my->yaw);
-						entity->z += limbs[playerRace][14][2];
+						entity->focalx = limbs[positionalRace][13][0];
+						entity->focaly = limbs[positionalRace][13][1];
+						entity->focalz = limbs[positionalRace][13][2];
+						entity->x += limbs[positionalRace][14][0] * cos(my->yaw + PI / 2) + limbs[positionalRace][14][1] * cos(my->yaw);
+						entity->y += limbs[positionalRace][14][0] * sin(my->yaw + PI / 2) + limbs[positionalRace][14][1] * sin(my->yaw);
+						entity->z += limbs[positionalRace][14][2];
 
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
@@ -15494,12 +17878,12 @@ void actPlayer(Entity* my)
 					}
 					else if ( playerRace == MYCONID )
 					{
-						entity->focalx = limbs[playerRace][13][0];
-						entity->focaly = limbs[playerRace][13][1];
-						entity->focalz = limbs[playerRace][13][2];
-						entity->x += limbs[playerRace][14][0] * cos(my->yaw + PI / 2) + limbs[playerRace][14][1] * cos(my->yaw);
-						entity->y += limbs[playerRace][14][0] * sin(my->yaw + PI / 2) + limbs[playerRace][14][1] * sin(my->yaw);
-						entity->z += limbs[playerRace][14][2];
+						entity->focalx = limbs[positionalRace][13][0];
+						entity->focaly = limbs[positionalRace][13][1];
+						entity->focalz = limbs[positionalRace][13][2];
+						entity->x += limbs[positionalRace][14][0] * cos(my->yaw + PI / 2) + limbs[positionalRace][14][1] * cos(my->yaw);
+						entity->y += limbs[positionalRace][14][0] * sin(my->yaw + PI / 2) + limbs[positionalRace][14][1] * sin(my->yaw);
+						entity->z += limbs[positionalRace][14][2];
 
 						entity->flags[INVISIBLE] = my->flags[INVISIBLE];
 						entity->flags[INVISIBLE_DITHER] = entity->flags[INVISIBLE];
@@ -15542,9 +17926,9 @@ void actPlayer(Entity* my)
 						else if ( playerRace == CREATURE_IMP )
 						{
 							entity->sprite = 834;
-							entity->focalx = limbs[playerRace][6][0];
-							entity->focaly = limbs[playerRace][6][1];
-							entity->focalz = limbs[playerRace][6][2];
+							entity->focalx = limbs[positionalRace][6][0];
+							entity->focaly = limbs[positionalRace][6][1];
+							entity->focalz = limbs[positionalRace][6][2];
 							entity->x += 1 * cos(my->yaw + PI / 2) - 2.5 * cos(my->yaw);
 							entity->y += 1 * sin(my->yaw + PI / 2) - 2.5 * sin(my->yaw);
 							entity->z += 1;
@@ -15561,9 +17945,9 @@ void actPlayer(Entity* my)
 					entity->scalex = 1.0;
 					entity->scaley = 1.0;
 					entity->scalez = 1.0;
-					entity->focalx = limbs[playerRace][1][0];
-					entity->focaly = limbs[playerRace][1][1];
-					entity->focalz = limbs[playerRace][1][2];
+					entity->focalx = limbs[positionalRace][1][0];
+					entity->focaly = limbs[positionalRace][1][1];
+					entity->focalz = limbs[positionalRace][1][2];
 					if ( multiplayer != CLIENT )
 					{
 						entity->flags[INVISIBLE_DITHER] = false;
@@ -15613,7 +17997,7 @@ void actPlayer(Entity* my)
 							entity->flags[INVISIBLE_DITHER] = false;
 						}
 					}
-					my->setHumanoidLimbOffset(entity, playerRace, LIMB_HUMANOID_TORSO);
+					my->setHumanoidLimbOffset(entity, positionalRace, LIMB_HUMANOID_TORSO);
 					break;
 				case 14: // robe leg left
 					entity->scalex = 1.025;
@@ -15745,8 +18129,15 @@ void actPlayer(Entity* my)
 					//entity->roll = 0.0;
 					//entity->pitch = legright->pitch;
 					break;
-				default:
-					break;
+			default:
+				break;
+		}
+
+			if ( wraithFormVisual && (bodypart == 7 || bodypart == 8
+				|| bodypart == 9 || bodypart == 10) )
+			{
+				entity->flags[INVISIBLE] = true;
+				entity->flags[INVISIBLE_DITHER] = false;
 			}
 
 
@@ -15779,6 +18170,22 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
+			if ( wraithMenuSpiritVisual && bodypart >= 1 && bodypart <= 5 )
+			{
+				if ( bodypart == 2 || bodypart == 3 )
+				{
+					entity->flags[INVISIBLE] = !wraithMenuShowsBoots;
+				}
+				else
+				{
+					entity->flags[INVISIBLE] = false;
+				}
+				entity->flags[INVISIBLE_DITHER] = false;
+			}
+			if ( wraithSpiritVisual && bodypart >= 1 && bodypart <= 5 )
+			{
+				entity->focalz += wraithVisualBob;
+			}
 		}
 		// rotate shield a bit
 		node_t* shieldNode = list_Node(&my->children, 7);
@@ -15791,7 +18198,7 @@ void actPlayer(Entity* my)
 			}
 		}
 	}
-	else
+	else if ( !wraithMonsterVisualProxy )
 	{
 		if ( stats[PLAYER_NUM]->type == RAT )
 		{
@@ -15935,6 +18342,22 @@ void actPlayerLimb(Entity* my)
 		my->mistformGLRender = 0.0;
 	}
 
+	if ( parent && my->skill[2] >= 0 && my->skill[2] < MAXPLAYERS
+		&& stats[my->skill[2]]
+		&& stats[my->skill[2]]->playerRace == RACE_WRAITH )
+	{
+		int bodypart = -1;
+		const bool intrinsicWraithLimb =
+			playerLimbIsIntrinsicWraithBodyPart(my, parent, &bodypart);
+		if ( intrinsicWraithLimb && my->flags[USERFLAG2] != parent->flags[USERFLAG2] )
+		{
+			my->flags[USERFLAG2] = parent->flags[USERFLAG2];
+			if ( multiplayer == SERVER )
+			{
+				serverUpdateEntityBodypart(parent, bodypart);
+			}
+		}
+	}
 
 	if (multiplayer != CLIENT)
 	{
@@ -16412,6 +18835,9 @@ Monster getMonsterFromPlayerRace(int playerRace)
 		case RACE_GOLEM: // mod add: distinct Golem gameplay identity
 			return GOLEM;
 			break;
+		case RACE_WRAITH:
+			return WRAITH;
+			break;
 		default:
 			return HUMAN;
 			break;
@@ -16516,6 +18942,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case GOLEM:
 					this->sprite = stats[playernum]->sex == FEMALE
 						? GOLEM_MODEL_C_TORSO : GOLEM_MODEL_B_TORSO;
+					break;
+				case WRAITH:
+					this->sprite = WRAITH_MODEL_TORSO;
 					break;
 				case TROLL:
 					this->sprite = 818;
@@ -16640,6 +19069,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					this->sprite = stats[playernum]->sex == FEMALE
 						? GOLEM_MODEL_C_LEG_RIGHT : GOLEM_MODEL_B_LEG_RIGHT;
 					break;
+				case WRAITH:
+					this->sprite = 0;
+					break;
 				case TROLL:
 					this->sprite = 822;
 					break;
@@ -16751,6 +19183,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 					this->sprite = stats[playernum]->sex == FEMALE
 						? GOLEM_MODEL_C_LEG_LEFT : GOLEM_MODEL_B_LEG_LEFT;
 					break;
+				case WRAITH:
+					this->sprite = 0;
+					break;
 				case TROLL:
 					this->sprite = 821;
 					break;
@@ -16847,6 +19282,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case GOLEM:
 					this->sprite = stats[playernum]->sex == FEMALE
 						? GOLEM_MODEL_C_ARM_RIGHT : GOLEM_MODEL_B_ARM_RIGHT;
+					break;
+				case WRAITH:
+					this->sprite = WRAITH_MODEL_ARM_RIGHT;
 					break;
 				case TROLL:
 					this->sprite = 820;
@@ -16956,6 +19394,9 @@ void Entity::setDefaultPlayerModel(int playernum, Monster playerRace, int limbTy
 				case GOLEM:
 					this->sprite = stats[playernum]->sex == FEMALE
 						? GOLEM_MODEL_C_ARM_LEFT : GOLEM_MODEL_B_ARM_LEFT;
+					break;
+				case WRAITH:
+					this->sprite = WRAITH_MODEL_ARM_LEFT;
 					break;
 				case TROLL:
 					this->sprite = 819;

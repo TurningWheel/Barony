@@ -3170,7 +3170,9 @@ void drawStatusNew(const int player)
 								break;
 							}
 
-							if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
+							if ( option == ItemContextMenuPrompts::PROMPT_DROP
+								&& players[player]->paperDoll.isItemOnDoll(*item)
+								&& !isWraithPhysicalHandItem(player, item) )
 							{
 								// need to unequip
 								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);

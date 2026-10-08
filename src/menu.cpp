@@ -363,6 +363,7 @@ static constexpr const char* WHALER_UNLOCK_PATH = "savegames/merrow_whaler.unloc
 static constexpr const char* WHALER_LEGACY_UNLOCK_PATH = "merrow_whaler.unlock";
 static constexpr const char* GUNSLINGER_UNLOCK_PATH = "savegames/leonin_gunslinger.unlock";
 static constexpr const char* RUNESMITH_UNLOCK_PATH = "savegames/golem_runesmith.unlock";
+static constexpr const char* WITCH_UNLOCK_PATH = "savegames/wraith_witch.unlock";
 static bool whalerLegacyUnlockRetainedThisSession = false;
 
 static bool customClassUnlockExists(const char* relativePath)
@@ -451,6 +452,11 @@ static bool isRunesmithGloballyUnlocked()
     return customClassUnlockExists(RUNESMITH_UNLOCK_PATH);
 }
 
+static bool isWitchGloballyUnlocked()
+{
+	return customClassUnlockExists(WITCH_UNLOCK_PATH);
+}
+
 static bool writeWhalerUnlock()
 {
 	if ( customClassUnlockExists(WHALER_UNLOCK_PATH) )
@@ -495,6 +501,21 @@ static bool writeRunesmithUnlock()
     printlog("[GOLEM]: Runesmith class unlocked.");
     return true;
 }
+
+static bool writeWitchUnlock()
+{
+	if ( customClassUnlockExists(WITCH_UNLOCK_PATH) )
+	{
+		return true;
+	}
+	if ( !writeCustomClassUnlock(WITCH_UNLOCK_PATH) )
+	{
+		printlog("[WRAITH]: Failed to save Witch unlock.");
+		return false;
+	}
+	printlog("[WRAITH]: Witch class unlocked.");
+	return true;
+}
 // mod add end
 
 bool isAchievementUnlockedForClassUnlock(int race)
@@ -512,6 +533,10 @@ bool isAchievementUnlockedForClassUnlock(int race)
     {
         return isRunesmithGloballyUnlocked();
     }
+	else if ( race == RACE_WRAITH )
+	{
+		return isWitchGloballyUnlocked();
+	}
 	// mod add end
 #ifdef STEAMWORKS
 	bool unlocked = false;
@@ -755,16 +780,22 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 			break;
 		case RACE_LEONIN: // mod add: Leonin has no DLC requirement
 		case RACE_GOLEM: // mod add: Golem has no DLC requirement
+		case RACE_WRAITH: // mod add: Wraith has no DLC requirement
 			break;
 		default:
 			break;
 	}
 
-	if ( myStats.playerRace == RACE_HUMAN )
-	{
-		return VALID_OK_CHARACTER;
-	}
 	if ( characterClass == CLASS_WITCH )
+	{
+		if ( myStats.playerRace == RACE_HUMAN || myStats.playerRace ==RACE_WRAITH )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_WRAITH)
+			? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+	}
+	if ( myStats.playerRace == RACE_HUMAN )
 	{
 		return VALID_OK_CHARACTER;
 	}
@@ -9166,6 +9197,7 @@ void doNewGame(bool makeHighscore) {
 					GenericGUI[c].assistShrineGUI.onGameStart();
 					stats[c]->clearStats();
 					initClass(c);
+					initializeWraithPlayerForNewGame(c);
 				}
 				else
 				{
@@ -9333,10 +9365,12 @@ void doNewGame(bool makeHighscore) {
 							node_t* gyrobotNode = nullptr;
 							Entity* gyrobotEntity = nullptr;
 							std::vector<node_t*> allyRobotNodes;
+							bool wraithBodyRestoreAttempted = false;
 							for ( node = tempFollowers->first; node != NULL; node = node->next )
 							{
 								Stat* tempStats = (Stat*)node->element;
-								if ( tempStats && tempStats->type == GYROBOT )
+								if ( tempStats && tempStats->type == GYROBOT
+									&& tempStats->getAttribute("wraith_possessed_body") != "1" )
 								{
 									gyrobotNode = node;
 									break;
@@ -9345,6 +9379,20 @@ void doNewGame(bool makeHighscore) {
 							for ( node = tempFollowers->first; node != NULL; node = node->next )
 							{
 								Stat* tempStats = (Stat*)node->element;
+								if ( tempStats
+									&& tempStats->getAttribute("wraith_possessed_body") == "1" )
+								{
+									const auto& wraith = players[c]->mechanics.wraith;
+									if ( !wraithBodyRestoreAttempted
+										&& wraith.possessionTransition
+										&& wraith.possessedEntityUid == UINT32_MAX )
+									{
+										wraithBodyRestoreAttempted = true;
+										restoreWraithPossessedBodyAfterLevelTransition(
+											c, tempStats->copyStats());
+									}
+									continue;
+								}
 								if ( tempStats && (tempStats->type == DUMMYBOT
 									|| tempStats->type == SENTRYBOT
 									|| tempStats->type == SPELLBOT) )
@@ -9491,6 +9539,13 @@ void doNewGame(bool makeHighscore) {
 									}
 								}
 							}
+							if ( players[c]->mechanics.wraith.possessionTransition
+								&& players[c]->mechanics.wraith.possessedEntityUid == UINT32_MAX
+								&& !wraithBodyRestoreAttempted )
+							{
+								printlog("[WRAITH]: ERROR saved possessed body was not available during map initialization");
+								restoreWraithPossessedBodyAfterLevelTransition(c, nullptr);
+							}
 						}
 					}
 				}
@@ -9534,6 +9589,10 @@ void doNewGame(bool makeHighscore) {
 				GenericGUI[c].assistShrineGUI.onGameStart();
 				stats[c]->clearStats();
 				initClass(c);
+				if ( c == clientnum )
+				{
+					initializeWraithPlayerForNewGame(c);
+				}
 			}
 			mapseed = 0;
 			if ( challengeRunCustomStartLevel != "" )
@@ -10379,6 +10438,15 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 										< GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit )
 								{
 									writeRunesmithUnlock();
+								}
+								break;
+							case RACE_WRAITH: // mod add: Wraith / Witch
+								if ( !conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+									&& !conductGameChallenges[CONDUCT_LIFESAVING]
+									&& conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]
+										< GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit )
+								{
+									writeWitchUnlock();
 								}
 								break;
 							// mod add end

@@ -460,6 +460,170 @@ void removeTemporaryEquipmentSpell(int player, int spellID)
 	}
 }
 
+bool grantTemporaryWraithPossessionSpell(int player, int spellID)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| !players[player]->isLocalPlayer() )
+	{
+		return false;
+	}
+	spell_t* definition = getSpellFromID(spellID);
+	if ( !definition ) { return false; }
+
+	bool changed = false;
+	if ( !spellInList(&players[player]->magic.spellList, definition) )
+	{
+		spell_t* spell = copySpell(definition);
+		if ( !spell ) { return false; }
+		node_t* node = list_AddNodeLast(&players[player]->magic.spellList);
+		node->element = spell;
+		node->size = sizeof(spell_t);
+		node->deconstructor = &spellDeconstructor;
+		changed = true;
+	}
+
+	Item* temporaryItem = nullptr;
+	const Uint32 temporaryAppearance = static_cast<Uint32>(1000 + spellID);
+	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->type == SPELL_ITEM && item->appearance == temporaryAppearance )
+		{
+			temporaryItem = item;
+			break;
+		}
+	}
+	if ( !temporaryItem )
+	{
+		temporaryItem = newItem(SPELL_ITEM, SERVICABLE, 0, 1,
+			temporaryAppearance, true, &stats[player]->inventory);
+		changed |= temporaryItem != nullptr;
+		if ( temporaryItem )
+		{
+			bool placed = false;
+			for ( int y = 0; !placed; ++y )
+			{
+				for ( int x = 0; x < Player::Inventory_t::MAX_SPELLS_X; ++x )
+				{
+					bool occupied = false;
+					for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+					{
+						const Item* other = static_cast<const Item*>(node->element);
+						if ( other && other != temporaryItem && other->type == SPELL_ITEM
+							&& other->x == x && other->y == y )
+						{
+							occupied = true;
+							break;
+						}
+					}
+					if ( !occupied )
+					{
+						temporaryItem->x = x;
+						temporaryItem->y = y;
+						placed = true;
+						break;
+					}
+				}
+			}
+		}
+	}
+	if ( temporaryItem )
+	{
+		bool onHotbar = false;
+		for ( const auto& slot : players[player]->hotbar.slots() )
+		{
+			if ( slot.item == temporaryItem->uid ) { onHotbar = true; break; }
+		}
+		if ( !onHotbar )
+		{
+			for ( auto& slot : players[player]->hotbar.slots() )
+			{
+				if ( slot.item == 0 )
+				{
+					slot.item = temporaryItem->uid;
+					break;
+				}
+			}
+		}
+	}
+	return changed;
+}
+
+void removeTemporaryWraithPossessionSpell(int player, int spellID)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| (!players[player]->isLocalPlayer() && multiplayer == CLIENT) )
+	{
+		return;
+	}
+	const Uint32 temporaryAppearance = static_cast<Uint32>(1000 + spellID);
+	std::vector<Uint32> removedItemUids;
+	for ( node_t* node = stats[player]->inventory.first, *next = nullptr; node; node = next )
+	{
+		next = node->next;
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->type == SPELL_ITEM && item->appearance == temporaryAppearance )
+		{
+			removedItemUids.push_back(item->uid);
+			list_RemoveNode(node);
+		}
+	}
+	auto clearRemovedHotbarItems = [&removedItemUids](auto& slots)
+	{
+		for ( auto& slot : slots )
+		{
+			if ( std::find(removedItemUids.begin(), removedItemUids.end(), slot.item)
+				!= removedItemUids.end() )
+			{
+				slot.item = 0;
+				slot.resetLastItem();
+			}
+		}
+	};
+	clearRemovedHotbarItems(players[player]->hotbar.slots());
+	for ( auto& slots : players[player]->hotbar.slotsAlternate() )
+	{
+		clearRemovedHotbarItems(slots);
+	}
+
+	bool permanent = players[player]->mechanics.learnedSpells.find(spellID)
+		!= players[player]->mechanics.learnedSpells.end();
+	for ( node_t* node = stats[player]->inventory.first; node && !permanent; node = node->next )
+	{
+		const Item* item = static_cast<const Item*>(node->element);
+		permanent = item && item->type == SPELL_ITEM
+			&& item->appearance == static_cast<Uint32>(spellID);
+	}
+	int matchingSpells = 0;
+	for ( node_t* node = players[player]->magic.spellList.first; node; node = node->next )
+	{
+		const spell_t* spell = static_cast<const spell_t*>(node->element);
+		if ( spell && spell->ID == spellID ) { ++matchingSpells; }
+	}
+	const int spellsToKeep = permanent ? 1 : 0;
+	for ( node_t* node = players[player]->magic.spellList.first, *next = nullptr;
+		node && matchingSpells > spellsToKeep; node = next )
+	{
+		next = node->next;
+		spell_t* spell = static_cast<spell_t*>(node->element);
+		if ( !spell || spell->ID != spellID ) { continue; }
+		if ( players[player]->magic.selectedSpell() == spell )
+		{
+			players[player]->magic.equipSpell(nullptr);
+			players[player]->magic.selected_spell_last_appearance = -1;
+		}
+		for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
+		{
+			if ( players[player]->magic.selected_spell_alternate[i] == spell )
+			{
+				players[player]->magic.selected_spell_alternate[i] = nullptr;
+			}
+		}
+		list_RemoveNode(node);
+		--matchingSpells;
+	}
+}
+
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
 	node_t* node = nullptr;
@@ -2272,8 +2436,26 @@ spell_t* getSpellFromItem(const int player, Item* item, bool usePlayerInventory)
 	return nullptr;
 }
 
+int canUseWraithPossessionSpellInCurrentBody(const int player, Item& item)
+{
+	if ( itemCategory(&item) != SPELL_CAT || item.appearance < 1000 ) { return -1; }
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| stats[player]->playerRace != RACE_WRAITH
+		|| !players[player]->mechanics.wraith.initialized )
+	{
+		return -1;
+	}
+	if ( players[player]->mechanics.wraith.possessedEntityUid == 0 ) { return 0; }
+	spell_t* spell = getSpellFromItem(player, &item, false);
+	if ( !spell ) { return 0; }
+	const auto innate = getWraithPossessionInnateSpells(getWraithEffectiveMonsterType(player));
+	return std::find(innate.begin(), innate.end(), spell->ID) != innate.end() ? 1 : 0;
+}
+
 int canUseShapeshiftSpellInCurrentForm(const int player, Item& item)
 {
+	const int wraithResult = canUseWraithPossessionSpellInCurrentBody(player, item);
+	if ( wraithResult != -1 ) { return wraithResult; }
 	if ( itemCategory(&item) != SPELL_CAT )
 	{
 		return -1;

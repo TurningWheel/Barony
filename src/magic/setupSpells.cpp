@@ -3443,6 +3443,17 @@ void setupSpells()   ///TODO: Verify this function.
 	spell->distance = 128.0;
 	spell->hide_from_ui = true;
 
+	// Wraith innate spell. Possession charges transactionally after validation.
+	spell = createSimpleSpell(
+		SPELL_POSSESS,
+		0,  // innate difficulty
+		0,
+		0, 1, 0, 1,
+		"spell_possess");
+	spell->skillID = PRO_MYSTICISM;
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 128.0;
+
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;
 	//static const int SPELL_IGNITE = 186;
