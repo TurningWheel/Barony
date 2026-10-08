@@ -379,19 +379,7 @@ bool syncAmuletFamiliarPersistentState(Entity* familiar, Item* amulet, bool noti
 
 	if ( notifyOwner && multiplayer == SERVER )
 	{
-		Entity* leader = uidToEntity(familiarStats->leader_uid);
-		const int player = leader ? leader->isEntityPlayer() : -1;
-		if ( player > 0 && player < MAXPLAYERS && players[player]
-			&& !players[player]->isLocalPlayer() && !client_disconnected[player] )
-		{
-			strcpy((char*)net_packet->data, "FAMP");
-			SDLNet_Write32(amulet->familiarInstanceId, &net_packet->data[4]);
-			writeFamiliarPersistentStateToPacket(*amulet, net_packet->data, 8);
-			net_packet->address.host = net_clients[player - 1].host;
-			net_packet->address.port = net_clients[player - 1].port;
-			net_packet->len = 8 + FAMILIAR_PERSISTENT_PACKET_BYTES;
-			sendPacketSafe(net_sock, -1, net_packet, player - 1);
-		}
+		serverSyncPersistentCustomItemStateForOwner(amulet);
 	}
 	return true;
 }
@@ -740,6 +728,15 @@ bool amuletFamiliarPolymorphTargetIsValid(Entity* familiar, real_t targetX, real
 		|| familiarCanBecomeMimicAtTile(tilex, tiley);
 }
 
+static Sint32 getAmuletFamiliarPolymorphMinHP(const Stat& familiarStats)
+{
+	if ( familiarStats.MAXHP <= 0 )
+	{
+		return 0;
+	}
+	return familiarStats.MAXHP / 4 + (familiarStats.MAXHP % 4 != 0);
+}
+
 bool amuletFamiliarIsTooWeakToTransform(const Entity* familiar, const Stat* familiarStats)
 {
 	if ( !familiar || getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_BAT )
@@ -751,7 +748,7 @@ bool amuletFamiliarIsTooWeakToTransform(const Entity* familiar, const Stat* fami
 		familiarStats = familiar->getStats();
 	}
 	return familiarStats && familiarStats->MAXHP > 0
-		&& static_cast<Sint64>(familiarStats->HP) * 4 < familiarStats->MAXHP;
+		&& familiarStats->HP < getAmuletFamiliarPolymorphMinHP(*familiarStats);
 }
 
 bool requestAmuletFamiliarPolymorph(Entity* owner, real_t targetX, real_t targetY)
@@ -831,6 +828,11 @@ bool updateAmuletFamiliarSpecialState(Entity* familiar, Stat* familiarStats)
 		removeBatFamiliar(familiar);
 		return true;
 	}
+	if ( multiplayer == SERVER && ownerStats->amulet
+		&& familiar->ticks % TICKS_PER_SECOND == 0 )
+	{
+		serverSyncPersistentCustomItemStateForOwner(ownerStats->amulet);
+	}
 
 	const FamiliarForm form = getAmuletFamiliarForm(familiar);
 	enforceAmuletFamiliarFormFlags(familiar, form);
@@ -851,6 +853,21 @@ bool updateAmuletFamiliarSpecialState(Entity* familiar, Stat* familiarStats)
 		familiarStats->MAXHP = std::max<Sint32>(1, familiarStats->MAXHP);
 		familiarStats->HP = 1;
 		familiarStats->OLDHP = 1;
+	}
+	const Sint32 polymorphMinHP = getAmuletFamiliarPolymorphMinHP(*familiarStats);
+	if ( familiarStats->HP <= 0 || familiarStats->HP >= polymorphMinHP )
+	{
+		familiar->familiarLowHpRecoveryTicks = 0;
+	}
+	else if ( ++familiar->familiarLowHpRecoveryTicks >= 60 * TICKS_PER_SECOND )
+	{
+		familiar->familiarLowHpRecoveryTicks = 0;
+		const Sint32 healAmount = std::max<Sint32>(1,
+			familiarStats->MAXHP / 10 + (familiarStats->MAXHP % 10 != 0));
+		const Sint32 targetHP = std::min<Sint32>(polymorphMinHP,
+			familiarStats->HP + healAmount);
+		familiar->modHP(targetHP - familiarStats->HP);
+		syncAmuletFamiliarPersistentState(familiar, ownerStats->amulet, true);
 	}
 	if ( form != FAMILIAR_FORM_BAT && entityDist(familiar, owner) > FAMILIAR_MAX_FORM_DISTANCE )
 	{
@@ -1196,9 +1213,25 @@ void removeBatFamiliar(Entity* my)
 	stopAmuletFamiliarCauldronAmbience(my);
 	closeAmuletFamiliarVoidChest(my);
 	closeStewingForCauldron(my);
-	syncAmuletFamiliarPersistentState(my, nullptr, true);
 	Stat* familiarStats = my->getStats();
 	Entity* leader = familiarStats ? uidToEntity(familiarStats->leader_uid) : nullptr;
+	Item* familiarAmulet = nullptr;
+	if ( leader )
+	{
+		if ( Stat* leaderStats = leader->getStats() )
+		{
+			familiarAmulet = leaderStats->amulet;
+		}
+	}
+	if ( !familiarAmulet )
+	{
+		familiarAmulet = findFamiliarAmuletItem(my->familiarInstanceId);
+	}
+	syncAmuletFamiliarPersistentState(my, familiarAmulet, false);
+	if ( multiplayer == SERVER && familiarAmulet )
+	{
+		serverSyncPersistentCustomItemStateForOwner(familiarAmulet);
+	}
 	if ( leader )
 	{
 		if ( Stat* leaderStats = leader->getStats() )

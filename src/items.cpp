@@ -28,6 +28,7 @@
 #include "monster.hpp"
 #include "collision.hpp"
 
+#include <algorithm>
 #include <assert.h>
 #include <limits>
 
@@ -675,6 +676,7 @@ bool mergeIngredientBags(Item& destination, const Item& source)
 		destination.ingredientCounts[i] += std::min(room, source.ingredientCounts[i]);
 	}
 	destination.count = 1;
+	serverSyncPersistentCustomItemStateForOwner(&destination);
 	return true;
 }
 
@@ -1376,7 +1378,8 @@ namespace
 		return total;
 	}
 
-	Uint32 consumeStewingIngredientFromList(list_t& inventory, ItemType ingredient, Uint32 amount)
+	Uint32 consumeStewingIngredientFromList(list_t& inventory, ItemType ingredient, Uint32 amount,
+		const int player, std::vector<Item*>* changedBags = nullptr)
 	{
 		const WitchIngredientCategory category = ingredientCategoryFromItem(ingredient);
 		const int ingredientSlot = ingredientSlotForItem(ingredient);
@@ -1392,7 +1395,28 @@ namespace
 				consumed += take;
 				if ( ingredientBagIsEmpty(*bag) )
 				{
-					list_RemoveNode(node);
+					if ( changedBags )
+					{
+						changedBags->erase(std::remove(changedBags->begin(), changedBags->end(), bag),
+							changedBags->end());
+					}
+					if ( player >= 0
+						&& player < MAXPLAYERS
+						&& stats[player]
+						&& node->list == &stats[player]->inventory )
+					{
+						Item* bagToConsume = static_cast<Item*>(node->element);
+						consumeItem(bagToConsume, player);
+					}
+					else
+					{
+						list_RemoveNode(node);
+					}
+				}
+				else if ( changedBags && take > 0
+					&& std::find(changedBags->begin(), changedBags->end(), bag) == changedBags->end() )
+				{
+					changedBags->push_back(bag);
 				}
 			}
 			node = next;
@@ -1423,6 +1447,46 @@ namespace
 		return consumed;
 	}
 
+	static bool consumeStewingPhysicalItem(const int player, const ItemType type)
+	{
+		if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
+		{
+			return false;
+		}
+
+		Item* itemToConsume = nullptr;
+		for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+		{
+			Item* candidate = static_cast<Item*>(node->element);
+			if ( candidate && candidate->type == type )
+			{
+				itemToConsume = candidate;
+				break;
+			}
+		}
+		if ( !itemToConsume ) { return false; }
+
+#ifndef NDEBUG
+		if ( playerIsInWraithForm(player) && stats[player]->weapon == itemToConsume )
+		{
+			assert(itemToConsume->node
+				&& itemToConsume->node->list == &stats[player]->inventory);
+		}
+#endif
+		consumeItem(itemToConsume, player);
+		return true;
+	}
+
+	static bool consumeStewingPhysicalItems(const int player, const ItemType type, Uint32 amount)
+	{
+		while ( amount > 0 )
+		{
+			if ( !consumeStewingPhysicalItem(player, type) ) { return false; }
+			--amount;
+		}
+		return true;
+	}
+
 	void giveStewingItem(int player, ItemType type, Uint64 amount)
 	{
 		const int resourceIndex = getStewingResourceIndex(type);
@@ -1431,9 +1495,38 @@ namespace
 		{
 			const Sint16 count = static_cast<Sint16>(std::min<Uint64>(amount,
 				static_cast<Uint64>(std::numeric_limits<Sint16>::max())));
-			Item* item = newItem(type, SERVICABLE, 0, count, 0, true, nullptr);
-			itemPickup(player, item);
-			free(item);
+				Item* item = newItem(type, SERVICABLE, 0, count, 0, true, nullptr);
+				if ( !item )
+				{
+					return;
+				}
+
+				if ( player >= 0
+					&& player < MAXPLAYERS
+					&& stats[player]
+					&& players[player]
+					&& players[player]->entity
+					&& playerIsInWraithForm(player)
+					&& item->type != SPELL_ITEM
+					&& stats[player]->weapon )
+				{
+					// The Wraith spectral hand is already occupied.
+					// Do NOT call itemPickup() here:
+					// itemPickup() may stack this crafted result into the existing held Item,
+					// making its return value alias stats[player]->weapon.
+					//
+					// The design for Wraith crafting is one physical hand:
+					// occupied hand => drop the NEW crafted result instead.
+					dropItemMonster(
+						item,
+						players[player]->entity,
+						nullptr,
+						item->count);
+					return;
+				}
+
+				itemPickup(player, item);
+				free(item);
 			amount -= count;
 		}
 		if ( multiplayer == SERVER && player > 0 && player < MAXPLAYERS
@@ -1879,7 +1972,11 @@ void consumeClientStewingInventoryResources(int player,
 		const ItemType type = getStewingResourceType(i);
 		if ( itemTypeIsWitchIngredient(type) )
 		{
-			consumeStewingIngredientFromList(stats[player]->inventory, type, resources[i]);
+			consumeStewingIngredientFromList(stats[player]->inventory, type, resources[i], player);
+		}
+		else if ( type == POTION_WATER || type == POTION_EMPTY )
+		{
+			if ( !consumeStewingPhysicalItems(player, type, resources[i]) ) { return; }
 		}
 		else
 		{
@@ -1893,17 +1990,8 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 {
 	result = StewingTransactionResult{};
 	result.remainingSelection = selection;
-	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !players[player]
-		|| !players[player]->entity || !stats[player] || !stats[0] || !familiar
-		|| !isAmuletFamiliar(familiar, familiar->getStats())
-		|| getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_CAULDRON
-		|| entityDist(players[player]->entity, familiar) > TOUCHRANGE )
-	{
-		return false;
-	}
-	Stat* familiarStats = familiar->getStats();
-	if ( !familiarStats || familiarStats->leader_uid != players[player]->entity->getUID()
-		|| !stats[player]->amulet || stats[player]->amulet->type != AMULET_FAMILIAR )
+	if ( multiplayer == CLIENT || !stats[0]
+		|| !validateStewingCauldronAccess(familiar, player) )
 	{
 		return false;
 	}
@@ -1963,6 +2051,7 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 	}
 	consumeAmounts[getStewingResourceIndex(POTION_EMPTY)] += requiredEmptyBottles;
 
+	std::vector<Item*> changedIngredientBags;
 	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
 	{
 		Uint32 amount = static_cast<Uint32>(consumeAmounts[i]);
@@ -1977,7 +2066,16 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 		else if ( itemTypeIsWitchIngredient(type) )
 		{
 			consumedFromInventory = consumeStewingIngredientFromList(
-				stats[player]->inventory, type, amount);
+				stats[player]->inventory, type, amount, player, &changedIngredientBags);
+		}
+		else if ( type == POTION_WATER || type == POTION_EMPTY )
+		{
+			consumedFromInventory = static_cast<Uint32>(std::min<Uint64>(amount,
+				countStewingResourceInList(stats[player]->inventory, type)));
+			if ( !consumeStewingPhysicalItems(player, type, consumedFromInventory) )
+			{
+				return false;
+			}
 		}
 		else
 		{
@@ -1989,13 +2087,18 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 		if ( remaining > 0 )
 		{
 			const Uint32 consumedFromVoid = itemTypeIsWitchIngredient(type)
-				? consumeStewingIngredientFromList(stats[0]->void_chest_inventory, type, remaining)
+				? consumeStewingIngredientFromList(stats[0]->void_chest_inventory, type, remaining, -1,
+					&changedIngredientBags)
 				: consumeStewingOrdinaryItemFromList(stats[0]->void_chest_inventory, type, remaining);
 			if ( consumedFromVoid != remaining )
 			{
 				return false; // Prevalidation makes this unreachable in the authoritative tick.
 			}
 		}
+	}
+	for ( Item* bag : changedIngredientBags )
+	{
+		serverSyncPersistentCustomItemStateForOwner(bag);
 	}
 
 	const Uint64 emptyBottleReturns = operation == STEWING_OPERATION_APPLY
@@ -2208,15 +2311,21 @@ bool oilMatchesTarget(AppliedOil oil, Entity* target)
 
 void serverSyncTinctureStacks(int player)
 {
-	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS || !stats[player] ) { return; }
-	strcpy(reinterpret_cast<char*>(net_packet->data), "TINC");
+	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS
+		|| client_disconnected[player] || !players[player]
+		|| players[player]->isLocalPlayer() || !stats[player] )
+	{
+		return;
+	}
+	strcpy(reinterpret_cast<char*>(net_packet->data), "WTCS");
 	net_packet->data[4] = static_cast<Uint8>(player);
-	for ( int stat = 0; stat < NUMSTATS; ++stat )
+	for ( int stat = 0; stat < 6; ++stat )
 	{
 		SDLNet_Write32(stats[player]->tinctureStacks[stat], &net_packet->data[5 + stat * 4]);
 	}
-	net_packet->address = net_clients[player - 1];
-	net_packet->len = 5 + NUMSTATS * 4;
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 29;
 	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
@@ -2237,7 +2346,7 @@ void rollOilWearOff(Item* source, int ownerPlayer, bool shieldSlot)
 	if ( multiplayer == CLIENT || !source || source->appliedOil == APPLIED_OIL_NONE ) { return; }
 	if ( local_rng.rand() % 40 != 0 ) { return; }
 	source->appliedOil = APPLIED_OIL_NONE;
-	serverSyncAppliedOil(ownerPlayer, shieldSlot);
+	serverSyncPersistentCustomItemStateForOwner(source);
 	messagePlayer(ownerPlayer, MESSAGE_EQUIPMENT, "The oil coating on %s wears off.", source->getName());
 }
 
@@ -2258,7 +2367,7 @@ void rollProjectileOilWearOff(Entity* projectile)
 				&& candidate->appliedOil == oil )
 			{
 				candidate->appliedOil = APPLIED_OIL_NONE;
-				serverSyncAppliedOil(player, slot == 1);
+				serverSyncPersistentCustomItemStateForOwner(candidate);
 				return;
 			}
 		}
@@ -2270,6 +2379,7 @@ void rollProjectileOilWearOff(Entity* projectile)
 				&& candidate->appliedOil == oil )
 			{
 				candidate->appliedOil = APPLIED_OIL_NONE;
+				serverSyncPersistentCustomItemStateForOwner(candidate);
 				return;
 			}
 		}
@@ -2284,8 +2394,8 @@ bool applyTinctureStackToPlayer(ItemType tincture, int player)
 	if ( stats[player]->tinctureStacks[stat] != UINT32_MAX )
 	{
 		++stats[player]->tinctureStacks[stat];
+		serverSyncTinctureStacks(player);
 	}
-	serverSyncTinctureStacks(player);
 	return true;
 }
 
@@ -5724,7 +5834,7 @@ static bool useOil(Item*& item, int player, bool reversePriority = false)
 	if ( multiplayer != CLIENT )
 	{
 		tryIncreaseAlchemyFromWitchbrewUse(player);
-		serverSyncAppliedOil(player, shieldSlot);
+		serverSyncPersistentCustomItemStateForOwner(target);
 		witchbrewReturnEmptyBottle(player);
 	}
 	messagePlayer(player, MESSAGE_EQUIPMENT, "You coat %s with %s.", target->getName(), item->getName());
@@ -5757,14 +5867,7 @@ bool useOilOnItem(Item*& oil, Item* target, int player)
 	}
 	target->appliedOil = coating;
 	tryIncreaseAlchemyFromWitchbrewUse(player);
-	if ( target == stats[player]->weapon )
-	{
-		serverSyncAppliedOil(player, false);
-	}
-	else if ( target == stats[player]->shield )
-	{
-		serverSyncAppliedOil(player, true);
-	}
+	serverSyncPersistentCustomItemStateForOwner(target);
 	messagePlayer(player, MESSAGE_EQUIPMENT, "You coat %s with %s.", target->getName(), oil->getName());
 	witchbrewReturnEmptyBottle(player);
 	consumeItem(oil, player);
@@ -7461,6 +7564,73 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 	}
 
 	return item;
+}
+
+Item* itemPickupCraftingResult(const int player, Item* const item)
+{
+	if ( !item || player < 0 || player >= MAXPLAYERS
+		|| !players[player] || !players[player]->entity || !stats[player] )
+	{
+		return nullptr;
+	}
+
+	if ( !playerIsInWraithForm(player) || !stats[player]->weapon )
+	{
+		return itemPickup(player, item);
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		dropItemMonster(item, players[player]->entity, nullptr, item->count);
+		return nullptr;
+	}
+
+	// DROP has no drop-all field. Send only quantities that its server receiver
+	// consumes completely, so no temporary remote inventory remainder survives.
+	Sint16 remaining = item->count;
+	while ( remaining > 0 )
+	{
+		Sint16 dropCount = 1;
+		if ( itemTypeIsQuiver(item->type) )
+		{
+			dropCount = remaining;
+		}
+		else if ( (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP)
+			&& remaining >= 10 )
+		{
+			dropCount = 10;
+		}
+
+		Item* temporary = newItem(item->type, item->status, item->beatitude,
+			dropCount, item->appearance, item->identified, nullptr);
+		if ( !temporary )
+		{
+			break;
+		}
+		copyItemPersistentCustomState(*temporary, *item);
+		temporary->ownerUid = item->ownerUid;
+		temporary->notifyIcon = item->notifyIcon;
+		temporary->node = list_AddNodeLast(&stats[player]->inventory);
+		temporary->node->element = temporary;
+		temporary->node->deconstructor = &defaultDeconstructor;
+		temporary->node->size = sizeof(Item);
+
+		if ( !dropItem(temporary, player, false, true) )
+		{
+			if ( temporary->node )
+			{
+				list_RemoveNode(temporary->node);
+			}
+			else
+			{
+				free(temporary);
+			}
+			break;
+		}
+		remaining -= dropCount;
+	}
+
+	return nullptr;
 }
 
 int Item::getMaxStackLimit(int player) const

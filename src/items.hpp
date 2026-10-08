@@ -678,7 +678,6 @@ const char* getTinctureIconPath(ItemType type);
 bool itemTypeCanReceiveOil(ItemType type);
 bool itemCanReceiveOil(const Item* item);
 bool oilMatchesTarget(AppliedOil oil, Entity* target);
-void serverSyncTinctureStacks(int player);
 void serverSyncAppliedOil(int player, bool shieldSlot);
 void rollOilWearOff(Item* source, int ownerPlayer, bool shieldSlot);
 void rollProjectileOilWearOff(Entity* projectile);
@@ -1294,6 +1293,7 @@ ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Ite
 ItemStackResult getItemStackingBehaviorIntoChest(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem);
 void getItemEmptySlotStackingBehavior(const int player, Item& itemToCheck, int& newQtyForCheckedItem, int& newQtyForDestItem);
 Item* itemPickup(int player, Item* item, Item* addToSpecificInventoryItem = nullptr, bool forceNewStack = false);
+Item* itemPickupCraftingResult(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
 bool shouldInvertEquipmentBeatitude(const Stat* wielder);
 bool isItemEquippableInShieldSlot(const Item* item);

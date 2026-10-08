@@ -1745,6 +1745,24 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		}
 		return nullptr;
 	}
+	if ( target->behavior == &actPlayer )
+	{
+		const int player = target->skill[2];
+		if ( player >= 0 && player < MAXPLAYERS && players[player]
+			&& stats[player] && stats[player]->playerRace == RACE_WRAITH
+			&& players[player]->mechanics.wraith.possessedEntityUid != 0 )
+		{
+			if ( !releaseWraithPossession(player) )
+			{
+				return nullptr;
+			}
+			target = players[player]->entity;
+			if ( !target || !stats[player] )
+			{
+				return nullptr;
+			}
+		}
+	}
 
 	Stat* targetStats = target->getStats();
 	const bool naturalCursedGolemPlayer = customMonster == NOTHING
@@ -2512,6 +2530,15 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 				// This runs only on the authoritative polymorph path; clients receive
 				// the selected form through effectPolymorph below.
 				target->effectPolymorph = local_rng.rand() % 2 == 0 ? INCUBUS : SUCCUBUS;
+			}
+			else if ( targetStats->playerRace == RACE_WRAITH )
+			{
+				target->effectPolymorph = 100 + local_rng.rand() % NUMAPPEARANCES;
+				const int player = target->skill[2];
+				if ( player >= 0 && player < MAXPLAYERS && players[player] )
+				{
+					players[player]->mechanics.wraith.wasHumanPolymorphed = true;
+				}
 			}
 			else if ( targetStats->playerRace == RACE_HUMAN || (targetStats->playerRace != RACE_HUMAN && targetStats->stat_appearance != 0) )
 			{

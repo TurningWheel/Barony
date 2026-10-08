@@ -2617,6 +2617,32 @@ bool dragDropStackChestItems(const int player, Item*& selectedItem, Item* tempIt
 	return stackedItems;
 }
 
+static void rebindWraithHeldStackBeforeSourceRemoval(
+	const int player, Item* source, Item* survivor)
+{
+	if ( player < 0
+		|| player >= MAXPLAYERS
+		|| !stats[player]
+		|| !source
+		|| !survivor
+		|| source == survivor )
+	{
+		return;
+	}
+
+	if ( !playerIsInWraithForm(player) )
+	{
+		return;
+	}
+
+	if ( stats[player]->weapon != source )
+	{
+		return;
+	}
+
+	stats[player]->weapon = survivor;
+}
+
 bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* tempItem, int oldx, int oldy)
 {
 	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
@@ -2627,6 +2653,7 @@ bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* te
 		&& ingredientCategoryFromBag(selectedItem->type) == ingredientCategoryFromBag(tempItem->type) )
 	{
 		mergeIngredientBags(*tempItem, *selectedItem);
+		rebindWraithHeldStackBeforeSourceRemoval(player, selectedItem, tempItem);
 		if ( selectedItem->node )
 		{
 			list_RemoveNode(selectedItem->node);
@@ -2653,6 +2680,7 @@ bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* te
 			{
 				messagePlayer(0, MESSAGE_DEBUG, "ERROR STACKING ITEM");
 			}
+			rebindWraithHeldStackBeforeSourceRemoval(player, selectedItem, tempItem);
 			if ( selectedItem->node )
 			{
 				list_RemoveNode(selectedItem->node);
@@ -12393,6 +12421,7 @@ void quickStackItems(int player)
 						clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
 							itemToStack->type, itemToStack->status,	itemToStack->beatitude, itemToStack->count, itemToStack->appearance, itemToStack->identified);
 					}
+					rebindWraithHeldStackBeforeSourceRemoval(player, item2, itemToStack);
 					if ( item2->node )
 					{
 						list_RemoveNode(item2->node);

@@ -75,6 +75,7 @@ Stat* createWraithPossessedBodySnapshot(int player);
 Stat* captureWraithPossessedBodyForLevelTransition(int player);
 bool restoreWraithPossessedBodyAfterLevelTransition(int player, Stat* savedBodyStats);
 void clearWraithReturningBodyUIReferences(int player, const std::vector<Item*>& returningBodyItems);
+bool applyWraithHumanPolymorphReturnInventory(int player, Uint32 bagKey);
 bool monsterIsActiveWraithBody(const Entity* monster);
 bool spawnWraithBodyDeathChest(Entity* monster);
 Monster getWraithEffectiveMonsterType(int player);
@@ -2465,6 +2466,7 @@ public:
 		struct WraithPlayerState
 		{
 			bool initialized = false;
+			bool wasHumanPolymorphed = false;
 			Sint32 corporealMaxHP = 0;
 			Sint32 corporealMaxMP = 0;
 			Uint32 possessedEntityUid = 0;

@@ -336,6 +336,7 @@ public:
 	real_t familiarCauldronBaseZ = -2.0;
 	bool familiarHasGroundedPosition = false;
 	Uint32 familiarIngredientTargetUid = 0;
+	Sint32 familiarLowHpRecoveryTicks = 0;
 	// Permanent identity of the physical AMULET_FAMILIAR represented by this
 	// temporary manifestation. This is deliberately separate from leader_uid.
 	Uint32 familiarInstanceId = 0;

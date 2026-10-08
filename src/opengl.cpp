@@ -1466,16 +1466,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
             HSVtoRGB(&remap.z, &hsv); // blue
 #endif
         }
-		else if ( entity->flags[USERFLAG2] )
+		else if ( entity->flags[USERFLAG2]
+			&& (entity->behavior == &actPlayer
+				|| entity->behavior == &actPlayerLimb) )
 		{
-			if ( entity->behavior != &actMonster
-				|| monsterChangesColorWhenAlly(nullptr, entity) )
-			{
-				remap = mat4x4_t(0.f);
-				remap.x.y = 1.f;
-				remap.y.z = 1.f;
-				remap.z.x = 1.f;
-			}
+			remap = mat4x4_t(0.f);
+			remap.x.y = 1.f;
+			remap.y.z = 1.f;
+			remap.z.x = 1.f;
 		}
         GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap));
         const float b = std::max(0.5f, camera->luminance * 4.f);

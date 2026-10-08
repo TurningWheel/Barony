@@ -41,6 +41,7 @@ void initializeWraithPlayerForNewGame(int player)
 	const Sint32 oldMaxMP = stats[player]->MAXMP;
 	wraith.corporealMaxHP = oldMaxHP;
 	wraith.corporealMaxMP = oldMaxMP;
+	wraith.wasHumanPolymorphed = false;
 	wraith.possessedEntityUid = 0;
 	wraith.possessionTransition = false;
 	wraith.possessedType = NOTHING;

@@ -1498,6 +1498,7 @@ public:
 extern GenericGUIMenu GenericGUI[MAXPLAYERS];
 
 bool openStewingCauldron(Entity* familiar, int player);
+bool validateStewingCauldronAccess(Entity* cauldron, int player);
 void closeStewingForCauldron(Entity* familiar);
 
 /*

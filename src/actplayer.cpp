@@ -50,6 +50,15 @@ static ConsoleVariable<float> cvar_followerStartZ("/follower_start_z", -2.5);
 static ConsoleVariable<float> cvar_followerMoveTo("/follower_moveto_z", 0.1);
 static ConsoleVariable<float> cvar_followerStartZLimit("/follower_start_z_limit", 7.5);
 
+static bool playerWraithIsHumanPolymorphed(int player)
+{
+	return player >= 0 && player < MAXPLAYERS
+		&& players[player] && players[player]->entity && stats[player]
+		&& stats[player]->playerRace == RACE_WRAITH
+		&& stats[player]->getEffectActive(EFF_POLYMORPH)
+		&& players[player]->entity->effectPolymorph > NUMMONSTERS;
+}
+
 static bool playerHasIncorporealWraithRuntimeState(int player)
 {
 	return player >= 0 && player < MAXPLAYERS
@@ -57,7 +66,8 @@ static bool playerHasIncorporealWraithRuntimeState(int player)
 		&& stats[player]->playerRace == RACE_WRAITH
 		&& stats[player]->stat_appearance == 0
 		&& players[player]->mechanics.wraith.initialized
-		&& players[player]->mechanics.wraith.possessedEntityUid == 0;
+		&& players[player]->mechanics.wraith.possessedEntityUid == 0
+		&& !playerWraithIsHumanPolymorphed(player);
 }
 
 bool playerIsInWraithForm(int player)
@@ -434,7 +444,12 @@ bool processWraithLoreRead(int player, WraithLoreKind kind, int textId, Uint64 p
 bool processWraithItemLoreRead(int player, Item* item, WraithLoreKind kind, int textId)
 {
 	if ( !item || (item->type != READABLE_BOOK && item->type != SCROLL_MAIL) ) { return false; }
+	const bool assignedInstanceId = item->wraithLoreInstanceId == 0;
 	const Uint32 instanceId = item->wraithLoreEnsureInstanceId();
+	if ( multiplayer == SERVER && assignedInstanceId && instanceId != 0 )
+	{
+		serverSyncPersistentCustomItemStateForOwner(item);
+	}
 	return instanceId != 0 && processWraithLoreRead(player, kind, textId, instanceId);
 }
 
@@ -500,6 +515,10 @@ Uint64 getWraithGravestoneLoreObjectId(const Entity* gravestone, int textId)
 Monster getWraithEffectiveMonsterType(int player)
 {
 	if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return HUMAN;
+	}
+	if ( playerWraithIsHumanPolymorphed(player) )
 	{
 		return HUMAN;
 	}
@@ -1161,6 +1180,16 @@ static void reactivateWraithBody(int player, Entity& body)
 	restoreWraithBodyStasisFlags(player, body);
 }
 
+static void resetWraithPossessedBodyLookOrientation(Entity* body)
+{
+	if ( !body )
+	{
+		return;
+	}
+	body->pitch = 0.0;
+	body->roll = 0.0;
+}
+
 bool beginWraithPossession(int player, Entity* target)
 {
 	if ( multiplayer == CLIENT ) { return false; }
@@ -1539,6 +1568,209 @@ void clearWraithReturningBodyUIReferences(int player, const std::vector<Item*>& 
 	clearWraithReturningBodyUIReferenceSets(player, returningItems, returningUids);
 }
 
+static bool wraithHumanPolymorphKeepsItem(const Item* item)
+{
+	if ( !item || item->type == SPELL_ITEM )
+	{
+		return true;
+	}
+	const Category category = itemCategory(item);
+	return category == RING || category == AMULET;
+}
+
+static std::vector<Item*> collectWraithHumanPolymorphReturnItems(int player)
+{
+	std::vector<Item*> itemsToPack;
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return itemsToPack;
+	}
+
+	std::unordered_set<Item*> seen;
+	auto addItem = [&](Item* item)
+	{
+		if ( !item || wraithHumanPolymorphKeepsItem(item)
+			|| !seen.insert(item).second )
+		{
+			return;
+		}
+		itemsToPack.push_back(item);
+	};
+
+	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+	{
+		addItem(static_cast<Item*>(node->element));
+	}
+
+	Item* equipment[] = {
+		stats[player]->helmet,
+		stats[player]->breastplate,
+		stats[player]->gloves,
+		stats[player]->shoes,
+		stats[player]->shield,
+		stats[player]->weapon,
+		stats[player]->cloak,
+		stats[player]->amulet,
+		stats[player]->ring,
+		stats[player]->mask
+	};
+	for ( Item* item : equipment )
+	{
+		addItem(item);
+	}
+
+	return itemsToPack;
+}
+
+bool applyWraithHumanPolymorphReturnInventory(int player, Uint32 bagKey)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| bagKey == 0 )
+	{
+		return false;
+	}
+
+	std::vector<Item*> itemsToPack = collectWraithHumanPolymorphReturnItems(player);
+	std::unordered_set<Item*> movingItems(itemsToPack.begin(), itemsToPack.end());
+	clearWraithReturningBodyUIReferences(player, itemsToPack);
+
+	Item** equipmentSlots[] = {
+		&stats[player]->helmet,
+		&stats[player]->breastplate,
+		&stats[player]->gloves,
+		&stats[player]->shoes,
+		&stats[player]->shield,
+		&stats[player]->weapon,
+		&stats[player]->cloak,
+		&stats[player]->mask
+	};
+	for ( Item** slot : equipmentSlots )
+	{
+		if ( *slot && movingItems.find(*slot) != movingItems.end() )
+		{
+			*slot = nullptr;
+		}
+	}
+
+	if ( players[player]->isLocalPlayer() )
+	{
+		// Retire UI/paper-doll references before destroying the old Item objects.
+		players[player]->paperDoll.updateSlots();
+	}
+
+	for ( Item* item : itemsToPack )
+	{
+		if ( item->node )
+		{
+			list_RemoveNode(item->node);
+		}
+		else
+		{
+			free(item);
+		}
+	}
+
+	list_t* chestInventory = &stats[player]->inventory;
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+	{
+		// Remote-player equipment is represented authoritatively on the server
+		// without requiring a duplicate inventory node. The owning client receives
+		// its inventory representation through WPRB below.
+		chestInventory = nullptr;
+	}
+	Item* chest = newItem(TOOL_PLAYER_LOOT_BAG, WORN, 0, 1, bagKey, true,
+		chestInventory);
+	if ( !chest )
+	{
+		printlog("[WRAITH]: ERROR failed to create polymorph-return loot chest");
+		return false;
+	}
+	if ( !setWraithHeldItem(player, chest) )
+	{
+		printlog("[WRAITH]: ERROR failed to place polymorph-return loot chest in hand");
+		if ( chest->node ) { list_RemoveNode(chest->node); }
+		else { free(chest); }
+		return false;
+	}
+
+	players[player]->hud.weaponSwitch = true;
+	players[player]->hud.shieldSwitch = true;
+	return true;
+}
+
+static void syncWraithHumanPolymorphReturnInventory(int player, Uint32 bagKey)
+{
+	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS
+		|| client_disconnected[player] || !players[player]
+		|| players[player]->isLocalPlayer() )
+	{
+		return;
+	}
+
+	// Make the form change arrive before the inventory-return command so the
+	// owning client is already in Wraith form when it equips the loot chest.
+	serverUpdateEffects(player);
+	if ( players[player]->entity )
+	{
+		serverUpdateEntitySkill(players[player]->entity, 50);
+	}
+
+	strcpy(reinterpret_cast<char*>(net_packet->data), "WPRB");
+	net_packet->data[4] = static_cast<Uint8>(player);
+	SDLNet_Write32(bagKey, &net_packet->data[5]);
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 9;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
+static bool handleWraithHumanPolymorphEnded(int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS
+		|| !players[player] || !players[player]->entity || !stats[player] || !stats[0]
+		|| stats[player]->playerRace != RACE_WRAITH
+		|| stats[player]->stat_appearance != 0
+		|| !players[player]->mechanics.wraith.initialized
+		|| stats[player]->HP <= 0
+		|| stats[player]->getEffectActive(EFF_POLYMORPH)
+		|| !playerIsInWraithForm(player) )
+	{
+		return false;
+	}
+
+	std::vector<Item*> itemsToPack = collectWraithHumanPolymorphReturnItems(player);
+	if ( itemsToPack.empty() )
+	{
+		return true;
+	}
+
+	Uint32 bagKey = 0;
+	if ( !Stat::allocateUniqueLootingBagKey(player, bagKey) )
+	{
+		printlog("[WRAITH]: ERROR failed to allocate polymorph-return loot-bag key for player %d",
+			player);
+		return false;
+	}
+
+	auto& loot = stats[0]->player_lootbags[bagKey];
+	loot.spawn_x = players[player]->entity->x;
+	loot.spawn_y = players[player]->entity->y;
+	loot.spawnedOnGround = false;
+	loot.looted = false;
+	for ( Item* item : itemsToPack )
+	{
+		loot.items.push_back(Item());
+		copyItem(&loot.items.back(), item);
+	}
+
+	if ( !applyWraithHumanPolymorphReturnInventory(player, bagKey) )
+	{
+		return false;
+	}
+	syncWraithHumanPolymorphReturnInventory(player, bagKey);
+	return true;
+}
+
 #ifndef NDEBUG
 static void assertWraithNoReturningUIReferences(int player,
 	const std::unordered_set<Item*>& returningItems, const std::unordered_set<Uint32>& returningUids)
@@ -1908,11 +2140,7 @@ bool releaseWraithPossession(int player)
 	targetStats->wraithFormerPossessor = static_cast<Sint8>(player);
 	targetStats->wraithBodyLootChestSpawned = false;
 	reactivateWraithBody(player, *target);
-	if ( wraithCanonicalPossessionType(targetStats->type) == DEMON )
-	{
-		target->pitch = 0.0;
-		target->roll = 0.0;
-	}
+	resetWraithPossessedBodyLookOrientation(target);
 	detachWraithBodyFollower(target, targetStats);
 	target->setEffect(EFF_ASLEEP, true, 2 * TICKS_PER_SECOND, true);
 	if ( !players[player]->entity->teleportAroundEntity(target, 1, 0) )
@@ -2449,7 +2677,12 @@ static void updateBatFamiliarForPlayer(Entity* playerEntity, int player)
 		}
 		return;
 	}
+	const bool assignedFamiliarInstanceId = familiarAmulet->familiarInstanceId == 0;
 	const Uint32 familiarInstanceId = familiarAmulet->familiarEnsureInstanceId();
+	if ( multiplayer == SERVER && assignedFamiliarInstanceId && familiarInstanceId != 0 )
+	{
+		serverSyncPersistentCustomItemStateForOwner(familiarAmulet);
+	}
 
 	Entity* familiar = nullptr;
 	for ( Uint32 uid : familiarUids )
@@ -8920,6 +9153,12 @@ void actPlayer(Entity* my)
 	{
 		return;
 	}
+	if ( multiplayer == SERVER && PLAYER_NUM > 0 && PLAYER_NUM < MAXPLAYERS
+		&& !client_disconnected[PLAYER_NUM] && players[PLAYER_NUM]
+		&& !players[PLAYER_NUM]->isLocalPlayer() && my->ticks == TICKS_PER_SECOND )
+	{
+		serverSyncTinctureStacks(PLAYER_NUM);
+	}
 	// mod add: Panicking cancels deliberate stance/selection state without
 	// touching movement, turning, camera input, or Entity::isMobile().
 	if ( playerIsPanicking(PLAYER_NUM) )
@@ -10131,6 +10370,26 @@ void actPlayer(Entity* my)
 			{
 				my->effectPolymorph = NOTHING;
 				serverUpdateEntitySkill(my, 50);
+			}
+		}
+
+		if ( stats[PLAYER_NUM]->playerRace == RACE_WRAITH
+			&& stats[PLAYER_NUM]->stat_appearance == 0
+			&& players[PLAYER_NUM]->mechanics.wraith.initialized )
+		{
+			auto& wraith = players[PLAYER_NUM]->mechanics.wraith;
+			const bool humanPolymorphedNow = playerWraithIsHumanPolymorphed(PLAYER_NUM);
+			if ( humanPolymorphedNow )
+			{
+				wraith.wasHumanPolymorphed = true;
+			}
+			else if ( wraith.wasHumanPolymorphed
+				&& !stats[PLAYER_NUM]->getEffectActive(EFF_POLYMORPH) )
+			{
+				// This transition is cause-independent: timer expiry, water potion,
+				// swimming, Revert Form, or any future effect removal all converge here.
+				wraith.wasHumanPolymorphed = false;
+				handleWraithHumanPolymorphEnded(PLAYER_NUM);
 			}
 		}
 	}

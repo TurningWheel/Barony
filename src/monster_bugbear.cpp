@@ -347,6 +347,7 @@ void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* entity = nullptr;
 	Entity* rightbody = nullptr;
 	int bodypart;
+	const bool wraithPossessed = monsterIsActiveWraithBody(my);
 
 	my->focalx = limbs[BUGBEAR][0][0];
 	my->focaly = limbs[BUGBEAR][0][1];
@@ -974,6 +975,11 @@ void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							entity->sprite = itemModel(myStats->weapon);
 						}
+						else if ( wraithPossessed )
+						{
+							entity->sprite = itemModel(myStats->weapon);
+							entity->flags[INVISIBLE] = entity->sprite <= 0;
+						}
 						else
 						{
 							entity->flags[INVISIBLE] = true;
@@ -1091,6 +1097,11 @@ void bugbearMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( myStats->shield->type == STEEL_SHIELD )
 						{
 							entity->sprite = 1420;
+						}
+						else if ( wraithPossessed )
+						{
+							entity->sprite = itemModel(myStats->shield);
+							entity->flags[INVISIBLE] = entity->sprite <= 0;
 						}
 						else
 						{

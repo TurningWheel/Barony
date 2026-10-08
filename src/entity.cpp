@@ -3923,21 +3923,24 @@ void Entity::monsterApplyNormalLevelUpGrowth(Stat* myStats)
 	const int mpMod = MP_MOD;
 	myStats->MAXHP += hpMod;
 	const int hpRestore = Entity::getHPRestoreOnLevelUp(this, myStats, hpMod);
-	const int mpRestore = Entity::getMPRestoreOnLevelUp(this, myStats, mpMod);
 
 	modHP(hpRestore);
 	myStats->HP = std::min(myStats->HP, myStats->MAXHP);
-	myStats->MP += mpRestore;
-	if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+	if ( monsterAllySummonRank == 0 )
 	{
-		myStats->MAXMP -= myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+		const int mpRestore = Entity::getMPRestoreOnLevelUp(this, myStats, mpMod);
+		myStats->MP += mpRestore;
+		if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+		{
+			myStats->MAXMP -= myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+		}
+		myStats->MAXMP += mpMod;
+		if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+		{
+			myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+		}
+		myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 	}
-	myStats->MAXMP += mpMod;
-	if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
-	{
-		myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
-	}
-	myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 }
 
 enum class GolemWildMagicSchool
@@ -5033,14 +5036,19 @@ void Entity::handleEffects(Stat* myStats)
 			}
 
 			// Consume one stored affinity only for each stat that really increased.
+			bool tinctureStacksChanged = false;
 			for ( int stat = 0; stat < NUMSTATS; ++stat )
 			{
 				if ( statIncrease[stat] > 0 && myStats->tinctureStacks[stat] > 0 )
 				{
 					--myStats->tinctureStacks[stat];
+					tinctureStacksChanged = true;
 				}
 			}
-			serverSyncTinctureStacks(player);
+			if ( tinctureStacksChanged )
+			{
+				serverSyncTinctureStacks(player);
+			}
 
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{

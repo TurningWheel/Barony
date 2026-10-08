@@ -6998,7 +6998,7 @@ void GenericGUIMenu::alterItem(Item* item)
 		else
 		{
 			Item* itemToPickup = newItem(newType, SERVICABLE, item->beatitude, 1, item->appearance, true, nullptr);
-			Item* pickedUp = itemPickup(gui_player, itemToPickup);
+			Item* pickedUp = itemPickupCraftingResult(gui_player, itemToPickup);
 			int oldCount = item->count;
 			item->count = 1;
 			std::string desc = itemToPickup->description();
@@ -7051,7 +7051,7 @@ void GenericGUIMenu::alterItem(Item* item)
 			}
 
 			Item* itemToPickup = newItem(GEM_JEWEL, result, 0, 1, 0, true, nullptr);
-			Item* pickedUp = itemPickup(gui_player, itemToPickup);
+			Item* pickedUp = itemPickupCraftingResult(gui_player, itemToPickup);
 			int oldCount = item->count;
 			item->count = 1;
 			std::string desc = itemToPickup->description();
@@ -9530,7 +9530,7 @@ void GenericGUIMenu::alchemyCookCombination()
 	if ( Item* newPotion = newItem(result, status, blessing, createCount, appearance, true, nullptr) )
 	{
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6771), newPotion->description());
-		Item* pickedUp = itemPickup(gui_player, newPotion);
+		Item* pickedUp = itemPickupCraftingResult(gui_player, newPotion);
 		if ( pickedUp )
 		{
 			alchemyGUI.potionResultUid = pickedUp->uid;
@@ -9547,7 +9547,7 @@ void GenericGUIMenu::alchemyCookCombination()
 	if ( emptyBottle )
 	{
 		Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
-		itemPickup(gui_player, emptyBottle);
+		itemPickupCraftingResult(gui_player, emptyBottle);
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(3351), items[POTION_EMPTY].getIdentifiedName());
 		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_BOTTLE_FROM_BREWING, POTION_EMPTY, 1);
 		free(emptyBottle);
@@ -10405,7 +10405,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 			if ( newPotion )
 			{
-				Item* pickedUp = itemPickup(gui_player, newPotion);
+				Item* pickedUp = itemPickupCraftingResult(gui_player, newPotion);
 				if ( samePotion )
 				{
 					if ( pickedUp != basePotion && pickedUp != secondaryPotion
@@ -10434,22 +10434,22 @@ void GenericGUIMenu::alchemyCombinePotions()
 					{
 						alchemyGUI.animPotionResultCount = 1;
 					}
-					if ( !tryDuplicatePotion && !randomResult )
+				}
+				if ( !tryDuplicatePotion && !randomResult )
+				{
+					alchemyAddRecipe(gui_player, basePotionType, secondaryPotionType, newPotion->type);
+				}
+				if ( tryDuplicatePotion )
+				{
+					if ( result == POTION_WATER && !duplicateSucceed )
 					{
-						alchemyAddRecipe(gui_player, basePotionType, secondaryPotionType, pickedUp->type);
-					}
-					if ( tryDuplicatePotion )
-					{
-						if ( result == POTION_WATER && !duplicateSucceed )
+						if ( basePotionType == POTION_WATER )
 						{
-							if ( basePotionType == POTION_WATER )
-							{
-								consumeItem(basePotion, gui_player);
-							}
-							else if ( secondaryPotionType == POTION_WATER )
-							{
-								consumeItem(secondaryPotion, gui_player);
-							}
+							consumeItem(basePotion, gui_player);
+						}
+						else if ( secondaryPotionType == POTION_WATER )
+						{
+							consumeItem(secondaryPotion, gui_player);
 						}
 					}
 				}
@@ -10467,7 +10467,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 			if ( emptyBottle )
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
-				itemPickup(gui_player, emptyBottle);
+				itemPickupCraftingResult(gui_player, emptyBottle);
 				messagePlayer(gui_player, MESSAGE_MISC, Language::get(3351), items[POTION_EMPTY].getIdentifiedName());
 				Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_BOTTLE_FROM_BREWING, POTION_EMPTY, 1);
 				free(emptyBottle);
@@ -10879,7 +10879,7 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 	Item* crafted = tinkeringCraftItemAndConsumeMaterials(item);
 	if ( crafted )
 	{
-		Item* pickedUp = itemPickup(gui_player, crafted);
+		Item* pickedUp = itemPickupCraftingResult(gui_player, crafted);
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(3668), crafted->description());
 		if ( workstationEntityUid != 0 && uidToEntity(workstationEntityUid) )
 		{
@@ -10997,13 +10997,13 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		Item* crafted = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, metal, 0, true, nullptr);
 		if ( crafted )
 		{
-			Item* pickedUp = itemPickup(player, crafted);
+			itemPickupCraftingResult(player, crafted);
 			if ( !tinkeringBulkSalvage )
 			{
 				if ( bonusMetalScrap > 0 )
 				{
 					Uint32 color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(player, MESSAGE_INVENTORY, color, Language::get(3665), metal + tinkeringBulkSalvageMetalScrap, items[pickedUp->type].getIdentifiedName());
+					messagePlayerColor(player, MESSAGE_INVENTORY, color, Language::get(3665), metal + tinkeringBulkSalvageMetalScrap, items[crafted->type].getIdentifiedName());
 					if ( players[player]->isLocalPlayer() )
 					{
 						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_METAL_SCRAPPED, TOOL_TINKERING_KIT, metal + tinkeringBulkSalvageMetalScrap);
@@ -11015,7 +11015,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_MISC, Language::get(3665), metal + tinkeringBulkSalvageMetalScrap, items[pickedUp->type].getIdentifiedName());
+					messagePlayer(player, MESSAGE_MISC, Language::get(3665), metal + tinkeringBulkSalvageMetalScrap, items[crafted->type].getIdentifiedName());
 					if ( players[player]->isLocalPlayer() )
 					{
 						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_METAL_SCRAPPED, TOOL_TINKERING_KIT, metal + tinkeringBulkSalvageMetalScrap);
@@ -11039,13 +11039,13 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		Item* crafted = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, magic, 0, true, nullptr);
 		if ( crafted )
 		{
-			Item* pickedUp = itemPickup(player, crafted);
+			itemPickupCraftingResult(player, crafted);
 			if ( !tinkeringBulkSalvage )
 			{
 				if ( bonusMagicScrap > 0 )
 				{
 					Uint32 color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(player, MESSAGE_INVENTORY, color, Language::get(3665), magic + tinkeringBulkSalvageMagicScrap, items[pickedUp->type].getIdentifiedName());
+					messagePlayerColor(player, MESSAGE_INVENTORY, color, Language::get(3665), magic + tinkeringBulkSalvageMagicScrap, items[crafted->type].getIdentifiedName());
 					if ( players[player]->isLocalPlayer() )
 					{
 						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_MAGIC_SCRAPPED, TOOL_TINKERING_KIT, magic + tinkeringBulkSalvageMagicScrap);
@@ -11057,7 +11057,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_MISC, Language::get(3665), magic + tinkeringBulkSalvageMagicScrap, items[pickedUp->type].getIdentifiedName());
+					messagePlayer(player, MESSAGE_MISC, Language::get(3665), magic + tinkeringBulkSalvageMagicScrap, items[crafted->type].getIdentifiedName());
 					if ( players[player]->isLocalPlayer() )
 					{
 						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_MAGIC_SCRAPPED, TOOL_TINKERING_KIT, magic + tinkeringBulkSalvageMagicScrap);
@@ -12673,7 +12673,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 						if ( upgradedItem )
 						{
 							achievementObserver.playerAchievements[gui_player].fixerUpper += 1;
-							Item* pickedUp = itemPickup(gui_player, upgradedItem);
+							Item* pickedUp = itemPickupCraftingResult(gui_player, upgradedItem);
 							if ( pickedUp && item->count == 1 )
 							{
 								// item* will be consumed, so pickedUp can take the inventory slot of it.
@@ -12786,7 +12786,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 						if ( repairedItem )
 						{
 							achievementObserver.playerAchievements[gui_player].fixerUpper += 1;
-							Item* pickedUp = itemPickup(gui_player, repairedItem);
+							Item* pickedUp = itemPickupCraftingResult(gui_player, repairedItem);
 							if ( pickedUp && item->count == 1 )
 							{
 								// item* will be consumed, so pickedUp can take the inventory slot of it.
@@ -12904,7 +12904,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 					Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
 					if ( repairedItem )
 					{
-						Item* pickedUp = itemPickup(gui_player, repairedItem);
+						Item* pickedUp = itemPickupCraftingResult(gui_player, repairedItem);
 						if ( pickedUp && item->count == 1 )
 						{
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
@@ -13433,12 +13433,13 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 				// mail uses the appearance to generate the text, so randomise it here.
 				crafted->appearance = local_rng.rand();
 			}
-			Item* pickedUp = itemPickup(gui_player, crafted);
+			Item* pickedUp = itemPickupCraftingResult(gui_player, crafted);
 			//messagePlayerColor(gui_player, uint32ColorGreen, Language::get(3724));
-			int oldcount = pickedUp->count;
-			pickedUp->count = 1;
-			messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorGreen, Language::get(3724), pickedUp->description());
-			pickedUp->count = oldcount;
+			Item* descriptionItem = pickedUp ? pickedUp : crafted;
+			int oldcount = descriptionItem->count;
+			descriptionItem->count = 1;
+			messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorGreen, Language::get(3724), descriptionItem->description());
+			descriptionItem->count = oldcount;
 			consumeItem(scribingBlankScrollTarget, gui_player);
 			featherGUI.inscribeSuccessName = label;
 			featherGUI.inscribeSuccessTicks = ticks;
@@ -13527,7 +13528,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
 			if ( repairedItem )
 			{
-				Item* pickedUp = itemPickup(gui_player, repairedItem);
+				Item* pickedUp = itemPickupCraftingResult(gui_player, repairedItem);
 				if ( pickedUp && item->count == 1 )
 				{
 					// item* will be consumed, so pickedUp can take the inventory slot of it.
@@ -16919,17 +16920,27 @@ void GenericGUIMenu::TinkerGUI_t::clearItemDisplayed()
 	itemRequirement = -1;
 }
 
+bool validateStewingCauldronAccess(Entity* cauldron, const int player)
+{
+	if ( !cauldron || player < 0 || player >= MAXPLAYERS || client_disconnected[player]
+		|| !players[player] || !players[player]->entity || !stats[player]
+		|| stats[player]->HP <= 0 || !isAmuletFamiliar(cauldron, cauldron->getStats())
+		|| getAmuletFamiliarForm(cauldron) != FAMILIAR_FORM_CAULDRON
+		|| !cauldron->getStats() || cauldron->getStats()->HP <= 0
+		|| cauldron->getStats()->leader_uid != players[player]->entity->getUID()
+		|| entityDist(players[player]->entity, cauldron) > TOUCHRANGE
+		|| !stats[player]->amulet || stats[player]->amulet->type != AMULET_FAMILIAR
+		|| stats[player]->amulet->status == BROKEN
+		|| stats[player]->amulet->familiarInstanceId != cauldron->familiarInstanceId )
+	{
+		return false;
+	}
+	return true;
+}
+
 bool openStewingCauldron(Entity* familiar, int player)
 {
-	if ( multiplayer == CLIENT || !familiar || player < 0 || player >= MAXPLAYERS
-		|| !players[player] || !players[player]->entity || !stats[player]
-		|| !isAmuletFamiliar(familiar, familiar->getStats())
-		|| getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_CAULDRON
-		|| !familiar->getStats()
-		|| familiar->getStats()->leader_uid != players[player]->entity->getUID()
-		|| entityDist(players[player]->entity, familiar) > TOUCHRANGE
-		|| !stats[player]->amulet || stats[player]->amulet->type != AMULET_FAMILIAR
-		|| stats[player]->amulet->status == BROKEN )
+	if ( multiplayer == CLIENT || !validateStewingCauldronAccess(familiar, player) )
 	{
 		return false;
 	}

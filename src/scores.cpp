@@ -7265,6 +7265,12 @@ int loadGame(int player, const SaveGameInfo& info) {
 	for (int c = 0; c < NUMMISCFLAGS && c < p.MISC_FLAGS.size(); ++c) {
 		stats[statsPlayer]->MISC_FLAGS[c] = p.MISC_FLAGS[c];
 	}
+	if ( stats[statsPlayer]->playerRace == RACE_WRAITH && players[statsPlayer] )
+	{
+		players[statsPlayer]->mechanics.wraith.wasHumanPolymorphed =
+			stats[statsPlayer]->getEffectActive(EFF_POLYMORPH)
+			&& stats[statsPlayer]->playerPolymorphStorage > NUMMONSTERS;
+	}
 	//stats[statsPlayer]->attributes = p.attributes; // skip attributes for now
 	for ( auto& loot : p.player_lootbags )
 	{
