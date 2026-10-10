@@ -725,10 +725,14 @@ struct StewingMatch
 	ItemType result = ITEM_ENUM_MAX;
 };
 
+// A distinctive appearance prevents Use-brewed oils/inks merging with ordinary bottles.
+constexpr Uint32 STEWING_NO_BOTTLE_APPEARANCE = 0x57535455u;
+
 enum StewingOperation : Uint8
 {
 	STEWING_OPERATION_BREW_INTO,
-	STEWING_OPERATION_APPLY
+	STEWING_OPERATION_APPLY,
+	STEWING_OPERATION_BREW_FOR_USE // Create a no-bottle oil/ink for the Use target picker.
 };
 
 struct StewingTransactionResult

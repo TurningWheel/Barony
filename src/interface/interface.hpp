@@ -1462,6 +1462,11 @@ public:
 		bool isInteractable = false;
 		bool bFirstTimeSnapCursor = false;
 		bool transactionPending = false;
+		// Oils and inks brew a physical item, then open the existing target picker.
+		// The picker never owns or reserves ingredients and can be cancelled safely.
+		ItemType handoffResult = ITEM_ENUM_MAX;
+		Uint32 handoffBaseline = 0;
+		bool handoffAwaitingResult = false;
 		Uint32 cauldronUid = 0;
 		StewingSelection selection{};
 		std::array<Uint32, STEWING_RESOURCE_COUNT> resources{};

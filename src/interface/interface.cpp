@@ -17171,6 +17171,9 @@ void GenericGUIMenu::StewingGUI_t::openStewingMenu(Uint32 familiarUid,
 	selection = StewingSelection{};
 	recipes.activeRecipeIndex = -1;
 	transactionPending = false;
+	handoffResult = ITEM_ENUM_MAX;
+	handoffBaseline = 0;
+	handoffAwaitingResult = false;
 	animx = 0.0;
 	isInteractable = false;
 	bFirstTimeSnapCursor = false;
@@ -17194,6 +17197,9 @@ void GenericGUIMenu::StewingGUI_t::closeStewingMenu()
 	recipes.activeRecipeIndex = -1;
 	resources.fill(0);
 	transactionPending = false;
+	handoffResult = ITEM_ENUM_MAX;
+	handoffBaseline = 0;
+	handoffAwaitingResult = false;
 	animx = 0.0;
 	isInteractable = false;
 	bFirstTimeSnapCursor = false;
@@ -17313,7 +17319,7 @@ void GenericGUIMenu::StewingGUI_t::autofillRecipe(int recipeIndex)
 
 void GenericGUIMenu::StewingGUI_t::requestTransaction(StewingOperation operation)
 {
-	if ( transactionPending || !bOpen || !isInteractable ) { return; }
+	if ( transactionPending || handoffAwaitingResult || !bOpen || !isInteractable ) { return; }
 	const StewingMatch match = evaluateStewingMixture(selection);
 	if ( match.type != STEWING_MATCH_VALID_RECIPE
 		&& match.type != STEWING_MATCH_INVALID_POISON )
@@ -17325,6 +17331,30 @@ void GenericGUIMenu::StewingGUI_t::requestTransaction(StewingOperation operation
 		return;
 	}
 	const int player = parentGUI.getPlayer();
+	// An oil/ink target is chosen AFTER the authoritative brew succeeds.
+	// Reuse ITEMFX's already implemented oil/ink inventory selection and packets.
+	const bool needsTarget = operation == STEWING_OPERATION_APPLY
+		&& match.type == STEWING_MATCH_VALID_RECIPE
+		&& (itemTypeIsOil(match.result) || itemTypeIsInk(match.result));
+	if ( needsTarget )
+	{
+		handoffResult = match.result;
+		handoffBaseline = 0;
+		for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+		{
+			Item* held = static_cast<Item*>(node->element);
+			if ( held && held->type == handoffResult )
+			{
+				handoffBaseline += held->count;
+			}
+		}
+		operation = STEWING_OPERATION_BREW_FOR_USE;
+	}
+	else
+	{
+		handoffResult = ITEM_ENUM_MAX;
+		handoffBaseline = 0;
+	}
 	Entity* familiar = uidToEntity(cauldronUid);
 	if ( multiplayer == CLIENT )
 	{
@@ -17358,12 +17388,17 @@ void GenericGUIMenu::StewingGUI_t::receiveTransaction(bool success,
 	resources = available;
 	if ( success )
 	{
+		// The brewed oil/ink may arrive in the client's inventory later than STWU.
+		// Do not open the target picker with a fabricated or stale item pointer.
+		handoffAwaitingResult = handoffResult != ITEM_ENUM_MAX;
 		selection = remaining;
 		recipes.activeRecipeIndex = -1;
 		Player::soundActivate();
 	}
 	else
 	{
+		handoffResult = ITEM_ENUM_MAX;
+		handoffAwaitingResult = false;
 		Player::soundCancel();
 	}
 }
@@ -17964,6 +17999,28 @@ void GenericGUIMenu::StewingGUI_t::updateStewingMenu()
 	stewFrame->setSize(SDL_Rect{ playerEntity->camera_virtualx1(), playerEntity->camera_virtualy1(),
 		STEWING_MAIN_WIDTH, playerEntity->camera_virtualHeight() });
 	if ( !bOpen || stewFrame->isDisabled() ) { return; }
+	if ( handoffAwaitingResult && !transactionPending && handoffResult != ITEM_ENUM_MAX )
+	{
+		Uint32 total = 0;
+		Item* targetSource = nullptr;
+		for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+		{
+			Item* entry = static_cast<Item*>(node->element);
+			if ( entry && entry->type == handoffResult && entry->count > 0 )
+			{
+				total += entry->count;
+				targetSource = entry;
+			}
+		}
+		if ( total > handoffBaseline && targetSource )
+		{
+			const ItemType produced = handoffResult;
+			handoffAwaitingResult = false;
+			handoffResult = ITEM_ENUM_MAX;
+			parentGUI.openGUI(GUI_TYPE_ITEMFX, targetSource, 0, produced, 0);
+			return;
+		}
+	}
 	if ( stewFrame->getFrames().empty() ) { createStewingMenu(); }
 	if ( multiplayer != CLIENT ) { resources = getStewingResourceSnapshot(player); }
 
@@ -18219,7 +18276,9 @@ void GenericGUIMenu::StewingGUI_t::updateStewingMenu()
 		const bool enabled = !transactionPending && stewingSelectionResourcesAvailable(*this)
 			&& (match.type == STEWING_MATCH_VALID_RECIPE
 				|| match.type == STEWING_MATCH_INVALID_POISON)
-			&& stewingResultCanApplyImmediately(match.result);
+			&& (stewingResultCanApplyImmediately(match.result)
+				|| itemTypeIsOil(match.result) || itemTypeIsInk(match.result))
+			&& !handoffAwaitingResult;
 		apply->setDisabled(!enabled);
 		apply->setTextColor(enabled ? 0xFFFFFFFF : hudColors.characterSheetFaintText);
 	}

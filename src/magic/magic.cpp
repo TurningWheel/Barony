@@ -3559,6 +3559,7 @@ Entity* spellEffectFlameSprite(Entity& caster, spellElement_t& element, real_t x
 bool Entity::spellEffectPreserveItem(Item* item)
 {
 	if ( !item ) { return false; }
+	if ( item->type == AMULET_FAMILIAR ) { return true; }
 	if ( Stat* myStats = getStats() )
 	{
 		if ( behavior != &actPlayer )

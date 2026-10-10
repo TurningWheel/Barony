@@ -1487,7 +1487,7 @@ namespace
 		return true;
 	}
 
-	void giveStewingItem(int player, ItemType type, Uint64 amount)
+	void giveStewingItem(int player, ItemType type, Uint64 amount, bool noBottleUse = false)
 	{
 		const int resourceIndex = getStewingResourceIndex(type);
 		const Uint64 originalAmount = amount;
@@ -1495,7 +1495,8 @@ namespace
 		{
 			const Sint16 count = static_cast<Sint16>(std::min<Uint64>(amount,
 				static_cast<Uint64>(std::numeric_limits<Sint16>::max())));
-				Item* item = newItem(type, SERVICABLE, 0, count, 0, true, nullptr);
+				Item* item = newItem(type, SERVICABLE, 0, count,
+					noBottleUse ? STEWING_NO_BOTTLE_APPEARANCE : 0, true, nullptr);
 				if ( !item )
 				{
 					return;
@@ -1568,7 +1569,13 @@ namespace
 			case POTION_JUICE: applied = item_PotionJuice(item, entity, entity); break;
 			case POTION_INVISIBILITY: applied = item_PotionInvisibility(item, entity, entity); break;
 			case POTION_SICKNESS: applied = item_PotionSickness(item, entity, entity); break;
-			default: break;
+			default:
+				if ( itemTypeIsTincture(result) )
+				{
+					applied = applyTinctureStackToPlayer(result, player);
+					if ( applied ) { tryIncreaseAlchemyFromWitchbrewUse(player); }
+				}
+				break;
 		}
 		if ( item ) { free(item); }
 		return applied;
@@ -1762,7 +1769,7 @@ bool stewingResultCanApplyImmediately(ItemType result)
 		case POTION_SICKNESS:
 			return true;
 		default:
-			return false;
+			return itemTypeIsTincture(result);
 	}
 }
 
@@ -2004,7 +2011,14 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 	{
 		return false;
 	}
-	if ( operation != STEWING_OPERATION_BREW_INTO && operation != STEWING_OPERATION_APPLY )
+	if ( operation != STEWING_OPERATION_BREW_INTO && operation != STEWING_OPERATION_APPLY
+		&& operation != STEWING_OPERATION_BREW_FOR_USE )
+	{
+		return false;
+	}
+	if ( operation == STEWING_OPERATION_BREW_FOR_USE
+		&& (match.type != STEWING_MATCH_VALID_RECIPE
+			|| (!itemTypeIsOil(match.result) && !itemTypeIsInk(match.result))))
 	{
 		return false;
 	}
@@ -2101,15 +2115,16 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 		serverSyncPersistentCustomItemStateForOwner(bag);
 	}
 
-	const Uint64 emptyBottleReturns = operation == STEWING_OPERATION_APPLY
-		? contributedBottles : (contributedBottles > 0 ? contributedBottles - 1 : 0);
+	const Uint64 emptyBottleReturns = operation == STEWING_OPERATION_BREW_FOR_USE ? 0
+		: (operation == STEWING_OPERATION_APPLY
+			? contributedBottles : (contributedBottles > 0 ? contributedBottles - 1 : 0));
 	if ( emptyBottleReturns > 0 )
 	{
 		giveStewingItem(player, POTION_EMPTY, emptyBottleReturns);
 	}
-	if ( operation == STEWING_OPERATION_BREW_INTO )
+	if ( operation == STEWING_OPERATION_BREW_INTO || operation == STEWING_OPERATION_BREW_FOR_USE )
 	{
-		giveStewingItem(player, match.result, 1);
+		giveStewingItem(player, match.result, 1, operation == STEWING_OPERATION_BREW_FOR_USE);
 	}
 	else if ( !applyStewingResult(player, match.result) )
 	{
@@ -5835,7 +5850,7 @@ static bool useOil(Item*& item, int player, bool reversePriority = false)
 	{
 		tryIncreaseAlchemyFromWitchbrewUse(player);
 		serverSyncPersistentCustomItemStateForOwner(target);
-		witchbrewReturnEmptyBottle(player);
+		if ( item->appearance != STEWING_NO_BOTTLE_APPEARANCE ) { witchbrewReturnEmptyBottle(player); }
 	}
 	messagePlayer(player, MESSAGE_EQUIPMENT, "You coat %s with %s.", target->getName(), item->getName());
 	consumeItem(item, player);
@@ -5861,7 +5876,8 @@ bool useOilOnItem(Item*& oil, Item* target, int player)
 		net_packet->data[21] = target == stats[player]->weapon ? 1
 			: (target == stats[player]->shield ? 2 : 0);
 		net_packet->address = net_server;
-		net_packet->len = 22;
+		net_packet->data[22] = oil->appearance == STEWING_NO_BOTTLE_APPEARANCE ? 1 : 0;
+		net_packet->len = 23;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		return true;
 	}
@@ -5869,7 +5885,7 @@ bool useOilOnItem(Item*& oil, Item* target, int player)
 	tryIncreaseAlchemyFromWitchbrewUse(player);
 	serverSyncPersistentCustomItemStateForOwner(target);
 	messagePlayer(player, MESSAGE_EQUIPMENT, "You coat %s with %s.", target->getName(), oil->getName());
-	witchbrewReturnEmptyBottle(player);
+	if ( oil->appearance != STEWING_NO_BOTTLE_APPEARANCE ) { witchbrewReturnEmptyBottle(player); }
 	consumeItem(oil, player);
 	return true;
 }
@@ -5888,7 +5904,8 @@ bool useInkOnSpellbook(Item*& ink, Item* book, int player)
 		SDLNet_Write32(ink->uid, &net_packet->data[17]);
 		net_packet->data[21] = itemIsEquipped(book, player) ? 1 : 0;
 		net_packet->address = net_server;
-		net_packet->len = 22;
+		net_packet->data[22] = ink->appearance == STEWING_NO_BOTTLE_APPEARANCE ? 1 : 0;
+		net_packet->len = 23;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		return true;
 	}
@@ -5897,7 +5914,7 @@ bool useInkOnSpellbook(Item*& ink, Item* book, int player)
 	book->type = result;
 	tryIncreaseAlchemyFromWitchbrewUse(player);
 	messagePlayer(player, MESSAGE_INVENTORY, "The spellbook becomes %s.", book->getName());
-	witchbrewReturnEmptyBottle(player);
+	if ( ink->appearance != STEWING_NO_BOTTLE_APPEARANCE ) { witchbrewReturnEmptyBottle(player); }
 	consumeItem(ink, player);
 	return true;
 }

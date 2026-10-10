@@ -49,8 +49,7 @@ void spawnAmuletFamiliarIngredientBag(Entity* recipient, Entity* source)
 	const bool isHumanOrGreenSlime = sourceStats && (sourceStats->type == HUMAN
 		|| (sourceStats->type == SLIME
 			&& MonsterData_t::getKeyFromSprite(source->sprite, SLIME) == "slime green"));
-	const int generatedCount = (isHumanOrGreenSlime ? 2 : 0) + local_rng.rand() % 3;
-	if ( generatedCount == 0 ) { return; }
+	const int generatedCount = 2 + local_rng.rand() % (isHumanOrGreenSlime ? 7 : 3);
 
 	Entity* bag = newEntity(-1, 1, map.entities, nullptr);
 	bag->flags[INVISIBLE] = true;

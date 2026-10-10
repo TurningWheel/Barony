@@ -10913,7 +10913,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 		return;
 	}
 	if ( player >= 0 && playerIsInWraithForm(player)
-		&& !myStats->weapon && getWraithHeldItem(player) )
+		&& !myStats->weapon && getWraithHeldItem(player)
+		&& pose != MONSTER_POSE_MAGIC_WINDUP1
+		&& pose != MONSTER_POSE_MAGIC_WINDUP2
+		&& pose != MONSTER_POSE_MAGIC_WINDUP3
+		&& pose != MONSTER_POSE_MAGIC_CAST1
+		&& pose != MONSTER_POSE_MAGIC_CAST2
+		&& pose != MONSTER_POSE_MAGIC_CAST3 )
 	{
 		// Native offhand equipment occupies the true Wraith's single hybrid
 		// hand. Reject the otherwise-empty-mainhand unarmed attack on both the
@@ -28099,7 +28105,8 @@ bool Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		return false; // conjured skeleton armor doesn't break.
 	}
 
-	if ( armor.type == ARTIFACT_BOOTS
+	if ( armor.type == AMULET_FAMILIAR
+		|| armor.type == ARTIFACT_BOOTS
 		|| armor.type == ARTIFACT_HELM
 		|| armor.type == ARTIFACT_CLOAK
 		|| armor.type == CLOAK_GUARDIAN

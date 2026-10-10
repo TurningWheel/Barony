@@ -3921,7 +3921,7 @@ void initClass(const int player)
 				{
 					for ( int slot = 0; slot < 4; ++slot )
 					{
-						bag->ingredientCounts[slot] = 1;
+						bag->ingredientCounts[slot] = 8;
 					}
 
 					bag->x = bagX++;

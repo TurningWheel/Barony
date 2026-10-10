@@ -9408,6 +9408,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		const Uint32 bookUid = SDLNet_Read32(&net_packet->data[8]);
 		const ItemType source = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[12]));
 		const Uint32 inkUid = net_packet->len >= 21 ? SDLNet_Read32(&net_packet->data[17]) : 0;
+		const bool returnBottle = net_packet->len < 23 || net_packet->data[22] == 0;
 		const bool targetEquipped = net_packet->len >= 22 && net_packet->data[21] != 0;
 		const ItemType result = getInkSpellbookResult(ink, source);
 		if ( result == ITEM_ENUM_MAX ) { return; }
@@ -9424,9 +9425,12 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		net_packet->len = 16;
 		sendPacketSafe(net_sock, -1, net_packet, client - 1);
 		tryIncreaseAlchemyFromWitchbrewUse(client);
-		Item* bottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
-		itemPickup(client, bottle);
-		free(bottle);
+		if ( returnBottle )
+		{
+			Item* bottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
+			itemPickup(client, bottle);
+			free(bottle);
+		}
 	}},
 
 	// apply an oil to a client-selected inventory item
@@ -9437,6 +9441,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		const Uint32 targetUid = SDLNet_Read32(&net_packet->data[8]);
 		const ItemType targetType = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[12]));
 		const Uint32 oilUid = SDLNet_Read32(&net_packet->data[17]);
+		const bool returnBottle = net_packet->len < 23 || net_packet->data[22] == 0;
 		const Uint8 targetSlot = net_packet->data[21];
 		if ( !itemTypeIsOil(oilType) || !itemTypeCanReceiveOil(targetType) || targetSlot > 2 ) { return; }
 		const AppliedOil coating = appliedOilFromItemType(oilType);
@@ -9455,9 +9460,12 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		net_packet->len = 13;
 		sendPacketSafe(net_sock, -1, net_packet, client - 1);
 		tryIncreaseAlchemyFromWitchbrewUse(client);
-		Item* bottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
-		itemPickup(client, bottle);
-		free(bottle);
+		if ( returnBottle )
+		{
+			Item* bottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
+			itemPickup(client, bottle);
+			free(bottle);
+		}
 	}},
 
 	// use item
