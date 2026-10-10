@@ -356,7 +356,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				//Blessed water damages undead.
 				int damage = -(20 * item->beatitude);
-				entity->modHP(damage);
+				entity->modHP(damage, usedBy);
 				playSoundEntity(entity, 28, 64);
 				playSoundEntity(entity, 249, 128);
 				entity->setObituary(Language::get(1533));
@@ -366,7 +366,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				if ( stats->type != AUTOMATON )
 				{
-					entity->modHP(item->potionGetEffectHealth(entity, stats));
+					entity->modHP(item->potionGetEffectHealth(entity, stats), usedBy);
 					playSoundEntity(entity, 168, 128);
 					spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 				}
@@ -377,7 +377,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			if ( stats->type == VAMPIRE )
 			{
-				entity->modHP(-5);
+				entity->modHP(-5, usedBy);
 				playSoundEntity(entity, 28, 64);
 				playSoundEntity(entity, 249, 128);
 				entity->setObituary(Language::get(1533));
@@ -385,7 +385,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			}
 			else if ( stats->type != AUTOMATON )
 			{
-				entity->modHP(item->potionGetEffectHealth(entity, stats));
+				entity->modHP(item->potionGetEffectHealth(entity, stats), usedBy);
 				playSoundEntity(entity, 168, 128);
 				spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 			}
@@ -826,7 +826,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 			entity->modMP(5 * (1 + item->beatitude));
 		}
 	}
-	entity->modHP(item->potionGetEffectHealth(entity, stats));
+	entity->modHP(item->potionGetEffectHealth(entity, stats), usedBy);
 	// results of eating
 	if ( entity->behavior == &actPlayer && stats->type != SKELETON && stats->type != AUTOMATON )
 	{
@@ -957,7 +957,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			stats->EFFECTS_TIMERS[EFF_DRUNK] = item->potionGetCursedEffectDurationRandom(entity, stats);
 		}
-		entity->modHP(item->potionGetEffectHealth(entity, stats));
+		entity->modHP(item->potionGetEffectHealth(entity, stats), usedBy);
 
 		if ( svFlags & SV_FLAG_HUNGER )
 		{
@@ -990,7 +990,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	else
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(760));
-		entity->modHP(item->potionGetEffectHealth(entity, stats));
+		entity->modHP(item->potionGetEffectHealth(entity, stats), usedBy);
 
 		if ( svFlags & SV_FLAG_HUNGER )
 		{
@@ -1121,7 +1121,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	messagePlayer(player, MESSAGE_HINT, Language::get(761));
 	int oldHP = stats->HP;
-	entity->modHP(-damage);
+	entity->modHP(-damage, usedBy);
 	stats->setEffectActive(EFF_POISONED, 1);
 	if ( usedBy && usedBy != entity )
 	{
@@ -2028,7 +2028,7 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	messagePlayer(player, MESSAGE_HINT, Language::get(770));
 	int oldHP = stats->HP;
-	entity->modHP(-damage);
+	entity->modHP(-damage, usedBy);
 	playSoundEntity(entity, 28, 64);
 
 	if ( usedBy && usedBy != entity )
@@ -2149,7 +2149,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(770));
 		int oldHP = stats->HP;
-		entity->modHP(-damage);
+		entity->modHP(-damage, usedBy);
 		playSoundEntity(entity, 28, 64);
 
 		if ( usedBy && usedBy != entity )

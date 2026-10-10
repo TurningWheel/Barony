@@ -1005,6 +1005,17 @@ void actHudWeapon(Entity* my)
 		HUDWEAPON_CHARGE = 0;
 		HUDWEAPON_OVERCHARGE = 0;
 	}
+	if ( playerIsInWraithForm(HUDWEAPON_PLAYERNUM)
+		&& !stats[HUDWEAPON_PLAYERNUM]->weapon
+		&& getWraithHeldItem(HUDWEAPON_PLAYERNUM) )
+	{
+		// A native offhand occupies the Wraith's only physical hand. Keep the
+		// offhand action available, but do not start a separate unarmed swing.
+		swingweapon = false;
+		HUDWEAPON_CHOP = 0;
+		HUDWEAPON_CHARGE = 0;
+		HUDWEAPON_OVERCHARGE = 0;
+	}
 	// mod add end
 	bool thrownWeapon = stats[HUDWEAPON_PLAYERNUM]->weapon
 		&& (itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == THROWN || itemCategory(stats[HUDWEAPON_PLAYERNUM]->weapon) == GEM
@@ -4382,6 +4393,15 @@ void actHudWeapon(Entity* my)
 			my->z += 5.0 * smash;
 			my->pitch += (PI * 0.65) * smash;
 		}
+	}
+	if ( playerIsInWraithForm(HUDWEAPON_PLAYERNUM)
+		&& stats[HUDWEAPON_PLAYERNUM]->weapon
+		&& getWraithHeldItem(HUDWEAPON_PLAYERNUM) == stats[HUDWEAPON_PLAYERNUM]->weapon
+		&& wraithHybridItemUsesGenericPose(stats[HUDWEAPON_PLAYERNUM]->weapon) )
+	{
+		WraithHybridItemModelPositions.applyOffset(
+			*my,
+			WraithHybridItemModelPositions.firstPersonGeneric);
 	}
 	if ( !my->flags[OVERDRAW] )
 	{

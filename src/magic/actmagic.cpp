@@ -3602,7 +3602,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							Sint32 oldHP = hitstats->HP;
-							hit.entity->modHP(-damage);
+							hit.entity->modHP(-damage, parent);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
@@ -4060,7 +4060,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								playSoundEntity(hit.entity, 28, 128);
 
 								Sint32 oldHP = hitstats->HP;
-								hit.entity->modHP(-damage);
+								hit.entity->modHP(-damage, parent);
 								magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 								magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 								int numGibs = damage / 2;
@@ -4403,7 +4403,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							int oldHP = hitstats->HP;
-							hit.entity->modHP(-damage);
+							hit.entity->modHP(-damage, parent);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 							//for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
@@ -4752,7 +4752,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int oldHP = hitstats->HP;
 							if ( damage > 0 )
 							{
-								hit.entity->modHP(-damage);
+								hit.entity->modHP(-damage, parent);
 								magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 								Entity* gib = spawnGib(hit.entity);
 								serverSpawnGibForClient(gib);
@@ -5196,7 +5196,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 28, 128);
 
 							int oldHP = hitstats->HP;
-							hit.entity->modHP(-damage);
+							hit.entity->modHP(-damage, parent);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
@@ -5732,7 +5732,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 
-							hit.entity->modHP(-damage);
+							hit.entity->modHP(-damage, parent);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
@@ -6682,7 +6682,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							
 							Sint32 oldHP = hitstats->HP;
-							hit.entity->modHP(-damage);
+							hit.entity->modHP(-damage, parent);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 

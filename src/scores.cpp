@@ -7427,11 +7427,11 @@ int loadGame(int player, const SaveGameInfo& info) {
 		wraith.initialized = true;
 
 		if ( wraith.possessedEntityUid == 0
-			&& stats[statsPlayer]->weapon )
+			&& getWraithHeldItem(statsPlayer) )
 		{
 			if ( !setWraithHeldItem(
 					statsPlayer,
-					stats[statsPlayer]->weapon) )
+					getWraithHeldItem(statsPlayer)) )
 			{
 				printlog(
 					"[WRAITH]: ERROR failed to restore saved physical hand item");

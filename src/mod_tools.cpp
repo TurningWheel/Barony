@@ -13103,6 +13103,7 @@ int Mods::createBlankModDirectory(std::string foldername)
 
 EquipmentModelOffsets_t EquipmentModelOffsets;
 RuneHammerModelPositions_t RuneHammerModelPositions;
+WraithHybridItemModelPositions_t WraithHybridItemModelPositions;
 
 const RuneHammerModelPositions_t::Transform_t& RuneHammerModelPositions_t::hammerTransform(
 	bool firstPersonView, bool twoHanded) const
@@ -13317,6 +13318,89 @@ void RuneHammerModelPositions_t::readFromFile()
 					thirdPersonTwoHandedRaceGroups.push_back(std::move(parsedGroup));
 				}
 			}
+		}
+	}
+}
+
+void WraithHybridItemModelPositions_t::applyOffset(
+	Entity& entity, const Transform_t& transform) const
+{
+	entity.x += transform.x;
+	entity.y += transform.y;
+	entity.z += transform.z;
+	entity.focalx += transform.focalx;
+	entity.focaly += transform.focaly;
+	entity.focalz += transform.focalz;
+	entity.yaw += transform.yaw;
+	entity.pitch += transform.pitch;
+	entity.roll += transform.roll;
+	entity.scalex *= transform.scalex;
+	entity.scaley *= transform.scaley;
+	entity.scalez *= transform.scalez;
+}
+
+void WraithHybridItemModelPositions_t::readFromFile()
+{
+	*this = WraithHybridItemModelPositions_t{};
+	const char* filename = "models/creatures/wraith/hybrid_item_positions.json";
+	const char* realDir = PHYSFS_getRealDir(filename);
+	if ( !realDir )
+	{
+		return;
+	}
+	std::string inputPath = realDir;
+	inputPath.append(PHYSFS_getDirSeparator()).append(filename);
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not open Wraith hybrid Item positions file %s",
+			inputPath.c_str());
+		return;
+	}
+	static char buf[32000];
+	const int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[std::max(0, count)] = '\0';
+	FileIO::close(fp);
+	rapidjson::Document d;
+	d.Parse(buf);
+	if ( d.HasParseError() || !d.IsObject() )
+	{
+		printlog("[JSON]: Error: Malformed Wraith hybrid Item positions file %s",
+			inputPath.c_str());
+		return;
+	}
+	auto readTransform = [](const rapidjson::Value& value, Transform_t& out)
+	{
+		if ( !value.IsObject() )
+		{
+			return;
+		}
+		auto number = [&](const char* key, real_t& dst)
+		{
+			if ( value.HasMember(key) && value[key].IsNumber() )
+			{
+				dst = value[key].GetDouble();
+			}
+		};
+		number("x", out.x); number("y", out.y); number("z", out.z);
+		number("focalx", out.focalx); number("focaly", out.focaly); number("focalz", out.focalz);
+		number("yaw", out.yaw); number("pitch", out.pitch); number("roll", out.roll);
+		number("scalex", out.scalex); number("scaley", out.scaley); number("scalez", out.scalez);
+	};
+	if ( d.HasMember("first_person") && d["first_person"].IsObject() )
+	{
+		const auto& view = d["first_person"];
+		if ( view.HasMember("generic") )
+		{
+			readTransform(view["generic"], firstPersonGeneric);
+		}
+	}
+	if ( d.HasMember("third_person") && d["third_person"].IsObject() )
+	{
+		const auto& view = d["third_person"];
+		if ( view.HasMember("generic") )
+		{
+			readTransform(view["generic"], thirdPersonGeneric);
 		}
 	}
 }

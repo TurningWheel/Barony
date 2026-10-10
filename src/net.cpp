@@ -5288,6 +5288,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		{
 			// The Wraith hand becomes ordinary body inventory on entry.
 			stats[player]->weapon = nullptr;
+			stats[player]->shield = nullptr;
 		}
 		wraith.possessedEntityUid = possessedUid;
 		wraith.possessedType = possessedType;
@@ -10177,14 +10178,35 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 58);
 		readWraithLoreInstanceIdFromPacket(*item, net_packet->data, net_packet->len,
 			58 + FAMILIAR_PERSISTENT_PACKET_BYTES);
+		const bool wraithPhysicalPickup = item->type != SPELL_ITEM
+			&& playerIsInWraithForm(player);
+		if ( wraithPhysicalPickup && !wraithCanAcceptPhysicalPickup(player) )
+		{
+			free(item);
+			return;
+		}
 
+		bool removed = false;
 		if ( net_packet->data[27] == 0 )
 		{
-			openedChest[player]->removeItemFromChestServer(item, item->count);
+			removed = openedChest[player]->removeItemFromChestServer(item, item->count);
 		}
 		else
 		{
-			Entity::removeItemFromVoidChestServer(player, item, item->count);
+			removed = Entity::removeItemFromVoidChestServer(player, item, item->count);
+		}
+		if ( removed && wraithPhysicalPickup )
+		{
+			if ( setWraithHeldItem(player, item) )
+			{
+				// Remote-player equipment is represented by this standalone Item on
+				// the server; the requesting client already owns its inventory copy.
+				item = nullptr;
+			}
+			else
+			{
+				printlog("[WRAITH]: ERROR failed to bind chest pickup to hybrid slot");
+			}
 		}
 		free(item);
 	}},

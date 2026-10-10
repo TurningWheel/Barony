@@ -32,13 +32,17 @@ bool playerIsPanicking(int player);
 bool playerCanInteractWhilePanicking(const Entity* target);
 bool playerDarkvisionSuppressed(int player);
 bool playerIsInWraithForm(int player);
+bool wraithHybridItemIsNativeMainhand(const Item* item);
+bool wraithHybridItemIsNativeOffhand(const Item* item);
+bool wraithHybridItemUsesGenericPose(const Item* item);
+Item* getWraithHeldItem(int player);
 bool isWraithPhysicalHandItem(int player, const Item* item);
 bool playerShouldRenderAsWraithSpirit(int player);
 bool playerLimbIsIntrinsicWraithBodyPart(const Entity* limb,
 	const Entity* parent, int* bodypartIndex = nullptr);
 bool wraithCanAcceptPhysicalPickup(int player);
 bool setWraithHeldItem(int player, Item* item);
-bool wraithNegatesIncomingDamage(Entity* target, Sint32 damage);
+bool wraithNegatesIncomingDamage(Entity* target, Sint32 damage, Entity* damageSource = nullptr);
 enum WraithLoreKind : Uint8
 {
 	WRAITH_LORE_BOOK,
@@ -2489,6 +2493,7 @@ public:
 			std::set<Uint32> readBookObjectIds;
 			std::set<Uint32> readMailObjectIds;
 			std::set<Uint64> readGravestoneObjectIds;
+			std::unordered_map<Uint32, Uint8> guaranteedDodgesConsumedByMonsterUid;
 		} wraith;
 		std::map<int, int> itemDegradeRng;
 		std::set<int> learnedSpells;

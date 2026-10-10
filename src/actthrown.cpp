@@ -1360,7 +1360,7 @@ void actThrown(Entity* my)
 								getSpellDamageSecondaryFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent),
 								getSpellDamageFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent));
 
-							hit.entity->modHP(-envenomDamage); // do the damage
+							hit.entity->modHP(-envenomDamage, parent); // do the damage
 							for ( int tmp = 0; tmp < 3; ++tmp )
 							{
 								Entity* gib = spawnGib(hit.entity, 211);
@@ -1393,7 +1393,7 @@ void actThrown(Entity* my)
 				if ( !friendlyHit )
 				{
 					Sint32 oldHP = hitstats->HP;
-					hit.entity->modHP(-damage);
+					hit.entity->modHP(-damage, parent);
 
 					if ( hitstats )
 					{

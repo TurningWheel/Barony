@@ -2475,6 +2475,12 @@ Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificI
 	{
 		return nullptr;
 	}
+	if ( item->type != SPELL_ITEM && !wraithCanAcceptPhysicalPickup(player) )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY,
+			"Your spectral hand is already occupied.");
+		return nullptr;
+	}
 	list_t* chest_inventory = nullptr;
 	if ( multiplayer == CLIENT )
 	{
@@ -2635,12 +2641,16 @@ static void rebindWraithHeldStackBeforeSourceRemoval(
 		return;
 	}
 
-	if ( stats[player]->weapon != source )
+	if ( getWraithHeldItem(player) != source )
 	{
 		return;
 	}
 
-	stats[player]->weapon = survivor;
+	if ( !setWraithHeldItem(player, nullptr)
+		|| !setWraithHeldItem(player, survivor) )
+	{
+		printlog("[WRAITH]: ERROR failed to rebind held stacked Item");
+	}
 }
 
 bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* tempItem, int oldx, int oldy)
@@ -11654,7 +11664,8 @@ void Player::PaperDoll_t::updateSlots()
 				}
 				break;
 			case SLOT_OFFHAND:
-				if ( equippedItem = stats[player.playernum]->shield )
+				if ( !playerIsInWraithForm(player.playernum)
+					&& (equippedItem = stats[player.playernum]->shield) )
 				{
 					slot.item = equippedItem->uid;
 				}
@@ -11684,7 +11695,9 @@ void Player::PaperDoll_t::updateSlots()
 				}
 				break;
 			case SLOT_WEAPON:
-				if ( equippedItem = stats[player.playernum]->weapon )
+				if ( equippedItem = playerIsInWraithForm(player.playernum)
+					? getWraithHeldItem(player.playernum)
+					: stats[player.playernum]->weapon )
 				{
 					slot.item = equippedItem->uid;
 				}
@@ -12188,8 +12201,10 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 
 	for ( auto it = options.begin(); it != options.end(); )
 	{
+		const bool wraithHeldJewelry = wraithPhysicalHandItem
+			&& (itemCategory(item) == RING || itemCategory(item) == AMULET);
 		if ( wraithPhysicalHandItem
-			&& (*it == PROMPT_EQUIP
+			&& ((*it == PROMPT_EQUIP && !wraithHeldJewelry)
 				|| *it == PROMPT_UNEQUIP
 				|| *it == PROMPT_UNEQUIP_FOR_DROP
 				|| *it == PROMPT_SPELL_EQUIP) )
@@ -12417,9 +12432,37 @@ void quickStackItems(int player)
 					itemToStack->count += item2->count;
 					if ( multiplayer == CLIENT && itemIsEquipped(itemToStack, player) )
 					{
-						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-						clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
-							itemToStack->type, itemToStack->status,	itemToStack->beatitude, itemToStack->count, itemToStack->appearance, itemToStack->identified);
+						// Update the authoritative quantity on the item's real equipment slot.
+						Item** slot = itemSlot(stats[player], itemToStack);
+						if ( slot )
+						{
+							if ( slot == &stats[player]->weapon )
+							{
+								clientSendEquipUpdateToServer(
+									EQUIP_ITEM_SLOT_WEAPON,
+									EQUIP_ITEM_SUCCESS_UPDATE_QTY,
+									player,
+									itemToStack->type,
+									itemToStack->status,
+									itemToStack->beatitude,
+									itemToStack->count,
+									itemToStack->appearance,
+									itemToStack->identified);
+							}
+							else if ( slot == &stats[player]->shield )
+							{
+								clientSendEquipUpdateToServer(
+									EQUIP_ITEM_SLOT_SHIELD,
+									EQUIP_ITEM_SUCCESS_UPDATE_QTY,
+									player,
+									itemToStack->type,
+									itemToStack->status,
+									itemToStack->beatitude,
+									itemToStack->count,
+									itemToStack->appearance,
+									itemToStack->identified);
+							}
+						}
 					}
 					rebindWraithHeldStackBeforeSourceRemoval(player, item2, itemToStack);
 					if ( item2->node )

@@ -3203,7 +3203,7 @@ sets the HP of the given entity
 
 -------------------------------------------------------------------------------*/
 
-void Entity::setHP(int amount, bool bypassWraithGainSuppression)
+void Entity::setHP(int amount, bool bypassWraithGainSuppression, Entity* damageSource)
 {
 	Stat* entitystats = this->getStats();
 	if ( !entitystats )
@@ -3240,7 +3240,7 @@ void Entity::setHP(int amount, bool bypassWraithGainSuppression)
 				return;
 			}
 			if ( amount < entitystats->HP
-				&& wraithNegatesIncomingDamage(this, entitystats->HP - amount) )
+				&& wraithNegatesIncomingDamage(this, entitystats->HP - amount, damageSource) )
 			{
 				return;
 			}
@@ -3312,7 +3312,7 @@ modifies the HP of the given entity
 
 -------------------------------------------------------------------------------*/
 
-void Entity::modHP(int amount)
+void Entity::modHP(int amount, Entity* damageSource)
 {
 	Stat* entitystats = this->getStats();
 	if ( entitystats && entitystats->type == BAT_FAMILIAR && amount < 0 )
@@ -3392,7 +3392,7 @@ void Entity::modHP(int amount)
 	}
 
 	Sint32 oldHP = entitystats->HP;
-	this->setHP(entitystats->HP + amount);
+	this->setHP(entitystats->HP + amount, false, damageSource);
 	if ( oldHP > entitystats->HP )
 	{
 		if ( behavior == &actPlayer )
@@ -7199,13 +7199,13 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				poisonhurt -= local_rng.rand() % (std::max(1, poisonhurt / 4));
 			}
-			this->modHP(-poisonhurt);
+			Entity* killer = uidToEntity(myStats->poisonKiller);
+			this->modHP(-poisonhurt, killer);
 			for ( int tmp = 0; tmp < 3; ++tmp )
 			{
 				Entity* gib = spawnGib(this, 211);
 				serverSpawnGibForClient(gib);
 			}
-			Entity* killer = uidToEntity(myStats->poisonKiller);
 			if ( myStats->HP <= 0 )
 			{
 				if ( killer )
@@ -7326,7 +7326,8 @@ void Entity::handleEffects(Stat* myStats)
 					bleedhurt = std::min(bleedhurt, 15); // prevent doing 50+ dmg
 				}
 				bleedhurt = std::max(1, bleedhurt);
-				this->modHP(-bleedhurt);
+				Entity* killer = uidToEntity(static_cast<Uint32>(myStats->bleedInflictedBy));
+				this->modHP(-bleedhurt, killer);
 				this->setObituary(Language::get(1532));
 				myStats->killer = KilledBy::BLEEDING;
 				Entity* gib = spawnGib(this);
@@ -7376,7 +7377,6 @@ void Entity::handleEffects(Stat* myStats)
 					}
 				}
 
-				Entity* killer = uidToEntity(static_cast<Uint32>(myStats->bleedInflictedBy));
 				if ( killer /*&& killer->behavior == &actPlayer*/ )
 				{
 					bool lowPriority = true;
@@ -8120,7 +8120,7 @@ void Entity::handleEffects(Stat* myStats)
 					}
 					damage *= fireMultiplier;
 
-					this->modHP(damage); // Deal between -2 to -5 damage
+					this->modHP(damage, killer); // Deal between -2 to -5 damage
 
 					// If the Entity died, handle experience
 					if ( myStats->HP <= 0 && oldHP > myStats->HP )
@@ -10910,6 +10910,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 	// ammo, durability, projectile, or animation state can be changed.
 	if ( player >= 0 && playerIsPanicking(player) )
 	{
+		return;
+	}
+	if ( player >= 0 && playerIsInWraithForm(player)
+		&& !myStats->weapon && getWraithHeldItem(player) )
+	{
+		// Native offhand equipment occupies the true Wraith's single hybrid
+		// hand. Reject the otherwise-empty-mainhand unarmed attack on both the
+		// predicting client and the authoritative server.
 		return;
 	}
 
@@ -14121,7 +14129,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					Sint32 oldHP = hitstats->HP;
-					hit.entity->modHP(-damage); // do the damage
+					hit.entity->modHP(-damage, this); // do the damage
 
 					if ( hitstats )
 					{
@@ -14873,7 +14881,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_DMG_MAX, SHILLELAGH_MACE, damage + shillelaghDamage);
 
 									Sint32 prevHP = hitstats->HP;
-									hit.entity->modHP(-shillelaghDamage);
+									hit.entity->modHP(-shillelaghDamage, this);
 									Sint32 newHP = hitstats->HP;
 									if ( newHP < prevHP )
 									{
@@ -15051,7 +15059,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "unarmed skill", 1);
 								}
 							}
-							hit.entity->modHP(-5); // do extra damage.
+							hit.entity->modHP(-5, this); // do extra damage.
 						}
 						if ( !knockbackInflicted && hasMeleeGloves
 							&& hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
@@ -15185,7 +15193,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "polearm skill", 1);
 									}
 								}
-								hit.entity->modHP(-capstoneDamage); // do the damage
+								hit.entity->modHP(-capstoneDamage, this); // do the damage
 							}
 						}
 						else if ( (weaponskill == PRO_MACE || runeHammerCapstone) && hitstats->HP > 0 && !(flail && pose == MONSTER_POSE_FLAIL_SWING) )
@@ -15207,7 +15215,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										}
 									}
 								}
-								hit.entity->modHP(-capstoneDamage); // do the damage
+								hit.entity->modHP(-capstoneDamage, this); // do the damage
 							}
 						}
 						else if ( weaponskill == PRO_AXE && hitstats->HP > 0 )
@@ -15230,7 +15238,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "axe skill", 1);
 									}
 								}
-								hit.entity->modHP(-capstoneDamage); // do the damage
+								hit.entity->modHP(-capstoneDamage, this); // do the damage
 								// don't re-notify if already inflicted slow from Parashu.
 							}
 						}
@@ -15249,7 +15257,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										Entity* gib = spawnGib(hit.entity);
 										serverSpawnGibForClient(gib);
 									}
-									hit.entity->modHP(-capstoneDamage); // do the damage
+									hit.entity->modHP(-capstoneDamage, this); // do the damage
 									if ( behavior == &actPlayer )
 									{
 										Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "sword skill", 1);
@@ -15259,7 +15267,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									swordExtraDamageInflicted = true;
 									int extraDamage = 5;
-									hit.entity->modHP(-(extraDamage + capstoneDamage)); // do the damage
+									hit.entity->modHP(-(extraDamage + capstoneDamage), this); // do the damage
 								}
 							}
 						}
@@ -15278,7 +15286,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								getSpellDamageSecondaryFromID(SPELL_ENVENOM_WEAPON, this, myStats, this),
 								getSpellDamageFromID(SPELL_ENVENOM_WEAPON, this, myStats, this));
 
-							hit.entity->modHP(-envenomDamage); // do the damage
+							hit.entity->modHP(-envenomDamage, this); // do the damage
 							for ( int tmp = 0; tmp < 3; ++tmp )
 							{
 								Entity* gib = spawnGib(hit.entity, 211);

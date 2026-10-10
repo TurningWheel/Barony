@@ -1467,7 +1467,7 @@ namespace
 		if ( !itemToConsume ) { return false; }
 
 #ifndef NDEBUG
-		if ( playerIsInWraithForm(player) && stats[player]->weapon == itemToConsume )
+		if ( playerIsInWraithForm(player) && getWraithHeldItem(player) == itemToConsume )
 		{
 			assert(itemToConsume->node
 				&& itemToConsume->node->list == &stats[player]->inventory);
@@ -1508,12 +1508,12 @@ namespace
 					&& players[player]->entity
 					&& playerIsInWraithForm(player)
 					&& item->type != SPELL_ITEM
-					&& stats[player]->weapon )
+					&& getWraithHeldItem(player) )
 				{
 					// The Wraith spectral hand is already occupied.
 					// Do NOT call itemPickup() here:
 					// itemPickup() may stack this crafted result into the existing held Item,
-					// making its return value alias stats[player]->weapon.
+					// making its return value alias the held hybrid Item.
 					//
 					// The design for Wraith crafting is one physical hand:
 					// occupied hand => drop the NEW crafted result instead.
@@ -5448,7 +5448,7 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 			&& (ringSlot || amuletSlot) )
 		{
 			// New jewelry can only move from the Wraith hand.
-			if ( stats[player]->weapon != item )
+			if ( getWraithHeldItem(player) != item )
 			{
 				return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 			}
@@ -5465,12 +5465,12 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 			}
 
 			// Remove it from the hand before normal equip logic assigns jewelry.
-			stats[player]->weapon = nullptr;
+			setWraithHeldItem(player, nullptr);
 		}
 
 		if ( !alreadyInTargetSlot
 			&& handSlot
-			&& stats[player]->weapon != nullptr )
+			&& getWraithHeldItem(player) != nullptr )
 		{
 			return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 		}
@@ -7269,7 +7269,7 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 		return nullptr;
 	}
 	const bool wraithPickup = playerIsInWraithForm(player) && item->type != SPELL_ITEM;
-	if ( wraithPickup && stats[player]->weapon )
+	if ( wraithPickup && getWraithHeldItem(player) )
 	{
 		messagePlayer(player, MESSAGE_INVENTORY, "Your spectral hand is already occupied.");
 		return nullptr;
@@ -7574,7 +7574,7 @@ Item* itemPickupCraftingResult(const int player, Item* const item)
 		return nullptr;
 	}
 
-	if ( !playerIsInWraithForm(player) || !stats[player]->weapon )
+	if ( !playerIsInWraithForm(player) || !getWraithHeldItem(player) )
 	{
 		return itemPickup(player, item);
 	}

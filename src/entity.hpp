@@ -985,8 +985,9 @@ public:
 
 	Stat* getStats() const;
 
-	void setHP(int amount, bool bypassWraithGainSuppression = false);
-	void modHP(int amount); //Adds amount to HP.
+	void setHP(int amount, bool bypassWraithGainSuppression = false,
+		Entity* damageSource = nullptr);
+	void modHP(int amount, Entity* damageSource = nullptr); //Adds amount to HP.
 	int getHP();
 
 	void setMP(int amount, bool updateClients = true, bool bypassWraithGainSuppression = false);

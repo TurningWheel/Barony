@@ -6095,7 +6095,7 @@ const bool Player::Inventory_t::bItemInventoryHasFreeSlot() const
 
 	if ( playerIsInWraithForm(player.playernum) )
 	{
-		return stats[player.playernum]->weapon == nullptr;
+		return getWraithHeldItem(player.playernum) == nullptr;
 	}
 	for ( node_t* node = stats[player.playernum]->inventory.first; node; node = node->next )
 	{

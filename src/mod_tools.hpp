@@ -3621,6 +3621,22 @@ struct RuneHammerModelPositions_t
 };
 extern RuneHammerModelPositions_t RuneHammerModelPositions;
 
+struct WraithHybridItemModelPositions_t
+{
+	struct Transform_t
+	{
+		real_t x = 0.0, y = 0.0, z = 0.0;
+		real_t focalx = 0.0, focaly = 0.0, focalz = 0.0;
+		real_t yaw = 0.0, pitch = 0.0, roll = 0.0;
+		real_t scalex = 1.0, scaley = 1.0, scalez = 1.0;
+	};
+	Transform_t firstPersonGeneric;
+	Transform_t thirdPersonGeneric;
+	void readFromFile();
+	void applyOffset(Entity& entity, const Transform_t& transform) const;
+};
+extern WraithHybridItemModelPositions_t WraithHybridItemModelPositions;
+
 struct Compendium_t
 {
 	struct CompendiumView_t

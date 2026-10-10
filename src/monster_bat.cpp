@@ -45,7 +45,11 @@ void spawnAmuletFamiliarIngredientBag(Entity* recipient, Entity* source)
 	}
 	const WitchIngredientCategory category = getIngredientCategoryForMonster(source);
 	if ( category == INGREDIENT_CATEGORY_NONE ) { return; }
-	const int generatedCount = local_rng.rand() % 3;
+	const Stat* sourceStats = source->getStats();
+	const bool isHumanOrGreenSlime = sourceStats && (sourceStats->type == HUMAN
+		|| (sourceStats->type == SLIME
+			&& MonsterData_t::getKeyFromSprite(source->sprite, SLIME) == "slime green"));
+	const int generatedCount = (isHumanOrGreenSlime ? 2 : 0) + local_rng.rand() % 3;
 	if ( generatedCount == 0 ) { return; }
 
 	Entity* bag = newEntity(-1, 1, map.entities, nullptr);

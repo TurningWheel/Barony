@@ -93,6 +93,7 @@ void initGameDatafiles(bool moddedReload)
 	}
 	EquipmentModelOffsets.readBaseItemsFromFile();
 	RuneHammerModelPositions.readFromFile();
+	WraithHybridItemModelPositions.readFromFile();
 	setupSpells();
 	CompendiumEntries.readMonstersFromFile();
 	Compendium_t::Events_t::itemDisplayedEventsList.clear();

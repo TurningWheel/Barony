@@ -76,6 +76,42 @@ bool playerIsInWraithForm(int player)
 		&& playerHasIncorporealWraithRuntimeState(player);
 }
 
+bool wraithHybridItemIsNativeMainhand(const Item* item)
+{
+	return item
+		&& items[item->type].item_slot
+			== ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON;
+}
+
+bool wraithHybridItemIsNativeOffhand(const Item* item)
+{
+	return item
+		&& items[item->type].item_slot
+			== ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD;
+}
+
+bool wraithHybridItemUsesGenericPose(const Item* item)
+{
+	return item
+		&& !wraithHybridItemIsNativeMainhand(item)
+		&& !wraithHybridItemIsNativeOffhand(item);
+}
+
+Item* getWraithHeldItem(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return nullptr;
+	}
+#ifndef NDEBUG
+	if ( playerIsInWraithForm(player) )
+	{
+		assert(!(stats[player]->weapon && stats[player]->shield));
+	}
+#endif
+	return stats[player]->weapon ? stats[player]->weapon : stats[player]->shield;
+}
+
 bool isWraithPhysicalHandItem(int player, const Item* item)
 {
 	if ( player < 0 || player >= MAXPLAYERS || !item || !stats[player] )
@@ -84,7 +120,7 @@ bool isWraithPhysicalHandItem(int player, const Item* item)
 	}
 
 	return playerIsInWraithForm(player)
-		&& stats[player]->weapon == item;
+		&& getWraithHeldItem(player) == item;
 }
 
 bool playerShouldRenderAsWraithSpirit(int player)
@@ -130,7 +166,7 @@ static real_t getWraithVisualBob()
 bool wraithCanAcceptPhysicalPickup(int player)
 {
 	return !playerIsInWraithForm(player)
-		|| (stats[player] && stats[player]->weapon == nullptr);
+		|| (stats[player] && getWraithHeldItem(player) == nullptr);
 }
 
 bool setWraithHeldItem(int player, Item* item)
@@ -144,14 +180,31 @@ bool setWraithHeldItem(int player, Item* item)
 	{
 		return false;
 	}
+	if ( stats[player]->weapon && stats[player]->shield )
+	{
+		printlog("[WRAITH]: ERROR hybrid slot has both weapon and shield backing items");
+	}
+	Item* existingHeld = getWraithHeldItem(player);
+	const bool clearingNativeOffhand = !item
+		&& existingHeld
+		&& stats[player]->shield == existingHeld;
 	if ( item
-		&& stats[player]->weapon
-		&& stats[player]->weapon != item )
+		&& existingHeld
+		&& existingHeld != item )
 	{
 		return false;
 	}
 
-	stats[player]->weapon = item;
+	stats[player]->weapon = nullptr;
+	stats[player]->shield = nullptr;
+	if ( wraithHybridItemIsNativeOffhand(item) )
+	{
+		stats[player]->shield = item;
+	}
+	else
+	{
+		stats[player]->weapon = item;
+	}
 
 	if ( players[player]->isLocalPlayer() )
 	{
@@ -164,21 +217,41 @@ bool setWraithHeldItem(int player, Item* item)
 		}
 
 		players[player]->paperDoll.updateSlots();
-		players[player]->hud.weaponSwitch = true;
+		if ( wraithHybridItemIsNativeOffhand(item) || clearingNativeOffhand )
+		{
+			players[player]->hud.shieldSwitch = true;
+		}
+		else
+		{
+			players[player]->hud.weaponSwitch = true;
+		}
 	}
 
 	return true;
 }
 
-bool wraithNegatesIncomingDamage(Entity* target, Sint32 damage)
+bool wraithNegatesIncomingDamage(Entity* target, Sint32 damage, Entity* damageSource)
 {
 	if ( !target || target->behavior != &actPlayer || damage <= 0 || multiplayer == CLIENT )
 	{
 		return false;
 	}
 	const int player = target->skill[2];
-	return playerIsInWraithForm(player) && players[player]->entity == target
-		&& local_rng.rand() % 2 == 0;
+	if ( !playerIsInWraithForm(player) || players[player]->entity != target )
+	{
+		return false;
+	}
+	if ( damageSource && damageSource->behavior == &actMonster )
+	{
+		auto& used = players[player]->mechanics.wraith
+			.guaranteedDodgesConsumedByMonsterUid[damageSource->getUID()];
+		if ( used < 2 )
+		{
+			++used;
+			return true;
+		}
+	}
+	return local_rng.rand() % 2 == 0;
 }
 
 static constexpr std::array<Monster, 25> kWraithLearnablePossessionTypes = {
@@ -1102,8 +1175,8 @@ static void assertWraithPossessionReleaseOwnership(int player, const Stat& targe
 	for ( Item* item : targetEquipment )
 	{
 		if ( !item ) { continue; }
-		assert(targetItems.find(item) != targetItems.end());
-		assert(item->node && item->node->list == &targetStats.inventory);
+		assert(targetItems.find(item) == targetItems.end());
+		assert(!item->node);
 		assert(playerPhysicalItems.find(item) == playerPhysicalItems.end());
 	}
 }
@@ -1216,7 +1289,7 @@ bool beginWraithPossession(int player, Entity* target)
 	const real_t targetZ = target->z;
 	const real_t targetYaw = target->yaw;
 	const real_t playerOriginalYaw = playerEntity->yaw;
-	Item* wraithHeldItem = playerStats->weapon;
+	Item* wraithHeldItem = getWraithHeldItem(player);
 	Item* targetHelmet = targetStats->helmet;
 	Item* targetBreastplate = targetStats->breastplate;
 	Item* targetGloves = targetStats->gloves;
@@ -1273,10 +1346,10 @@ bool beginWraithPossession(int player, Entity* target)
 	}
 #endif
 
-	if ( playerStats->weapon
-		&& equipItem(playerStats->weapon, &playerStats->weapon, player, false)
-			== EQUIP_ITEM_FAIL_CANT_UNEQUIP )
+	if ( wraithHeldItem
+		&& !setWraithHeldItem(player, nullptr) )
 	{
+		printlog("[WRAITH]: ERROR failed to clear Wraith hybrid slot for possession");
 		return false;
 	}
 	struct OriginalBodyItemOwnership
@@ -1999,6 +2072,53 @@ static void autoEquipReleasedWraithBody(Entity& body, Stat& bodyStats)
 	equipArmor(bestGloves);
 }
 
+static void detachReleasedWraithBodyEquippedItems(Stat& bodyStats)
+{
+	std::unordered_set<Item*> processed;
+
+	Item* equippedItems[] =
+	{
+		bodyStats.helmet,
+		bodyStats.breastplate,
+		bodyStats.gloves,
+		bodyStats.shoes,
+		bodyStats.shield,
+		bodyStats.weapon,
+		bodyStats.cloak,
+		bodyStats.amulet,
+		bodyStats.ring,
+		bodyStats.mask
+	};
+
+	for ( Item* item : equippedItems )
+	{
+		if ( !item || !processed.insert(item).second || !item->node )
+		{
+			continue;
+		}
+
+		node_t* node = item->node;
+
+		// Released monster equipment should only be detached from that
+		// monster's own inventory. Never unlink some unrelated list.
+		if ( node->list != &bodyStats.inventory || node->element != item )
+		{
+			printlog(
+				"[WRAITH]: ERROR released body equipped item uid %u "
+				"has unexpected inventory-node ownership",
+				item->uid);
+			continue;
+		}
+
+		// Convert the equipped item back to vanilla monster ownership:
+		// the Item survives, only its inventory node is destroyed.
+		item->node = nullptr;
+		node->element = nullptr;
+		node->deconstructor = &emptyDeconstructor;
+		list_RemoveNode(node);
+	}
+}
+
 static void returnWraithBodyItems(int player, Stat& targetStats)
 {
 	Stat& playerStats = *stats[player];
@@ -2133,6 +2253,7 @@ bool releaseWraithPossession(int player)
 	restoreWraithEffects(*stats[player], wraith, targetStats, false);
 	returnWraithBodyItems(player, *targetStats);
 	autoEquipReleasedWraithBody(*target, *targetStats);
+	detachReleasedWraithBodyEquippedItems(*targetStats);
 #ifndef NDEBUG
 	assertWraithPossessionReleaseOwnership(player, *targetStats);
 #endif
@@ -2142,6 +2263,7 @@ bool releaseWraithPossession(int player)
 	reactivateWraithBody(player, *target);
 	resetWraithPossessedBodyLookOrientation(target);
 	detachWraithBodyFollower(target, targetStats);
+	targetStats->OLDHP = targetStats->HP;
 	target->setEffect(EFF_ASLEEP, true, 2 * TICKS_PER_SECOND, true);
 	if ( !players[player]->entity->teleportAroundEntity(target, 1, 0) )
 	{
@@ -2277,6 +2399,7 @@ Stat* captureWraithPossessedBodyForLevelTransition(int player)
 		return nullptr;
 	}
 	auto& wraith = players[player]->mechanics.wraith;
+	wraith.guaranteedDodgesConsumedByMonsterUid.clear();
 	if ( !wraith.initialized || wraith.possessedEntityUid == 0
 		|| wraith.possessionTransition )
 	{
@@ -2442,6 +2565,65 @@ bool monsterIsActiveWraithBody(const Entity* monster)
 	return false;
 }
 
+static void collectWraithBodyDeathItemsForChest(
+	Stat& bodyStats,
+	std::vector<Item*>& bodyItems,
+	std::vector<Item*>& standaloneEquipment)
+{
+	std::unordered_set<Item*> seen;
+	std::unordered_set<Item*> inventoryItems;
+
+	// The inventory list itself is authoritative.
+	for ( node_t* node = bodyStats.inventory.first;
+		node != nullptr;
+		node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( !item )
+		{
+			continue;
+		}
+
+		inventoryItems.insert(item);
+
+		if ( seen.insert(item).second )
+		{
+			bodyItems.push_back(item);
+		}
+	}
+
+	// Equipment may either alias an inventory item or be a normal
+	// standalone monster Item. Deduplicate strictly by pointer identity.
+	Item* equippedItems[] =
+	{
+		bodyStats.helmet,
+		bodyStats.breastplate,
+		bodyStats.gloves,
+		bodyStats.shoes,
+		bodyStats.shield,
+		bodyStats.weapon,
+		bodyStats.cloak,
+		bodyStats.amulet,
+		bodyStats.ring,
+		bodyStats.mask
+	};
+
+	for ( Item* item : equippedItems )
+	{
+		if ( !item || !seen.insert(item).second )
+		{
+			continue;
+		}
+
+		bodyItems.push_back(item);
+
+		if ( inventoryItems.find(item) == inventoryItems.end() )
+		{
+			standaloneEquipment.push_back(item);
+		}
+	}
+}
+
 bool spawnWraithBodyDeathChest(Entity* monster)
 {
 	Stat* monsterStats = monster ? monster->getStats() : nullptr;
@@ -2463,9 +2645,20 @@ bool spawnWraithBodyDeathChest(Entity* monster)
 	loot.spawn_y = monster->y;
 	loot.spawnedOnGround = true;
 	loot.looted = false;
-	std::vector<Item*> bodyItems = collectUniqueWraithBodyItems(*monsterStats);
+	std::vector<Item*> bodyItems;
+	std::vector<Item*> standaloneEquipment;
+
+	collectWraithBodyDeathItemsForChest(
+		*monsterStats,
+		bodyItems,
+		standaloneEquipment);
 	for ( Item* item : bodyItems )
 	{
+		if ( !item )
+		{
+			continue;
+		}
+
 		loot.items.push_back(Item());
 		copyItem(&loot.items.back(), item);
 	}
@@ -2491,11 +2684,28 @@ bool spawnWraithBodyDeathChest(Entity* monster)
 	entity->skill[14] = static_cast<Sint32>(bagKey);
 	entity->skill[15] = true;
 
-	clearWraithBodyEquipment(*monsterStats);
-	for ( Item* item : bodyItems )
+	monsterStats->helmet = nullptr;
+	monsterStats->breastplate = nullptr;
+	monsterStats->gloves = nullptr;
+	monsterStats->shoes = nullptr;
+	monsterStats->shield = nullptr;
+	monsterStats->weapon = nullptr;
+	monsterStats->cloak = nullptr;
+	monsterStats->amulet = nullptr;
+	monsterStats->ring = nullptr;
+	monsterStats->mask = nullptr;
+
+	for ( node_t* node = monsterStats->inventory.first;
+		node != nullptr; )
 	{
-		if ( item->node ) { list_RemoveNode(item->node); }
-		else { free(item); }
+		node_t* nextNode = node->next;
+		list_RemoveNode(node);
+		node = nextNode;
+	}
+
+	for ( Item* item : standaloneEquipment )
+	{
+		free(item);
 	}
 	monsterStats->wraithBodyLootChestSpawned = true;
 	return true;
@@ -2522,6 +2732,52 @@ static Entity* runeHammerVisualLimb(Entity* body, int limb)
 static bool runeHammerRemotePresentation(int player)
 {
 	return multiplayer == CLIENT && !players[player]->isLocalPlayer();
+}
+
+static bool wraithWeaponSpriteIsNativeMainhand(Sint32 sprite)
+{
+	if ( sprite <= 0 ) { return false; }
+	for ( int type = 0; type < NUMITEMS; ++type )
+	{
+		if ( items[type].item_slot != ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON )
+		{
+			continue;
+		}
+		const Sint32 firstSprite = items[type].index;
+		const Sint32 spriteCount = std::max<Sint32>(1, items[type].variations);
+		if ( sprite >= firstSprite && sprite < firstSprite + spriteCount )
+		{
+			return true;
+		}
+		if ( type == MAGICSTAFF_SCEPTER && sprite == firstSprite + 2 )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool wraithVisualUsesGenericHybridPose(Entity* body, int player)
+{
+	if ( !runeHammerRemotePresentation(player) )
+	{
+		return stats[player] && stats[player]->weapon
+			&& getWraithHeldItem(player) == stats[player]->weapon
+			&& wraithHybridItemUsesGenericPose(stats[player]->weapon);
+	}
+	Entity* weaponLimb = runeHammerVisualLimb(body, 6);
+	return weaponLimb && weaponLimb->sprite > 0
+		&& !wraithWeaponSpriteIsNativeMainhand(weaponLimb->sprite);
+}
+
+static bool wraithVisualHasNativeOffhand(Entity* body, int player)
+{
+	if ( !runeHammerRemotePresentation(player) )
+	{
+		return stats[player] && wraithHybridItemIsNativeOffhand(stats[player]->shield);
+	}
+	Entity* shieldLimb = runeHammerVisualLimb(body, 7);
+	return shieldLimb && shieldLimb->sprite > 0;
 }
 
 static bool runeHammerVisualWeapon(Entity* body, int player)
@@ -11658,9 +11914,37 @@ void actPlayer(Entity* my)
 							item2->count += tempItem->count;
 							if ( multiplayer == CLIENT && itemIsEquipped(item2, PLAYER_NUM) )
 							{
-								// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, PLAYER_NUM,
-									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+								// If incrementing qty on equipped gear, update the actual backing slot.
+								Item** slot = itemSlot(stats[PLAYER_NUM], item2);
+								if ( slot )
+								{
+									if ( slot == &stats[PLAYER_NUM]->weapon )
+									{
+										clientSendEquipUpdateToServer(
+											EQUIP_ITEM_SLOT_WEAPON,
+											EQUIP_ITEM_SUCCESS_UPDATE_QTY,
+											PLAYER_NUM,
+											item2->type,
+											item2->status,
+											item2->beatitude,
+											item2->count,
+											item2->appearance,
+											item2->identified);
+									}
+									else if ( slot == &stats[PLAYER_NUM]->shield )
+									{
+										clientSendEquipUpdateToServer(
+											EQUIP_ITEM_SLOT_SHIELD,
+											EQUIP_ITEM_SUCCESS_UPDATE_QTY,
+											PLAYER_NUM,
+											item2->type,
+											item2->status,
+											item2->beatitude,
+											item2->count,
+											item2->appearance,
+											item2->identified);
+									}
+								}
 							}
 							if ( tempItem->node )
 							{
@@ -16798,13 +17082,12 @@ void actPlayer(Entity* my)
 					}
 				}
 				my->handleHumanoidWeaponLimb(entity, weaponarm);
-				if ( wraithFormVisual && stats[PLAYER_NUM]->weapon
-					&& stats[PLAYER_NUM]->weapon->type == TOOL_PLAYER_LOOT_BAG )
+				if ( wraithFormVisual
+					&& wraithVisualUsesGenericHybridPose(my, PLAYER_NUM) )
 				{
-					// Keep the Wraith's carried death chest visibly forward, right, and low.
-					entity->x += 0.5 * cos(my->yaw) + 0.35 * cos(my->yaw + PI / 2);
-					entity->y += 0.5 * sin(my->yaw) + 0.35 * sin(my->yaw + PI / 2);
-					entity->z += 0.75;
+					WraithHybridItemModelPositions.applyOffset(
+						*entity,
+						WraithHybridItemModelPositions.thirdPersonGeneric);
 				}
 				if ( runeHammerVisualWeapon(my, PLAYER_NUM) )
 				{
@@ -18392,8 +18675,10 @@ void actPlayer(Entity* my)
 				break;
 		}
 
-			if ( wraithFormVisual && (bodypart == 7 || bodypart == 8
-				|| bodypart == 9 || bodypart == 10) )
+			if ( wraithFormVisual
+				&& ((bodypart == 7
+						&& !wraithVisualHasNativeOffhand(my, PLAYER_NUM))
+					|| bodypart == 8 || bodypart == 9 || bodypart == 10) )
 			{
 				entity->flags[INVISIBLE] = true;
 				entity->flags[INVISIBLE_DITHER] = false;

@@ -4088,11 +4088,12 @@ void actMonster(Entity* my)
 		&& my->monsterState != MONSTER_STATE_LICHFIRE_DIE 
 		&& my->monsterState != MONSTER_STATE_LICHICE_DIE )
 	{
-		if ( myStats->wraithFormerPossessor >= 0
-			&& !myStats->wraithBodyLootChestSpawned )
-		{
-			spawnWraithBodyDeathChest(my);
-		}
+		const Sint32 wraithFormerPossessorBeforeDeath =
+			myStats->wraithFormerPossessor;
+
+		const bool wraithBodyLootChestSpawnedBeforeDeath =
+			myStats->wraithBodyLootChestSpawned;
+
 		Uint8 cursedFlesh = myStats->getEffectActive(EFF_CURSE_FLESH);
 		if ( cursedFlesh & (1 << 7) )
 		{
@@ -4106,6 +4107,14 @@ void actMonster(Entity* my)
 				// old entity was removed
 				if ( Stat* monsterStats = monster->getStats() )
 				{
+					// Preserve former-Wraith-body identity across Revenant resurrection.
+					// This death was prevented, so do not create the Wraith loot chest yet.
+					monsterStats->wraithFormerPossessor =
+						wraithFormerPossessorBeforeDeath;
+
+					monsterStats->wraithBodyLootChestSpawned =
+						wraithBodyLootChestSpawnedBeforeDeath;
+
 					monster->setEffect(EFF_STUNNED, true, 20, false);
 
 					Entity* commanderEntity = player >= 0 ? players[player]->entity : nullptr;
@@ -4148,6 +4157,12 @@ void actMonster(Entity* my)
 			{
 				cursedFlesh &= ~(1 << 7); // revert to revenant skull
 			}
+		}
+
+		if ( myStats->wraithFormerPossessor >= 0
+			&& !myStats->wraithBodyLootChestSpawned )
+		{
+			spawnWraithBodyDeathChest(my);
 		}
 
 		//TODO: Refactor die function.

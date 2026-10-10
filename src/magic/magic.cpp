@@ -355,7 +355,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int da
 			damage *= damageMultiplier;
 			if ( !hasgoggles )
 			{
-				hit.entity->modHP(-damage);
+				hit.entity->modHP(-damage, parent);
 				magicOnEntityHit(parent, &my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, SPELL_ACID_SPRAY);
 			}
 			else
@@ -559,7 +559,7 @@ void spellEffectPoison(Entity& my, spellElement_t& element, Entity* parent, int 
 			Sint32 preResistanceDamage = damage;
 			damage *= damageMultiplier;
 			Sint32 oldHP = hitstats->HP;
-			hit.entity->modHP(-damage);
+			hit.entity->modHP(-damage, parent);
 
 			magicOnEntityHit(parent, &my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, SPELL_POISON);
 
@@ -1069,7 +1069,7 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 			int damageHP = hitstats->HP;
 			int damageMP = hitstats->MP;
 			Sint32 oldHP = hitstats->HP;
-			hit.entity->modHP(-damage);
+			hit.entity->modHP(-damage, parent);
 
 			magicOnEntityHit(parent, &my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, SPELL_DRAIN_SOUL);
 
@@ -4081,7 +4081,7 @@ bool applyGenericMagicDamage(Entity* caster, Entity* hitentity, Entity& damageSo
 			damage = std::max(1, damage);
 		}
 
-		hitentity->modHP(-damage);
+		hitentity->modHP(-damage, caster);
 		if ( damage > 0 )
 		{
 			Entity* gib = spawnGib(hitentity);
