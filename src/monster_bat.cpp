@@ -963,7 +963,7 @@ bool updateAmuletFamiliarSpecialState(Entity* familiar, Stat* familiarStats)
 				Item* bag = newItemFromEntity(target, true);
 				if ( bag && !ingredientBagIsEmpty(*bag) )
 				{
-					mergeIngredientBagIntoVoidChest(*bag);
+					mergeIngredientBagIntoVoidChest(*bag, owner->isEntityPlayer());
 				}
 				if ( bag ) { free(bag); }
 				familiar->familiarIngredientTargetUid = 0;
@@ -1022,7 +1022,7 @@ void sweepAmuletFamiliarIngredientsOnLevelChange()
 			Item* bag = newItemFromEntity(groundBag, true);
 			if ( bag && !ingredientBagIsEmpty(*bag) )
 			{
-				mergeIngredientBagIntoVoidChest(*bag);
+				mergeIngredientBagIntoVoidChest(*bag, player);
 			}
 			if ( bag ) { free(bag); }
 			groundBag->removeLightField();

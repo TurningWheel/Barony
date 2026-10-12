@@ -1393,7 +1393,16 @@ namespace
 				const Uint32 take = std::min(amount - consumed, bag->ingredientCounts[ingredientSlot]);
 				bag->ingredientCounts[ingredientSlot] -= take;
 				consumed += take;
-				if ( ingredientBagIsEmpty(*bag) )
+				if ( ingredientBagIsEmpty(*bag)
+					&& player >= 0 && player < MAXPLAYERS && stats[player]
+					&& node->list == &stats[player]->void_chest_inventory )
+				{
+					// Retain an empty bag's category and slot in its owner's Void Chest.
+					// Otherwise the client keeps a stale bag until reopening the chest.
+					if ( changedBags && std::find(changedBags->begin(), changedBags->end(), bag)
+						== changedBags->end() ) { changedBags->push_back(bag); }
+				}
+				else if ( ingredientBagIsEmpty(*bag) )
 				{
 					if ( changedBags )
 					{
@@ -1752,7 +1761,7 @@ void tryIncreaseAlchemyFromWitchbrewUse(int player)
 	{
 		return;
 	}
-	if ( local_rng.rand() % 6 == 0 )
+	if ( local_rng.rand() % 20 == 0 )
 	{
 		players[player]->entity->increaseSkill(PRO_ALCHEMY);
 	}
@@ -1936,7 +1945,7 @@ bool serverStewingInventoryMirrorIsValid(int player)
 Uint32 getTotalStewingResource(int player, ItemType resource)
 {
 	const int index = getStewingResourceIndex(resource);
-	if ( index < 0 || player < 0 || player >= MAXPLAYERS || !stats[player] || !stats[0] ) { return 0; }
+	if ( index < 0 || player < 0 || player >= MAXPLAYERS || !stats[player] ) { return 0; }
 	Uint64 total = 0;
 	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer()
 		&& serverStewingInventoryMirrorValid[player] )
@@ -1947,7 +1956,7 @@ Uint32 getTotalStewingResource(int player, ItemType resource)
 	{
 		total = countStewingResourceInList(stats[player]->inventory, resource);
 	}
-	total += countStewingResourceInList(stats[0]->void_chest_inventory, resource);
+	total += countStewingResourceInList(stats[player]->void_chest_inventory, resource);
 	return static_cast<Uint32>(std::min<Uint64>(total, std::numeric_limits<Uint32>::max()));
 }
 
@@ -1997,7 +2006,7 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 {
 	result = StewingTransactionResult{};
 	result.remainingSelection = selection;
-	if ( multiplayer == CLIENT || !stats[0]
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !stats[player]
 		|| !validateStewingCauldronAccess(familiar, player) )
 	{
 		return false;
@@ -2101,9 +2110,9 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 		if ( remaining > 0 )
 		{
 			const Uint32 consumedFromVoid = itemTypeIsWitchIngredient(type)
-				? consumeStewingIngredientFromList(stats[0]->void_chest_inventory, type, remaining, -1,
+				? consumeStewingIngredientFromList(stats[player]->void_chest_inventory, type, remaining, player,
 					&changedIngredientBags)
-				: consumeStewingOrdinaryItemFromList(stats[0]->void_chest_inventory, type, remaining);
+				: consumeStewingOrdinaryItemFromList(stats[player]->void_chest_inventory, type, remaining);
 			if ( consumedFromVoid != remaining )
 			{
 				return false; // Prevalidation makes this unreachable in the authoritative tick.
@@ -2112,7 +2121,14 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 	}
 	for ( Item* bag : changedIngredientBags )
 	{
-		serverSyncPersistentCustomItemStateForOwner(bag);
+		if ( bag->node && bag->node->list == &stats[player]->void_chest_inventory )
+		{
+			syncIngredientBagToOpenVoidChest(*bag, player);
+		}
+		else
+		{
+			serverSyncPersistentCustomItemStateForOwner(bag);
+		}
 	}
 
 	const Uint64 emptyBottleReturns = operation == STEWING_OPERATION_BREW_FOR_USE ? 0
@@ -2150,7 +2166,7 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 	result.newlyUnlockedRecipe = tryDiscoverStewingRecipe(player, consumeAmounts);
 	if ( match.type == STEWING_MATCH_VALID_RECIPE )
 	{
-		if ( local_rng.rand() % 2 == 0 )
+		if ( local_rng.rand() % 10 == 0 )
 		{
 			players[player]->entity->increaseSkill(PRO_ALCHEMY);
 		}
@@ -2368,37 +2384,13 @@ void rollOilWearOff(Item* source, int ownerPlayer, bool shieldSlot)
 void rollProjectileOilWearOff(Entity* projectile)
 {
 	if ( multiplayer == CLIENT || !projectile ) { return; }
-	const AppliedOil oil = static_cast<AppliedOil>(projectile->projectileAppliedOil);
-	if ( oil == APPLIED_OIL_NONE || local_rng.rand() % 40 != 0 ) { return; }
-	for ( int player = 0; player < MAXPLAYERS; ++player )
-	{
-		if ( !stats[player] ) { continue; }
-		Item* candidates[2] = { stats[player]->weapon, stats[player]->shield };
-		for ( int slot = 0; slot < 2; ++slot )
-		{
-			Item* candidate = candidates[slot];
-			if ( candidate && candidate->uid == static_cast<Uint32>(projectile->projectileOilSourceItemUID)
-				&& candidate->type == static_cast<ItemType>(projectile->projectileOilSourceItemType)
-				&& candidate->appliedOil == oil )
-			{
-				candidate->appliedOil = APPLIED_OIL_NONE;
-				serverSyncPersistentCustomItemStateForOwner(candidate);
-				return;
-			}
-		}
-		for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
-		{
-			Item* candidate = static_cast<Item*>(node->element);
-			if ( candidate && candidate->uid == static_cast<Uint32>(projectile->projectileOilSourceItemUID)
-				&& candidate->type == static_cast<ItemType>(projectile->projectileOilSourceItemType)
-				&& candidate->appliedOil == oil )
-			{
-				candidate->appliedOil = APPLIED_OIL_NONE;
-				serverSyncPersistentCustomItemStateForOwner(candidate);
-				return;
-			}
-		}
-	}
+	if ( projectile->projectileAppliedOil == APPLIED_OIL_NONE
+		|| local_rng.rand() % 40 != 0 ) { return; }
+	// A thrown weapon has already been detached from its inventory stack.
+	// Only that one projectile's coating can wear off; the remaining stack
+	// stays oiled. Its eventual floor/returned Item inherits this new state.
+	projectile->projectileAppliedOil = APPLIED_OIL_NONE;
+	projectile->itemAppliedOil = APPLIED_OIL_NONE;
 }
 
 bool applyTinctureStackToPlayer(ItemType tincture, int player)
@@ -6003,6 +5995,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		Uint32 runeCreatorIdentity = 0;
 		AppliedOil appliedOil = APPLIED_OIL_NONE;
 		Item familiarState{};
+		Uint32 loreInstanceId = 0;
 		Sint32 x = 0;
 		Sint32 y = 0;
 		bool alternateUse = false;
@@ -6023,6 +6016,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			x = item.x;
 			y = item.y;
 			copyItemPersistentCustomState(familiarState, item);
+			loreInstanceId = item.wraithLoreInstanceId;
 			sendToServer = true;
 		}
 		void send()
@@ -6047,9 +6041,12 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 				&net_packet->data[41 + FAMILIAR_PERSISTENT_PACKET_BYTES]);
 			SDLNet_Write32(static_cast<Uint32>(y),
 				&net_packet->data[45 + FAMILIAR_PERSISTENT_PACKET_BYTES]);
+			// Stable host-issued physical lore instance, never a client-created ID.
+			SDLNet_Write32(loreInstanceId,
+				&net_packet->data[49 + FAMILIAR_PERSISTENT_PACKET_BYTES]);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
-			net_packet->len = 49 + FAMILIAR_PERSISTENT_PACKET_BYTES;
+			net_packet->len = 53 + FAMILIAR_PERSISTENT_PACKET_BYTES;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 	};

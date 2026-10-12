@@ -62,6 +62,7 @@ void initializeWraithPlayerForNewGame(int player)
 	wraith.readBookObjectIds.clear();
 	wraith.readMailObjectIds.clear();
 	wraith.readGravestoneObjectIds.clear();
+	wraith.remoteLoreItems.clear();
 	stats[player]->HP = 5;
 	stats[player]->MAXHP = 5;
 	stats[player]->MP = oldMP + std::max(0, oldHP - 5);
@@ -118,6 +119,12 @@ void initializeWraithPlayerForNewGame(int player)
 			free(item);
 		}
 	}
+
+	// The spirit has no free inventory slot for an ordinary consumable.
+	// Place its starting MP potion inside the existing starting loot chest.
+	Item* startingMagicPotion = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, nullptr);
+	stats[player]->addItemToLootingBag(player, 0.0, 0.0, *startingMagicPotion, false);
+	free(startingMagicPotion);
 
 	const Uint32 bagKey = stats[player]->getLootingBagKey(player);
 	Item* chest = newItem(TOOL_PLAYER_LOOT_BAG, WORN, 0, 1, bagKey, true,

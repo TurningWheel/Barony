@@ -131,7 +131,11 @@ bool playerShouldRenderAsWraithSpirit(int player)
 	{
 		return false;
 	}
-	return intro || playerIsInWraithForm(player);
+	return intro || playerIsInWraithForm(player)
+		// Before the first WPST arrives, a remote Wraith should render as a
+		// spirit rather than as an uninitialized head at its spawn point.
+		|| (multiplayer == CLIENT && !players[player]->isLocalPlayer()
+			&& !players[player]->mechanics.wraith.initialized);
 }
 
 bool playerLimbIsIntrinsicWraithBodyPart(const Entity* limb,
@@ -377,14 +381,16 @@ int getWraithCanonicalMailLoreId(Uint32 appearance)
 
 int getWraithAddressedMailLoreId(int player)
 {
+	// A per-run base inscription with a distinct offset for each player.
+	// Hashing (run, player) independently could assign two Wraiths the same mail.
 	Uint32 hash = uniqueGameKey ^ 0x574C4F52u;
-	hash ^= static_cast<Uint32>(player + 1) * 0x9e3779b9u;
 	hash ^= hash >> 16;
 	hash *= 0x7feb352du;
 	hash ^= hash >> 15;
 	hash *= 0x846ca68bu;
 	hash ^= hash >> 16;
-	return static_cast<int>(hash % NUM_SCROLL_MAIL_OPTIONS);
+	return static_cast<int>((hash % NUM_SCROLL_MAIL_OPTIONS
+		+ static_cast<Uint32>(std::max(0, player))) % NUM_SCROLL_MAIL_OPTIONS);
 }
 
 void syncWraithPossessionKnowledge(int player)
@@ -549,7 +555,28 @@ bool processWraithRemoteItemLoreRead(int player, Item* requestItem)
 		if ( realItem ) { return false; }
 		realItem = candidate;
 	}
-	if ( !realItem ) { return false; }
+	if ( !realItem )
+	{
+		// The host never mirrors an ordinary connecting player's inventory.
+		// Validate against the exact physical item issued by the host instead.
+		const Uint32 id = requestItem->wraithLoreInstanceId;
+		const auto& ledger = players[player]->mechanics.wraith.remoteLoreItems;
+		const auto found = ledger.find(id);
+		if ( id == 0 || found == ledger.end()
+			|| found->second.first != requestItem->type
+			|| found->second.second != requestItem->appearance )
+		{
+			return false;
+		}
+		if ( requestItem->type == READABLE_BOOK )
+		{
+			if ( numbooks <= 0 ) { return false; }
+			return processWraithLoreRead(player, WRAITH_LORE_BOOK,
+				getBookDisplayIndex(static_cast<int>(requestItem->appearance % numbooks)), id);
+		}
+		return processWraithLoreRead(player, WRAITH_LORE_MAIL,
+			getWraithCanonicalMailLoreId(requestItem->appearance), id);
+	}
 	if ( realItem->type == READABLE_BOOK )
 	{
 		if ( numbooks <= 0 ) { return false; }
@@ -908,6 +935,33 @@ static void syncWraithPossessionState(int player)
 	}
 }
 
+// Reconcile Wraith hand equipment across floor loads. Vanilla remote-player
+// equipment replication is event-driven; the owned client can retain a local
+// item in inventory while losing the paper-doll binding after a map change.
+static void syncWraithHandEquipment(int player)
+{
+	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS
+		|| client_disconnected[player] || !players[player]
+		|| players[player]->isLocalPlayer() || !stats[player]
+		|| stats[player]->playerRace != RACE_WRAITH ) { return; }
+	strcpy(reinterpret_cast<char*>(net_packet->data), "WHEQ");
+	net_packet->data[4] = static_cast<Uint8>(player);
+	Item* hand[2] = { stats[player]->weapon, stats[player]->shield };
+	int offset = 5;
+	for ( const Item* item : hand )
+	{
+		net_packet->data[offset++] = item ? 1 : 0;
+		SDLNet_Write32(item ? static_cast<Uint32>(item->type) : 0, &net_packet->data[offset]); offset += 4;
+		SDLNet_Write32(item ? static_cast<Uint32>(item->status) : 0, &net_packet->data[offset]); offset += 4;
+		SDLNet_Write32(item ? static_cast<Uint32>(item->beatitude) : 0, &net_packet->data[offset]); offset += 4;
+		SDLNet_Write32(item ? static_cast<Uint32>(item->count) : 0, &net_packet->data[offset]); offset += 4;
+		SDLNet_Write32(item ? item->appearance : 0, &net_packet->data[offset]); offset += 4;
+	}
+	net_packet->address = net_clients[player - 1];
+	net_packet->len = offset;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
 static void updateWraithPlayerColorRemap(int player)
 {
 	if ( player < 0 || player >= MAXPLAYERS || !players[player]
@@ -1263,6 +1317,29 @@ static void resetWraithPossessedBodyLookOrientation(Entity* body)
 	body->roll = 0.0;
 }
 
+// An occupied body uses the real player entity for collision; its monster
+// entity remains a passable, presentation-only proxy. Some transitions can
+// leave the player entity with stale pass-through flags, so explicitly restore
+// solid creature collision on the authoritative player entity.
+static void hardenWraithPossessedPlayerCollision(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player]
+		|| !players[player]->entity || !stats[player]
+		|| stats[player]->playerRace != RACE_WRAITH
+		|| !players[player]->mechanics.wraith.initialized ) { return; }
+	Entity* controlled = players[player]->entity;
+	if ( controlled->flags[PASSABLE] )
+	{
+		controlled->flags[PASSABLE] = false;
+		if ( multiplayer == SERVER ) { serverUpdateEntityFlag(controlled, PASSABLE); }
+	}
+	if ( controlled->flags[NOCLIP_CREATURES] )
+	{
+		controlled->flags[NOCLIP_CREATURES] = false;
+		if ( multiplayer == SERVER ) { serverUpdateEntityFlag(controlled, NOCLIP_CREATURES); }
+	}
+}
+
 bool beginWraithPossession(int player, Entity* target)
 {
 	if ( multiplayer == CLIENT ) { return false; }
@@ -1462,6 +1539,7 @@ bool beginWraithPossession(int player, Entity* target)
 
 	wraith.possessedEntityUid = target->getUID();
 	wraith.possessedType = targetType;
+	hardenWraithPossessedPlayerCollision(player);
 	updateWraithPlayerColorRemap(player);
 	wraith.possessionStartPlayerLevel = playerStats->LVL;
 	wraith.possessionLastPlayerLevel = playerStats->LVL;
@@ -2481,6 +2559,7 @@ bool restoreWraithPossessedBodyAfterLevelTransition(int player, Stat* savedBodyS
 	wraith.possessedEntityUid = body->getUID();
 	wraith.possessedType = effectiveType;
 	stats[player]->type = effectiveType;
+	hardenWraithPossessedPlayerCollision(player);
 	putWraithBodyInStasis(player, *body);
 	wraith.possessionTransition = false;
 	syncWraithPossessionState(player);
@@ -2502,6 +2581,7 @@ void updateWraithPossession(int player)
 		wraith.possessionTransition = false;
 		return;
 	}
+	hardenWraithPossessedPlayerCollision(player);
 	Entity* playerEntity = players[player]->entity;
 	const bool visualProxy = wraithPossessionUsesMonsterVisualProxy(wraith.possessedType);
 	const Monster targetType = wraithCanonicalPossessionType(targetStats->type);
@@ -9409,6 +9489,14 @@ void actPlayer(Entity* my)
 	{
 		return;
 	}
+	// The owning client's movement prediction must use the same solid
+	// collider as the server while the visual monster body is in stasis.
+	if ( PLAYER_NUM >= 0 && PLAYER_NUM < MAXPLAYERS && players[PLAYER_NUM]
+		&& players[PLAYER_NUM]->mechanics.wraith.possessedEntityUid != 0
+		&& !players[PLAYER_NUM]->mechanics.wraith.possessionTransition )
+	{
+		hardenWraithPossessedPlayerCollision(PLAYER_NUM);
+	}
 	if ( multiplayer == SERVER && PLAYER_NUM > 0 && PLAYER_NUM < MAXPLAYERS
 		&& !client_disconnected[PLAYER_NUM] && players[PLAYER_NUM]
 		&& !players[PLAYER_NUM]->isLocalPlayer() && my->ticks == TICKS_PER_SECOND )
@@ -10538,7 +10626,10 @@ void actPlayer(Entity* my)
 		stats[PLAYER_NUM]->type = HUMAN;
 	}
 	const bool wraithFormVisual =
-		playerIsInWraithForm(PLAYER_NUM);
+		playerIsInWraithForm(PLAYER_NUM)
+		|| (multiplayer == CLIENT && !players[PLAYER_NUM]->isLocalPlayer()
+			&& stats[PLAYER_NUM]->playerRace == RACE_WRAITH
+			&& !players[PLAYER_NUM]->mechanics.wraith.initialized);
 	const bool wraithSpiritVisual =
 		playerShouldRenderAsWraithSpirit(PLAYER_NUM);
 	if ( wraithMenuSpiritVisual )
@@ -10555,6 +10646,21 @@ void actPlayer(Entity* my)
 		&& players[PLAYER_NUM]->mechanics.wraith.possessedEntityUid != 0
 		&& wraithPossessionUsesMonsterVisualProxy(playerRace);
 	const Monster positionalRace = playerRace == WRAITH ? SKELETON : playerRace;
+	// The occupied monster is a visual-only proxy. Network entity movement
+	// arrives less frequently than player interpolation; keep remote rendering
+	// at the owning player's interpolated coordinates, not behind them.
+	if ( multiplayer == CLIENT && wraithMonsterVisualProxy )
+	{
+		if ( Entity* proxy = uidToEntity(
+			players[PLAYER_NUM]->mechanics.wraith.possessedEntityUid) )
+		{
+			proxy->x = my->x;
+			proxy->y = my->y;
+			proxy->z = my->z;
+			proxy->yaw = my->yaw;
+		}
+	}
+
 
 
 	// mod add: Merrow cannot wear boots while racial features are enabled
@@ -14326,6 +14432,16 @@ void actPlayer(Entity* my)
 		// remove client entities that should no longer exist
 		if ( !intro )
 		{
+			// Initial Wraith state was never sent unless possession changed. Send
+			// an idempotent authoritative snapshot to every client, including
+			// observers, and refresh after floor transitions/packet loss.
+			if ( multiplayer == SERVER && stats[PLAYER_NUM]->playerRace == RACE_WRAITH
+				&& players[PLAYER_NUM]->mechanics.wraith.initialized
+				&& ticks % (2 * TICKS_PER_SECOND) == 0 )
+			{
+				syncWraithPossessionState(PLAYER_NUM);
+				syncWraithHandEquipment(PLAYER_NUM);
+			}
 			updateWraithPossession(PLAYER_NUM);
 			my->handleEffects(stats[PLAYER_NUM]); // hunger, regaining hp/mp, poison, etc.
 			if ( !client_disconnected[PLAYER_NUM] && stats[PLAYER_NUM]->HP <= 0

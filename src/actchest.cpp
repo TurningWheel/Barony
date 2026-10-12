@@ -23,6 +23,8 @@
 #include "monster.hpp"
 
 static bool isVoidChestEndpoint(const Entity* entity);
+static int voidChestOwnerForEndpoint(const Entity* endpoint);
+static bool voidChestSessionValid(int player, bool voidChest);
 
 /*
  * Chest theme ideas:
@@ -1058,7 +1060,10 @@ void Entity::actChest()
 				{
 					for ( int i = 0; i < MAXPLAYERS; ++i )
 					{
-						if ( isVoidChestEndpoint(openedChest[i]) )
+						if ( isVoidChestEndpoint(openedChest[i])
+							&& voidChestOwnerForEndpoint(openedChest[i]) ==
+								((client_classes[chestclicked] == CLASS_WITCH
+									|| client_classes[0] == CLASS_WITCH) ? chestclicked : 0) )
 						{
 							voidChestInUse = true;
 						}
@@ -1077,6 +1082,8 @@ void Entity::actChest()
 					Compendium_t::Events_t::eventUpdateWorld(chestclicked, Compendium_t::CPDM_CHESTS_OPENED, "chest", 1);
 
 					chestOpener = chestclicked;
+					inventory = getChestInventoryList();
+					if ( !inventory ) { closeChest(); return; }
 					if ( !players[chestclicked]->isLocalPlayer() && multiplayer == SERVER)
 					{
 						//Send all of the items to the client.
@@ -1253,10 +1260,74 @@ static bool isVoidChestEndpoint(const Entity* entity)
 			&& getAmuletFamiliarForm(entity) == FAMILIAR_FORM_MIMIC));
 }
 
+// Familiar Mimics always use their summoner's inventory. Vanilla Void Chests
+// remain shared among non-Witches when the host is not a Witch. With a Witch
+// host, non-Witches use their own inventory instead: otherwise sharing the
+// host's player-zero stash exposes the Witch's personal ingredients and loot.
+static int voidChestOwnerForEndpoint(const Entity* endpoint)
+{
+	if ( !isVoidChestEndpoint(endpoint) ) { return -1; }
+	if ( isAmuletFamiliar(endpoint, endpoint->getStats()) )
+	{
+		const Stat* familiarStats = endpoint->getStats();
+		Entity* leader = familiarStats ? uidToEntity(familiarStats->leader_uid) : nullptr;
+		const int owner = leader ? leader->isEntityPlayer() : -1;
+		return owner >= 0 && owner < MAXPLAYERS && stats[owner] ? owner : -1;
+	}
+	for ( int p = 0; p < MAXPLAYERS; ++p )
+	{
+		if ( openedChest[p] == endpoint && stats[p] )
+		{
+			return (client_classes[p] == CLASS_WITCH || client_classes[0] == CLASS_WITCH) ? p : 0;
+		}
+	}
+	return stats[0] ? 0 : -1;
+}
+
+// Map client chest transfers to the *same* inventory that the chest displayed.
+// Do not redirect unrelated deposits (such as a Witch familiar collecting loot)
+// merely because the player happens to be in a different chest session.
+static int voidChestStorageOwnerForPlayer(int player)
+{
+	if ( player == -1 ) { return stats[0] ? 0 : -1; } // Vanilla NPC Void Mimics.
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] ) { return -1; }
+	if ( isVoidChestEndpoint(openedChest[player]) )
+	{
+		return voidChestOwnerForEndpoint(openedChest[player]);
+	}
+	return player;
+}
+
+static bool voidChestSessionValid(int player, bool voidChest)
+{
+	if ( player <= 0 || player >= MAXPLAYERS || !players[player]
+		|| !players[player]->entity || !stats[player] || !openedChest[player] )
+	{
+		return false;
+	}
+	Entity* chest = openedChest[player];
+	if ( voidChest != isVoidChestEndpoint(chest)
+		|| entityDist(chest, players[player]->entity) > TOUCHRANGE )
+	{
+		return false;
+	}
+	if ( isAmuletFamiliar(chest, chest->getStats()) )
+	{
+		return chest->getStats() && chest->getStats()->leader_uid == players[player]->entity->getUID()
+			&& voidChestOwnerForEndpoint(chest) == player;
+	}
+	return chest->behavior == &actChest && chest->chestOpener == player;
+}
+
+bool validateVoidChestPacketSession(int player, bool voidChest)
+{
+	return voidChestSessionValid(player, voidChest);
+}
+
 bool openAmuletFamiliarVoidChest(Entity* familiar, int player)
 {
 	if ( multiplayer == CLIENT || !familiar || player < 0 || player >= MAXPLAYERS
-		|| !players[player] || !players[player]->entity || !stats[0]
+		|| !players[player] || !players[player]->entity || !stats[player]
 		|| !isAmuletFamiliar(familiar, familiar->getStats())
 		|| getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_MIMIC )
 	{
@@ -1276,9 +1347,12 @@ bool openAmuletFamiliarVoidChest(Entity* familiar, int player)
 	{
 		return false;
 	}
+	// Other Witches may use their own Mimics at the same time. Only
+	// endpoints resolving to the same storage still need exclusion.
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( i != player && isVoidChestEndpoint(openedChest[i]) )
+		if ( i != player && isVoidChestEndpoint(openedChest[i])
+			&& voidChestOwnerForEndpoint(openedChest[i]) == player )
 		{
 			messagePlayer(player, MESSAGE_INTERACTION, Language::get(6565));
 			return false;
@@ -1306,7 +1380,7 @@ bool openAmuletFamiliarVoidChest(Entity* familiar, int player)
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 9;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
-		for ( node_t* node = stats[0]->void_chest_inventory.first; node; node = node->next )
+		for ( node_t* node = stats[player]->void_chest_inventory.first; node; node = node->next )
 		{
 			Item* item = static_cast<Item*>(node->element);
 			if ( !item ) { continue; }
@@ -1983,7 +2057,8 @@ list_t* Entity::getChestInventoryList()
 	{
 		if ( chestVoidState != 0 )
 		{
-			return &stats[0]->void_chest_inventory;
+			const int owner = voidChestOwnerForEndpoint(this);
+			return owner >= 0 ? &stats[owner]->void_chest_inventory : nullptr;
 		}
 		else
 		{
@@ -1994,9 +2069,10 @@ list_t* Entity::getChestInventoryList()
 		}
 	}
 	if ( isAmuletFamiliar(this, getStats())
-		&& getAmuletFamiliarForm(this) == FAMILIAR_FORM_MIMIC && stats[0] )
+		&& getAmuletFamiliarForm(this) == FAMILIAR_FORM_MIMIC )
 	{
-		return &stats[0]->void_chest_inventory;
+		const int owner = voidChestOwnerForEndpoint(this);
+		return owner >= 0 ? &stats[owner]->void_chest_inventory : nullptr;
 	}
 	return nullptr;
 }
@@ -2053,16 +2129,20 @@ Item* addItemToChestClientside(const int player, Item* item, bool forceNewStack,
 
 Item* Entity::tryAddItemToVoidChestServer(int player, Item* item, bool forceNewStack, Item* specificDestinationStack)
 {
-	if ( !item || !stats[0] )
+	// Non-player void Mimics use vanilla host storage. Player familiars are
+	// never permitted to silently fall back to player zero.
+	const int storageOwner = voidChestStorageOwnerForPlayer(player);
+	if ( player == -1 ) { player = 0; }
+	if ( !item || storageOwner < 0 || storageOwner >= MAXPLAYERS || !stats[storageOwner] )
 	{
 		return nullptr;
 	}
 	if ( itemTypeIsIngredientBag(item->type) )
 	{
-		return mergeIngredientBagIntoVoidChest(*item);
+		return mergeIngredientBagIntoVoidChest(*item, storageOwner);
 	}
 
-	list_t* inventory = &stats[0]->void_chest_inventory;
+	list_t* inventory = &stats[storageOwner]->void_chest_inventory;
 	if ( !forceNewStack )
 	{
 		while ( item->count > 0 )
@@ -2158,6 +2238,7 @@ Item* Entity::tryAddItemToVoidChestServer(int player, Item* item, bool forceNewS
 		}
 	}
 
+	if ( !foundSlot ) { return nullptr; }
 	item->node = list_AddNodeLast(inventory);
 	item->node->element = item;
 	item->node->deconstructor = &defaultDeconstructor;
@@ -2198,13 +2279,15 @@ void Entity::serverSendItemToOpenVoidChest(int player, const Item* item, bool fo
 	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
-void syncIngredientBagToOpenVoidChest(const Item& bag)
+void syncIngredientBagToOpenVoidChest(const Item& bag, int ownerPlayer)
 {
-	if ( multiplayer != SERVER || !itemTypeIsIngredientBag(bag.type) ) { return; }
+	if ( multiplayer != SERVER || !itemTypeIsIngredientBag(bag.type)
+		|| ownerPlayer < 0 || ownerPlayer >= MAXPLAYERS ) { return; }
 	for ( int player = 1; player < MAXPLAYERS; ++player )
 	{
 		if ( client_disconnected[player] || !players[player] || players[player]->isLocalPlayer()
-			|| !isVoidChestEndpoint(openedChest[player]) )
+			|| !isVoidChestEndpoint(openedChest[player])
+			|| voidChestOwnerForEndpoint(openedChest[player]) != ownerPlayer )
 		{
 			continue;
 		}
@@ -2220,13 +2303,14 @@ void syncIngredientBagToOpenVoidChest(const Item& bag)
 	}
 }
 
-Item* mergeIngredientBagIntoVoidChest(const Item& source)
+Item* mergeIngredientBagIntoVoidChest(const Item& source, int ownerPlayer)
 {
-	if ( !stats[0] || !itemTypeIsIngredientBag(source.type) || ingredientBagIsEmpty(source) )
+	if ( ownerPlayer < 0 || ownerPlayer >= MAXPLAYERS || !stats[ownerPlayer]
+		|| !itemTypeIsIngredientBag(source.type) || ingredientBagIsEmpty(source) )
 	{
 		return nullptr;
 	}
-	list_t& inventory = stats[0]->void_chest_inventory;
+	list_t& inventory = stats[ownerPlayer]->void_chest_inventory;
 	const WitchIngredientCategory category = ingredientCategoryFromBag(source.type);
 	Item* destination = findIngredientBagInInventory(inventory, category);
 	if ( destination )
@@ -2235,6 +2319,8 @@ Item* mergeIngredientBagIntoVoidChest(const Item& source)
 	}
 	else
 	{
+		if ( list_Size(&inventory) >= Player::Inventory_t::MAX_CHEST_X
+			* Player::Inventory_t::MAX_CHEST_Y ) { return nullptr; }
 		destination = newItem(ingredientBagForCategory(category), EXCELLENT, 0, 1, 0, true, &inventory);
 		copyItemPersistentCustomState(*destination, source);
 		destination->count = 1;
@@ -2264,8 +2350,13 @@ Item* mergeIngredientBagIntoVoidChest(const Item& source)
 				}
 			}
 		}
+		if ( !foundSlot )
+		{
+			list_RemoveNode(destination->node);
+			return nullptr;
+		}
 	}
-	syncIngredientBagToOpenVoidChest(*destination);
+	syncIngredientBagToOpenVoidChest(*destination, ownerPlayer);
 	return destination;
 }
 
@@ -2276,10 +2367,12 @@ Item* Entity::addItemToVoidChestServer(int player, Item* item, bool forceNewStac
 		return nullptr;
 	}
 
+	const int storageOwner = voidChestStorageOwnerForPlayer(player);
 	bool voidChestInUse = false;
 	for ( int i = 0; i < MAXPLAYERS; ++i )
 	{
-		if ( isVoidChestEndpoint(openedChest[i]) && i != player )
+		if ( isVoidChestEndpoint(openedChest[i]) && i != player
+			&& voidChestOwnerForEndpoint(openedChest[i]) == storageOwner )
 		{
 			voidChestInUse = true;
 			break;
@@ -2466,7 +2559,7 @@ Item* Entity::addItemToChestServer(Item* item, bool forceNewStack, Item* specifi
 
 bool Entity::removeItemFromVoidChestServer(int player, Item* item, int count)
 {
-	if ( !item )
+	if ( !item || count <= 0 )
 	{
 		return false;
 	}
@@ -2474,11 +2567,25 @@ bool Entity::removeItemFromVoidChestServer(int player, Item* item, int count)
 	Item* item2 = NULL;
 	node_t* t_node = NULL;
 
-	list_t* inventory = &stats[0]->void_chest_inventory;
+	const int storageOwner = voidChestStorageOwnerForPlayer(player);
+	list_t* inventory = (storageOwner >= 0 && storageOwner < MAXPLAYERS && stats[storageOwner])
+		? &stats[storageOwner]->void_chest_inventory : nullptr;
 	if ( !inventory )
 	{
 		return false;
 	}
+	// Don't partially withdraw the contents of a fabricated or stale request.
+	Uint64 available = 0;
+	for ( node_t* node = inventory->first; node; node = node->next )
+	{
+		Item* candidate = static_cast<Item*>(node->element);
+		if ( candidate && !itemCompare(item, candidate, false, false)
+			&& candidate->count > 0 )
+		{
+			available += candidate->count;
+		}
+	}
+	if ( available < static_cast<Uint32>(count) ) { return false; }
 
 	node_t* nextnode = nullptr;
 	bool removedItems = false;

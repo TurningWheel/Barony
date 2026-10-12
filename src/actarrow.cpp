@@ -1049,10 +1049,8 @@ void actArrow(Entity* my)
 					{
 						damage += damage / 4;
 					}
-					if ( projectileOil != APPLIED_OIL_NONE )
-					{
-						rollProjectileOilWearOff(my);
-					}
+					// Oil was applied to the whole ammunition stack. Hitting with
+					// this spent arrow cannot strip oil from the remaining arrows.
 
 					Sint32 oldHP = hitstats->HP;
 					hit.entity->modHP(-damage, parent);

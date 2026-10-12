@@ -1007,10 +1007,11 @@ void actHudWeapon(Entity* my)
 	}
 	if ( playerIsInWraithForm(HUDWEAPON_PLAYERNUM)
 		&& !stats[HUDWEAPON_PLAYERNUM]->weapon
-		&& getWraithHeldItem(HUDWEAPON_PLAYERNUM) )
+		&& getWraithHeldItem(HUDWEAPON_PLAYERNUM)
+		&& !cast_animation[HUDWEAPON_PLAYERNUM].spellWaitingAttackInput() )
 	{
-		// A native offhand occupies the Wraith's only physical hand. Keep the
-		// offhand action available, but do not start a separate unarmed swing.
+		// The offhand blocks physical unarmed swings, never remembered spell
+		// touch targeting/charging (which uses this same swingweapon input).
 		swingweapon = false;
 		HUDWEAPON_CHOP = 0;
 		HUDWEAPON_CHARGE = 0;

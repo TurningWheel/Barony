@@ -142,6 +142,14 @@ void onThrownLandingParticle(Entity* my)
 
 void actThrown(Entity* my)
 {
+	// Projectiles store the coating separately from world items. Make the
+	// thrown Item reconstructed below (and on later ticks) carry that coat.
+	if ( multiplayer != CLIENT && static_cast<ItemType>(my->skill[10]) >= 0
+		&& static_cast<ItemType>(my->skill[10]) < NUMITEMS
+		&& items[my->skill[10]].category == THROWN )
+	{
+		my->itemAppliedOil = my->projectileAppliedOil;
+	}
 	Item* item = nullptr;
 	Category cat = GEM;
 	ItemType type = WOODEN_SHIELD;
@@ -691,6 +699,7 @@ void actThrown(Entity* my)
 						spellEntity->skill[13] = 1;
 						spellEntity->skill[14] = item->appearance;
 						spellEntity->skill[15] = item->identified;
+						spellEntity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 					}
 					
 					// mod add: Harpoon: the return entity now represents the weapon,
@@ -785,6 +794,7 @@ void actThrown(Entity* my)
 					entity->skill[13] = item->count;
 					entity->skill[14] = item->appearance;
 					entity->skill[15] = item->identified;
+					entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 					if ( item->type == GEM_JEWEL )
 					{
 						entity->parent = my->parent;
@@ -955,6 +965,7 @@ void actThrown(Entity* my)
 					spellEntity->skill[13] = 1;
 					spellEntity->skill[14] = item->appearance;
 					spellEntity->skill[15] = item->identified;
+					spellEntity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 				}
 			}
 			free(item);
@@ -991,6 +1002,7 @@ void actThrown(Entity* my)
 							entity->skill[13] = item->count;
 							entity->skill[14] = item->appearance;
 							entity->skill[15] = item->identified;
+							entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 							entity->itemReturnUID = parent->getUID();
 
 							free(item);
@@ -1111,6 +1123,7 @@ void actThrown(Entity* my)
 					spellEntity->skill[13] = 1;
 					spellEntity->skill[14] = item->appearance;
 					spellEntity->skill[15] = item->identified;
+					spellEntity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 					// mod add: remember entity struck by Harpoon
 					if ( item->type == HARPOON && hit.entity )
 					{
@@ -1335,6 +1348,9 @@ void actThrown(Entity* my)
 						damage += damage / 4;
 					}
 					rollProjectileOilWearOff(my);
+					// The weapon was reconstructed before the impact roll. Carry
+					// the post-impact coating into the recoverable/return item.
+					item->appliedOil = static_cast<AppliedOil>(my->projectileAppliedOil);
 				}
 				//messagePlayer(0, "damage: %d", damage);
 				if ( parent && parent->behavior == &actPlayer && parent->checkFriend(hit.entity) && itemCategory(item) == POTION )
@@ -2022,6 +2038,7 @@ void actThrown(Entity* my)
 						entity->skill[13] = item->count;
 						entity->skill[14] = item->appearance;
 						entity->skill[15] = item->identified;
+						entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 						if ( item->type == GEM_JEWEL )
 						{
 							entity->parent = my->parent;
@@ -2658,6 +2675,7 @@ void actThrown(Entity* my)
 				entity->skill[13] = item->count;
 				entity->skill[14] = item->appearance;
 				entity->skill[15] = item->identified;
+				entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 				if ( item->type == GEM_JEWEL )
 				{
 					entity->parent = my->parent;

@@ -16947,7 +16947,7 @@ bool openStewingCauldron(Entity* familiar, int player)
 
 	if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
-		clearServerStewingInventoryMirror(player);
+		resetServerStewingSession(player);
 		strcpy(reinterpret_cast<char*>(net_packet->data), "STWQ");
 		SDLNet_Write32(familiar->getUID(), &net_packet->data[4]);
 		net_packet->address.host = net_clients[player - 1].host;
@@ -16978,7 +16978,7 @@ void closeStewingForCauldron(Entity* familiar)
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 8;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
-		clearServerStewingInventoryMirror(player);
+		resetServerStewingSession(player);
 	}
 	else if ( players[player]->isLocalPlayer()
 		&& GenericGUI[player].stewingGUI.bOpen
@@ -17391,6 +17391,14 @@ void GenericGUIMenu::StewingGUI_t::receiveTransaction(bool success,
 		// The brewed oil/ink may arrive in the client's inventory later than STWU.
 		// Do not open the target picker with a fabricated or stale item pointer.
 		handoffAwaitingResult = handoffResult != ITEM_ENUM_MAX;
+		// Host/local Witch-Wraith: crafting into an occupied spectral hand
+		// drops the result instead of putting it in inventory.
+		const int player = parentGUI.getPlayer();
+		if ( playerIsInWraithForm(player) && getWraithHeldItem(player) )
+		{
+			handoffAwaitingResult = false;
+			handoffResult = ITEM_ENUM_MAX;
+		}
 		selection = remaining;
 		recipes.activeRecipeIndex = -1;
 		Player::soundActivate();

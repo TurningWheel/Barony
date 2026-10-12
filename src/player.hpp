@@ -2493,6 +2493,10 @@ public:
 			std::set<Uint32> readBookObjectIds;
 			std::set<Uint32> readMailObjectIds;
 			std::set<Uint64> readGravestoneObjectIds;
+			// Only the host populates this ledger from actual item pickups.
+			// Remote Wraith clients otherwise have no host-side book/mail inventory
+			// to validate their USEI reading requests against.
+			std::map<Uint32, std::pair<ItemType, Uint32>> remoteLoreItems;
 			std::unordered_map<Uint32, Uint8> guaranteedDodgesConsumedByMonsterUid;
 		} wraith;
 		std::map<int, int> itemDegradeRng;

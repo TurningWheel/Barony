@@ -10919,7 +10919,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 		&& pose != MONSTER_POSE_MAGIC_WINDUP3
 		&& pose != MONSTER_POSE_MAGIC_CAST1
 		&& pose != MONSTER_POSE_MAGIC_CAST2
-		&& pose != MONSTER_POSE_MAGIC_CAST3 )
+		&& pose != MONSTER_POSE_MAGIC_CAST3
+		&& pose != MONSTER_POSE_SPECIAL_WINDUP1
+		&& pose != MONSTER_POSE_SPECIAL_WINDUP2 )
 	{
 		// Native offhand equipment occupies the true Wraith's single hybrid
 		// hand. Reject the otherwise-empty-mainhand unarmed attack on both the
