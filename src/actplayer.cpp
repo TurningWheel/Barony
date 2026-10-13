@@ -55,6 +55,7 @@ static bool playerWraithIsHumanPolymorphed(int player)
 	return player >= 0 && player < MAXPLAYERS
 		&& players[player] && players[player]->entity && stats[player]
 		&& stats[player]->playerRace == RACE_WRAITH
+		&& players[player]->mechanics.wraith.possessedEntityUid == 0
 		&& stats[player]->getEffectActive(EFF_POLYMORPH)
 		&& players[player]->entity->effectPolymorph > NUMMONSTERS;
 }
@@ -468,6 +469,9 @@ bool processWraithLoreRead(int player, WraithLoreKind kind, int textId, Uint64 p
 	auto& wraith = players[player]->mechanics.wraith;
 	bool seenBefore = false;
 	int chance = 0;
+	// Grave lore rolls use hundredths of a percent to preserve exactly
+	// one quarter of the old 50% / 1% probabilities (12.5% / 0.25%).
+	bool quarterGravestoneChance = false;
 	switch ( kind )
 	{
 		case WRAITH_LORE_BOOK:
@@ -488,6 +492,7 @@ bool processWraithLoreRead(int player, WraithLoreKind kind, int textId, Uint64 p
 			wraith.readGravestoneObjectIds.insert(physicalObjectId);
 			wraith.seenGravestoneLoreIds.insert(textId);
 			chance = seenBefore ? 1 : 50;
+			quarterGravestoneChance = true;
 			break;
 		case WRAITH_LORE_MAIL:
 			if ( textId < 0 || textId >= NUM_SCROLL_MAIL_OPTIONS
@@ -503,7 +508,12 @@ bool processWraithLoreRead(int player, WraithLoreKind kind, int textId, Uint64 p
 			return false;
 	}
 
-	if ( chance < 100 && local_rng.rand() % 100 >= chance ) { return false; }
+	if ( quarterGravestoneChance )
+	{
+		// 1,250 / 10,000 on first inscription, 25 / 10,000 thereafter.
+		if ( local_rng.rand() % 10000 >= chance * 25 ) { return false; }
+	}
+	else if ( chance < 100 && local_rng.rand() % 100 >= chance ) { return false; }
 	std::vector<Monster> candidates;
 	for ( Monster type : getWraithLearnablePossessionTypes() )
 	{
@@ -612,6 +622,26 @@ Uint64 getWraithGravestoneLoreObjectId(const Entity* gravestone, int textId)
 	return hash == 0 ? 1 : hash;
 }
 
+// Treat a temporary form as an overlay on the same occupied body. The
+// original monster entity remains in stasis, never duplicated or released.
+bool wraithPossessionHasTemporaryFormOverride(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player]
+		|| !players[player]->entity || !stats[player]
+		|| stats[player]->playerRace != RACE_WRAITH
+		|| stats[player]->stat_appearance != 0
+		|| !players[player]->mechanics.wraith.initialized
+		|| players[player]->mechanics.wraith.possessedEntityUid == 0 )
+	{
+		return false;
+	}
+	const Entity* controlled = players[player]->entity;
+	return (stats[player]->getEffectActive(EFF_SHAPESHIFT)
+			&& controlled->effectShapeshift != NOTHING)
+		|| (stats[player]->getEffectActive(EFF_POLYMORPH)
+			&& controlled->effectPolymorph != NOTHING);
+}
+
 Monster getWraithEffectiveMonsterType(int player)
 {
 	if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
@@ -627,8 +657,25 @@ Monster getWraithEffectiveMonsterType(int player)
 		&& players[player] && players[player]->mechanics.wraith.initialized )
 	{
 		const auto& wraith = players[player]->mechanics.wraith;
-		return wraith.possessedEntityUid != 0
-			? wraithCanonicalPossessionType(wraith.possessedType) : WRAITH;
+		if ( wraith.possessedEntityUid != 0 )
+		{
+			const Entity* controlled = players[player]->entity;
+			// Shaman forms take precedence over temporary polymorph, just
+			// like for ordinary players. Never rewrite possessedType.
+			if ( controlled && stats[player]->getEffectActive(EFF_SHAPESHIFT)
+				&& controlled->effectShapeshift != NOTHING )
+			{
+				return static_cast<Monster>(controlled->effectShapeshift);
+			}
+			if ( controlled && stats[player]->getEffectActive(EFF_POLYMORPH)
+				&& controlled->effectPolymorph != NOTHING )
+			{
+				return controlled->effectPolymorph > NUMMONSTERS ? HUMAN
+					: static_cast<Monster>(controlled->effectPolymorph);
+			}
+			return wraithCanonicalPossessionType(wraith.possessedType);
+		}
+		return WRAITH;
 	}
 	return stats[player]->type;
 }
@@ -753,7 +800,11 @@ bool wraithPossessedBodyCanEquipSlot(int player, int category)
 	{
 		return false;
 	}
-	const Monster possessedType = getWraithEffectiveMonsterType(player);
+	// Keep hard equipment restrictions bound to the *occupied* body.
+	// A temporary Shaman/polymorph form must not make restricted Demon or
+	// Bugbear gear permanently equippable after the timer expires.
+	const Monster possessedType = wraithCanonicalPossessionType(
+		players[player]->mechanics.wraith.possessedType);
 	if ( possessedType == DEMON )
 	{
 		// Native Demon hand-equipment presentation is not supported for Wraith
@@ -924,7 +975,24 @@ static void syncWraithPossessionState(int player)
 	net_packet->data[4] = static_cast<Uint8>(player);
 	SDLNet_Write32(wraith.possessedEntityUid, &net_packet->data[5]);
 	SDLNet_Write32(static_cast<Uint32>(wraith.possessedType), &net_packet->data[9]);
-	net_packet->len = 13;
+	// The possessed form's model depends on BOTH the effect flag and its
+	// entity skill. A separate EFFE packet can arrive before/after ENTS;
+	// include an atomic authoritative snapshot in the periodic reliable WPST.
+	const Entity* controlled = players[player]->entity;
+	const Stat* currentStats = stats[player];
+	const bool possessing = wraith.possessedEntityUid != 0;
+	const bool polymorphed = possessing && controlled && currentStats
+		&& currentStats->getEffectActive(EFF_POLYMORPH)
+		&& controlled->effectPolymorph != NOTHING;
+	const bool shapeshifted = possessing && controlled && currentStats
+		&& currentStats->getEffectActive(EFF_SHAPESHIFT)
+		&& controlled->effectShapeshift != NOTHING;
+	SDLNet_Write32(static_cast<Uint32>(polymorphed ? controlled->effectPolymorph : NOTHING),
+		&net_packet->data[13]);
+	SDLNet_Write32(static_cast<Uint32>(shapeshifted ? controlled->effectShapeshift : NOTHING),
+		&net_packet->data[17]);
+	net_packet->data[21] = (polymorphed ? 1 : 0) | (shapeshifted ? 2 : 0);
+	net_packet->len = 22;
 	for ( int client = 1; client < MAXPLAYERS; ++client )
 	{
 		if ( client_disconnected[client] || !players[client]
@@ -1557,6 +1625,8 @@ bool beginWraithPossession(int player, Entity* target)
 	};
 	targetStats->wraithFormerPossessor = -1;
 	targetStats->wraithBodyLootChestSpawned = false;
+	// Preserve the Wraith's MP after the possession cost. The monster's MP
+	// is not transferred: possession only takes its current HP.
 	playerStats->MP -= cost;
 	const Sint32 mpAfterCost = playerStats->MP;
 	detachWraithBodyFollower(target, targetStats);
@@ -1588,6 +1658,10 @@ bool beginWraithPossession(int player, Entity* target)
 #endif
 
 	suspendWraithEffects(*playerStats, wraith, *targetStats);
+	// Restore the original v4.03 resource split: Wraith progression and
+	// corporeal maxima remain the player's, while current HP comes from
+	// the possessed creature. No monster level, attributes, or MP is copied.
+	// The spirit's possession cost was already paid above.
 	playerStats->MAXHP = wraith.corporealMaxHP;
 	playerStats->HP = targetCurrentHP;
 	playerStats->MAXMP = wraith.corporealMaxMP;
@@ -1608,6 +1682,10 @@ bool beginWraithPossession(int player, Entity* target)
 		}
 	}
 	serverUpdateEffects(player);
+	// WPST synchronizes the controlled body, not its HP/MP maxima.
+	// Refresh vanilla multiplayer STAT immediately so a connecting Wraith
+	// does not keep spirit-form resources until the periodic update.
+	serverUpdatePlayerStats();
 	wraith.possessionTransition = false;
 	return true;
 }
@@ -2280,6 +2358,11 @@ static void returnWraithBodyItems(int player, Stat& targetStats)
 	if ( !wraithPossessedBodyCanEquipSlot(player, 9) ) { targetStats.gloves = findReturnedItem(original[9]); }
 	targetStats.ring = findReturnedItem(original[5]);
 	targetStats.amulet = findReturnedItem(original[6]);
+	// Vanilla does not mirror all remote unequipped inventory items to the
+	// host. Reconcile only missing items from the latest completed snapshot,
+	// keeping every existing server-owned Item and equipment pointer intact.
+	reconcileWraithRemoteBodyInventory(player, targetStats,
+		players[player]->mechanics.wraith.possessedEntityUid);
 #ifndef NDEBUG
 	for ( Item* item : toReturn )
 	{
@@ -2296,6 +2379,22 @@ static void clearWraithPossessionState(int player, Sint32 bodyCurrentHP,
 	auto& wraith = players[player]->mechanics.wraith;
 	Stat& playerStats = *stats[player];
 	clearWraithPossessionTemporarySpells(player);
+	// Temporary transformations belonged to the occupied body, not to the
+	// incorporeal Wraith. The original spirit effects were restored before
+	// this function; discard stale visual selectors on release/body death.
+	if ( Entity* controlled = players[player]->entity )
+	{
+		if ( controlled->effectPolymorph != NOTHING )
+		{
+			controlled->effectPolymorph = NOTHING;
+			serverUpdateEntitySkill(controlled, 50);
+		}
+		if ( controlled->effectShapeshift != NOTHING )
+		{
+			controlled->effectShapeshift = NOTHING;
+			serverUpdateEntitySkill(controlled, 53);
+		}
+	}
 	playerStats.type = WRAITH;
 	wraith.possessedEntityUid = 0;
 	wraith.possessedType = NOTHING;
@@ -2310,6 +2409,9 @@ static void clearWraithPossessionState(int player, Sint32 bodyCurrentHP,
 	setWraithFormResources(playerStats, wraith, bodyCurrentHP, bodyCurrentMP, bodyDied);
 	serverUpdateEffects(player);
 	syncWraithPossessionState(player);
+	// Reflect the restored 5 HP spirit form and converted MP immediately
+	// on the owning client and other observers.
+	serverUpdatePlayerStats();
 }
 
 bool releaseWraithPossession(int player)
@@ -2335,6 +2437,7 @@ bool releaseWraithPossession(int player)
 #ifndef NDEBUG
 	assertWraithPossessionReleaseOwnership(player, *targetStats);
 #endif
+	// The creature resumes at the HP it had while controlled; no healing on release.
 	targetStats->HP = std::max<Sint32>(1, std::min(bodyCurrentHP, targetStats->MAXHP));
 	targetStats->wraithFormerPossessor = static_cast<Sint8>(player);
 	targetStats->wraithBodyLootChestSpawned = false;
@@ -2583,7 +2686,9 @@ void updateWraithPossession(int player)
 	}
 	hardenWraithPossessedPlayerCollision(player);
 	Entity* playerEntity = players[player]->entity;
-	const bool visualProxy = wraithPossessionUsesMonsterVisualProxy(wraith.possessedType);
+	const bool formOverride = wraithPossessionHasTemporaryFormOverride(player);
+	const bool visualProxy = !formOverride
+		&& wraithPossessionUsesMonsterVisualProxy(wraith.possessedType);
 	const Monster targetType = wraithCanonicalPossessionType(targetStats->type);
 	target->x = playerEntity->x;
 	target->y = playerEntity->y;
@@ -2613,8 +2718,15 @@ void updateWraithPossession(int player)
 	{
 		target->flags[INVISIBLE] = !visualProxy;
 		if ( multiplayer == SERVER ) { serverUpdateEntityFlag(target, INVISIBLE); }
+		// Synchronize the original monster's limbs when switching between
+		// a proxy and a player-rendered temporary form. Do this on changes
+		// only, to avoid fighting vanilla monster animation each tick.
+		setWraithBodyLimbsInvisible(target, !visualProxy);
 	}
-	if ( !visualProxy ) { setWraithBodyLimbsInvisible(target, true); }
+	else if ( !visualProxy )
+	{
+		setWraithBodyLimbsInvisible(target, true);
+	}
 	if ( !target->flags[PASSABLE] )
 	{
 		target->flags[PASSABLE] = true;
@@ -3280,7 +3392,8 @@ static void updateLeoninRacialEffects(int player, bool inNormalWater)
 
 	// Leonin racial: Retractable Claws is a passive HUD indicator for uncovered
 	// hands. Weapon state intentionally does not affect its presentation.
-	const bool retractableClawsAvailable = playerEntity->isNaturalLeoninPlayer()
+	const bool retractableClawsAvailable =
+		(playerEntity->isNaturalLeoninPlayer() || playerEntity->isWraithPossessedDemonWithClaws())
 		&& !playerStats->gloves;
 	if ( retractableClawsAvailable )
 	{
@@ -10590,6 +10703,12 @@ void actPlayer(Entity* my)
 		&& players[PLAYER_NUM]->mechanics.wraith.possessedEntityUid != 0 )
 	{
 		playerRace = getWraithEffectiveMonsterType(PLAYER_NUM);
+		if ( my->effectPolymorph > NUMMONSTERS
+			&& stats[PLAYER_NUM]->getEffectActive(EFF_POLYMORPH)
+			&& !stats[PLAYER_NUM]->getEffectActive(EFF_SHAPESHIFT) )
+		{
+			playerAppearance = my->effectPolymorph - 100;
+		}
 		stats[PLAYER_NUM]->type = playerRace;
 	}
 	else if ( my->effectShapeshift != NOTHING )
@@ -10640,16 +10759,49 @@ void actPlayer(Entity* my)
 	}
 	const real_t wraithVisualBob = wraithSpiritVisual ? getWraithVisualBob() : 0.0;
 	updateWraithPlayerColorRemap(PLAYER_NUM);
+	// The original possessed monster is a visual proxy ONLY while showing
+	// its original form. During polymorph/Shaman forms, show the controlled
+	// player's transformed model and hide the old body on every client.
+	const bool wraithPossessionFormOverride =
+		wraithPossessionHasTemporaryFormOverride(PLAYER_NUM);
 	const bool wraithMonsterVisualProxy = !intro
 		&& stats[PLAYER_NUM]->playerRace == RACE_WRAITH
 		&& players[PLAYER_NUM]->mechanics.wraith.initialized
 		&& players[PLAYER_NUM]->mechanics.wraith.possessedEntityUid != 0
-		&& wraithPossessionUsesMonsterVisualProxy(playerRace);
+		&& !wraithPossessionFormOverride
+		&& wraithPossessionUsesMonsterVisualProxy(
+			players[PLAYER_NUM]->mechanics.wraith.possessedType);
 	const Monster positionalRace = playerRace == WRAITH ? SKELETON : playerRace;
 	// The occupied monster is a visual-only proxy. Network entity movement
 	// arrives less frequently than player interpolation; keep remote rendering
 	// at the owning player's interpolated coordinates, not behind them.
-	if ( multiplayer == CLIENT && wraithMonsterVisualProxy )
+	// The host may have sent sprite -1 while a monster proxy was visible.
+	// When the remote Wraith returns to spirit form the vanilla client path
+	// never recalculates the host player's head sprite. Restore it locally.
+	if ( wraithFormVisual && !wraithMonsterVisualProxy
+		&& stats[PLAYER_NUM]->playerRace == RACE_WRAITH )
+	{
+		// A previous proxy may have left the player root invisible. The
+		// player entity, not the monster proxy, renders the spirit; restore
+		// its visibility even if the last entity-flag packet was lost.
+		// Respect real invisibility effects/equipment and stealth.
+		if ( !my->isInvisible() )
+		{
+			const bool wasInvisible = my->flags[INVISIBLE];
+			my->flags[INVISIBLE] = false;
+			my->flags[INVISIBLE_DITHER] = false;
+			if ( wasInvisible && multiplayer == SERVER )
+			{
+				serverUpdateEntityFlag(my, INVISIBLE);
+				serverUpdateEntityFlag(my, INVISIBLE_DITHER);
+			}
+		}
+		if ( multiplayer == CLIENT && !players[PLAYER_NUM]->isLocalPlayer() )
+		{
+			my->sprite = WRAITH_MODEL_HEAD;
+		}
+	}
+	if ( multiplayer == CLIENT && (wraithMonsterVisualProxy || wraithPossessionFormOverride) )
 	{
 		if ( Entity* proxy = uidToEntity(
 			players[PLAYER_NUM]->mechanics.wraith.possessedEntityUid) )
@@ -10658,6 +10810,60 @@ void actPlayer(Entity* my)
 			proxy->y = my->y;
 			proxy->z = my->z;
 			proxy->yaw = my->yaw;
+			// The monster's render entity is not a second body during a
+			// temporary form. Protect against delayed INVISIBLE/ENTB packets.
+			if ( wraithPossessionFormOverride )
+			{
+				proxy->flags[INVISIBLE] = true;
+				proxy->flags[INVISIBLE_DITHER] = false;
+				int bodypart = 0;
+				for ( node_t* limbNode = proxy->children.first; limbNode;
+					limbNode = limbNode->next, ++bodypart )
+				{
+					if ( bodypart < 2 ) { continue; }
+					Entity* limb = static_cast<Entity*>(limbNode->element);
+					if ( limb )
+					{
+						limb->flags[INVISIBLE] = true;
+						limb->flags[INVISIBLE_DITHER] = false;
+					}
+				}
+			}
+		}
+	}
+	// A previous monster-proxy state can leave a remote player's head at -1.
+	// Restore the actual transformed head without modifying spirit rendering.
+	if ( multiplayer == CLIENT && !players[PLAYER_NUM]->isLocalPlayer()
+		&& wraithSpiritVisual && !wraithMonsterVisualProxy )
+	{
+		// A previous possession may have left the remote root at sprite -1;
+		// don't depend on the next ENTU/sprite update to restore the spirit.
+		my->sprite = WRAITH_MODEL_HEAD;
+		if ( !my->isInvisible() )
+		{
+			my->flags[INVISIBLE] = false;
+			my->flags[INVISIBLE_DITHER] = false;
+		}
+	}
+	if ( wraithPossessionFormOverride )
+	{
+		// The visual proxy might have been the last visible body. Restore
+		// the controlled player root so the real transformed form is drawn
+		// (including on the remote client); preserve genuine invisibility.
+		if ( !my->isInvisible() && my->flags[INVISIBLE] )
+		{
+			my->flags[INVISIBLE] = false;
+			my->flags[INVISIBLE_DITHER] = false;
+			if ( multiplayer == SERVER )
+			{
+				serverUpdateEntityFlag(my, INVISIBLE);
+				serverUpdateEntityFlag(my, INVISIBLE_DITHER);
+			}
+		}
+		if ( multiplayer == CLIENT && !players[PLAYER_NUM]->isLocalPlayer() )
+		{
+			my->sprite = playerHeadSprite(playerRace, stats[PLAYER_NUM]->sex,
+				playerAppearance, PLAYER_ATTACK ? PLAYER_ATTACKTIME : 0, PLAYER_NUM);
 		}
 	}
 
@@ -12461,6 +12667,15 @@ void actPlayer(Entity* my)
 		}
 
 	updateBatFamiliarForPlayer(my, PLAYER_NUM);
+	if ( multiplayer == CLIENT && players[PLAYER_NUM]->isLocalPlayer() )
+	{
+		sendWraithStartingChestSnapshot(PLAYER_NUM);
+		sendWraithBodyInventorySnapshot(PLAYER_NUM);
+	}
+	if ( multiplayer != CLIENT && PLAYER_NUM == 0 )
+	{
+		reconcileSharedVoidChestInventory();
+	}
 
 	if ( multiplayer != CLIENT )
 	{
@@ -13858,7 +14073,24 @@ void actPlayer(Entity* my)
 			{
 				followerMenu.followerToCommand = nullptr;
 				Entity* parent = uidToEntity(selectedEntity[PLAYER_NUM]->skill[2]);
-				if ( !telekinesisTarget )
+				// The client may see the Cauldron model before receiving its
+				// familiar identity/ally skill updates. In particular, a remote
+				// Witch's Cauldron over lava has no campfire to forward the click.
+				// Always route an ordinary Use click to the monster root instead of
+				// opening the generic follower-command wheel. The host still checks
+				// ownership, equipped amulet, form, health and distance.
+				Entity* cauldronRoot = selectedEntity[PLAYER_NUM]->behavior == &actMonster
+					? selectedEntity[PLAYER_NUM]
+					: (parent && parent->behavior == &actMonster ? parent : nullptr);
+				const bool clickedStewingCauldron = cauldronRoot
+					&& (cauldronRoot->sprite == BAT_FAMILIAR_MODEL_CAULDRON
+						|| (isAmuletFamiliar(cauldronRoot, cauldronRoot->getStats())
+							&& getAmuletFamiliarForm(cauldronRoot) == FAMILIAR_FORM_CAULDRON));
+				if ( clickedStewingCauldron && !telekinesisTarget )
+				{
+					selectedEntity[PLAYER_NUM] = cauldronRoot;
+				}
+				else if ( !telekinesisTarget )
 				{
 					if ( selectedEntity[PLAYER_NUM]->behavior == &actMonster || (parent && parent->behavior == &actMonster) )
 					{
@@ -15673,6 +15905,33 @@ void actPlayer(Entity* my)
 	if ( auto node = list_Node(&my->children, 11) )
 	{
 		additionalLimb = (Entity*)node->element;
+	}
+	if ( wraithPossessionFormOverride && isHumanoid && !my->isInvisible() )
+	{
+		// These limbs were hidden while the original monster proxy rendered.
+		// Vanilla humanoid animation does not always unhide torso/arms on
+		// a transition back to the player model. Do not touch spirit form,
+		// monster-only forms, real invisibility, or Merrow's hidden legs.
+		for ( int part = 1; part <= 5; ++part )
+		{
+			if ( playerRace == MERROW && (part == 2 || part == 3) )
+			{
+				continue;
+			}
+			if ( node_t* limbNode = list_Node(&my->children, part) )
+			{
+				Entity* limb = static_cast<Entity*>(limbNode->element);
+				if ( limb && (limb->flags[INVISIBLE] || limb->flags[INVISIBLE_DITHER]) )
+				{
+					limb->flags[INVISIBLE] = false;
+					limb->flags[INVISIBLE_DITHER] = false;
+					if ( multiplayer == SERVER )
+					{
+						serverUpdateEntityBodypart(my, part);
+					}
+				}
+			}
+		}
 	}
 	if ( wraithMonsterVisualProxy )
 	{
@@ -18844,7 +19103,10 @@ void actPlayer(Entity* my)
 			}
 			if ( wraithSpiritVisual && bodypart >= 1 && bodypart <= 5 )
 			{
-				entity->focalz += wraithVisualBob;
+				// The bob is an ABSOLUTE displacement from the model's base.
+				// Adding to last frame's focalz accumulates hundreds of ticks of
+				// drift and mangles remote Wraith limbs at the spawn location.
+				entity->focalz = limbs[SKELETON][bodypart][2] + wraithVisualBob;
 			}
 		}
 		// rotate shield a bit

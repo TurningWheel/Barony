@@ -5898,8 +5898,13 @@ void GenericGUIMenu::updateGUI()
 		else if ( guiType == GUI_TYPE_STEWING )
 		{
 			Entity* familiar = uidToEntity(stewingGUI.cauldronUid);
-			if ( !familiar || !isAmuletFamiliar(familiar, familiar->getStats())
-				|| getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_CAULDRON
+			// In multiplayer the host owns the authoritative form and sends
+			// STWC when the Cauldron disappears. Local client visual state can
+			// arrive after STWO, so do not close a host-approved GUI prematurely.
+			if ( !familiar || familiar->behavior != &actMonster
+				|| (multiplayer != CLIENT
+					&& (!isAmuletFamiliar(familiar, familiar->getStats())
+						|| getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_CAULDRON))
 				|| !player->entity || entityDist(player->entity, familiar) > TOUCHRANGE )
 			{
 				closeGUI();
@@ -16947,7 +16952,12 @@ bool openStewingCauldron(Entity* familiar, int player)
 
 	if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
-		resetServerStewingSession(player);
+		if ( !beginServerStewingSessionOpen(player, familiar->getUID()) )
+		{
+			// An opening request or an active menu already exists. A second
+			// interaction should never cancel an in-flight craft.
+			return true;
+		}
 		strcpy(reinterpret_cast<char*>(net_packet->data), "STWQ");
 		SDLNet_Write32(familiar->getUID(), &net_packet->data[4]);
 		net_packet->address.host = net_clients[player - 1].host;
@@ -16957,7 +16967,13 @@ bool openStewingCauldron(Entity* familiar, int player)
 	}
 	else
 	{
-		GenericGUI[player].openGUI(GUI_TYPE_STEWING, familiar);
+		// Preserve the current selection/resources if the click callback is
+		// observed on more than one tick. Only a real new interaction opens UI.
+		if ( !GenericGUI[player].stewingGUI.bOpen
+			|| GenericGUI[player].stewingGUI.cauldronUid != familiar->getUID() )
+		{
+			GenericGUI[player].openGUI(GUI_TYPE_STEWING, familiar);
+		}
 	}
 	return true;
 }
@@ -17128,7 +17144,6 @@ namespace
 		button->setBackgroundHighlighted(highlighted);
 		button->setBackgroundActivated(pressed);
 		button->setTextHighlightColor(makeColor(201, 162, 100, 255));
-		button->setTickCallback(genericgui_deselect_fn);
 	}
 
 	bool stewingMixtureCanUseResultSlot(const GenericGUIMenu::StewingGUI_t& stewing)
@@ -17171,13 +17186,22 @@ void GenericGUIMenu::StewingGUI_t::openStewingMenu(Uint32 familiarUid,
 	selection = StewingSelection{};
 	recipes.activeRecipeIndex = -1;
 	transactionPending = false;
+	pendingTransactionSequence = 0;
+	pendingTransactionLastCheck = 0;
+	controllerFocus = 0;
 	handoffResult = ITEM_ENUM_MAX;
 	handoffBaseline = 0;
 	handoffAwaitingResult = false;
+	handoffWaitStartedAt = 0;
 	animx = 0.0;
 	isInteractable = false;
 	bFirstTimeSnapCursor = false;
 	bOpen = true;
+	if ( players[player] && inputs.hasController(player)
+		&& !inputs.getVirtualMouse(player)->draw_cursor )
+	{
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_STEWING);
+	}
 	recipes.closeRecipePanel();
 	if ( stewFrame )
 	{
@@ -17192,14 +17216,28 @@ void GenericGUIMenu::StewingGUI_t::openStewingMenu(Uint32 familiarUid,
 
 void GenericGUIMenu::StewingGUI_t::closeStewingMenu()
 {
+	const int player = parentGUI.getPlayer();
+	if ( stewFrame ) { stewFrame->deselect(); }
+	if ( players[player] && players[player]->GUI.activeModule == Player::GUI_t::MODULE_STEWING )
+	{
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		if ( inputs.hasController(player) )
+		{
+			players[player]->GUI.warpControllerToModule(false);
+		}
+	}
 	const Uint32 oldCauldronUid = cauldronUid;
 	selection = StewingSelection{};
 	recipes.activeRecipeIndex = -1;
 	resources.fill(0);
 	transactionPending = false;
+	pendingTransactionSequence = 0;
+	pendingTransactionLastCheck = 0;
+	controllerFocus = 0;
 	handoffResult = ITEM_ENUM_MAX;
 	handoffBaseline = 0;
 	handoffAwaitingResult = false;
+	handoffWaitStartedAt = 0;
 	animx = 0.0;
 	isInteractable = false;
 	bFirstTimeSnapCursor = false;
@@ -17367,8 +17405,19 @@ void GenericGUIMenu::StewingGUI_t::requestTransaction(StewingOperation operation
 			SDLNet_Write32(static_cast<Uint32>(selection[i].type), &net_packet->data[10 + i * 8]);
 			SDLNet_Write32(selection[i].quantity, &net_packet->data[14 + i * 8]);
 		}
+		// Server processes any sequence at most once per Cauldron session.
+		// The UI may retry its acknowledgement without replaying the craft.
+		++transactionSequence;
+		if ( transactionSequence == 0 ) { ++transactionSequence; }
+		pendingTransactionSequence = transactionSequence;
+		registerClientStewingTransaction(player, pendingTransactionSequence);
+		pendingTransactionOperation = operation;
+		pendingTransactionSelection = selection;
+		pendingTransactionLastCheck = ticks;
+		SDLNet_Write32(pendingTransactionSequence,
+			&net_packet->data[10 + STEWING_MAX_EDUCTS * 8]);
 		net_packet->address = net_server;
-		net_packet->len = 10 + STEWING_MAX_EDUCTS * 8;
+		net_packet->len = 14 + STEWING_MAX_EDUCTS * 8;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		transactionPending = true;
 	}
@@ -17385,12 +17434,14 @@ void GenericGUIMenu::StewingGUI_t::receiveTransaction(bool success,
 	const std::array<Uint32, STEWING_RESOURCE_COUNT>& available)
 {
 	transactionPending = false;
+	pendingTransactionSequence = 0;
 	resources = available;
 	if ( success )
 	{
 		// The brewed oil/ink may arrive in the client's inventory later than STWU.
 		// Do not open the target picker with a fabricated or stale item pointer.
 		handoffAwaitingResult = handoffResult != ITEM_ENUM_MAX;
+		handoffWaitStartedAt = ticks;
 		// Host/local Witch-Wraith: crafting into an occupied spectral hand
 		// drops the result instead of putting it in inventory.
 		const int player = parentGUI.getPlayer();
@@ -17696,6 +17747,7 @@ void GenericGUIMenu::StewingGUI_t::createStewingMenu()
 	recipePanel->setDisabled(true);
 	const int numGrids = (6 / recipes.kNumRecipesToDisplayVertical) + 1;
 	Frame* recipeSlots = recipePanel->addFrame("stewing recipe slots");
+	recipeSlots->setOwner(player);
 	recipeSlots->setSize(SDL_Rect{ 6, 0, STEWING_RECIPE_WIDTH, kRecipeListHeight });
 	recipeSlots->setActualSize(SDL_Rect{ 0, 0, STEWING_RECIPE_WIDTH,
 		(kRecipeGridImgHeight + 2) * numGrids });
@@ -17707,6 +17759,7 @@ void GenericGUIMenu::StewingGUI_t::createStewingMenu()
 		"*#images/ui/WitchCauldron/Witchbrew_ScrollGrid.png", "stewing recipe grid");
 	recipeGrid->tiled = true;
 	Frame* cursor = recipeSlots->addFrame("stewing active recipe");
+	cursor->setOwner(player);
 	cursor->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
 	cursor->setDisabled(true);
 	const Uint32 cursorColor = makeColor(177, 72, 3, 255);
@@ -17738,6 +17791,8 @@ void GenericGUIMenu::StewingGUI_t::createStewingMenu()
 				char buttonName[32];
 				snprintf(buttonName, sizeof(buttonName), "stewing recipe %d", recipeIndex);
 				Button* button = slot->addButton(buttonName);
+				button->setOwner(player);
+				button->setMenuConfirmControlType(0);
 				button->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
 				button->setInvisible(false);
 				button->setColor(makeColor(255, 255, 255, 0));
@@ -17758,11 +17813,13 @@ void GenericGUIMenu::StewingGUI_t::createStewingMenu()
 	}
 	}
 	Frame* recipeImageFrame = recipePanel->addFrame("stewing recipe image frame");
+	recipeImageFrame->setOwner(player);
 	recipeImageFrame->setSize(SDL_Rect{ 0, 0, STEWING_RECIPE_WIDTH, 328 });
 	recipeImageFrame->setHollow(true);
 	recipeImageFrame->addImage(SDL_Rect{ 0, 0, STEWING_RECIPE_WIDTH, 328 },
 		0xFFFFFFFF, "*#images/ui/WitchCauldron/Witchbrew_Recipes_00.png", "stewing recipe base image");
 	Frame* recipeBase = recipePanel->addFrame("stewing recipe base");
+	recipeBase->setOwner(player);
 	recipeBase->setSize(SDL_Rect{ 0, 0, STEWING_RECIPE_WIDTH, kRecipeListHeight });
 	recipeBase->setHollow(true);
 	Field* recipeTitle = recipeBase->addField("stewing recipe title", 64);
@@ -17773,6 +17830,7 @@ void GenericGUIMenu::StewingGUI_t::createStewingMenu()
 	recipeTitle->setSize(SDL_Rect{ 0, 0, 0, 24 });
 	recipeTitle->setDisabled(true);
 	Button* clearRecipe = recipeBase->addButton("stewing clear recipe");
+	clearRecipe->setOwner(player);
 	configureStewingButton(clearRecipe, SDL_Rect{ 0, 0, 172, 26 },
 		"*#images/ui/WitchCauldron/Witchbrew_RecipeClear_Button_00.png",
 		"*#images/ui/WitchCauldron/Witchbrew_RecipeClear_ButtonHigh_00.png",
@@ -17806,6 +17864,7 @@ void GenericGUIMenu::StewingGUI_t::createStewingMenu()
 	recipeSlider->setMenuConfirmControlType(0);
 
 	Frame* mainFrame = stewFrame->addFrame("stewing main");
+	mainFrame->setOwner(player);
 	mainFrame->setSize(SDL_Rect{ 0, 0, STEWING_MAIN_WIDTH, STEWING_MAIN_HEIGHT });
 	mainFrame->setHollow(true);
 	mainFrame->addImage(SDL_Rect{ 0, 0, STEWING_MAIN_WIDTH, STEWING_MAIN_HEIGHT }, 0xFFFFFFFF,
@@ -17824,6 +17883,7 @@ void GenericGUIMenu::StewingGUI_t::createStewingMenu()
 	title->setOutlineColor(makeColor(29, 16, 11, 255));
 
 	Button* close = mainFrame->addButton("close stewing");
+	close->setOwner(player);
 	configureStewingButton(close, SDL_Rect{ 180, 0, 26, 26 },
 		"*#images/ui/WitchCauldron/Button_X_00.png",
 		"*#images/ui/WitchCauldron/Button_XHigh_00.png",
@@ -17835,6 +17895,7 @@ void GenericGUIMenu::StewingGUI_t::createStewingMenu()
 	});
 
 	Button* recipeButton = mainFrame->addButton("stewing recipe toggle");
+	recipeButton->setOwner(player);
 	configureStewingButton(recipeButton, SDL_Rect{ 12, 70, 182, 40 },
 		"*#images/ui/WitchCauldron/Witchbrew_Recipe_Button_00.png",
 		"*#images/ui/WitchCauldron/Witchbrew_Recipe_ButtonHigh_00.png",
@@ -17871,13 +17932,18 @@ void GenericGUIMenu::StewingGUI_t::createStewingMenu()
 		createPlayerInventorySlotFrameElements(slot);
 		clearStewingSlot(slot);
 		Button* button = slot->addButton(buttonName);
+		button->setOwner(player);
+		button->setMenuConfirmControlType(0);
 		button->setSize(SDL_Rect{ 0, 0, 38, 40 });
-		button->setInvisible(true);
+		// Transparent overlay: lets controller focus and mouse activate an
+		// occupied mixture slot to remove an ingredient.
+		button->setInvisible(false);
+		button->setColor(makeColor(255, 255, 255, 0));
+		button->setHighlightColor(makeColor(255, 255, 255, 0));
 		button->setCallback([](Button& button) {
 			const int slot = static_cast<int>(strtol(button.getName() + strlen("stewing educt button "), nullptr, 10));
 			GenericGUI[button.getOwner()].stewingGUI.removeResourceSlot(slot);
 		});
-		button->setTickCallback(genericgui_deselect_fn);
 	}
 
 	Frame* bottles = mainFrame->addFrame("stewing empty bottles");
@@ -17902,6 +17968,8 @@ unknownProductSurround->disabled = true;
 	createPlayerInventorySlotFrameElements(product);
 	clearStewingSlot(product);
 	Button* productButton = product->addButton("stewing product button");
+	productButton->setOwner(player);
+	productButton->setMenuConfirmControlType(0);
 	productButton->setSize(SDL_Rect{ 0, 0, 38, 40 });
 	productButton->setInvisible(false);
 	productButton->setColor(makeColor(255, 255, 255, 0));
@@ -17909,8 +17977,15 @@ unknownProductSurround->disabled = true;
 	productButton->setHideSelectors(false);
 	productButton->setOntop(true);
 	productButton->setTooltip("Stew into bottle");
+	productButton->setCallback([](Button& button) {
+		if ( !button.isDisabled() )
+		{
+			GenericGUI[button.getOwner()].stewingGUI.requestTransaction(STEWING_OPERATION_BREW_INTO);
+		}
+	});
 
 	Button* apply = mainFrame->addButton("stewing apply button");
+	apply->setOwner(player);
 	configureStewingButton(apply, SDL_Rect{ 135, 247, 64, 46 },
 		"*#images/ui/WitchCauldron/Witchbrew_ButtonBrew_Base_00.png",
 		"*#images/ui/WitchCauldron/Witchbrew_ButtonBrew_High_00.png",
@@ -17923,6 +17998,7 @@ unknownProductSurround->disabled = true;
 		}
 	});
 	Button* clear = mainFrame->addButton("stewing clear button");
+	clear->setOwner(player);
 	configureStewingButton(clear, SDL_Rect{ 135, 295, 64, 46 },
 		"*#images/ui/WitchCauldron/Witchbrew_ButtonBrew_Base_00.png",
 		"*#images/ui/WitchCauldron/Witchbrew_ButtonBrew_High_00.png",
@@ -17935,6 +18011,7 @@ unknownProductSurround->disabled = true;
 	});
 
 	Frame* bags = stewFrame->addFrame("stewing ingredient bags");
+	bags->setOwner(player);
 	bags->setSize(SDL_Rect{ STEWING_BAG_ROW_X, STEWING_MAIN_HEIGHT,
 		STEWING_BAG_ROW_WIDTH, STEWING_BAG_HEIGHT });
 	bags->setHollow(true);
@@ -17943,6 +18020,7 @@ unknownProductSurround->disabled = true;
 		char panelName[32];
 		snprintf(panelName, sizeof(panelName), "stewing ingredient bag %d", category);
 		Frame* panel = bags->addFrame(panelName);
+		panel->setOwner(player);
 		panel->setSize(SDL_Rect{ category * STEWING_BAG_STRIDE_X, 0,
 			STEWING_BAG_WIDTH, STEWING_BAG_HEIGHT });
 		panel->setHollow(true);
@@ -17961,6 +18039,7 @@ unknownProductSurround->disabled = true;
 			const int row = slot / 2;
 			const SDL_Rect slotRect{ 13 + column * 44, 11 + row * 41, 42, 39 };
 			Frame* ingredientFrame = panel->addFrame(slotName);
+			ingredientFrame->setOwner(player);
 			ingredientFrame->setSize(slotRect);
 			ingredientFrame->setHollow(true);
 			ingredientFrame->addImage(SDL_Rect{
@@ -17973,6 +18052,8 @@ unknownProductSurround->disabled = true;
 			count->setHJustify(Field::justify_t::BOTTOM);
 			count->setVJustify(Field::justify_t::RIGHT);
 			Button* button = ingredientFrame->addButton(buttonName);
+			button->setOwner(player);
+			button->setMenuConfirmControlType(0);
 			button->setSize(SDL_Rect{ 0, 0, slotRect.w, slotRect.h });
 			button->setInvisible(false);
 			button->setColor(makeColor(255, 255, 255, 0));
@@ -17989,7 +18070,6 @@ unknownProductSurround->disabled = true;
 					button.getName() + strlen("stewing resource "), nullptr, 10));
 				GenericGUI[button.getOwner()].stewingGUI.addResource(type);
 			});
-			button->setTickCallback(genericgui_deselect_fn);
 		}
 	}
 }
@@ -18007,6 +18087,33 @@ void GenericGUIMenu::StewingGUI_t::updateStewingMenu()
 	stewFrame->setSize(SDL_Rect{ playerEntity->camera_virtualx1(), playerEntity->camera_virtualy1(),
 		STEWING_MAIN_WIDTH, playerEntity->camera_virtualHeight() });
 	if ( !bOpen || stewFrame->isDisabled() ) { return; }
+	// When a network acknowledgement is lost, request the cached result,
+	// not a second craft. Every response carries the same unique sequence.
+	if ( multiplayer == CLIENT && transactionPending
+		&& pendingTransactionSequence != 0
+		&& ticks - pendingTransactionLastCheck >= 3 * TICKS_PER_SECOND )
+	{
+		// Resend the *identical* operation and sequence. The server will
+		// replay its cached STWU, or continue its pending STWS handshake.
+		// It never commits the same sequence twice.
+		strcpy(reinterpret_cast<char*>(net_packet->data), "STWR");
+		net_packet->data[4] = static_cast<Uint8>(clientnum);
+		net_packet->data[5] = static_cast<Uint8>(pendingTransactionOperation);
+		SDLNet_Write32(cauldronUid, &net_packet->data[6]);
+		for ( int i = 0; i < STEWING_MAX_EDUCTS; ++i )
+		{
+			SDLNet_Write32(static_cast<Uint32>(pendingTransactionSelection[i].type),
+				&net_packet->data[10 + i * 8]);
+			SDLNet_Write32(pendingTransactionSelection[i].quantity,
+				&net_packet->data[14 + i * 8]);
+		}
+		SDLNet_Write32(pendingTransactionSequence,
+			&net_packet->data[10 + STEWING_MAX_EDUCTS * 8]);
+		net_packet->address = net_server;
+		net_packet->len = 14 + STEWING_MAX_EDUCTS * 8;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+		pendingTransactionLastCheck = ticks;
+	}
 	if ( handoffAwaitingResult && !transactionPending && handoffResult != ITEM_ENUM_MAX )
 	{
 		Uint32 total = 0;
@@ -18027,6 +18134,15 @@ void GenericGUIMenu::StewingGUI_t::updateStewingMenu()
 			handoffResult = ITEM_ENUM_MAX;
 			parentGUI.openGUI(GUI_TYPE_ITEMFX, targetSource, 0, produced, 0);
 			return;
+		}
+		// A remote Oil/Ink result can arrive as ground loot rather than
+		// client inventory (restricted Wraith hand, item delivery race).
+		// Never block the entire cauldron menu indefinitely waiting for it;
+		// the product, if received later, is still usable from inventory.
+		if ( ticks - handoffWaitStartedAt >= 3 * TICKS_PER_SECOND )
+		{
+			handoffAwaitingResult = false;
+			handoffResult = ITEM_ENUM_MAX;
 		}
 	}
 	if ( stewFrame->getFrames().empty() ) { createStewingMenu(); }
@@ -18332,6 +18448,153 @@ void GenericGUIMenu::StewingGUI_t::updateStewingMenu()
 
 	const bool usingGamepad = inputs.hasController(player)
 		&& !inputs.getVirtualMouse(player)->draw_cursor;
+	if ( usingGamepad && players[player]->GUI.activeModule != Player::GUI_t::MODULE_STEWING )
+	{
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_STEWING);
+	}
+	else if ( !usingGamepad && players[player]->GUI.activeModule == Player::GUI_t::MODULE_STEWING )
+	{
+		stewFrame->deselect();
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+	}
+	if ( usingGamepad && isInteractable )
+	{
+		// The Witch GUI is a modal controller surface. Build focus targets each
+		// frame instead of keeping pointers to widgets that can be rebuilt.
+		// 0 = Recipes, 1 = Close, 2 = Bottle, 3 = Use, 4 = Clear,
+		// 5..12 = mixture slots, 13..28 = ingredients, 29..52 = recipes,
+		// 53 = clear recipe.
+		auto focusButton = [&](int focus) -> Button* {
+			switch ( focus )
+			{
+				case 0: return mainFrame->findButton("stewing recipe toggle");
+				case 1: return mainFrame->findButton("close stewing");
+				case 2:
+				{
+					Frame* frame = mainFrame->findFrame("stewing product");
+					return frame ? frame->findButton("stewing product button") : nullptr;
+				}
+				case 3: return mainFrame->findButton("stewing apply button");
+				case 4: return mainFrame->findButton("stewing clear button");
+				default: break;
+			}
+			char name[64];
+			if ( focus >= 5 && focus < 13 )
+			{
+				const int slot = focus - 5;
+				snprintf(name, sizeof(name), "stewing educt %d", slot);
+				Frame* frame = mainFrame->findFrame(name);
+				snprintf(name, sizeof(name), "stewing educt button %d", slot);
+				return frame ? frame->findButton(name) : nullptr;
+			}
+			if ( focus >= 13 && focus < 29 )
+			{
+				const int category = (focus - 13) / 4;
+				const int slot = (focus - 13) % 4;
+				snprintf(name, sizeof(name), "stewing ingredient bag %d", category);
+				Frame* panel = bags->findFrame(name);
+				snprintf(name, sizeof(name), "ingredient slot %d", slot);
+				Frame* frame = panel ? panel->findFrame(name) : nullptr;
+				const ItemType ingredient = ingredientForCategorySlot(
+					static_cast<WitchIngredientCategory>(INGREDIENT_CATEGORY_SLIME + category), slot);
+				snprintf(name, sizeof(name), "stewing resource %d", static_cast<int>(ingredient));
+				return frame ? frame->findButton(name) : nullptr;
+			}
+			if ( focus >= 29 && focus < 29 + STEWING_RECIPE_COUNT )
+			{
+				if ( !recipes.bOpen || !recipes.isInteractable ) { return nullptr; }
+				const int recipe = focus - 29;
+				Frame* frame = recipes.getSlotFrame(recipe % 4, recipe / 4);
+				snprintf(name, sizeof(name), "stewing recipe %d", recipe);
+				return frame ? frame->findButton(name) : nullptr;
+			}
+			if ( focus == 53 && recipes.bOpen && recipes.isInteractable )
+			{
+				Frame* base = recipesFrame->findFrame("stewing recipe base");
+				return base ? base->findButton("stewing clear recipe") : nullptr;
+			}
+			return nullptr;
+		};
+		auto available = [&](int focus) -> bool {
+			Button* button = focusButton(focus);
+			return button && !button->isDisabled() && !button->isInvisible();
+		};
+		if ( !available(controllerFocus) )
+		{
+			controllerFocus = 0;
+			if ( !available(controllerFocus) )
+			{
+				for ( int candidate = 0; candidate < 54; ++candidate )
+				{
+					if ( available(candidate) ) { controllerFocus = candidate; break; }
+				}
+			}
+		}
+		auto& input = Input::inputs[player];
+		const char* directions[] = {
+			"InventoryMoveLeft", "InventoryMoveRight", "InventoryMoveUp", "InventoryMoveDown" };
+		const char* analogDirections[] = {
+			"InventoryMoveLeftAnalog", "InventoryMoveRightAnalog", "InventoryMoveUpAnalog", "InventoryMoveDownAnalog" };
+		int dir = -1;
+		for ( int i = 0; i < 4; ++i )
+		{
+			if ( input.binaryToggle(directions[i]) || input.binaryToggle(analogDirections[i]) )
+			{
+				dir = i;
+				input.consumeBinaryToggle(directions[i]);
+				input.consumeBinaryToggle(analogDirections[i]);
+				break;
+			}
+		}
+		if ( dir >= 0 && available(controllerFocus) )
+		{
+			const SDL_Rect from = focusButton(controllerFocus)->getAbsoluteSize();
+			const int fx = from.x + from.w / 2;
+			const int fy = from.y + from.h / 2;
+			int destination = controllerFocus;
+			long long best = std::numeric_limits<long long>::max();
+			for ( int candidate = 0; candidate < 54; ++candidate )
+			{
+				if ( candidate == controllerFocus || !available(candidate) ) { continue; }
+				const SDL_Rect target = focusButton(candidate)->getAbsoluteSize();
+				const int dx = target.x + target.w / 2 - fx;
+				const int dy = target.y + target.h / 2 - fy;
+				const int primary = (dir == 0 ? -dx : dir == 1 ? dx : dir == 2 ? -dy : dy);
+				if ( primary <= 0 ) { continue; }
+				const int secondary = (dir < 2 ? abs(dy) : abs(dx));
+				const long long score = static_cast<long long>(primary) * primary
+					+ static_cast<long long>(secondary) * secondary * 4;
+				if ( score < best ) { best = score; destination = candidate; }
+			}
+			if ( destination != controllerFocus )
+			{
+				controllerFocus = destination;
+				Player::soundActivate();
+			}
+		}
+		if ( available(controllerFocus) )
+		{
+			focusButton(controllerFocus)->select();
+		}
+		if ( input.binaryToggle("MenuCancel") )
+		{
+			input.consumeBinaryToggle("MenuCancel");
+			if ( recipes.bOpen ) { recipes.closeRecipePanel(); controllerFocus = 0; }
+			else { parentGUI.closeGUI(); }
+			Player::soundCancel();
+			return;
+		}
+		if ( input.binaryToggle("MenuConfirm") )
+		{
+			input.consumeBinaryToggle("MenuConfirm");
+			if ( available(controllerFocus) )
+			{
+				focusButton(controllerFocus)->activate();
+				return; // callback may rebuild or close the menu
+			}
+			playSound(90, 64);
+		}
+	}
 	const bool pointerOverStewing = !usingGamepad
 		&& (mainFrame->capturesMouseInRealtimeCoords()
 			|| bags->capturesMouseInRealtimeCoords()

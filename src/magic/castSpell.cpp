@@ -982,6 +982,9 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool 
 		{
 			if ( multiplayer == CLIENT )
 			{
+				// Refresh the complete client-owned inventory immediately before
+				// asking the host to return it to the possessed body.
+				sendWraithBodyInventorySnapshot(player, true);
 				strcpy(reinterpret_cast<char*>(net_packet->data), "WREQ");
 				net_packet->data[4] = static_cast<Uint8>(player);
 				SDLNet_Write32(0, &net_packet->data[5]);
@@ -1602,6 +1605,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		const Uint32 targetUid = castSpellProps ? castSpellProps->targetUID : 0;
 		if ( multiplayer == CLIENT )
 		{
+			if ( players[possessPlayer]->mechanics.wraith.possessedEntityUid != 0 )
+			{
+				sendWraithBodyInventorySnapshot(possessPlayer, true);
+			}
 			strcpy(reinterpret_cast<char*>(net_packet->data), "WREQ");
 			net_packet->data[4] = static_cast<Uint8>(possessPlayer);
 			SDLNet_Write32(targetUid, &net_packet->data[5]);

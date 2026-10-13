@@ -1745,24 +1745,9 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 		}
 		return nullptr;
 	}
-	if ( target->behavior == &actPlayer )
-	{
-		const int player = target->skill[2];
-		if ( player >= 0 && player < MAXPLAYERS && players[player]
-			&& stats[player] && stats[player]->playerRace == RACE_WRAITH
-			&& players[player]->mechanics.wraith.possessedEntityUid != 0 )
-		{
-			if ( !releaseWraithPossession(player) )
-			{
-				return nullptr;
-			}
-			target = players[player]->entity;
-			if ( !target || !stats[player] )
-			{
-				return nullptr;
-			}
-		}
-	}
+	// A possessed Wraith remains in control of its body while polymorphed.
+	// Do not release possession here: that destroys the intended temporary
+	// body-form semantics and breaks multiplayer body ownership.
 
 	Stat* targetStats = target->getStats();
 	const bool naturalCursedGolemPlayer = customMonster == NOTHING
@@ -2533,11 +2518,66 @@ Entity* spellEffectPolymorph(Entity* target, Entity* parent, bool fromMagicSpell
 			}
 			else if ( targetStats->playerRace == RACE_WRAITH )
 			{
-				target->effectPolymorph = 100 + local_rng.rand() % NUMAPPEARANCES;
 				const int player = target->skill[2];
-				if ( player >= 0 && player < MAXPLAYERS && players[player] )
+				const bool possessing = player >= 0 && player < MAXPLAYERS
+					&& players[player] && players[player]->mechanics.wraith.initialized
+					&& players[player]->mechanics.wraith.possessedEntityUid != 0;
+				if ( possessing )
 				{
-					players[player]->mechanics.wraith.wasHumanPolymorphed = true;
+					// Use the form occupied just BEFORE this potion/spell, not
+					// the original body's race. Repeated polymorphs alternate
+					// between Human and non-Human instead of reselecting Human.
+					// setEffect() above may have just activated POLYMORPH; the
+					// existing effectPolymorph value distinguishes a prior form.
+					Monster currentType = wraithCanonicalPossessionType(
+						players[player]->mechanics.wraith.possessedType);
+					if ( targetStats->getEffectActive(EFF_SHAPESHIFT)
+						&& target->effectShapeshift != NOTHING )
+					{
+						currentType = static_cast<Monster>(target->effectShapeshift);
+					}
+					else if ( target->effectPolymorph != NOTHING )
+					{
+						currentType = target->effectPolymorph > NUMMONSTERS
+							? HUMAN : static_cast<Monster>(target->effectPolymorph);
+					}
+					if ( currentType == HUMAN )
+					{
+						const std::vector<int> playable = {
+							RACE_SKELETON, RACE_VAMPIRE, RACE_SUCCUBUS,
+							RACE_GOATMAN, RACE_AUTOMATON, RACE_INCUBUS,
+							RACE_GOBLIN, RACE_INSECTOID, RACE_GNOME,
+							RACE_GREMLIN, RACE_DRYAD, RACE_MYCONID,
+							RACE_SALAMANDER, RACE_RAT, RACE_TROLL,
+							RACE_SPIDER, RACE_IMP,
+							RACE_MERROW, RACE_LEONIN, RACE_GOLEM
+						};
+						Monster form = NOTHING;
+						do
+						{
+							form = target->getMonsterFromPlayerRace(
+								playable[local_rng.rand() % playable.size()]);
+						} while ( form == target->effectPolymorph );
+						target->effectPolymorph = form;
+					}
+					else
+					{
+						// Every nonhuman possessed body becomes an actual Human.
+						// The 100+appearance encoding is vanilla's human form and
+						// is understood by the player renderer and effective-type logic.
+						// Never pick another monster here: its player bodyparts may
+						// not exist, leaving a hidden or head-only transformation.
+						target->effectPolymorph = 100 + local_rng.rand() % NUMAPPEARANCES;
+					}
+				}
+				else
+				{
+					// Original incorporeal Wraith polymorph behavior is unchanged.
+					target->effectPolymorph = 100 + local_rng.rand() % NUMAPPEARANCES;
+					if ( player >= 0 && player < MAXPLAYERS && players[player] )
+					{
+						players[player]->mechanics.wraith.wasHumanPolymorphed = true;
+					}
 				}
 			}
 			else if ( targetStats->playerRace == RACE_HUMAN || (targetStats->playerRace != RACE_HUMAN && targetStats->stat_appearance != 0) )

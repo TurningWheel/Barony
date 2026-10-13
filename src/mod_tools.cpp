@@ -10775,7 +10775,7 @@ void ClassHotbarConfig_t::readFromFile(ClassHotbarConfig_t::HotbarConfigType fil
 							{
 								for ( int c = 0; c < NUMITEMS; ++c )
 								{
-									if ( itemString.compare(itemNameStrings[c + 2]) == 0 )
+									if ( itemString.compare(itemNameStrings[c + 2]) == 0     || (static_cast<size_t>(c) < ItemTooltips.tmpItems.size() && itemString == ItemTooltips.tmpItems[c].internalName) )
 									{
 										itemType = c;
 										found = true;

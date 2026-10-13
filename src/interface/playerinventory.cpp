@@ -10806,6 +10806,7 @@ void Player::Inventory_t::updateInventory()
 					}
 				};
 				if ( stewingOpen && inventoryControlActive && !selectedItem
+					&& players[player]->GUI.activeModule != Player::GUI_t::MODULE_STEWING
 					&& !inputs.getVirtualMouse(player)->draw_cursor
 					&& Input::inputs[player].binaryToggle("MenuConfirm") )
 				{

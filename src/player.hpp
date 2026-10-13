@@ -66,6 +66,10 @@ void syncWraithPossessionKnowledge(int player);
 void replaceWraithLearnedPossessionTypes(int player, const std::vector<Monster>& types);
 bool unlockAllWraithPossessions(int player);
 void initializeWraithPlayerForNewGame(int player);
+void sendWraithStartingChestSnapshot(int player);
+void sendWraithBodyInventorySnapshot(int player, bool force = false);
+void reconcileWraithRemoteBodyInventory(int player, Stat& bodyStats, Uint32 bodyUid);
+void acknowledgeWraithStartingChestSnapshot(int player, Uint32 key, Uint32 runKey);
 constexpr Sint32 WRAITH_MIN_POSSESS_RESERVE = 26;
 Sint32 getWraithPossessManaCost(const Entity* target);
 bool wraithMonsterTypeCanEverBePossessed(const Entity* monster);
@@ -86,6 +90,7 @@ Monster getWraithEffectiveMonsterType(int player);
 std::vector<int> getWraithPossessionInnateSpells(Monster type);
 bool wraithPossessedBodyCanEquipSlot(int player, int category);
 bool wraithPossessionUsesMonsterVisualProxy(Monster type);
+bool wraithPossessionHasTemporaryFormOverride(int player);
 bool wraithPossessionHasFirstPersonModel(Monster type);
 void updateWraithPossessionTemporarySpells(int player);
 void clearWraithPossessionTemporarySpells(int player);
@@ -857,7 +862,8 @@ public:
 			MODULE_ITEMEFFECTGUI,
 			MODULE_PORTRAIT,
 			MODULE_ASSISTSHRINE,
-			MODULE_MAILBOX
+			MODULE_MAILBOX,
+			MODULE_STEWING // appended: existing module IDs remain stable
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;

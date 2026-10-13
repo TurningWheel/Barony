@@ -1462,11 +1462,22 @@ public:
 		bool isInteractable = false;
 		bool bFirstTimeSnapCursor = false;
 		bool transactionPending = false;
+		// Reliable remote brewing: retry the receipt, NEVER the brew itself.
+		// One pending sequence is matched with precisely one authoritative result.
+		Uint32 transactionSequence = 0;
+		Uint32 pendingTransactionSequence = 0;
+		Uint32 pendingTransactionLastCheck = 0;
+		StewingOperation pendingTransactionOperation = STEWING_OPERATION_BREW_INTO;
+		StewingSelection pendingTransactionSelection{};
+		// Controller focus is an index into the fixed stewing button layout.
+		// Never retain Widget pointers across frame rebuilds or menu closure.
+		int controllerFocus = 0;
 		// Oils and inks brew a physical item, then open the existing target picker.
 		// The picker never owns or reserves ingredients and can be cancelled safely.
 		ItemType handoffResult = ITEM_ENUM_MAX;
 		Uint32 handoffBaseline = 0;
 		bool handoffAwaitingResult = false;
+		Uint32 handoffWaitStartedAt = 0;
 		Uint32 cauldronUid = 0;
 		StewingSelection selection{};
 		std::array<Uint32, STEWING_RESOURCE_COUNT> resources{};

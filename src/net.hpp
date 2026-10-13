@@ -60,6 +60,8 @@ void serverSendItemToPickupAndEquip(int player, Item* item);
 void serverSyncPersistentCustomItemState(int player, Item* item);
 void serverSyncPersistentCustomItemStateForOwner(Item* item);
 void resetServerStewingSession(int player);
+bool beginServerStewingSessionOpen(int player, Uint32 familiarUid);
+void registerClientStewingTransaction(int player, Uint32 sequence);
 void serverSyncTinctureStacks(int player);
 void serverUpdateAllyStat(int player, Uint32 uidToUpdate, int LVL, int HP, int MAXHP, int type);
 void serverUpdatePlayerSummonStrength(int player);

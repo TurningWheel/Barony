@@ -150,6 +150,181 @@ void initializeWraithPlayerForNewGame(int player)
 	}
 }
 
+
+// Transmit the owning client's complete starting loot chest to the server.
+// initClass() intentionally creates normal inventory items only for the local
+// player. Without this reconciliation, the server's remote-Wraith starter
+// chest lacks that class's locally generated consumables and equipment.
+static Uint32 wraithStarterChestAckKey = 0;
+static Uint32 wraithStarterChestAckRun = 0;
+
+void acknowledgeWraithStartingChestSnapshot(int player, Uint32 key, Uint32 runKey)
+{
+    if ( multiplayer == CLIENT && player == clientnum )
+    {
+        wraithStarterChestAckKey = key;
+        wraithStarterChestAckRun = runKey;
+    }
+}
+
+void sendWraithStartingChestSnapshot(int player)
+{
+    if ( multiplayer != CLIENT || player != clientnum || !stats[player]
+        || !players[player] || stats[player]->playerRace != RACE_WRAITH
+        || !players[player]->mechanics.wraith.initialized || currentlevel != 0
+        || !players[player]->entity
+        || players[player]->entity->ticks >= 30 * TICKS_PER_SECOND
+        || (players[player]->entity->ticks != 1
+            && players[player]->entity->ticks % TICKS_PER_SECOND != 0) )
+    {
+        return;
+    }
+    const Uint32 bagKey = stats[player]->getLootingBagKey(player);
+    if ( wraithStarterChestAckKey == bagKey
+        && wraithStarterChestAckRun == uniqueGameKey ) { return; }
+    auto found = stats[player]->player_lootbags.find(bagKey);
+    if ( found == stats[player]->player_lootbags.end() || found->second.looted )
+    {
+        return;
+    }
+    const auto& contents = found->second.items;
+    if ( contents.empty() || contents.size() > 128 ) { return; }
+    const int customOffset = 62 + FAMILIAR_PERSISTENT_PACKET_BYTES;
+    const int packetLength = customOffset + WRAITH_LORE_INSTANCE_PACKET_BYTES + 4;
+    for ( size_t i = 0; i < contents.size(); ++i )
+    {
+        const Item& item = contents[i];
+        strcpy((char*)net_packet->data, "WBGI");
+        net_packet->data[4] = static_cast<Uint8>(player);
+        SDLNet_Write32(bagKey, &net_packet->data[5]);
+        net_packet->data[9] = static_cast<Uint8>(contents.size());
+        net_packet->data[10] = static_cast<Uint8>(i);
+        SDLNet_Write32(static_cast<Uint32>(item.type), &net_packet->data[11]);
+        SDLNet_Write32(static_cast<Uint32>(item.status), &net_packet->data[15]);
+        SDLNet_Write32(static_cast<Uint32>(item.beatitude), &net_packet->data[19]);
+        SDLNet_Write32(static_cast<Uint32>(item.count), &net_packet->data[23]);
+        SDLNet_Write32(item.appearance, &net_packet->data[27]);
+        net_packet->data[31] = item.identified;
+        net_packet->data[32] = static_cast<Uint8>(item.appliedOil);
+        SDLNet_Write32(static_cast<Uint32>(item.runeGetStoredPWRRaw()), &net_packet->data[33]);
+        net_packet->data[37] = static_cast<Uint8>(item.runeGetCreatorPlayer());
+        SDLNet_Write32(item.runeGetInstanceId(), &net_packet->data[38]);
+        SDLNet_Write32(item.runeGetCreatorIdentity(), &net_packet->data[42]);
+        writeIngredientCountsToPacket(item, net_packet->data, 46);
+        writeFamiliarPersistentStateToPacket(item, net_packet->data, 62);
+        writeWraithLoreInstanceIdToPacket(item, net_packet->data, customOffset);
+        SDLNet_Write32(uniqueGameKey, &net_packet->data[packetLength - 4]);
+        net_packet->address.host = net_server.host;
+        net_packet->address.port = net_server.port;
+        net_packet->len = packetLength;
+        sendPacketSafe(net_sock, -1, net_packet, 0);
+    }
+}
+
+
+
+// A remote Wraith inherits the possessed creature's LOCAL client inventory.
+// The vanilla host only mirrors some equipped items. Send a bounded, complete
+// inventory view on changes and periodically. The host uses it ONLY to fill
+// missing items when this particular possessed body is released/dies, never
+// to overwrite live authoritative inventory.
+void sendWraithBodyInventorySnapshot(int player, bool force)
+{
+    if ( multiplayer != CLIENT || player != clientnum || !players[player]
+        || !players[player]->entity || !stats[player]
+        || stats[player]->playerRace != RACE_WRAITH
+        || !players[player]->mechanics.wraith.initialized )
+    {
+        return;
+    }
+    const Uint32 bodyUid = players[player]->mechanics.wraith.possessedEntityUid;
+    if ( !bodyUid || bodyUid == UINT32_MAX ) { return; }
+    const auto* spirit = stats[player];
+    std::vector<const Item*> inventory;
+    Uint32 digest = 2166136261u;
+    const auto mix = [&digest](Uint32 value) { digest = (digest ^ value) * 16777619u; };
+    for ( node_t* node = spirit->inventory.first; node; node = node->next )
+    {
+        const Item* item = static_cast<const Item*>(node->element);
+        if ( !item || item->type == SPELL_ITEM || item->type == TOOL_PLAYER_LOOT_BAG
+            || item == spirit->ring || item == spirit->amulet ) { continue; }
+        if ( inventory.size() >= 128 ) { return; } // no truncated snapshots
+        inventory.push_back(item);
+        mix(static_cast<Uint32>(item->type));
+        mix(item->appearance);
+        mix(static_cast<Uint32>(item->status));
+        mix(static_cast<Uint32>(item->beatitude));
+        mix(static_cast<Uint32>(item->count));
+        mix(static_cast<Uint32>(item->appliedOil));
+        mix(static_cast<Uint32>(item->identified));
+        mix(item->runeGetInstanceId());
+        mix(item->runeGetCreatorIdentity());
+        mix(item->familiarInstanceId);
+        mix(item->wraithLoreInstanceId);
+        for ( int slot = 0; slot < 4; ++slot )
+        {
+            mix(item->ingredientCounts[slot]);
+        }
+    }
+    static Uint32 lastUid = 0, lastDigest = 0, lastSentTick = 0, lastRun = 0;
+    if ( !force && lastUid == bodyUid && lastRun == uniqueGameKey && lastDigest == digest
+        && static_cast<Uint32>(ticks - lastSentTick) < 2 * TICKS_PER_SECOND )
+    {
+        return;
+    }
+    lastUid = bodyUid;
+    lastRun = uniqueGameKey;
+    lastDigest = digest;
+    lastSentTick = ticks;
+    // A forced pre-release snapshot may be sent in the same game tick as a
+    // regular snapshot. IDs must still increase, or the host will reject the
+    // newer, complete snapshot as an already-processed sequence.
+    static Uint32 lastSnapshotId = 0;
+    const Uint32 snapshotId = std::max(ticks, lastSnapshotId + 1);
+    lastSnapshotId = snapshotId;
+    const int customOffset = 66 + FAMILIAR_PERSISTENT_PACKET_BYTES;
+    const int packetLength = customOffset + WRAITH_LORE_INSTANCE_PACKET_BYTES + 4;
+    // Send a well-defined empty snapshot to invalidate an old inventory view.
+    const size_t frames = std::max<size_t>(1, inventory.size());
+    for ( size_t i = 0; i < frames; ++i )
+    {
+        strcpy((char*)net_packet->data, "WBMI");
+        net_packet->data[4] = static_cast<Uint8>(player);
+        SDLNet_Write32(bodyUid, &net_packet->data[5]);
+        SDLNet_Write32(snapshotId, &net_packet->data[9]);
+        net_packet->data[13] = static_cast<Uint8>(inventory.size());
+        net_packet->data[14] = static_cast<Uint8>(i);
+        if ( !inventory.empty() )
+        {
+            const Item& item = *inventory[i];
+            SDLNet_Write32(static_cast<Uint32>(item.type), &net_packet->data[15]);
+            SDLNet_Write32(static_cast<Uint32>(item.status), &net_packet->data[19]);
+            SDLNet_Write32(static_cast<Uint32>(item.beatitude), &net_packet->data[23]);
+            SDLNet_Write32(static_cast<Uint32>(item.count), &net_packet->data[27]);
+            SDLNet_Write32(item.appearance, &net_packet->data[31]);
+            net_packet->data[35] = item.identified;
+            net_packet->data[36] = static_cast<Uint8>(item.appliedOil);
+            SDLNet_Write32(static_cast<Uint32>(item.runeGetStoredPWRRaw()), &net_packet->data[37]);
+            net_packet->data[41] = static_cast<Uint8>(item.runeGetCreatorPlayer());
+            SDLNet_Write32(item.runeGetInstanceId(), &net_packet->data[42]);
+            SDLNet_Write32(item.runeGetCreatorIdentity(), &net_packet->data[46]);
+            writeIngredientCountsToPacket(item, net_packet->data, 50);
+            writeFamiliarPersistentStateToPacket(item, net_packet->data, 66);
+            writeWraithLoreInstanceIdToPacket(item, net_packet->data, customOffset);
+        }
+        else
+        {
+            memset(&net_packet->data[15], 0, packetLength - 15);
+        }
+        SDLNet_Write32(uniqueGameKey, &net_packet->data[packetLength - 4]);
+        net_packet->address.host = net_server.host;
+        net_packet->address.port = net_server.port;
+        net_packet->len = packetLength;
+        sendPacketSafe(net_sock, -1, net_packet, 0);
+    }
+}
+
+
 /*-------------------------------------------------------------------------------
 
 	initClass
@@ -3903,36 +4078,40 @@ void initClass(const int player)
 			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 2, 0, true, nullptr);
 			item2 = itemPickup(player, item);
 			free(item);
+
+			item = newItem(OIL_AETHER, SERVICABLE, 0, 2, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(OIL_MINERAL, SERVICABLE, 0, 2, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
 		}
 
 		if ( multiplayer != CLIENT )
 		{
-			int bagX = 0;
-
 			for ( int category = INGREDIENT_CATEGORY_SLIME;
 				category <= INGREDIENT_CATEGORY_ANIMATIC; ++category )
 			{
 				const auto ingredientCategory =
 					static_cast<WitchIngredientCategory>(category);
 
-				Item* bag = newItem(
+				// Every Witch contributes eight of each ingredient to vanilla's
+				// single shared multiplayer Void Chest.
+				Item* contribution = newItem(
 					ingredientBagForCategory(ingredientCategory),
-					EXCELLENT,
-					0,
-					1,
-					0,
-					true,
-					&stats[player]->void_chest_inventory);
-
-				if ( bag )
+					EXCELLENT, 0, 1, 0, true, nullptr);
+				if ( contribution )
 				{
 					for ( int slot = 0; slot < 4; ++slot )
 					{
-						bag->ingredientCounts[slot] = 8;
+						contribution->ingredientCounts[slot] = 8;
 					}
-
-					bag->x = bagX++;
-					bag->y = 0;
+					if ( !mergeIngredientBagIntoVoidChest(*contribution, 0) )
+					{
+						printlog("[WITCH] ERROR unable to initialize shared starting ingredients");
+					}
+					free(contribution);
 				}
 			}
 		}

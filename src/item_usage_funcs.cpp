@@ -2824,16 +2824,16 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 		}
 	}
 	Entity* transformedEntity = nullptr;
-	bool consumedBeforeWraithRelease = false;
+	bool consumedBeforeWraithPolymorph = false;
 	if ( !usedBy && entity->behavior == &actPlayer && player >= 0 && player < MAXPLAYERS
 		&& players[player] && stats->playerRace == RACE_WRAITH
 		&& players[player]->mechanics.wraith.possessedEntityUid != 0 )
 	{
-		// Consume the held potion while it still belongs to the player. Releasing
-		// possession returns body equipment to the monster before this function resumes.
+		// Consume the original inventory item before applying the temporary
+		// possessed-body transformation. Do not release possession here.
 		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);
-		consumedBeforeWraithRelease = true;
+		consumedBeforeWraithPolymorph = true;
 	}
 
 	if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
@@ -2841,7 +2841,7 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 		transformedEntity = spellEffectPolymorph(entity, usedBy, false);
 	}
 
-	if ( !consumedBeforeWraithRelease )
+	if ( !consumedBeforeWraithPolymorph )
 	{
 		potionUseAbundanceEffect(item, entity, usedBy);
 		consumeItem(item, player);

@@ -25955,6 +25955,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 	{
 		const auto& wraith = players[player]->mechanics.wraith;
 		if ( wraith.possessedEntityUid != 0
+			&& !wraithPossessionHasTemporaryFormOverride(player)
 			&& wraithPossessionUsesMonsterVisualProxy(wraith.possessedType) )
 		{
 			if ( Entity* proxy = uidToEntity(wraith.possessedEntityUid) )
@@ -30446,7 +30447,18 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			{
 				if ( itemTypeIsOil(item->type) )
 				{
-					GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
+					const bool coatedWeaponEquipped = stats[player]
+						&& itemCanReceiveOil(stats[player]->weapon);
+					const bool quiverEquipped = stats[player] && stats[player]->shield
+						&& itemTypeIsQuiver(stats[player]->shield->type);
+					if ( coatedWeaponEquipped || quiverEquipped )
+					{
+						GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
+					}
+					else
+					{
+						playerTryEquipItemAndUpdateServer(player, item, true);
+					}
 				}
 				else
 				{
@@ -30484,7 +30496,8 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 				|| prompt == PROMPT_UNEQUIP
 				|| prompt == PROMPT_UNEQUIP_FOR_DROP )
 			{
-				if ( items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON
+				if ( itemTypeIsOil(item->type)
+					|| items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON
 					|| itemCategory(item) == SPELLBOOK )
 				{
 					if ( prompt == PROMPT_UNEQUIP_FOR_DROP )

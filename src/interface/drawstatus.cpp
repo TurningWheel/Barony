@@ -3296,7 +3296,8 @@ void drawStatusNew(const int player)
 				}
 			}
 			else if ( (/*keystatus[SDLK_LALT] || keystatus[SDLK_RALT]*/ input.binary("Alternate Use Modifier"))
-				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || itemCategory(item) == SPELL_CAT
+				&& (itemTypeIsOil(item->type) || itemCategory(item) == POTION
+				|| itemCategory(item) == SPELLBOOK || itemCategory(item) == SPELL_CAT
 				|| item->type == FOOD_CREAMPIE) )
 			{
 				badpotion = true;

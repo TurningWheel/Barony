@@ -972,6 +972,7 @@ void rebuildAmuletFamiliarVisuals(Entity* familiar);
 void animateAmuletFamiliarCauldron(Entity* familiar);
 void rebuildAmuletFamiliarCauldron(Entity* familiar);
 Entity* getAmuletFamiliarMimicLid(Entity* familiar);
+void reconcileSharedVoidChestInventory();
 Item* mergeIngredientBagIntoVoidChest(const Item& source, int ownerPlayer);
 void syncIngredientBagToOpenVoidChest(const Item& bag, int ownerPlayer);
 void spawnAmuletFamiliarIngredientBag(Entity* recipient, Entity* source);

@@ -2911,6 +2911,17 @@ static void changeLevel() {
 	fadealpha = 255;
 }
 
+// Keep transaction receipt identities independent of the Stewing GUI's
+// lifetime. Closing a menu must not prevent the server from consuming the
+// client's private physical ingredients for an already committed brew.
+static std::unordered_set<Uint32> unacknowledgedClientStewing[MAXPLAYERS];
+
+void registerClientStewingTransaction(int player, Uint32 sequence)
+{
+	if ( multiplayer != CLIENT || player < 0 || player >= MAXPLAYERS || sequence == 0 ) { return; }
+	unacknowledgedClientStewing[player].insert(sequence);
+}
+
 static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	// keep alive
 	{'KPAL', [](){
@@ -2945,8 +2956,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		}
 		const Uint32 familiarUid = SDLNet_Read32(&net_packet->data[4]);
 		Entity* familiar = uidToEntity(familiarUid);
-		if ( !familiar || !isAmuletFamiliar(familiar, familiar->getStats())
-			|| getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_CAULDRON )
+		// The host has already validated the owner, amulet and Cauldron
+		// form before issuing STWO. A connecting client's form/identity
+		// replication can lag this reliable reply; do not drop an approved
+		// menu session just because those visual fields are still stale.
+		if ( !familiar || familiar->behavior != &actMonster )
 		{
 			return;
 		}
@@ -2971,10 +2985,14 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 	// inventory resources which were consumed by the server transaction.
 	{'STWU', [](){
 		const int oldPacketLength = 146 + STEWING_RESOURCE_COUNT * 4;
-		if ( net_packet->len != oldPacketLength + static_cast<int>(sizeof(Uint32))
-			&& net_packet->len != oldPacketLength + static_cast<int>(sizeof(Uint32)) + 1 ) { return; }
-		const bool resultDropped = net_packet->len > oldPacketLength + 4
-			&& net_packet->data[oldPacketLength + 4] != 0;
+		if ( net_packet->len != oldPacketLength + 9 ) { return; }
+		const Uint32 sequence = SDLNet_Read32(&net_packet->data[oldPacketLength + 5]);
+		auto& brewUI = GenericGUI[clientnum].stewingGUI;
+		// A completed brew still consumes private inventory if the user closed
+		// the menu before STWU arrived. Remember receipts independently of the
+		// panel; duplicate packets must never consume physical items twice.
+		if ( !unacknowledgedClientStewing[clientnum].erase(sequence) ) { return; }
+		const bool resultDropped = net_packet->data[oldPacketLength + 4] != 0;
 		const bool success = net_packet->data[4] != 0;
 		const Uint32 familiarUid = SDLNet_Read32(&net_packet->data[6]);
 		StewingSelection remaining{};
@@ -3000,10 +3018,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		{
 			unlockStewingRecipe(clientnum, newlyUnlocked);
 		}
-		if ( GenericGUI[clientnum].stewingGUI.bOpen
-			&& GenericGUI[clientnum].stewingGUI.cauldronUid == familiarUid )
+		if ( brewUI.bOpen && brewUI.transactionPending
+			&& brewUI.pendingTransactionSequence == sequence
+			&& brewUI.cauldronUid == familiarUid )
 		{
-			GenericGUI[clientnum].stewingGUI.receiveTransaction(success, remaining, resources);
+			brewUI.receiveTransaction(success, remaining, resources);
 			if ( success && resultDropped )
 			{
 				// The host dropped the brewed oil/ink beside an occupied Wraith.
@@ -3215,6 +3234,30 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			const int skillIndex = net_packet->data[8];
 			const Sint32 oldValue = entity->skill[skillIndex];
 			entity->skill[skillIndex] = SDLNet_Read32(&net_packet->data[9]);
+			// A possessed Wraith's normal model is gated on both the form skill
+			// and effect state. The reliable ENTS is the first update to reach
+			// many observers; keep its presentation state coherent immediately.
+			// The complete WPST snapshot periodically corrects late EFFE packets.
+			if ( (skillIndex == 50 || skillIndex == 53)
+				&& entity->behavior == &actPlayer )
+			{
+				const int player = entity->skill[2];
+				if ( player >= 0 && player < MAXPLAYERS && stats[player]
+					&& players[player] && stats[player]->playerRace == RACE_WRAITH
+					&& players[player]->mechanics.wraith.initialized
+					&& players[player]->mechanics.wraith.possessedEntityUid != 0 )
+				{
+					const int effect = skillIndex == 50 ? EFF_POLYMORPH : EFF_SHAPESHIFT;
+					if ( entity->skill[skillIndex] != NOTHING )
+					{
+						stats[player]->setEffectValueUnsafe(effect, 1);
+					}
+					else
+					{
+						stats[player]->clearEffect(effect);
+					}
+				}
+			}
 			if ( skillIndex == 58 && oldValue != entity->skill[skillIndex]
 				&& entity->skill[3] != 0 && isAmuletFamiliar(entity) )
 			{
@@ -5260,13 +5303,26 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 			target->appliedOil = coating;
 			if ( oil && itemTypeIsOil(oil->type) )
 			{
-				messagePlayer(clientnum, MESSAGE_EQUIPMENT, "You coat %s with %s.", target->getName(), oil->getName());
+				const std::string targetName = target->getName();
+				const std::string oilName = oil->getName();
+				messagePlayer(clientnum, MESSAGE_EQUIPMENT, "You coat %s with %s.", targetName.c_str(), oilName.c_str());
 			}
 		}
 		if ( oil && itemTypeIsOil(oil->type) )
 		{
 			consumeItem(oil, clientnum);
 		}
+	}},
+
+	// Authoritative server has received the complete local starting death
+	// chest. Stop retransmitting the item snapshot.
+	{'WBSA', [](){
+		if ( net_packet->len != 13 ) { return; }
+		const int player = net_packet->data[4];
+		if ( player != clientnum ) { return; }
+		acknowledgeWraithStartingChestSnapshot(player,
+			SDLNet_Read32(&net_packet->data[5]),
+			SDLNet_Read32(&net_packet->data[9]));
 	}},
 
 	// Idempotent host equipment reconciliation for a remote Wraith. Match to
@@ -5338,6 +5394,11 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		const Uint32 possessedUid = SDLNet_Read32(&net_packet->data[5]);
 		const Monster possessedType = wraithCanonicalPossessionType(
 			static_cast<Monster>(SDLNet_Read32(&net_packet->data[9])));
+		// WPST is resent every two seconds. Only animate an actual transition;
+		// repeating it previously replayed the weapon-equip animation forever.
+		const bool possessionChanged = !wraith.initialized
+			|| wraith.possessedEntityUid != possessedUid
+			|| wraith.possessedType != possessedType;
 		const bool savegameBodyRebind = owningClient && possessedUid != 0
 			&& wraith.possessionTransition
 			&& wraith.possessedEntityUid == UINT32_MAX;
@@ -5374,7 +5435,7 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 				else { free(item); }
 			}
 		}
-		else if ( owningClient && possessedUid != 0 && !savegameBodyRebind )
+		else if ( owningClient && possessionChanged && possessedUid != 0 && !savegameBodyRebind )
 		{
 			// The Wraith hand becomes ordinary body inventory on entry.
 			stats[player]->weapon = nullptr;
@@ -5384,7 +5445,28 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		wraith.possessedType = possessedType;
 		wraith.initialized = true;
 		stats[player]->type = possessedUid ? possessedType : WRAITH;
-		if ( owningClient && possessedUid != 0 && !savegameBodyRebind )
+		// Extended WPST: the host sends a coherent temporary-form snapshot.
+		// Only override effects WHILE possessing; Wraith-form polymorph must
+		// keep its vanilla behavior untouched. Older 13-byte WPST is ignored
+		// for this new portion rather than reading uninitialized packet data.
+		if ( net_packet->len >= 22 && possessedUid != 0
+			&& stats[player]->playerRace == RACE_WRAITH
+			&& players[player]->entity )
+		{
+			Entity* controlled = players[player]->entity;
+			const Uint8 formFlags = net_packet->data[21];
+			const bool hasPoly = (formFlags & 1) != 0;
+			const bool hasShaman = (formFlags & 2) != 0;
+			controlled->effectPolymorph = hasPoly
+				? static_cast<Sint32>(SDLNet_Read32(&net_packet->data[13])) : NOTHING;
+			controlled->effectShapeshift = hasShaman
+				? static_cast<Sint32>(SDLNet_Read32(&net_packet->data[17])) : NOTHING;
+			if ( hasPoly ) { stats[player]->setEffectValueUnsafe(EFF_POLYMORPH, 1); }
+			else { stats[player]->clearEffect(EFF_POLYMORPH); }
+			if ( hasShaman ) { stats[player]->setEffectValueUnsafe(EFF_SHAPESHIFT, 1); }
+			else { stats[player]->clearEffect(EFF_SHAPESHIFT); }
+		}
+		if ( owningClient && possessionChanged && possessedUid != 0 && !savegameBodyRebind )
 		{
 			updateWraithPossessionTemporarySpells(player);
 		}
@@ -5392,12 +5474,15 @@ static std::unordered_map<Uint32, void(*)()> clientPacketHandlers = {
 		{
 			wraith.possessionTransition = false;
 		}
-		if ( owningClient && !paperDollUpdatedBeforeBodyRemoval )
+		if ( owningClient && possessionChanged && !paperDollUpdatedBeforeBodyRemoval )
 		{
 			players[player]->paperDoll.updateSlots();
 		}
-		players[player]->hud.weaponSwitch = true;
-		players[player]->hud.shieldSwitch = true;
+		if ( possessionChanged )
+		{
+			players[player]->hud.weaponSwitch = true;
+			players[player]->hud.shieldSwitch = true;
+		}
 	}},
 
 	// Wraith human-polymorph inventory return. The server owns the loot-bag
@@ -8009,18 +8094,55 @@ void clientHandleMessages(Uint32 framerateBreakInterval)
 -------------------------------------------------------------------------------*/
 
 static Uint32 stewingCauldronSessionUid[MAXPLAYERS] = {};
+// A click can be seen for several ticks, including while the client is still
+// answering STWQ. Do not restart the same session and cancel an active brew.
+static Uint32 openingStewingCauldronUid[MAXPLAYERS] = {};
+
 // A brewing request must be paired with a *fresh* client-side resource
 // snapshot. The menu-open snapshot alone can go stale after inventory changes.
 static bool pendingStewingTransaction[MAXPLAYERS] = {};
 static StewingOperation pendingStewingOperation[MAXPLAYERS] = {};
 static StewingSelection pendingStewingSelection[MAXPLAYERS] = {};
+static Uint32 pendingStewingSequence[MAXPLAYERS] = {};
+static Uint32 lastStewingResultSequence[MAXPLAYERS] = {};
+static Uint32 lastStewingResultFamiliarUid[MAXPLAYERS] = {};
+static constexpr int kStewingReplyLength = 146 + STEWING_RESOURCE_COUNT * 4 + 9;
+static std::array<Uint8, kStewingReplyLength> lastStewingResult[MAXPLAYERS] = {};
+
+// Replays an already committed response; does not touch ingredients/items.
+static bool resendStewingResult(int player, Uint32 familiarUid, Uint32 sequence)
+{
+	if ( player <= 0 || player >= MAXPLAYERS || sequence == 0
+		|| lastStewingResultSequence[player] != sequence
+		|| lastStewingResultFamiliarUid[player] != familiarUid
+		|| stewingCauldronSessionUid[player] != familiarUid ) { return false; }
+	memcpy(net_packet->data, lastStewingResult[player].data(), kStewingReplyLength);
+	net_packet->address = net_clients[player - 1];
+	net_packet->len = kStewingReplyLength;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	return true;
+}
 
 void resetServerStewingSession(int player)
 {
 	if ( player < 0 || player >= MAXPLAYERS ) { return; }
 	stewingCauldronSessionUid[player] = 0;
+	openingStewingCauldronUid[player] = 0;
 	pendingStewingTransaction[player] = false;
+	pendingStewingSequence[player] = 0;
+	lastStewingResultSequence[player] = 0;
+	lastStewingResultFamiliarUid[player] = 0;
 	clearServerStewingInventoryMirror(player);
+}
+
+bool beginServerStewingSessionOpen(int player, Uint32 familiarUid)
+{
+	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS || !familiarUid ) { return false; }
+	if ( stewingCauldronSessionUid[player] == familiarUid
+		|| openingStewingCauldronUid[player] == familiarUid ) { return false; }
+	resetServerStewingSession(player);
+	openingStewingCauldronUid[player] = familiarUid;
+	return true;
 }
 
 static void sendStewingTransactionResult(int player, Uint32 familiarUid,
@@ -8053,11 +8175,129 @@ static void sendStewingTransactionResult(int player, Uint32 familiarUid,
 	SDLNet_Write32(static_cast<Uint32>(result.newlyUnlockedRecipe),
 		&net_packet->data[oldPacketLength]);
 	net_packet->data[oldPacketLength + 4] = success && wraithUseResultDropped ? 1 : 0;
+	SDLNet_Write32(pendingStewingSequence[player], &net_packet->data[oldPacketLength + 5]);
+	lastStewingResultSequence[player] = pendingStewingSequence[player];
+	lastStewingResultFamiliarUid[player] = familiarUid;
+	memcpy(lastStewingResult[player].data(), net_packet->data, kStewingReplyLength);
 	net_packet->address.host = net_clients[player - 1].host;
 	net_packet->address.port = net_clients[player - 1].port;
-	net_packet->len = oldPacketLength + static_cast<int>(sizeof(Uint32)) + 1;
+	net_packet->len = kStewingReplyLength;
 	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	pendingStewingSequence[player] = 0;
 }
+
+
+// The full ordinary inventory of a connecting player is not represented on
+// the authoritative host. Keep a bounded, per-possession *observation* only;
+// do not replace or delete server Items in response to client snapshots.
+struct WraithBodyInventoryMirror
+{
+    Uint32 bodyUid = 0;
+    Uint32 runKey = 0;
+    Uint32 sequence = 0;
+    Uint32 receivedAt = 0;
+    std::vector<Item> items;
+    std::vector<bool> received;
+    bool complete = false;
+};
+static WraithBodyInventoryMirror wraithBodyMirrorReady[MAXPLAYERS];
+static WraithBodyInventoryMirror wraithBodyMirrorPending[MAXPLAYERS];
+
+void reconcileWraithRemoteBodyInventory(int player, Stat& bodyStats, Uint32 bodyUid)
+{
+    if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS
+        || !bodyUid ) { return; }
+    WraithBodyInventoryMirror& mirror = wraithBodyMirrorReady[player];
+    const bool fresh = mirror.complete && mirror.bodyUid == bodyUid
+        && mirror.runKey == uniqueGameKey
+        && static_cast<Uint32>(ticks - mirror.receivedAt) <= 3 * TICKS_PER_SECOND;
+    if ( fresh )
+    {
+        // Preserve every host-owned Item and its current count. A remote
+        // player can have additional units merged into a stack with an item
+        // already known to the host, so existence alone is insufficient.
+        // Match *quantities* by persistent item identity. Each server unit
+        // covers at most one client unit across the entire snapshot.
+        auto sameIdentity = [](const Item& a, const Item& b) -> bool
+        {
+            return a.type == b.type && a.appearance == b.appearance
+                && a.beatitude == b.beatitude
+                && a.runeGetInstanceId() == b.runeGetInstanceId()
+                && a.runeGetCreatorIdentity() == b.runeGetCreatorIdentity();
+        };
+        struct ServerStackRemaining
+        {
+            const Item* item;
+            Sint32 remaining;
+        };
+        std::vector<ServerStackRemaining> serverStacks;
+        for ( node_t* node = bodyStats.inventory.first; node; node = node->next )
+        {
+            const Item* item = static_cast<const Item*>(node->element);
+            if ( item && item->count > 0 )
+            {
+                serverStacks.push_back({item, item->count});
+            }
+        }
+        int recoveredStacks = 0;
+        Sint64 recoveredUnits = 0;
+        for ( const Item& fromClient : mirror.items )
+        {
+            // Neither spell placeholders nor death-chest tokens are body loot.
+            if ( fromClient.type == SPELL_ITEM || fromClient.type == TOOL_PLAYER_LOOT_BAG
+                || fromClient.count <= 0 ) { continue; }
+            Sint32 missing = fromClient.count;
+            for ( auto& server : serverStacks )
+            {
+                if ( missing == 0 ) { break; }
+                if ( server.remaining <= 0 || !sameIdentity(*server.item, fromClient) )
+                {
+                    continue;
+                }
+                const Sint32 covered = std::min(missing, server.remaining);
+                missing -= covered;
+                server.remaining -= covered;
+            }
+            if ( missing == 0 ) { continue; }
+            // Append only the amount absent from the server's inventory. Do
+            // not mutate an existing Item: equipment pointers may refer to it.
+            Item* created = newItem(fromClient.type, fromClient.status,
+                fromClient.beatitude, missing, fromClient.appearance,
+                fromClient.identified, &bodyStats.inventory);
+            if ( !created ) { continue; }
+            copyItemPersistentCustomState(*created, fromClient);
+            created->x = 0;
+            created->y = 0;
+            ++recoveredStacks;
+            recoveredUnits += missing;
+        }
+        if ( recoveredStacks )
+        {
+            printlog("[WRAITH] Recovered %lld missing client-owned units in %d stacks "
+                "for remote player %d (snapshot %u)",
+                static_cast<long long>(recoveredUnits), recoveredStacks, player,
+                mirror.sequence);
+        }
+    }
+    else
+    {
+        printlog("[WRAITH] No fresh remote inventory snapshot for player %d on body release; "
+            "preserving authoritative server inventory without guessing", player);
+    }
+    mirror = WraithBodyInventoryMirror{};
+    wraithBodyMirrorPending[player] = WraithBodyInventoryMirror{};
+}
+
+// A remote Wraith must not open its starting death chest before the
+// host has received the complete item list. Otherwise a fast LOOT packet
+// turns an incomplete snapshot into permanent item loss.
+struct WraithStarterReceipt
+{
+    Uint32 bagKey = 0;
+    Uint32 runKey = 0;
+    bool complete = false;
+};
+static WraithStarterReceipt wraithStarterReceipts[MAXPLAYERS];
 
 static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	// keep alive
@@ -8097,11 +8337,17 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		{
 			resources[i] = SDLNet_Read32(&net_packet->data[9 + i * 4]);
 		}
-		// Ignore a late response from a different Cauldron session.
+		// Ignore late snapshots from an old Cauldron after its session closed.
+		// Ignore duplicate opening responses instead of reopening the GUI.
+		if ( stewingCauldronSessionUid[player] == familiarUid
+			&& !pendingStewingTransaction[player] ) { return; }
+		if ( stewingCauldronSessionUid[player] == 0
+			&& openingStewingCauldronUid[player] != familiarUid ) { return; }
 		if ( pendingStewingTransaction[player]
 			&& stewingCauldronSessionUid[player] != familiarUid ) { return; }
 		setServerStewingInventoryMirror(player, resources);
 		stewingCauldronSessionUid[player] = familiarUid;
+		openingStewingCauldronUid[player] = 0;
 		if ( pendingStewingTransaction[player] )
 		{
 			pendingStewingTransaction[player] = false;
@@ -8128,7 +8374,7 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 	// The client supplies only operation + selected educts. The server derives
 	// the result and commits all item/bottle/effect changes.
 	{'STWR', [](){
-		if ( net_packet->len != 10 + STEWING_MAX_EDUCTS * 8 ) { return; }
+		if ( net_packet->len != 14 + STEWING_MAX_EDUCTS * 8 ) { return; }
 		const int player = net_packet->data[4];
 		if ( player < 0 || player >= MAXPLAYERS ) { return; }
 		Entity* familiar = nullptr;
@@ -8138,21 +8384,53 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		}
 		if ( !validateStewingCauldronAccess(familiar, player) )
 		{
+			const Uint32 previousUid = stewingCauldronSessionUid[player];
 			resetServerStewingSession(player);
+			// The client must not remain stuck in transactionPending after a
+			// rejected session (amulet removed, moved away, level changed).
+			if ( previousUid && player > 0 && !client_disconnected[player] )
+			{
+				strcpy(reinterpret_cast<char*>(net_packet->data), "STWC");
+				SDLNet_Write32(previousUid, &net_packet->data[4]);
+				net_packet->address = net_clients[player - 1];
+				net_packet->len = 8;
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
+			}
 			return;
 		}
 		const StewingOperation operation = static_cast<StewingOperation>(net_packet->data[5]);
 		const Uint32 familiarUid = SDLNet_Read32(&net_packet->data[6]);
 		if ( familiarUid != stewingCauldronSessionUid[player] ) { return; }
+		const Uint32 sequence = SDLNet_Read32(&net_packet->data[10 + STEWING_MAX_EDUCTS * 8]);
+		if ( sequence == 0 ) { return; }
+		if ( resendStewingResult(player, familiarUid, sequence) ) { return; }
+		// A delayed retry of an *older* transaction must never be processed
+		// again once a newer sequence has already committed. Only the last
+		// result is cached for an exact retransmission.
+		if ( lastStewingResultSequence[player] != 0
+			&& sequence < lastStewingResultSequence[player] ) { return; }
 		StewingSelection selection{};
 		for ( int i = 0; i < STEWING_MAX_EDUCTS; ++i )
 		{
 			selection[i].type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[10 + i * 8]));
 			selection[i].quantity = SDLNet_Read32(&net_packet->data[14 + i * 8]);
 		}
-		// A second request while waiting for a fresh snapshot is not a second brew.
-		if ( pendingStewingTransaction[player] ) { return; }
+		// Duplicate STWR during the STWS phase: request the same fresh
+		// snapshot again, but do not start a second craft.
+		if ( pendingStewingTransaction[player] )
+		{
+			if ( pendingStewingSequence[player] == sequence )
+			{
+				strcpy(reinterpret_cast<char*>(net_packet->data), "STWQ");
+				SDLNet_Write32(familiarUid, &net_packet->data[4]);
+				net_packet->address = net_clients[player - 1];
+				net_packet->len = 8;
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
+			}
+			return;
+		}
 		pendingStewingTransaction[player] = true;
+		pendingStewingSequence[player] = sequence;
 		pendingStewingOperation[player] = operation;
 		pendingStewingSelection[player] = selection;
 		strcpy(reinterpret_cast<char*>(net_packet->data), "STWQ");
@@ -8168,7 +8446,8 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		const int player = net_packet->data[4];
 		if ( player < 0 || player >= MAXPLAYERS ) { return; }
 		const Uint32 familiarUid = SDLNet_Read32(&net_packet->data[5]);
-		if ( stewingCauldronSessionUid[player] != familiarUid ) { return; }
+		if ( stewingCauldronSessionUid[player] != familiarUid
+			&& openingStewingCauldronUid[player] != familiarUid ) { return; }
 		resetServerStewingSession(player);
 	}},
 
@@ -8686,6 +8965,20 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		}
 		if ( entity )
 		{
+			// A client-owned Witch Cauldron is a station, not a follower
+			// command target. Open on this validated server click instead of
+			// waiting for actMonster's generic follower processing (which may
+			// return early for the stationary Cauldron). This works over lava
+			// as well as campfire, and does not affect shared Void Chest access.
+			if ( entity->behavior == &actMonster
+				&& isAmuletFamiliar(entity, entity->getStats())
+				&& getAmuletFamiliarForm(entity) == FAMILIAR_FORM_CAULDRON
+				&& openStewingCauldron(entity, player) )
+			{
+				client_selected[player] = nullptr;
+				inrange[player] = false;
+				return;
+			}
 			client_selected[player] = entity;
 			inrange[player] = true;
 		}
@@ -9719,10 +10012,203 @@ static std::unordered_map<Uint32, void(*)()> serverPacketHandlers = {
 		useItem(item, client, nullptr, false, true, net_packet->len >= 41 && net_packet->data[40] != 0);
 	}},
 
+
+    // Complete snapshots replace only the previous OBSERVATION of a remote
+    // Wraith inventory. They cannot create, destroy, or equip a live item.
+    {'WBMI', [](){
+        const int end = 66 + FAMILIAR_PERSISTENT_PACKET_BYTES
+            + WRAITH_LORE_INSTANCE_PACKET_BYTES;
+        if ( net_packet->len != end + 4 ) { return; }
+        const int player = net_packet->data[4];
+        const Uint32 bodyUid = SDLNet_Read32(&net_packet->data[5]);
+        const Uint32 sequence = SDLNet_Read32(&net_packet->data[9]);
+        const Uint8 total = net_packet->data[13];
+        const Uint8 index = net_packet->data[14];
+        const Uint32 runKey = SDLNet_Read32(&net_packet->data[end]);
+        if ( player <= 0 || player >= MAXPLAYERS || !players[player]
+            || players[player]->isLocalPlayer() || !stats[player]
+            || stats[player]->playerRace != RACE_WRAITH
+            || !bodyUid || bodyUid == UINT32_MAX || runKey != uniqueGameKey
+            || !players[player]->mechanics.wraith.initialized
+            || players[player]->mechanics.wraith.possessedEntityUid != bodyUid
+            || total > 128 || (total == 0 ? index != 0 : index >= total) )
+        {
+            return;
+        }
+        WraithBodyInventoryMirror& pending = wraithBodyMirrorPending[player];
+        WraithBodyInventoryMirror& ready = wraithBodyMirrorReady[player];
+        if ( ready.bodyUid == bodyUid && ready.runKey == runKey
+            && ready.complete && sequence <= ready.sequence ) { return; }
+        if ( pending.bodyUid == bodyUid && pending.runKey == runKey
+            && sequence < pending.sequence ) { return; }
+        if ( pending.bodyUid != bodyUid || pending.runKey != runKey
+            || pending.sequence != sequence || pending.items.size() != total )
+        {
+            pending = WraithBodyInventoryMirror{};
+            pending.bodyUid = bodyUid;
+            pending.runKey = runKey;
+            pending.sequence = sequence;
+            pending.items.resize(total);
+            pending.received.assign(total, false);
+        }
+        if ( total == 0 )
+        {
+            pending.complete = true;
+        }
+        else if ( !pending.received[index] )
+        {
+            const Sint32 type = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[15]));
+            const Sint32 status = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[19]));
+            const Sint32 count = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[27]));
+            if ( type < 0 || type >= NUMITEMS || status < BROKEN || status > EXCELLENT
+                || count <= 0 || count > 10000 ) { return; }
+            Item* item = newItem(static_cast<ItemType>(type),
+                static_cast<Status>(status),
+                static_cast<Sint32>(SDLNet_Read32(&net_packet->data[23])),
+                count, SDLNet_Read32(&net_packet->data[31]),
+                net_packet->data[35] != 0, nullptr);
+            if ( !item ) { return; }
+            item->appliedOil = static_cast<AppliedOil>(
+                std::min<int>(net_packet->data[36], APPLIED_OIL_MAX - 1));
+            item->runeSetStoredPWRRaw(static_cast<Sint32>(SDLNet_Read32(&net_packet->data[37])));
+            item->runeSetCreatorPlayer(static_cast<Sint8>(net_packet->data[41]));
+            item->runeSetInstanceId(SDLNet_Read32(&net_packet->data[42]));
+            item->runeSetCreatorIdentity(SDLNet_Read32(&net_packet->data[46]));
+            readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 50);
+            readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 66);
+            readWraithLoreInstanceIdFromPacket(*item, net_packet->data,
+                net_packet->len, 66 + FAMILIAR_PERSISTENT_PACKET_BYTES);
+            copyItem(&pending.items[index], item);
+            free(item);
+            pending.received[index] = true;
+            pending.complete = std::all_of(pending.received.begin(), pending.received.end(),
+                [](bool r){ return r; });
+        }
+        if ( pending.complete )
+        {
+            ready = pending;
+            ready.receivedAt = ticks;
+        }
+    }},
+
+	// A connecting Wraith's starting class inventory is created locally by
+	// vanilla initClass(), whereas the server does not own those consumables.
+	// Transfer the full starting death-chest contents atomically once, before
+	// the chest is opened. Reliable repeats/duplicates are idempotent.
+	{'WBGI', [](){
+		const int payloadEnd = 62 + FAMILIAR_PERSISTENT_PACKET_BYTES
+			+ WRAITH_LORE_INSTANCE_PACKET_BYTES;
+		if ( net_packet->len != payloadEnd + 4 ) { return; }
+		const int player = net_packet->data[4];
+		const Uint32 bagKey = SDLNet_Read32(&net_packet->data[5]);
+		const Uint8 total = net_packet->data[9];
+		const Uint8 index = net_packet->data[10];
+		const Sint32 itemType = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[11]));
+		const Sint32 itemStatus = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[15]));
+		const Sint32 count = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[23]));
+		const Uint32 runKey = SDLNet_Read32(&net_packet->data[payloadEnd]);
+		if ( player <= 0 || player >= MAXPLAYERS || !players[player]
+			|| players[player]->isLocalPlayer() || !stats[player]
+			|| stats[player]->playerRace != RACE_WRAITH || currentlevel != 0
+			|| !players[player]->mechanics.wraith.initialized
+			|| !players[player]->entity
+			|| players[player]->entity->ticks >= 30 * TICKS_PER_SECOND
+			|| bagKey != stats[player]->getLootingBagKey(player)
+			|| runKey != uniqueGameKey || total == 0 || total > 128
+			|| index >= total || itemType < 0 || itemType >= NUMITEMS
+			|| itemStatus < BROKEN || itemStatus > EXCELLENT
+			|| count <= 0 || count > 10000 ) { return; }
+		auto existing = stats[player]->player_lootbags.find(bagKey);
+		if ( existing == stats[player]->player_lootbags.end()
+			|| existing->second.looted ) { return; }
+
+		struct IncomingChest
+		{
+			Uint32 bagKey = 0;
+			Uint32 runKey = 0;
+			Uint8 total = 0;
+			bool complete = false;
+			std::vector<Item> items;
+			std::vector<bool> received;
+		};
+		static IncomingChest incoming[MAXPLAYERS];
+		IncomingChest& pending = incoming[player];
+		if ( pending.runKey != runKey || pending.bagKey != bagKey || pending.total != total )
+		{
+			pending = IncomingChest{};
+			pending.runKey = runKey;
+			pending.bagKey = bagKey;
+			pending.total = total;
+			pending.items.resize(total);
+			pending.received.assign(total, false);
+		}
+		if ( !pending.complete && !pending.received[index] )
+		{
+			Item* item = newItem(static_cast<ItemType>(itemType),
+				static_cast<Status>(itemStatus),
+				static_cast<Sint32>(SDLNet_Read32(&net_packet->data[19])),
+				count, SDLNet_Read32(&net_packet->data[27]),
+				net_packet->data[31] != 0, nullptr);
+			if ( !item ) { return; }
+			item->appliedOil = static_cast<AppliedOil>(
+				std::min<int>(net_packet->data[32], APPLIED_OIL_MAX - 1));
+			item->runeSetStoredPWRRaw(static_cast<Sint32>(SDLNet_Read32(&net_packet->data[33])));
+			item->runeSetCreatorPlayer(static_cast<Sint8>(net_packet->data[37]));
+			item->runeSetInstanceId(SDLNet_Read32(&net_packet->data[38]));
+			item->runeSetCreatorIdentity(SDLNet_Read32(&net_packet->data[42]));
+			readIngredientCountsFromPacket(*item, net_packet->data, net_packet->len, 46);
+			readFamiliarPersistentStateFromPacket(*item, net_packet->data, net_packet->len, 62);
+			readWraithLoreInstanceIdFromPacket(*item, net_packet->data, net_packet->len,
+				62 + FAMILIAR_PERSISTENT_PACKET_BYTES);
+			copyItem(&pending.items[index], item);
+			free(item);
+			pending.received[index] = true;
+		}
+		if ( !pending.complete )
+		{
+			bool allReceived = true;
+			for ( bool received : pending.received )
+			{
+				if ( !received ) { allReceived = false; break; }
+			}
+			if ( !allReceived ) { return; }
+			auto& loot = existing->second;
+			loot.items.clear();
+			for ( const Item& item : pending.items )
+			{
+				loot.items.push_back(Item());
+				copyItem(&loot.items.back(), &item);
+			}
+			pending.complete = true;
+		}
+		wraithStarterReceipts[player] = {bagKey, runKey, true};
+		strcpy((char*)net_packet->data, "WBSA");
+		net_packet->data[4] = static_cast<Uint8>(player);
+		SDLNet_Write32(bagKey, &net_packet->data[5]);
+		SDLNet_Write32(runKey, &net_packet->data[9]);
+		net_packet->len = 13;
+		net_packet->address = net_clients[player - 1];
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}},
+
 	// use loot bag
 	{ 'LOOT', []() {
 		const int client = std::min(net_packet->data[8], (Uint8)(MAXPLAYERS - 1));
 		Uint32 appearance = SDLNet_Read32(&net_packet->data[4]);
+		const int owner = appearance & 0xF;
+		if ( owner > 0 && owner < MAXPLAYERS && currentlevel == 0
+			&& stats[owner] && stats[owner]->playerRace == RACE_WRAITH
+			&& appearance == stats[owner]->getLootingBagKey(owner) )
+		{
+			const WraithStarterReceipt& receipt = wraithStarterReceipts[owner];
+			if ( !receipt.complete || receipt.bagKey != appearance
+				|| receipt.runKey != uniqueGameKey )
+			{
+				messagePlayer(client, MESSAGE_INTERACTION,
+					"The starting chest is still synchronizing.");
+				return;
+			}
+		}
 		Stat::emptyLootingBag(client, appearance);
 	} },
 
@@ -11297,11 +11783,14 @@ void serverHandlePacket()
 			const Uint32 command = SDLNet_Read32(&net_packet->data[offset]);
 			if ( command == 'FRST' || command == 'FRCP' || command == 'FJCP'
 				|| command == 'STWS' || command == 'STWR' || command == 'STWX'
-				|| command == 'CITM' || command == 'RCIT' )
+				|| command == 'CITM' || command == 'RCIT'
+				|| command == 'WBGI' || command == 'WBMI' )
 			{
 				int expectedLength = command == 'FRST' ? 13 : 14;
 				if ( command == 'STWS' ) { expectedLength = 9 + STEWING_RESOURCE_COUNT * 4; }
-				else if ( command == 'STWR' ) { expectedLength = 10 + STEWING_MAX_EDUCTS * 8; }
+				else if ( command == 'WBGI' ) { expectedLength = 62 + FAMILIAR_PERSISTENT_PACKET_BYTES + WRAITH_LORE_INSTANCE_PACKET_BYTES + 4; }
+				else if ( command == 'WBMI' ) { expectedLength = 66 + FAMILIAR_PERSISTENT_PACKET_BYTES + WRAITH_LORE_INSTANCE_PACKET_BYTES + 4; }
+				else if ( command == 'STWR' ) { expectedLength = 14 + STEWING_MAX_EDUCTS * 8; }
 				else if ( command == 'STWX' ) { expectedLength = 9; }
 				else if ( command == 'CITM' || command == 'RCIT' )
 				{

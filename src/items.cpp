@@ -1394,8 +1394,8 @@ namespace
 				bag->ingredientCounts[ingredientSlot] -= take;
 				consumed += take;
 				if ( ingredientBagIsEmpty(*bag)
-					&& player >= 0 && player < MAXPLAYERS && stats[player]
-					&& node->list == &stats[player]->void_chest_inventory )
+					&& stats[0]
+					&& node->list == &stats[0]->void_chest_inventory )
 				{
 					// Retain an empty bag's category and slot in its owner's Void Chest.
 					// Otherwise the client keeps a stale bag until reopening the chest.
@@ -1956,7 +1956,11 @@ Uint32 getTotalStewingResource(int player, ItemType resource)
 	{
 		total = countStewingResourceInList(stats[player]->inventory, resource);
 	}
-	total += countStewingResourceInList(stats[player]->void_chest_inventory, resource);
+	if ( multiplayer != CLIENT ) { reconcileSharedVoidChestInventory(); }
+	if ( stats[0] )
+	{
+		total += countStewingResourceInList(stats[0]->void_chest_inventory, resource);
+	}
 	return static_cast<Uint32>(std::min<Uint64>(total, std::numeric_limits<Uint32>::max()));
 }
 
@@ -2080,6 +2084,7 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 		Uint32 amount = static_cast<Uint32>(consumeAmounts[i]);
 		if ( amount == 0 ) { continue; }
 		const ItemType type = getStewingResourceType(i);
+		if ( multiplayer != CLIENT ) { reconcileSharedVoidChestInventory(); }
 		Uint32 consumedFromInventory = 0;
 		if ( remotePlayer )
 		{
@@ -2110,9 +2115,9 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 		if ( remaining > 0 )
 		{
 			const Uint32 consumedFromVoid = itemTypeIsWitchIngredient(type)
-				? consumeStewingIngredientFromList(stats[player]->void_chest_inventory, type, remaining, player,
+				? consumeStewingIngredientFromList(stats[0]->void_chest_inventory, type, remaining, player,
 					&changedIngredientBags)
-				: consumeStewingOrdinaryItemFromList(stats[player]->void_chest_inventory, type, remaining);
+				: consumeStewingOrdinaryItemFromList(stats[0]->void_chest_inventory, type, remaining);
 			if ( consumedFromVoid != remaining )
 			{
 				return false; // Prevalidation makes this unreachable in the authoritative tick.
@@ -2121,7 +2126,7 @@ bool performStewingTransaction(int player, Entity* familiar, StewingOperation op
 	}
 	for ( Item* bag : changedIngredientBags )
 	{
-		if ( bag->node && bag->node->list == &stats[player]->void_chest_inventory )
+		if ( stats[0] && bag->node && bag->node->list == &stats[0]->void_chest_inventory )
 		{
 			syncIngredientBagToOpenVoidChest(*bag, player);
 		}
@@ -5823,11 +5828,11 @@ static Item* chooseOilTarget(int player, bool reversePriority, bool* shieldSlot)
 	return result;
 }
 
-static bool useOil(Item*& item, int player, bool reversePriority = false)
+static bool useOil(Item*& item, int player)
 {
 	if ( !item || !stats[player] || !itemTypeIsOil(item->type) ) { return false; }
 	bool shieldSlot = false;
-	Item* target = chooseOilTarget(player, reversePriority, &shieldSlot);
+	Item* target = chooseOilTarget(player, false, &shieldSlot);
 	if ( !target )
 	{
 		if ( players[player]->isLocalPlayer() )
@@ -5844,7 +5849,11 @@ static bool useOil(Item*& item, int player, bool reversePriority = false)
 		serverSyncPersistentCustomItemStateForOwner(target);
 		if ( item->appearance != STEWING_NO_BOTTLE_APPEARANCE ) { witchbrewReturnEmptyBottle(player); }
 	}
-	messagePlayer(player, MESSAGE_EQUIPMENT, "You coat %s with %s.", target->getName(), item->getName());
+	// Item::getName() returns the shared tempstr buffer. Copy both names before
+	// formatting or the second lookup overwrites the first one.
+	const std::string targetName = target->getName();
+	const std::string oilName = item->getName();
+	messagePlayer(player, MESSAGE_EQUIPMENT, "You coat %s with %s.", targetName.c_str(), oilName.c_str());
 	consumeItem(item, player);
 	return true;
 }
@@ -5876,7 +5885,9 @@ bool useOilOnItem(Item*& oil, Item* target, int player)
 	target->appliedOil = coating;
 	tryIncreaseAlchemyFromWitchbrewUse(player);
 	serverSyncPersistentCustomItemStateForOwner(target);
-	messagePlayer(player, MESSAGE_EQUIPMENT, "You coat %s with %s.", target->getName(), oil->getName());
+	const std::string targetName = target->getName();
+	const std::string oilName = oil->getName();
+	messagePlayer(player, MESSAGE_EQUIPMENT, "You coat %s with %s.", targetName.c_str(), oilName.c_str());
 	if ( oil->appearance != STEWING_NO_BOTTLE_APPEARANCE ) { witchbrewReturnEmptyBottle(player); }
 	consumeItem(oil, player);
 	return true;
@@ -6112,7 +6123,19 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case OIL_LEAD:
 		case OIL_MINERAL:
 		case OIL_BRINE:
-			if ( !useOil(item, player, alternateUse) )
+			// Alternate action always wields/unequips the Oil. Primary action
+			// applies it to an eligible equipped weapon/quiver, or equips the
+			// bottle if neither slot contains a valid coating target.
+			// Equipment updates must use EQUI, never a synthetic USEI use.
+			if ( alternateUse || !chooseOilTarget(player, false, nullptr) )
+			{
+				itemDetailsForServer.sendToServer = false;
+				if ( !serverCheckUse && players[player]->isLocalPlayer() )
+				{
+					playerTryEquipItemAndUpdateServer(player, item, true);
+				}
+			}
+			else if ( !useOil(item, player) )
 			{
 				itemDetailsForServer.sendToServer = false;
 			}

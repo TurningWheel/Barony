@@ -22417,6 +22417,24 @@ bool Entity::isNaturalLeoninPlayer() const
 		&& !myStats->getEffectActive(EFF_SHAPESHIFT);
 }
 
+bool Entity::isWraithPossessedDemonWithClaws() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats || behavior != &actPlayer || myStats->type != DEMON
+		|| myStats->playerRace != RACE_WRAITH || myStats->stat_appearance != 0
+		|| effectPolymorph != NOTHING || effectShapeshift != NOTHING
+		|| myStats->getEffectActive(EFF_POLYMORPH)
+		|| myStats->getEffectActive(EFF_SHAPESHIFT) )
+	{
+		return false;
+	}
+	const int player = isEntityPlayer();
+	return player >= 0 && player < MAXPLAYERS && players[player]
+		&& players[player]->mechanics.wraith.initialized
+		&& players[player]->mechanics.wraith.possessedEntityUid != 0
+		&& players[player]->mechanics.wraith.possessedType == DEMON;
+}
+
 // A natural Golem is its own gameplay identity and is not inferred from its
 // current rendering model.
 bool Entity::isNaturalGolemPlayer() const
@@ -22472,7 +22490,7 @@ int Entity::getNaturalGolemAlliance(Monster otherType) const
 bool Entity::isLeoninNaturalClawAttack() const
 {
 	Stat* myStats = getStats();
-	return myStats && isNaturalLeoninPlayer()
+	return myStats && (isNaturalLeoninPlayer() || isWraithPossessedDemonWithClaws())
 		&& !myStats->weapon
 		&& !myStats->gloves;
 }
@@ -22489,7 +22507,7 @@ int Entity::getLeoninNaturalClawTier() const
 int Entity::getLeoninClawTier() const
 {
 	Stat* myStats = getStats();
-	if ( !myStats || !isNaturalLeoninPlayer() )
+	if ( !myStats || (!isNaturalLeoninPlayer() && !isWraithPossessedDemonWithClaws()) )
 	{
 		return 0;
 	}
@@ -24160,6 +24178,19 @@ Uint32 Entity::getMonsterFootstepSound(int footstepType, int bootSprite)
 	return static_cast<Uint32>(sound);
 }
 
+static bool spriteIsWitchbrewBottleModel(Sint32 sprite)
+{
+	for ( int type = TINCTURE_STR; type <= OIL_BRINE; ++type )
+	{
+		const int variations = items[type].variations > 0 ? items[type].variations : 1;
+		if ( sprite >= items[type].index && sprite < items[type].index + variations )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 {
 	if ( weaponLimb == nullptr || weaponArmLimb == nullptr )
@@ -24398,7 +24429,8 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		if ( isPlayer )
 		{
 			if ( (weaponLimb->sprite >= 50 && weaponLimb->sprite < 58)
-				|| weaponLimb->sprite == 795 )
+				|| weaponLimb->sprite == 795
+				|| spriteIsWitchbrewBottleModel(weaponLimb->sprite) )
 			{
 				weaponLimb->roll += (PI / 2); // potion sprites rotated
 				isPotion = true;

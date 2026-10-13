@@ -420,10 +420,13 @@ void rebuildAmuletFamiliarCauldron(Entity* familiar)
 void animateAmuletFamiliarCauldron(Entity* familiar)
 {
 	if ( !familiar ) { return; }
-	const real_t bobPhase = (2.0 * PI * ticks)
-		/ (FAMILIAR_CAULDRON_BOB_PERIOD_SECONDS * TICKS_PER_SECOND);
 	const real_t turnPhase = (2.0 * PI * ticks)
 		/ (FAMILIAR_CAULDRON_ROTATION_PERIOD_SECONDS * TICKS_PER_SECOND);
+	// Restore pre-v4.05.4 cauldron behavior (the previous working
+	// interaction presentation). This is a purely familiar-side change;
+	// shared Void Chest routing and personal inventories are unaffected.
+	const real_t bobPhase = (2.0 * PI * ticks)
+		/ (FAMILIAR_CAULDRON_BOB_PERIOD_SECONDS * TICKS_PER_SECOND);
 	familiar->z = familiar->familiarCauldronBaseZ
 		+ FAMILIAR_CAULDRON_BOB_AMPLITUDE * sin(bobPhase);
 	familiar->yaw = turnPhase;
@@ -839,13 +842,20 @@ bool updateAmuletFamiliarSpecialState(Entity* familiar, Stat* familiarStats)
 
 	const FamiliarForm form = getAmuletFamiliarForm(familiar);
 	enforceAmuletFamiliarFormFlags(familiar, form);
-	if ( form == FAMILIAR_FORM_MIMIC && ownerPlayer >= 0 && ownerPlayer < MAXPLAYERS
-		&& openedChest[ownerPlayer] == familiar )
+	// Shared Void Chests allow a guest to open another Witch's Mimic. The
+	// person who actually opened it (not the familiar's owner) controls the
+	// session distance/closure; otherwise a guest can leave it open remotely.
+	if ( form == FAMILIAR_FORM_MIMIC )
 	{
-		Entity* opener = players[ownerPlayer] ? players[ownerPlayer]->entity : nullptr;
-		if ( !opener || entityDist(familiar, opener) > TOUCHRANGE )
+		for ( int openerPlayer = 0; openerPlayer < MAXPLAYERS; ++openerPlayer )
 		{
-			familiar->closeChest();
+			if ( openedChest[openerPlayer] != familiar ) { continue; }
+			Entity* opener = players[openerPlayer] ? players[openerPlayer]->entity : nullptr;
+			if ( !opener || entityDist(familiar, opener) > TOUCHRANGE )
+			{
+				familiar->closeChest();
+			}
+			break; // the shared chest permits a single session at once
 		}
 	}
 	// Bat and Cauldron are invulnerable forms. Some effect paths write HP

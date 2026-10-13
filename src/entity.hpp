@@ -1162,6 +1162,7 @@ public:
 	int isEntityPlayer() const;
 	// mod add: Leonin racial mechanics
 	bool isNaturalLeoninPlayer() const;
+	bool isWraithPossessedDemonWithClaws() const;
 	bool isNaturalGolemPlayer() const;
 	bool isBlessedGolemPlayer() const;
 	bool isCursedGolemPlayer() const;

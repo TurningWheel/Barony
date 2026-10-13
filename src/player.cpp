@@ -1287,6 +1287,16 @@ bool Player::GUI_t::returnToPreviousActiveModule()
 Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation)
 {
 	auto& input = Input::inputs[player.playernum];
+	if ( GenericGUI[player.playernum].stewingGUI.bOpen )
+	{
+		// No bumper navigation into the underlying inventory while brewing.
+		if ( !checkDestinationOnly )
+		{
+			input.consumeBinaryToggle("UINavLeftBumper");
+			input.consumeBinaryToggle("UINavRightBumper");
+		}
+		return MODULE_NONE;
+	}
 	if ( player.shootmode || gamePaused || !inputs.hasController(player.playernum)
 		|| nohud || !player.isLocalPlayer() )
 	{
@@ -2134,6 +2144,13 @@ void Player::soundStatusClose()
 
 bool Player::GUI_t::handleInventoryMovement()
 {
+	// Stewing is modal; its own panel handles the controller grid and consumes
+	// navigation. Never let the inventory underneath also move its selection.
+	if ( GenericGUI[player.playernum].stewingGUI.bOpen
+		&& activeModule == MODULE_STEWING )
+	{
+		return true;
+	}
 	bool dpad_moved = false;
 
 	if ( inputs.getUIInteraction(player.playernum)->itemMenuOpen )
@@ -4208,13 +4225,15 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 			int monsterType = parent->getMonsterTypeFromSprite();
 			Stat* parentStats = parent->getStats();
 			const bool ownedFamiliarCauldron =
-				parentStats
-				&& player.entity
-				&& isAmuletFamiliar(parent, parentStats)
-				&& getAmuletFamiliarForm(parent) == FAMILIAR_FORM_CAULDRON
-				&& parentStats->leader_uid == player.entity->getUID();
+				(isAmuletFamiliar(parent, parentStats)
+					&& getAmuletFamiliarForm(parent) == FAMILIAR_FORM_CAULDRON)
+				// Client may receive the model before the familiar's
+				// identity/form skill packets. This sprite is dedicated
+				// to the Witch cauldron and is safe as a visual fallback.
+				|| parent->sprite == BAT_FAMILIAR_MODEL_CAULDRON;
+			const bool anyFamiliarMimic = isAmuletFamiliarMimic(parent);
 			const bool ownedFamiliarMimic =
-				isAmuletFamiliarMimic(parent)
+				anyFamiliarMimic
 				&& parentStats
 				&& player.entity
 				&& parentStats->leader_uid == player.entity->getUID();
@@ -4247,6 +4266,10 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 				{
 					interactText = Language::get(4005); // "Open chest"
 				}
+			}
+			else if ( anyFamiliarMimic )
+			{
+				interactText = Language::get(4005); // Shared Void Chest: "Open chest"
 			}
 			else if ( parent->isInertMimic() )
 			{

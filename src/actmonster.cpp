@@ -2905,6 +2905,23 @@ void actMonster(Entity* my)
 		}
 		else if (MONSTER_INIT)
 		{
+			// Position an occupied monster at its possessing player's *current*
+			// interpolated coordinates BEFORE monsterAnimate lays out the limbs.
+			// Translating the root/limbs after animation makes old bodypart
+			// coordinates persist or jitter on remote clients.
+			for ( int owner = 0; owner < MAXPLAYERS; ++owner )
+			{
+				if ( players[owner] && players[owner]->entity && stats[owner]
+					&& stats[owner]->playerRace == RACE_WRAITH
+					&& players[owner]->mechanics.wraith.possessedEntityUid == my->getUID() )
+				{
+					my->x = players[owner]->entity->x;
+					my->y = players[owner]->entity->y;
+					my->z = players[owner]->entity->z;
+					my->yaw = players[owner]->entity->yaw;
+					break;
+				}
+			}
 		    const auto dist = sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY);
 			monsterAnimate(my, nullptr, dist);
 
@@ -2912,6 +2929,59 @@ void actMonster(Entity* my)
 			{
 				my->handleEffectsClient();
 			}
+		}
+
+		// Wraith possession never hands monster AI control to the client.
+		// Keep the old monster at the interpolated player position AFTER its
+		// normal visual animation, which may otherwise restore stale transforms
+		// or make hidden limbs reappear following a floor transition.
+		for ( int possessor = 0; possessor < MAXPLAYERS; ++possessor )
+		{
+			if ( !players[possessor] || !players[possessor]->entity
+				|| !stats[possessor]
+				|| stats[possessor]->playerRace != RACE_WRAITH
+				|| players[possessor]->mechanics.wraith.possessedEntityUid != my->getUID() )
+			{
+				continue;
+			}
+			Entity* controlled = players[possessor]->entity;
+			const auto& wraith = players[possessor]->mechanics.wraith;
+			const bool transformed = (stats[possessor]->getEffectActive(EFF_SHAPESHIFT)
+				&& controlled->effectShapeshift != NOTHING)
+				|| (stats[possessor]->getEffectActive(EFF_POLYMORPH)
+					&& controlled->effectPolymorph != NOTHING);
+			const bool visualProxy = !transformed
+				&& wraithPossessionUsesMonsterVisualProxy(wraith.possessedType);
+			// Root and limbs were positioned together before monsterAnimate().
+			// Do not add any post-animation delta to the limbs: on the next tick
+			// that would be applied again and the proxy would appear to trail.
+			my->x = controlled->x;
+			my->y = controlled->y;
+			my->z = controlled->z;
+			my->yaw = controlled->yaw;
+			my->vel_x = 0.0;
+			my->vel_y = 0.0;
+			my->vel_z = 0.0;
+			my->flags[PASSABLE] = true;
+			my->flags[UNCLICKABLE] = true;
+			if ( !visualProxy )
+			{
+				my->flags[INVISIBLE] = true;
+				my->flags[INVISIBLE_DITHER] = false;
+				int bodypart = 0;
+				for ( node_t* childNode = my->children.first; childNode;
+					childNode = childNode->next, ++bodypart )
+				{
+					if ( bodypart < 2 ) { continue; }
+					Entity* limb = static_cast<Entity*>(childNode->element);
+					if ( limb )
+					{
+						limb->flags[INVISIBLE] = true;
+						limb->flags[INVISIBLE_DITHER] = false;
+					}
+				}
+			}
+			break;
 		}
 
 		// request entity update (check if I've been deleted)
@@ -3086,7 +3156,17 @@ void actMonster(Entity* my)
 		my->monsterState = MONSTER_STATE_WAIT;
 		const Monster effectiveProxyType =
 			wraithCanonicalPossessionType(myStats->type);
-		const bool visualProxy = wraithPossessionUsesMonsterVisualProxy(myStats->type);
+		bool visualProxy = wraithPossessionUsesMonsterVisualProxy(myStats->type);
+		for ( int player = 0; player < MAXPLAYERS; ++player )
+		{
+			if ( players[player]
+				&& players[player]->mechanics.wraith.possessedEntityUid == my->getUID()
+				&& wraithPossessionHasTemporaryFormOverride(player) )
+			{
+				visualProxy = false;
+				break;
+			}
+		}
 		const bool supportsAttackPresentation = visualProxy
 			&& wraithProxySupportsAttackPresentation(myStats->type);
 		if ( !supportsAttackPresentation )
@@ -3298,39 +3378,24 @@ void actMonster(Entity* my)
 			&& getAmuletFamiliarForm(my)
 				== FAMILIAR_FORM_CAULDRON )
 		{
-			int cauldronClicked = -1;
-
-			for ( int i = 0; i < MAXPLAYERS; ++i )
+			// Only the owning Witch may brew. Other players can still use
+			// the shared *Void Chest* through any Mimic, not this Cauldron.
+			// MONSTER_CLICKED is a fallback; don't let a stale click from a
+			// different player override a legitimate selectedEntity interaction.
+			Entity* owner = uidToEntity(myStats->leader_uid);
+			const int ownerPlayer = owner ? owner->isEntityPlayer() : -1;
+			if ( ownerPlayer >= 0 && ownerPlayer < MAXPLAYERS
+				&& players[ownerPlayer] && players[ownerPlayer]->entity
+				// Range is validated by openStewingCauldron() via entityDist.
+				// The generic familiar-command inrange flag can be stale here.
+				&& (selectedEntity[ownerPlayer] == my
+					|| client_selected[ownerPlayer] == my
+					|| MONSTER_CLICKED == ownerPlayer + 1) )
 			{
-				if ( (selectedEntity[i] == my
-						|| client_selected[i] == my)
-					&& inrange[i] )
-				{
-					cauldronClicked = i;
-					break;
-				}
+				openStewingCauldron(my, ownerPlayer);
 			}
+			if ( MONSTER_CLICKED ) { MONSTER_CLICKED = 0; }
 
-			if ( MONSTER_CLICKED )
-			{
-				cauldronClicked =
-					MONSTER_CLICKED - 1;
-
-				MONSTER_CLICKED = 0;
-			}
-
-			if ( cauldronClicked >= 0
-				&& cauldronClicked < MAXPLAYERS
-				&& players[cauldronClicked]
-				&& players[cauldronClicked]->entity
-				&& myStats->leader_uid
-					== players[cauldronClicked]
-						->entity->getUID() )
-			{
-				openStewingCauldron(
-					my,
-					cauldronClicked);
-			}
 		}
 
 		if ( updateAmuletFamiliarSpecialState(
@@ -4991,10 +5056,7 @@ void actMonster(Entity* my)
 	{
 		if ( isAmuletFamiliar(my, myStats) && getAmuletFamiliarForm(my) == FAMILIAR_FORM_MIMIC )
 		{
-			if ( myStats->leader_uid == players[monsterclicked]->entity->getUID() )
-			{
-				openAmuletFamiliarVoidChest(my, monsterclicked);
-			}
+			openAmuletFamiliarVoidChest(my, monsterclicked);
 			return;
 		}
 		if ( !my->isMobile() )
