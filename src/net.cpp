@@ -2379,6 +2379,27 @@ void clientActions(Entity* entity)
 			break;
 	}
 
+	// During Wraith possession the server deliberately sends sprite -1
+	// for the hidden player head and displays the occupied monster instead.
+	// ENTU resets the behavior before calling clientActions(), but a sprite
+	// of -1 cannot pass isPlayerHeadSprite(). Keep the existing, UID-bound
+	// player entity alive as actPlayer so its limbs and equipment continue
+	// following the networked player position. Do not infer player identity
+	// from arbitrary entity skill[2] fields; only trust the existing binding.
+	if ( entity->behavior == NULL && entity->sprite == -1 )
+	{
+		for ( int player = 0; player < MAXPLAYERS; ++player )
+		{
+			if ( players[player] && players[player]->entity == entity
+				&& stats[player] && stats[player]->playerRace == RACE_WRAITH )
+			{
+				entity->behavior = &actPlayer;
+				entity->skill[2] = player;
+				break;
+			}
+		}
+	}
+
 	// if the above method failed, we check the value of skill[2] (stored in net_packet->data[30]) and assign an action based on that
 	if ( entity->behavior == NULL )
 	{

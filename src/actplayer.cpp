@@ -10801,15 +10801,14 @@ void actPlayer(Entity* my)
 			my->sprite = WRAITH_MODEL_HEAD;
 		}
 	}
-	if ( multiplayer == CLIENT && (wraithMonsterVisualProxy || wraithPossessionFormOverride) )
+	// An occupied monster is already positioned by the server's ENTU stream.
+	// Do not move the proxy from this client's player entity: its last
+	// received position can be stale while the player head is hidden.
+	if ( multiplayer == CLIENT && wraithPossessionFormOverride )
 	{
 		if ( Entity* proxy = uidToEntity(
 			players[PLAYER_NUM]->mechanics.wraith.possessedEntityUid) )
 		{
-			proxy->x = my->x;
-			proxy->y = my->y;
-			proxy->z = my->z;
-			proxy->yaw = my->yaw;
 			// The monster's render entity is not a second body during a
 			// temporary form. Protect against delayed INVISIBLE/ENTB packets.
 			if ( wraithPossessionFormOverride )
@@ -19675,6 +19674,9 @@ bool Entity::isPlayerHeadSprite(const int sprite)
 		case LEONIN_MODEL_HEAD_FEMALE:
 		case GOLEM_MODEL_B_HEAD:
 		case GOLEM_MODEL_C_HEAD:
+		// A remote Wraith must stay classified as actPlayer when ENTU
+		// delivers its spirit head. Otherwise its limbs stop animating.
+		case WRAITH_MODEL_HEAD:
 			return true;
 			break;
 		default:

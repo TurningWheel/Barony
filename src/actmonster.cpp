@@ -2905,24 +2905,10 @@ void actMonster(Entity* my)
 		}
 		else if (MONSTER_INIT)
 		{
-			// Position an occupied monster at its possessing player's *current*
-			// interpolated coordinates BEFORE monsterAnimate lays out the limbs.
-			// Translating the root/limbs after animation makes old bodypart
-			// coordinates persist or jitter on remote clients.
-			for ( int owner = 0; owner < MAXPLAYERS; ++owner )
-			{
-				if ( players[owner] && players[owner]->entity && stats[owner]
-					&& stats[owner]->playerRace == RACE_WRAITH
-					&& players[owner]->mechanics.wraith.possessedEntityUid == my->getUID() )
-				{
-					my->x = players[owner]->entity->x;
-					my->y = players[owner]->entity->y;
-					my->z = players[owner]->entity->z;
-					my->yaw = players[owner]->entity->yaw;
-					break;
-				}
-			}
-		    const auto dist = sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY);
+			// An occupied monster is positioned by the host's normal ENTU
+			// updates. Do not snap it to the local view of the player here.
+			const auto dist = sqrt(MONSTER_VELX * MONSTER_VELX
+				+ MONSTER_VELY * MONSTER_VELY);
 			monsterAnimate(my, nullptr, dist);
 
 			if ( !intro )
@@ -2931,10 +2917,12 @@ void actMonster(Entity* my)
 			}
 		}
 
-		// Wraith possession never hands monster AI control to the client.
-		// Keep the old monster at the interpolated player position AFTER its
-		// normal visual animation, which may otherwise restore stale transforms
-		// or make hidden limbs reappear following a floor transition.
+		// The server drives the possessed monster's coordinates from the
+		// controlled player in updateWraithPossession(). Its regular ENTU
+		// stream then moves/interpolates this client-side visual proxy.
+		// Interfering with root or new_* positions here can either pull the
+		// monster back toward its spawn point or pin it in place. Keep only
+		// the presentation and non-interaction flags for this proxy.
 		for ( int possessor = 0; possessor < MAXPLAYERS; ++possessor )
 		{
 			if ( !players[possessor] || !players[possessor]->entity
@@ -2952,16 +2940,6 @@ void actMonster(Entity* my)
 					&& controlled->effectPolymorph != NOTHING);
 			const bool visualProxy = !transformed
 				&& wraithPossessionUsesMonsterVisualProxy(wraith.possessedType);
-			// Root and limbs were positioned together before monsterAnimate().
-			// Do not add any post-animation delta to the limbs: on the next tick
-			// that would be applied again and the proxy would appear to trail.
-			my->x = controlled->x;
-			my->y = controlled->y;
-			my->z = controlled->z;
-			my->yaw = controlled->yaw;
-			my->vel_x = 0.0;
-			my->vel_y = 0.0;
-			my->vel_z = 0.0;
 			my->flags[PASSABLE] = true;
 			my->flags[UNCLICKABLE] = true;
 			if ( !visualProxy )
