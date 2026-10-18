@@ -6,6 +6,9 @@ build/*
 **/items/*
 **/maps/*
 **/models/*
+!models/items/
+models/items/*
+!models/items/rune_hammer_positions.json
 **/music/*
 **/sound/*
 **/editor/*

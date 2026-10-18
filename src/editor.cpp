@@ -131,7 +131,7 @@ char summonTrapPropertyNames[7][44] =
 
 char itemPropertyNames[6][36] =
 {
-	"Item ID: (1-255)",
+	"Item ID: (1-current item list)",
 	"Status: (0-5)",
 	"Blessing: (-9 to +9)",
 	"Quantity: (1-99)",
@@ -170,7 +170,7 @@ char powerCrystalPropertyNames[4][39] =
 
 char monsterItemPropertyNames[7][36] =
 {
-	"Item ID: (0-255)",
+	"Item ID: (0-current item list)",
 	"Status: (0-5)",
 	"Blessing: (-9 to +9)",
 	"Quantity: (1-99)",
@@ -408,7 +408,19 @@ char wallButtonPropertyNames[2][49] =
 
 const char* playerClassLangEntry(int classnum, int playernum)
 {
-	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
+	if ( classnum == CLASS_WITCH ) // mod add
+	{
+		return "Witch";
+	}
+	else if ( classnum == CLASS_RUNESMITH ) // mod add
+	{
+		return "Runesmith";
+	}
+	else if ( classnum == CLASS_GUNSLINGER ) // mod add
+	{
+		return "Gunslinger";
+	}
+	else if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
 	{
 		return Language::get(1900 + classnum);
 	}
@@ -2116,6 +2128,13 @@ int main(int argc, char** argv)
 			auto* string = static_cast<string_t*>(node2->element);
 			*surface = loadImage(string->data);
 		}
+	}
+	// mod add: Names are compiled into the editor independently of items.json.
+	// Report missing Musket presentation data; drawWorld() safely retains the
+	// generic Item entity sprite until an items.json containing its icon is mounted.
+	if ( items[MUSKET].variations <= 0 || list_Size(&items[MUSKET].surfaces) <= 0 )
+	{
+		printlog("[EDITOR]: Musket ItemGeneric image data is unavailable; editor Item ID 528 will use generic sprite 8.");
 	}
 	loadTilePalettes();
 	EditorEntityData_t::readFromFile();
@@ -4629,7 +4648,9 @@ int main(int argc, char** argv)
 
 							if ( editproperty == 0 )
 							{
-								inputlen = 3;
+								//mod add: Custom item IDs are stored as Sint32 in .lmp files;
+								// do not retain the editor's old three-digit UI restriction.
+								inputlen = 10;
 								//update the item name when the ID changes.
 								if ( newwindow == 5 && atoi(spriteProperties[0]) == 1 )
 								{
@@ -4637,7 +4658,16 @@ int main(int argc, char** argv)
 								}
 								else
 								{
-									strcpy(itemName, itemNameStrings[atoi(spriteProperties[0])]);
+									const Sint32 editorItemID = static_cast<Sint32>(atoi(spriteProperties[0]));
+									if ( editorItemID >= 0 && editorItemID < NUM_ITEM_STRINGS
+										&& itemNameStrings[editorItemID][0] != '\0' )
+									{
+										strcpy(itemName, itemNameStrings[editorItemID]);
+									}
+									else
+									{
+										strcpy(itemName, "invalid_item");
+									}
 								}
 							}
 							else if( editproperty == 2 || editproperty == 3 )

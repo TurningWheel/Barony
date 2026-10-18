@@ -613,6 +613,10 @@
             "name_identified": "pair of glasses",
             "name_unidentified": "pair of glasses"
         },
+		"spyglass": {
+			"name_identified": "spyglass",
+			"name_unidentified": "spyglass"
+		},
         "tool_beartrap": {
             "name_identified": "beartrap",
             "name_unidentified": "beartrap"
@@ -2096,6 +2100,30 @@
 		"spellbook_dominate": {
             "name_identified": "spellbook of dominate",
             "name_unidentified": "spellbook"
+        },
+		"harpoon": {
+			"name_identified": "harpoon",
+			"name_unidentified": "harpoon"
+		},
+		"flintlock_pistol": {
+			"name_identified": "flintlock pistol",
+			"name_unidentified": "flintlock pistol"
+		},
+		"musket": {
+			"name_identified": "musket",
+			"name_unidentified": "musket"
+		},
+		"spellbook_entrench": {
+			"name_identified": "spellbook of entrench",
+			"name_unidentified": "spellbook"
+		},
+		"magic_rune": {
+			"name_identified": "magic rune",
+			"name_unidentified": "engraved gemstone"
+		},
+		"rune_hammer": {
+			"name_identified": "Rune Hammer",
+			"name_unidentified": "rune hammer"
         }
     },
 	"spell_names": {
@@ -2734,6 +2762,9 @@
 		},
 		"spell_holy_beam": {
 			"name": "Holy Beam"
+		},
+		"spell_entrench": {
+			"name": "Entrench"
 		}
     }
 }

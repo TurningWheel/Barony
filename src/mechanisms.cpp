@@ -19,6 +19,7 @@
 #include "scores.hpp"
 #include "mod_tools.hpp"
 #include "collision.hpp"
+#include "magic/magic.hpp"
 
 //Circuits do not overlap. They connect to all their neighbors, allowing for circuits to interfere with eachother.
 static ConsoleVariable<bool> cvar_wire_debug("/wire_debug", false);
@@ -2233,6 +2234,7 @@ bool entityInsideWind(Entity* entity1, Entity* wind)
 
 void Entity::actWind()
 {
+	ScopedSpellPowerOverride spellPowerScope(this, true);
 	if ( actWindLifetime > 0 )
 	{
 		--actWindLifetime;

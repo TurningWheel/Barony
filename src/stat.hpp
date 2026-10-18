@@ -156,6 +156,10 @@ static const int EFF_HOLY_FIRE = 131;
 static const int EFF_SIGIL = 132;
 static const int EFF_SANCTUARY = 133;
 static const int EFF_DUCKED = 134;
+// mod add: reserved custom player status effects; NUMEFFECTS already covers these slots.
+static const int EFF_PANICKING = 135;
+static const int EFF_DARKVISION = 136;
+static const int EFF_RETRACTABLE_CLAWS = 137;
 static const int NUMEFFECTS = 160;
 
 // stats
@@ -269,6 +273,8 @@ static const int STAT_FLAG_MONSTER_DISABLE_HC_SCALING = 26;
 static const int STAT_FLAG_HP_BONUS = 27;
 static const int STAT_FLAG_MP_BONUS = 28;
 static const int STAT_FLAG_ASSISTANCE_PLAYER_PTS = 29;
+static const int STAT_FLAG_MERROW_SCALE_COOLDOWN = 30; // mod add: Merrow reflecting scales
+static const int STAT_FLAG_MERROW_SCALE_DECAY_INTERVAL = 31; // mod add: Merrow scale grime decay
 
 typedef enum
 {
@@ -337,6 +343,16 @@ public:
 	Sint32 STR, DEX, CON, INT, PER, CHR;
 	Sint32 EXP, LVL;
 	Sint32 GOLD, HUNGER;
+	// Runtime ownership for a released/dead Wraith possession body.
+	Sint8 wraithFormerPossessor = -1;
+	bool wraithBodyLootChestSpawned = false;
+	// Natural Golem alignment, fixed point: 0 = fully cursed, 10000 = fully blessed.
+	Sint32 golemBlessedComposition = 10000;
+	// Stable identity for Rune creator credit. Persisted with the character so a
+	// later occupant of the same network slot cannot inherit that credit.
+	Uint32 runeCreatorIdentity = 0;
+	// Persistent, independently consumed level-up affinity boosts (STR..CHR).
+	Uint32 tinctureStacks[NUMSTATS];
 	// randomised additional values to add to attributes
 	Sint32 RANDOM_STR, RANDOM_DEX, RANDOM_CON, RANDOM_INT, RANDOM_PER, RANDOM_CHR;
 	Sint32 RANDOM_MAXHP, RANDOM_HP, RANDOM_MAXMP, RANDOM_MP;
@@ -499,8 +515,10 @@ public:
 	void setAttribute(std::string key, std::string value);
 	bool statusEffectRemovedByCureAilment(const int effect, Entity* my);
 	int numShillelaghDebuffsActive(Entity* my);
-	void addItemToLootingBag(const int player, const real_t x, const real_t y, Item& item);
+	void addItemToLootingBag(const int player, const real_t x, const real_t y, Item& item,
+		bool spawnOnGround = true);
 	Uint32 getLootingBagKey(const int player);
+	static bool allocateUniqueLootingBagKey(int player, Uint32& outKey);
 	static bool emptyLootingBag(const int player, Uint32 key);
 	static int maxEquipmentBonusToSkill;
 	enum EnsembleEffectsBonusType

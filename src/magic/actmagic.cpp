@@ -593,7 +593,7 @@ void actMagiclightBall(Entity* my)
 					{
 						lightball_timer = spell->channel_duration;
 					}
-					else if ( caster->safeConsumeMP(1) )
+					else if ( consumeSustainedSpellResource(caster, spell, 1) )
 					{
 						if ( caster->behavior == &actPlayer && !spell->magicstaff )
 						{
@@ -1037,6 +1037,80 @@ void spawnBloodVialOnMonsterDeath(Entity* entity, Stat* hitstats, Entity* killer
 	}
 }
 
+static bool applySpellSchoolSkillupAfterSuccessfulEvent(int recipientPlayer, const spell_t& spell)
+{
+	const int proficiency = stats[recipientPlayer]->getProficiency(spell.skillID);
+	int& procsToLevel = players[recipientPlayer]->mechanics.baseSpellLevelUpProcs[spell.ID];
+	const int highSkillProcsToLevel = std::max(0, proficiency - spell.difficulty) / 5;
+	const bool skillTooHigh = proficiency >= std::min(SKILL_LEVEL_LEGENDARY, spell.difficulty + 20);
+	if ( skillTooHigh && procsToLevel < highSkillProcsToLevel )
+	{
+		++procsToLevel;
+		return false;
+	}
+
+	players[recipientPlayer]->entity->increaseSkill(spell.skillID);
+	procsToLevel = 0;
+	return true;
+}
+
+bool magicOnGuaranteedSpellSchoolTraining(Entity* recipient, int spellID)
+{
+	if ( multiplayer == CLIENT || !recipient || recipient->behavior != &actPlayer )
+	{
+		return false;
+	}
+	const int recipientPlayer = recipient->skill[2];
+	spell_t* spell = getSpellFromID(spellID);
+	if ( recipientPlayer < 0 || recipientPlayer >= MAXPLAYERS || !spell
+		|| spell->skillID <= 0 || !players[recipientPlayer] || !stats[recipientPlayer]
+		|| players[recipientPlayer]->entity != recipient )
+	{
+		return false;
+	}
+	return applySpellSchoolSkillupAfterSuccessfulEvent(recipientPlayer, *spell);
+}
+
+static bool tryRuneSpellSchoolSkillup(int recipientPlayer, const spell_t& spell,
+	Uint32 eventType, bool allowedLevelup, int chanceDenominatorMultiplier)
+{
+	if ( !allowedLevelup || recipientPlayer < 0 || recipientPlayer >= MAXPLAYERS
+		|| !players[recipientPlayer] || !stats[recipientPlayer] || !players[recipientPlayer]->entity
+		|| spell.skillID <= 0 || chanceDenominatorMultiplier <= 0 )
+	{
+		return false;
+	}
+
+	const int proficiency = stats[recipientPlayer]->getProficiency(spell.skillID);
+	int chance = 4 + proficiency / 20;
+	if ( eventType & spell_t::SPELL_LEVEL_EVENT_SHAPESHIFT
+		|| eventType & spell_t::SPELL_LEVEL_EVENT_SUMMON )
+	{
+		chance /= 2;
+	}
+	if ( eventType & spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE )
+	{
+		chance += 8;
+	}
+	chance = std::max(2,
+		chance - players[recipientPlayer]->mechanics.baseSpellLevelChance(spell.skillID));
+	if ( eventType & spell_t::SPELL_LEVEL_EVENT_ALWAYS )
+	{
+		chance = 1;
+	}
+	chance *= chanceDenominatorMultiplier;
+
+	const real_t percentChance = 100.0 / chance;
+	if ( !players[recipientPlayer]->mechanics.rollRngProc(
+		Player::PlayerMechanics_t::RngRollTypes::RNG_ROLL_SPELL_LEVELS,
+		std::max(1, std::min(100, static_cast<int>(percentChance))), spell.ID) )
+	{
+		return false;
+	}
+
+	return applySpellSchoolSkillupAfterSuccessfulEvent(recipientPlayer, spell);
+}
+
 bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity, int spellID, Uint32 eventType, int eventValue, bool allowedLevelup)
 {
 	if ( !parent )
@@ -1047,6 +1121,29 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 	if ( parent->behavior != &actPlayer )
 	{
 		return false;
+	}
+
+	Sint8 runeCreatorPlayer = Item::RUNE_CREATOR_INVALID;
+	Uint32 runeInstanceId = Item::RUNE_INSTANCE_ID_INVALID;
+	Uint32 runeCreatorIdentity = Item::RUNE_CREATOR_IDENTITY_INVALID;
+	bool runeEvent = getActiveRuneCastSource(runeCreatorPlayer, &runeInstanceId,
+		&runeCreatorIdentity);
+	if ( !runeEvent && projectile && projectile->magicCastFromRune )
+	{
+		runeEvent = true;
+		runeCreatorPlayer = projectile->magicRuneCreatorPlayer;
+		runeInstanceId = projectile->magicRuneInstanceId;
+		runeCreatorIdentity = projectile->magicRuneCreatorIdentity;
+	}
+	if ( runeEvent )
+	{
+		eventType |= spell_t::SPELL_LEVEL_EVENT_RUNE;
+	}
+	else if ( eventType & spell_t::SPELL_LEVEL_EVENT_RUNE )
+	{
+		// An event flag without authoritative scoped/entity provenance is still a
+		// Rune event, but has no trusted creator and therefore cannot train anyone.
+		runeEvent = true;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -1061,10 +1158,11 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 				SDLNet_Write16(spellID, &net_packet->data[5]);
 				SDLNet_Write32(eventType, &net_packet->data[7]);
 				SDLNet_Write32(eventValue, &net_packet->data[11]);
+				SDLNet_Write32(runeEvent ? runeInstanceId : 0, &net_packet->data[15]);
 
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
-				net_packet->len = 15;
+				net_packet->len = 19;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
 		}
@@ -1216,7 +1314,8 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 			if ( tag != spell_t::SPELL_LEVEL_EVENT_MAGICSTAFF 
 				&& tag != spell_t::SPELL_LEVEL_EVENT_SPELLBOOK 
 				&& tag != spell_t::SPELL_LEVEL_EVENT_MINOR_CHANCE
-				&& tag != spell_t::SPELL_LEVEL_EVENT_ALWAYS )
+				&& tag != spell_t::SPELL_LEVEL_EVENT_ALWAYS
+				&& tag != spell_t::SPELL_LEVEL_EVENT_RUNE )
 			{
 				bool found = spellDef.spellLevelTags.find((spell_t::SpellOnCastEventTypes)tag) != spellDef.spellLevelTags.end();
 				assert(found);
@@ -1226,6 +1325,28 @@ bool magicOnSpellCastEvent(Entity* parent, Entity* projectile, Entity* hitentity
 
 	bool nothingElseToLearnMsg = false;
 	bool skillIncreased = false;
+	if ( runeEvent )
+	{
+		const bool creatorValid = runeCreatorPlayer >= 0
+			&& runeCreatorPlayer < MAXPLAYERS && players[runeCreatorPlayer]
+			&& stats[runeCreatorPlayer] && players[runeCreatorPlayer]->entity
+			&& (players[runeCreatorPlayer]->isLocalPlayer()
+				|| !client_disconnected[runeCreatorPlayer])
+			&& runeCreatorIdentity != Item::RUNE_CREATOR_IDENTITY_INVALID
+			&& stats[runeCreatorPlayer]->runeCreatorIdentity == runeCreatorIdentity;
+		if ( creatorValid && runeCreatorPlayer == player )
+		{
+			return tryRuneSpellSchoolSkillup(player, *spell, eventType, allowedLevelup, 2);
+		}
+
+		skillIncreased = tryRuneSpellSchoolSkillup(player, *spell, eventType, allowedLevelup, 4);
+		if ( creatorValid )
+		{
+			skillIncreased = tryRuneSpellSchoolSkillup(runeCreatorPlayer, *spell,
+				eventType, allowedLevelup, 4) || skillIncreased;
+		}
+		return skillIncreased;
+	}
 
 	if ( spell->skillID > 0 )
 	{
@@ -1790,6 +1911,8 @@ bool absorbMagicEvent(Entity* entity, Entity* parent, Entity& damageSourceProjec
 	{
 		if ( parentStats->getEffectActive(EFF_ABSORB_MAGIC) > 1 && spellID > SPELL_NONE )
 		{
+			spell_t* activeSpell = parent->getActiveMagicEffect(SPELL_ABSORB_MAGIC);
+			ScopedSpellPowerOverride spellPowerScope(activeSpell, true);
 			if ( entity->behavior == &actMonster && parent && !entity->monsterAllyGetPlayerLeader() )
 			{
 				if ( auto spell = getSpellFromID(spellID) )
@@ -1894,6 +2017,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 	{
 		return;
 	}
+	ScopedSpellPowerOverride spellPowerScope(spell);
 	//node_t *node = NULL;
 	spellElement_t* element = NULL;
 	node_t* node = NULL;
@@ -2412,6 +2536,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						reflection = 0;
 					}
+					// mod add: Merrow reflecting scales
+					if ( reflection == 4 && multiplayer != CLIENT )
+					{
+						if ( !hit.entity->consumeMerrowReflectingScale() )
+						{
+							// Safety check: if the scale disappeared before the hit
+							// was resolved, do not reflect the spell.
+							reflection = 0;
+						}
+					}
+					// mod add end
 					if ( reflection == 3 && hitstats->shield 
 						&& (hitstats->shield->type == MIRROR_SHIELD || hitstats->getEffectActive(EFF_REFLECTOR_SHIELD) > 0) && hitstats->defending )
 					{
@@ -2786,12 +2921,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						int spellCost = getCostOfSpell(spell) + 5 + local_rng.rand() % 6;
 						bool unsustain = false;
-						if ( spellCost >= hit.entity->getMP() ) //Unsustain the spell if expended all mana.
+						if ( spellIsReflectingMagic->runeInstanceId != 0 )
 						{
-							unsustain = true;
+							unsustain = !consumeSustainedSpellResource(hit.entity,
+								spellIsReflectingMagic, spellCost);
 						}
-
-						hit.entity->drainMP(spellCost);
+						else
+						{
+							if ( spellCost >= hit.entity->getMP() ) //Unsustain the spell if expended all mana.
+							{
+								unsustain = true;
+							}
+							hit.entity->drainMP(spellCost);
+						}
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z / 2, 174);
 						playSoundEntity(hit.entity, 166, 128); //TODO: Custom sound effect?
 
@@ -3048,6 +3190,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 				}
 
+				real_t amplifyMagicMultiplier = 1.0;
+				if ( parent && my->actmagicIsOrbiting == 2 && my->actmagicOrbitCastFromSpell == 1 )
+				{
+					spell_t* activeSpell = parent->getActiveMagicEffect(SPELL_AMPLIFY_MAGIC);
+					ScopedSpellPowerOverride amplifyPowerScope(activeSpell, true);
+					amplifyMagicMultiplier = getSpellDamageFromID(SPELL_AMPLIFY_MAGIC, parent, nullptr, parent) / 100.0;
+					amplifyMagicMultiplier = std::min(amplifyMagicMultiplier,
+						getSpellDamageSecondaryFromID(SPELL_AMPLIFY_MAGIC, parent, nullptr, parent) / 100.0);
+				}
+
 				int damageTmp = 0;
 				Sint32 preResistanceDamageTmp = 0;
 				{
@@ -3073,9 +3225,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								if ( parent && my->actmagicOrbitCastFromSpell == 1 )
 								{
 									// cast through amplify magic effect
-									real_t mult = getSpellDamageFromID(SPELL_AMPLIFY_MAGIC, parent, nullptr, my) / 100.0;
-									mult = std::min(mult, getSpellDamageSecondaryFromID(SPELL_AMPLIFY_MAGIC, parent, nullptr, my) / 100.0);
-									magicDmg *= mult;
+									magicDmg *= amplifyMagicMultiplier;
 								}
 								magicDmg = magicDmg - local_rng.rand() % ((magicDmg / 8) + 1);
 							}
@@ -3106,9 +3256,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									else if ( parent && my->actmagicOrbitCastFromSpell == 1 )
 									{
 										// cast through amplify magic effect
-										real_t mult = getSpellDamageFromID(SPELL_AMPLIFY_MAGIC, parent, nullptr, my) / 100.0;
-										mult = std::min(mult, getSpellDamageSecondaryFromID(SPELL_AMPLIFY_MAGIC, parent, nullptr, my) / 100.0);
-										magicDmg *= mult;
+										magicDmg *= amplifyMagicMultiplier;
 									}
 									else
 									{
@@ -3144,9 +3292,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									else if ( parent && my->actmagicOrbitCastFromSpell == 1 )
 									{
 										// cast through amplify magic effect
-										real_t mult = getSpellDamageFromID(SPELL_AMPLIFY_MAGIC, parent, nullptr, my) / 100.0;
-										mult = std::min(mult, getSpellDamageSecondaryFromID(SPELL_AMPLIFY_MAGIC, parent, nullptr, my) / 100.0);
-										magicDmg *= mult;
+										magicDmg *= amplifyMagicMultiplier;
 									}
 									else
 									{
@@ -3182,9 +3328,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									else if ( parent && my->actmagicOrbitCastFromSpell == 1 )
 									{
 										// cast through amplify magic effect
-										real_t mult = getSpellDamageFromID(SPELL_AMPLIFY_MAGIC, parent, nullptr, my) / 100.0;
-										mult = std::min(mult, getSpellDamageSecondaryFromID(SPELL_AMPLIFY_MAGIC, parent, nullptr, my) / 100.0);
-										magicDmg *= mult;
+										magicDmg *= amplifyMagicMultiplier;
 									}
 									else
 									{
@@ -3230,9 +3374,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											if ( parent && my->actmagicOrbitCastFromSpell == 1 )
 											{
 												// cast through amplify magic effect
-												real_t mult = getSpellDamageFromID(SPELL_AMPLIFY_MAGIC, parent, nullptr, my) / 100.0;
-												mult = std::min(mult, getSpellDamageSecondaryFromID(SPELL_AMPLIFY_MAGIC, parent, nullptr, my) / 100.0);
-												extraDamage *= mult;
+												extraDamage *= amplifyMagicMultiplier;
 											}
 										}
 										magicDmg += std::max(1, extraDamage);
@@ -3359,6 +3501,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 				if ( hit.entity && hitstats && hitstats->getEffectActive(EFF_ABSORB_MAGIC) )
 				{
+					spell_t* activeSpell = hit.entity->getActiveMagicEffect(SPELL_ABSORB_MAGIC);
+					ScopedSpellPowerOverride absorbPowerScope(activeSpell, true);
 					Uint8 effectStrength = hitstats->getEffectActive(EFF_ABSORB_MAGIC);
 					if ( effectStrength >= 101 )
 					{
@@ -3458,7 +3602,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							Sint32 oldHP = hitstats->HP;
-							hit.entity->modHP(-damage);
+							hit.entity->modHP(-damage, parent);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
@@ -3916,7 +4060,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								playSoundEntity(hit.entity, 28, 128);
 
 								Sint32 oldHP = hitstats->HP;
-								hit.entity->modHP(-damage);
+								hit.entity->modHP(-damage, parent);
 								magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 								magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 								int numGibs = damage / 2;
@@ -4259,7 +4403,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							int oldHP = hitstats->HP;
-							hit.entity->modHP(-damage);
+							hit.entity->modHP(-damage, parent);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 							//for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
@@ -4608,7 +4752,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int oldHP = hitstats->HP;
 							if ( damage > 0 )
 							{
-								hit.entity->modHP(-damage);
+								hit.entity->modHP(-damage, parent);
 								magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 								Entity* gib = spawnGib(hit.entity);
 								serverSpawnGibForClient(gib);
@@ -5052,7 +5196,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 28, 128);
 
 							int oldHP = hitstats->HP;
-							hit.entity->modHP(-damage);
+							hit.entity->modHP(-damage, parent);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
@@ -5588,7 +5732,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 
-							hit.entity->modHP(-damage);
+							hit.entity->modHP(-damage, parent);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
@@ -6538,7 +6682,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							
 							Sint32 oldHP = hitstats->HP;
-							hit.entity->modHP(-damage);
+							hit.entity->modHP(-damage, parent);
 							magicOnEntityHit(parent, my, hit.entity, hitstats, preResistanceDamage, damage, oldHP, spell ? spell->ID : SPELL_NONE);
 							magicTrapOnHit(parent, hit.entity, hitstats, oldHP, spell ? spell->ID : SPELL_NONE);
 
@@ -6710,7 +6854,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					Entity *caster = uidToEntity(spell->caster);
 					if ( caster )
 					{
-						if ( spellEffectDominate(*my, *element, *caster, parent) )
+						if ( spellEffectDominate(*my, *element, *caster, parent, spell) )
 						{
 							//Success
 							magicOnEntityHit(parent, my, hit.entity, hitstats, 0, 0, 0, spell ? spell->ID : SPELL_NONE);
@@ -10163,13 +10307,16 @@ Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int s
 	entity->parent = (parent->getUID());
 	entity->yaw = parent->yaw + PI; // face towards the caster.
 	entity->skill[0] = 45;
-	entity->skill[2] = -13; // so clients know my behavior.
+	// -13 is the vanilla sap-center behavior. Harpoon returns use -17 so
+	// multiplayer clients can identify them from the ENTU packet itself;
+	// skill[10] is not carried by ENTU.
+	entity->skill[2] = (target->skill[10] == HARPOON) ? -17 : -13;
 	entity->skill[3] = 0; // init
 	entity->skill[4] = sprite; // visible sprites.
 	entity->skill[5] = endSprite; // sprite to spawn on return to caster.
 	entity->skill[6] = spell;
 	entity->behavior = &actParticleSapCenter;
-	if ( target->sprite == 977 )
+	if ( target->sprite == 977  || target->skill[10] == HARPOON ) //mod add harpoon
 	{
 		// boomerang.
 		entity->yaw = target->yaw;
@@ -10177,7 +10324,16 @@ Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int s
 		entity->pitch = target->pitch;
 		entity->z = target->z;
 	}
-	entity->flags[INVISIBLE] = true;
+	//mod add: exclude harpoon
+	if ( target->skill[10] == HARPOON ) 
+	{
+		entity->flags[INVISIBLE] = false;
+	}
+	else
+	{
+    	entity->flags[INVISIBLE] = true;
+	}
+	//mod add end
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = true;
 	entity->flags[UNCLICKABLE] = true;
@@ -10920,6 +11076,7 @@ Entity* floorMagicSetLightningParticle(Entity* my)
 
 void actParticleTimer(Entity* my)
 {
+	ScopedSpellPowerOverride spellPowerScope(my);
 	if ( PARTICLE_LIFE < 0 )
 	{
 		if ( multiplayer != CLIENT )
@@ -14079,12 +14236,20 @@ void actParticleSap(Entity* my)
 
 void actParticleSapCenter(Entity* my)
 {
+	// skill[10] is not included in the normal ENTU spawn packet. Clients can
+	// still identify the Harpoon return entity from its unique item sprite.
+	const bool isHarpoonReturn =
+		(my->skill[10] == HARPOON || my->sprite == items[HARPOON].index);
+
 	// init
 	if ( my->skill[3] == 0 )
 	{
 		// for clients and server spawn the visible arcing particles.
 		my->skill[3] = 1;
-		createParticleSap(my);
+		if ( !isHarpoonReturn )
+		{
+			createParticleSap(my);
+		}
 	}
 
 	if ( multiplayer == CLIENT )
@@ -14095,6 +14260,109 @@ void actParticleSapCenter(Entity* my)
 	Entity* parent = uidToEntity(my->parent);
 	if ( parent )
 	{
+		// mod add: short pause before retracting Harpoon
+    	if ( my->skill[10] == HARPOON && my->ticks < 30 )
+    	{
+        	return;
+    	}
+    	// mod add end
+		// mod add: Harpoon yank on retract
+		if ( my->skill[10] == HARPOON && my->skill[7] != 0 )
+		{
+			Entity* hookedTarget = uidToEntity(my->skill[7]);
+
+			if ( hookedTarget
+				&& (hookedTarget->behavior == &actMonster
+					|| hookedTarget->behavior == &actPlayer) )
+			{
+				Stat* hookedStats = hookedTarget->getStats();
+
+				if ( hookedStats && hookedStats->HP > 0 )
+				{
+					// Apply bleed once, when retract starts.
+					// Chance scales with Ranged proficiency:
+					// 0-100 Ranged -> 0-50% bleed chance.
+					if ( my->ticks == 30 )
+					{
+						Stat* parentStats = parent->getStats();
+
+						if ( parentStats )
+						{
+							int bleedChance =
+								parentStats->getModifiedProficiency(PRO_RANGED) / 2;
+
+							if ( local_rng.rand() % 100 < bleedChance )
+							{
+								if ( hookedTarget->setEffect(
+									EFF_BLEEDING,
+									true,
+									5 * TICKS_PER_SECOND,
+									false) )
+								{
+									hookedStats->bleedInflictedBy = parent->getUID();
+								}
+							}
+						}
+					}
+					
+					bool canHarpoonPull = true;
+
+					// Match vanilla EFF_KNOCKBACK immunity.
+					if ( (hookedStats->type >= LICH && hookedStats->type < KOBOLD)
+						|| hookedStats->type == LICH_FIRE
+						|| hookedStats->type == LICH_ICE )
+					{
+						canHarpoonPull = false;
+					}
+
+					// Pull smoothly every tick AFTER the pause.
+					if ( my->ticks >= 30 && canHarpoonPull )
+					{
+						real_t dx = parent->x - hookedTarget->x;
+						real_t dy = parent->y - hookedTarget->y;
+						real_t dist = sqrt(dx * dx + dy * dy);
+
+						// Don't drag enemy directly inside player.
+						if ( dist > 12.0 )
+						{
+							real_t pullDirection = atan2(dy, dx);
+
+							// THIS is now your pull-speed balancing value.
+							real_t pullSpeed = 3.0;
+
+							real_t step = std::min<real_t>(
+								pullSpeed,
+								dist - 12.0
+							);
+
+							clipMove(
+								&hookedTarget->x,
+								&hookedTarget->y,
+								cos(pullDirection) * step,
+								sin(pullDirection) * step,
+								hookedTarget
+							);
+
+							// Force vanilla AI to regenerate the pursuit path from here.
+							if ( hookedTarget->behavior == &actMonster
+								&& hookedTarget->monsterState == MONSTER_STATE_HUNT
+								&& hookedTarget->monsterTarget != 0 )
+							{
+								hookedTarget->monsterState = MONSTER_STATE_PATH;
+							}
+						}
+					}
+				}
+			}
+		}
+		// mod add end
+		// mod add: remember Harpoon owner's last position in case they die
+		if ( my->skill[10] == HARPOON )
+		{
+			my->fskill[4] = parent->x;
+			my->fskill[5] = parent->y;
+		}
+		// mod add end
 		// if reached the caster, delete self and spawn some particles.
 		if ( my->sprite == 977 && PARTICLE_LIFE > 1 )
 		{
@@ -14190,16 +14458,31 @@ void actParticleSapCenter(Entity* my)
 					spellEffectFear(nullptr, spellElement_fear, caster, parent, 0);
 				}
 			}
-			else if ( my->sprite == 977 ) // boomerang
+			else if ( my->sprite == 977  || my->skill[10] == HARPOON ) // boomerang // mod add harpoon
 			{
+				bool isBoomerang = (my->sprite == 977); 	//mod add: differentiate between boomerang and harpoon
+				bool isHarpoon = (my->skill[10] == HARPOON); //
+
 				Item* item = newItemFromEntity(my);
 				if ( parent->behavior == &actPlayer )
 				{
 					item->ownerUid = parent->getUID();
 					Item* pickedUp = itemPickup(parent->skill[2], item);
 					Uint32 color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, Language::get(3746), items[item->type].getUnidentifiedName());
-					achievementObserver.awardAchievementIfActive(parent->skill[2], parent, AchievementObserver::BARONY_ACH_IF_YOU_LOVE_SOMETHING);
+					
+					if ( isHarpoon ) //mod add: change message when harpoon returns
+					{
+						    messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, "You pulled the harpoon back!");
+					}
+					else
+					{
+						messagePlayerColor(parent->skill[2], MESSAGE_EQUIPMENT, color, Language::get(3746), items[item->type].getUnidentifiedName());
+					}
+					
+					if ( isBoomerang ) //mod add: prevent achievement if harpoon
+					{
+						achievementObserver.awardAchievementIfActive(parent->skill[2], parent, AchievementObserver::BARONY_ACH_IF_YOU_LOVE_SOMETHING);
+					} //mod add
 					if ( pickedUp )
 					{
 						if ( parent->skill[2] == 0 || (parent->skill[2] > 0 && splitscreen) )
@@ -14211,21 +14494,42 @@ void actParticleSapCenter(Entity* my)
 							{
 								useItem(pickedUp, parent->skill[2]);
 							}
+							//mod add: added harpoon
 							auto& hotbar_t = players[parent->skill[2]]->hotbar;
-							if ( hotbar_t.magicBoomerangHotbarSlot >= 0 )
+
+							int returnHotbarSlot = -1;
+							
+							if ( isBoomerang )
 							{
-								auto& hotbar = hotbar_t.slots();
-								hotbar[hotbar_t.magicBoomerangHotbarSlot].item = pickedUp->uid;
-								for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
-								{
-									if ( i != hotbar_t.magicBoomerangHotbarSlot
-										&& hotbar[i].item == pickedUp->uid )
-									{
-										hotbar[i].item = 0;
-										hotbar[i].resetLastItem();
-									}
-								}
+							    returnHotbarSlot = hotbar_t.magicBoomerangHotbarSlot;
 							}
+							else if ( isHarpoon )
+							{
+							    returnHotbarSlot = hotbar_t.harpoonHotbarSlot;
+							}
+
+							if ( returnHotbarSlot >= 0 )
+							{
+							    auto& hotbar = hotbar_t.slots();
+
+    							hotbar[returnHotbarSlot].item = pickedUp->uid;
+
+    							for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+    							{
+    							    if ( i != returnHotbarSlot
+    							        && hotbar[i].item == pickedUp->uid )
+    							    {
+    							        hotbar[i].item = 0;
+							            hotbar[i].resetLastItem();
+    							    }
+    							}
+
+    							if ( isHarpoon )
+    							{
+    							    hotbar_t.harpoonHotbarSlot = -1;
+    							}
+							}
+							//mod add end
 						}
 						else
 						{
@@ -14256,7 +14560,22 @@ void actParticleSapCenter(Entity* my)
 		// calculate direction to caster and move.
 		real_t tangent = atan2(parent->y - my->y, parent->x - my->x);
 		real_t dist = sqrt(pow(my->x - parent->x, 2) + pow(my->y - parent->y, 2));
-		real_t speed = dist / std::max(PARTICLE_LIFE, 1);
+		//mod add: harpoon retraction speed
+		real_t speed;
+
+		if ( my->skill[10] == HARPOON )
+		{
+    		speed = std::min<real_t>(6.0, dist);
+
+   			my->yaw = tangent;
+			my->pitch = PI / 2;
+    		my->roll = 0.0;
+		}
+		else
+		{
+			speed = dist / std::max(PARTICLE_LIFE, 1); //usual
+		}
+		//mod add end
 		my->vel_x = speed * cos(tangent);
 		my->vel_y = speed * sin(tangent);
 		my->x += my->vel_x;
@@ -14453,13 +14772,29 @@ void actParticleSapCenter(Entity* my)
 			list_RemoveNode(my->mynode);
 			return;
 		}
-		else if ( my->sprite == 977 )
+		else if ( my->sprite == 977 || my->skill[10] == HARPOON ) //mod add harpoon
 		{
 			// calculate direction to caster and move.
 			real_t tangent = atan2(my->fskill[5] - my->y, my->fskill[4] - my->x);
 			real_t dist = sqrt(pow(my->x - my->fskill[4], 2) + pow(my->y - my->fskill[5], 2));
-			real_t speed = dist / std::max(PARTICLE_LIFE, 1);
+			//mod add harpoon
+			real_t speed;
 
+			if ( my->skill[10] == HARPOON )
+			{
+				// use normal Harpoon retract speed
+				speed = std::min<real_t>(6.0, dist);
+
+				my->yaw = tangent;
+				my->pitch = PI / 2;
+				my->roll = 0.0;
+			}
+			else
+			{
+				// vanilla Boomerang
+				speed = dist / std::max(PARTICLE_LIFE, 1);
+			}
+			//mod add add
 			if ( dist < 4 || (abs(my->fskill[5]) < 0.001 && abs(my->fskill[4]) < 0.001) )
 			{
 				// reached goal, or goal not set then spawn the item.
@@ -19636,7 +19971,8 @@ void radiusMagicSetUID(Entity& fx, bool noupdate)
 	fx.skill[2] = val;
 }
 
-Entity* createRadiusMagic(int spellID, Entity* caster, real_t x, real_t y, real_t radius, Uint32 lifetime, Entity* follow)
+Entity* createRadiusMagic(int spellID, Entity* caster, real_t x, real_t y, real_t radius,
+	Uint32 lifetime, Entity* follow, Uint32 runeInstanceId)
 {
 	if ( !caster )
 	{
@@ -19773,6 +20109,7 @@ Entity* createRadiusMagic(int spellID, Entity* caster, real_t x, real_t y, real_
 	entity->parent = caster->getUID();
 	entity->actRadiusMagicID = spellID;
 	entity->actRadiusMagicDist = radius;
+	entity->actRadiusMagicRuneInstanceId = runeInstanceId;
 	if ( follow )
 	{
 		entity->actRadiusMagicFollowUID = follow->getUID();
@@ -19859,6 +20196,7 @@ void actRadiusMagicOnFade(Entity* my)
 
 void actRadiusMagic(Entity* my)
 {
+	ScopedSpellPowerOverride spellPowerScope(my);
 	Entity* caster = nullptr;
 	if ( multiplayer != CLIENT )
 	{
@@ -20689,6 +21027,7 @@ void actRadiusMagic(Entity* my)
 					if ( caster && caster->behavior == &actPlayer )
 					{
 						effectStrength |= ((caster->skill[2] + 1) << 4);
+						if ( my->actRadiusMagicRuneInstanceId != 0 ) { effectStrength |= 0x80; }
 					}
 					else
 					{

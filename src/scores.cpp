@@ -27,6 +27,9 @@
 #include "mod_tools.hpp"
 #include "lobbies.hpp"
 #include "shops.hpp"
+#include "scrolls.hpp"
+#include <cerrno>
+#include <sstream>
 #ifdef USE_PLAYFAB
 #include "playfab.hpp"
 #endif
@@ -2758,7 +2761,9 @@ void setDefaultPlayerConducts()
 		clientLearnedAlchemyIngredients[c].clear();
 		clientLearnedAlchemyRecipes[c].clear();
 		clientLearnedScrollLabels[c].clear();
+		setStewingRecipeUnlockMask(c, 0);
 	}
+	setActiveStewingGeneratorVersion(STEWING_GENERATOR_VERSION);
 	achievementObserver.clearPlayerAchievementData();
 }
 
@@ -4545,7 +4550,9 @@ std::set<ItemType> AchievementObserver::PlayerAchievements::startingClassItems =
 	HOOD_TEAL,
 	MASK_PIPE,
 	HAT_PLUMED_CAP,
-	CHAIN_COIF
+	CHAIN_COIF,
+	MASK_STEEL_VISOR, // Runesmith starting mask
+	IRON_HELM // Runesmith starting helmet
 	/*,
 	HAT_CIRCLET_WISDOM*/
 };
@@ -5441,6 +5448,14 @@ void SaveGameInfo::computeHash(const int playernum, Uint32& hash)
 		hash += (Uint32)((Uint32)stats->LVL << (shift % 32)); ++shift;
 		hash += (Uint32)((Uint32)stats->GOLD << (shift % 32)); ++shift;
 		hash += (Uint32)((Uint32)stats->HUNGER << (shift % 32)); ++shift;
+		if ( stats->rune_creator_identity != 0 )
+		{
+			hash += (Uint32)(stats->rune_creator_identity << (shift % 32)); ++shift;
+		}
+		for ( auto stack : stats->tincture_stacks )
+		{
+			hash += static_cast<Uint32>(stack << (shift % 32)); ++shift;
+		}
 
 		for ( auto k : stats->PROFICIENCIES )
 		{
@@ -5551,6 +5566,290 @@ void SaveGameInfo::Player::stat_t::item_t::computeHash(Uint32& hash, Uint32& shi
 	hash += (Uint32)((Uint32)identified << (shift % 32)); ++shift;
 	hash += (Uint32)((Uint32)x << (shift % 32)); ++shift;
 	hash += (Uint32)((Uint32)y << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)runeStoredPWR << (shift % 32)); ++shift;
+	hash += (Uint32)((Uint32)runeCreatorPlayer << (shift % 32)); ++shift;
+	// Optional metadata must not perturb the legacy hash layout when absent.
+	if ( runeInstanceId != 0 ) { hash += (Uint32)(runeInstanceId << (shift % 32)); ++shift; }
+	if ( runeCreatorIdentity != 0 ) { hash += (Uint32)(runeCreatorIdentity << (shift % 32)); ++shift; }
+	if ( appliedOil != 0 ) { hash += (Uint32)(appliedOil << (shift % 32)); ++shift; }
+	const bool hasIngredientCounts = ingredientCounts[0] != 0 || ingredientCounts[1] != 0
+		|| ingredientCounts[2] != 0 || ingredientCounts[3] != 0;
+	if ( hasIngredientCounts )
+	{
+		for ( int slot = 0; slot < 4; ++slot )
+		{
+			const Uint32 taggedCount = ingredientCounts[slot] ^ (0x9e3779b9u * (slot + 1));
+			hash += static_cast<Uint32>(taggedCount << (shift % 32));
+			++shift;
+		}
+	}
+	if ( familiarInitialized || familiarInstanceId != 0 )
+	{
+		const Uint32 familiarFields[] = {
+			familiarInitialized ? 1u : 0u, familiarInstanceId,
+			static_cast<Uint32>(familiarHP), static_cast<Uint32>(familiarMAXHP),
+			static_cast<Uint32>(familiarMP), static_cast<Uint32>(familiarMAXMP),
+			static_cast<Uint32>(familiarLVL), static_cast<Uint32>(familiarEXP),
+			static_cast<Uint32>(familiarSTR), static_cast<Uint32>(familiarDEX),
+			static_cast<Uint32>(familiarCON), static_cast<Uint32>(familiarINT),
+			static_cast<Uint32>(familiarPER), static_cast<Uint32>(familiarCHR)
+		};
+		for ( Uint32 value : familiarFields ) { hash += value << (shift % 32); ++shift; }
+	}
+	if ( wraithLoreInstanceId != 0 )
+	{
+		hash += wraithLoreInstanceId << (shift % 32);
+		++shift;
+	}
+}
+
+template <typename T>
+static std::string serializeWraithLoreSet(const std::set<T>& values)
+{
+	std::string result;
+	for ( const T value : values )
+	{
+		if ( !result.empty() ) { result += ','; }
+		result += std::to_string(static_cast<Uint64>(value));
+	}
+	return result;
+}
+
+static std::vector<Uint64> parseWraithLoreSet(const std::string& serialized)
+{
+	std::vector<Uint64> result;
+	std::stringstream stream(serialized);
+	std::string token;
+	while ( std::getline(stream, token, ',') )
+	{
+		if ( token.empty() || token.front() == '-' ) { continue; }
+		errno = 0;
+		char* end = nullptr;
+		const unsigned long long value = strtoull(token.c_str(), &end, 10);
+		if ( errno == ERANGE || end == token.c_str() || *end != '\0' ) { continue; }
+		result.push_back(static_cast<Uint64>(value));
+	}
+	return result;
+}
+
+static SaveGameInfo::Player::stat_t::item_t runtimeItemToSavedItem(const Item& item)
+{
+	return SaveGameInfo::Player::stat_t::item_t{
+		static_cast<Uint32>(item.type), static_cast<Uint32>(item.status),
+		item.appearance, item.beatitude, item.count, item.identified, item.x, item.y,
+		item.runeGetStoredPWRRaw(), static_cast<Sint8>(item.runeGetCreatorPlayer()),
+		item.runeGetInstanceId(), item.runeGetCreatorIdentity(), item.appliedOil,
+		item.ingredientCounts[0], item.ingredientCounts[1],
+		item.ingredientCounts[2], item.ingredientCounts[3],
+		item.familiarInitialized, item.familiarInstanceId,
+		item.familiarHP, item.familiarMAXHP, item.familiarMP, item.familiarMAXMP,
+		item.familiarLVL, item.familiarEXP, item.familiarSTR, item.familiarDEX,
+		item.familiarCON, item.familiarINT, item.familiarPER, item.familiarCHR,
+		item.wraithLoreInstanceId
+	};
+}
+
+static void runtimeMonsterStatToSavedStat(const Stat& runtime,
+	SaveGameInfo::Player::stat_t& saved)
+{
+	saved = SaveGameInfo::Player::stat_t{};
+	saved.name = runtime.name;
+	saved.type = runtime.type;
+	saved.sex = runtime.sex;
+	saved.statscore_appearance = runtime.stat_appearance;
+	saved.HP = runtime.HP;
+	saved.maxHP = runtime.MAXHP;
+	saved.MP = runtime.MP;
+	saved.maxMP = runtime.MAXMP;
+	saved.STR = runtime.STR;
+	saved.DEX = runtime.DEX;
+	saved.CON = runtime.CON;
+	saved.INT = runtime.INT;
+	saved.PER = runtime.PER;
+	saved.CHR = runtime.CHR;
+	saved.EXP = runtime.EXP;
+	saved.LVL = runtime.LVL;
+	saved.GOLD = runtime.GOLD;
+	saved.HUNGER = runtime.HUNGER;
+	saved.golem_blessed_composition = runtime.golemBlessedComposition;
+	saved.rune_creator_identity = runtime.runeCreatorIdentity;
+	saved.tincture_stacks.assign(runtime.tinctureStacks,
+		runtime.tinctureStacks + NUMSTATS);
+	saved.PROFICIENCIES.resize(NUMPROFICIENCIES);
+	for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+	{
+		saved.PROFICIENCIES[i] = runtime.getProficiency(i);
+	}
+	saved.EFFECTS.resize(NUMEFFECTS);
+	saved.EFFECTS_TIMERS.resize(NUMEFFECTS);
+	saved.EFFECTS_ACCRETION_TIME.resize(NUMEFFECTS);
+	for ( int i = 0; i < NUMEFFECTS; ++i )
+	{
+		saved.EFFECTS[i] = runtime.getEffectActive(i);
+		saved.EFFECTS_TIMERS[i] = runtime.EFFECTS_TIMERS[i];
+		saved.EFFECTS_ACCRETION_TIME[i] = runtime.EFFECTS_ACCRETION_TIME[i];
+	}
+	constexpr int numMiscFlags = sizeof(Stat::MISC_FLAGS) / sizeof(Stat::MISC_FLAGS[0]);
+	saved.MISC_FLAGS.resize(numMiscFlags);
+	for ( int i = 0; i < numMiscFlags; ++i )
+	{
+		saved.MISC_FLAGS[i] = runtime.MISC_FLAGS[i];
+	}
+	for ( const auto& attribute : runtime.attributes )
+	{
+		saved.attributes.push_back(attribute);
+	}
+
+	const std::vector<std::pair<std::string, Item*>> equipment = {
+		{"helmet", runtime.helmet}, {"breastplate", runtime.breastplate},
+		{"gloves", runtime.gloves}, {"shoes", runtime.shoes},
+		{"shield", runtime.shield}, {"weapon", runtime.weapon},
+		{"cloak", runtime.cloak}, {"amulet", runtime.amulet},
+		{"ring", runtime.ring}, {"mask", runtime.mask}
+	};
+	for ( const auto& slot : equipment )
+	{
+		if ( slot.second )
+		{
+			saved.npc_equipment.emplace_back(slot.first,
+				runtimeItemToSavedItem(*slot.second));
+		}
+	}
+	for ( node_t* node = runtime.inventory.first; node; node = node->next )
+	{
+		const Item* item = static_cast<const Item*>(node->element);
+		if ( item ) { saved.inventory.push_back(runtimeItemToSavedItem(*item)); }
+	}
+}
+
+static std::string serializeWraithOriginalEquipmentIndexes(int player,
+	const std::array<Uint32, 10>& originalUids)
+{
+	std::string result;
+	for ( Uint32 uid : originalUids )
+	{
+		int inventoryIndex = -1;
+		int index = 0;
+		for ( node_t* node = stats[player]->inventory.first; node; node = node->next, ++index )
+		{
+			const Item* item = static_cast<const Item*>(node->element);
+			if ( item && uid != 0 && item->uid == uid )
+			{
+				inventoryIndex = index;
+				break;
+			}
+		}
+		if ( !result.empty() ) { result += ','; }
+		result += std::to_string(inventoryIndex);
+	}
+	return result;
+}
+
+static std::string serializeWraithSuspendedEffects(
+	const Player::PlayerMechanics_t::WraithPlayerState& wraith)
+{
+	std::string result;
+	for ( int effect = 0; effect < NUMEFFECTS; ++effect )
+	{
+		if ( !wraith.suspendedWraithEffects[effect]
+			&& wraith.suspendedWraithEffectTimers[effect] == 0 )
+		{
+			continue;
+		}
+		if ( !result.empty() ) { result += ';'; }
+		result += std::to_string(effect);
+		result += ':';
+		result += (wraith.suspendedWraithEffects[effect] ? '1' : '0');
+		result += ':';
+		result += std::to_string(wraith.suspendedWraithEffectTimers[effect]);
+	}
+	return result;
+}
+
+static bool parseSignedLong(const std::string& text, long& value)
+{
+	if ( text.empty() ) { return false; }
+	errno = 0;
+	char* end = nullptr;
+	value = strtol(text.c_str(), &end, 10);
+	return errno != ERANGE && end != text.c_str() && *end == '\0';
+}
+
+static std::array<int, 10> parseWraithOriginalEquipmentIndexes(const std::string& serialized)
+{
+	std::array<int, 10> result;
+	result.fill(-1);
+	std::stringstream stream(serialized);
+	std::string token;
+	int slot = 0;
+	while ( slot < static_cast<int>(result.size()) && std::getline(stream, token, ',') )
+	{
+		long value = -1;
+		if ( parseSignedLong(token, value) && value >= -1 && value <= INT_MAX )
+		{
+			result[slot] = static_cast<int>(value);
+		}
+		++slot;
+	}
+	return result;
+}
+
+static void parseWraithSuspendedEffects(const std::string& serialized,
+	Player::PlayerMechanics_t::WraithPlayerState& wraith)
+{
+	std::stringstream entries(serialized);
+	std::string entry;
+	while ( std::getline(entries, entry, ';') )
+	{
+		std::stringstream fields(entry);
+		std::string indexText;
+		std::string activeText;
+		std::string timerText;
+		std::string extra;
+		if ( !std::getline(fields, indexText, ':')
+			|| !std::getline(fields, activeText, ':')
+			|| !std::getline(fields, timerText, ':')
+			|| std::getline(fields, extra, ':') )
+		{
+			continue;
+		}
+		long index = -1;
+		long active = 0;
+		long timer = 0;
+		if ( !parseSignedLong(indexText, index) || index < 0 || index >= NUMEFFECTS
+			|| !parseSignedLong(activeText, active) || (active != 0 && active != 1)
+			|| !parseSignedLong(timerText, timer)
+			|| timer < std::numeric_limits<Sint32>::min()
+			|| timer > std::numeric_limits<Sint32>::max() )
+		{
+			continue;
+		}
+		wraith.suspendedWraithEffects[index] = active != 0;
+		wraith.suspendedWraithEffectTimers[index] = static_cast<Sint32>(timer);
+	}
+}
+
+static const SaveGameInfo::Player::stat_t* findSavedWraithPossessedBody(
+	const SaveGameInfo::Player& player, bool& duplicate)
+{
+	const SaveGameInfo::Player::stat_t* result = nullptr;
+	duplicate = false;
+	for ( const auto& follower : player.followers )
+	{
+		const bool marked = std::any_of(follower.attributes.begin(), follower.attributes.end(),
+			[](const std::pair<std::string, std::string>& attribute)
+			{
+				return attribute.first == "wraith_possessed_body" && attribute.second == "1";
+			});
+		if ( !marked ) { continue; }
+		if ( result )
+		{
+			duplicate = true;
+			return nullptr;
+		}
+		result = &follower;
+	}
+	return result;
 }
 
 int SaveGameInfo::populateFromSession(const int playernum)
@@ -5616,9 +5915,18 @@ int SaveGameInfo::populateFromSession(const int playernum)
 	info->level_track = secretlevel ? 1 : 0;
 	info->players_connected.resize(MAXPLAYERS);
 	info->players.resize(MAXPLAYERS);
+	info->entrenchStashes.resize(MAXPLAYERS);
 	for ( int c = 0; c < MAXPLAYERS; ++c ) {
 		info->players_connected[c] = client_disconnected[c] && !::players[c]->was_connected_to_game ? 0 : 1;
 		if ( info->players_connected[c] ) {
+			if ( multiplayer != CLIENT && ::players[c] && ::players[c]->entity && stats[c]
+				&& stats[c]->amulet && stats[c]->amulet->type == AMULET_FAMILIAR )
+			{
+				if ( Entity* familiar = findAmuletFamiliar(::players[c]->entity) )
+				{
+					syncAmuletFamiliarPersistentState(familiar, stats[c]->amulet, false);
+				}
+			}
 			auto& player = info->players[c];
 			player.char_class = client_classes[c];
 			player.race = stats[c]->playerRace;
@@ -5751,6 +6059,10 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			player.stats.LVL = stats[c]->LVL;
 			player.stats.GOLD = stats[c]->GOLD;
 			player.stats.HUNGER = stats[c]->HUNGER;
+			player.stats.golem_blessed_composition = stats[c]->golemBlessedComposition;
+			player.stats.rune_creator_identity = stats[c]->runeCreatorIdentity;
+			player.stats.tincture_stacks.assign(stats[c]->tinctureStacks,
+				stats[c]->tinctureStacks + NUMSTATS);
 			player.stats.PROFICIENCIES.resize(NUMPROFICIENCIES);
 			for ( int i = 0; i < NUMPROFICIENCIES; ++i ) {
 				player.stats.PROFICIENCIES[i] = stats[c]->getProficiency(i);
@@ -5811,6 +6123,12 @@ int SaveGameInfo::populateFromSession(const int playernum)
 			{
 				player.escalatingSpellRngRolls.push_back(pair);
 			}
+			// A map change may save before the carried entity is recreated.
+			// The authoritative semantic stash remains valid throughout that gap.
+			if ( multiplayer != CLIENT )
+			{
+				info->entrenchStashes[c] = ::players[c]->mechanics.entrenchStash;
+			}
 			player.sustainedSpellMPUsedSorcery = ::players[c]->mechanics.sustainedSpellMPUsedSorcery;
 			player.sustainedSpellMPUsedMysticism = ::players[c]->mechanics.sustainedSpellMPUsedMysticism;
 			player.sustainedSpellMPUsedThaumaturgy = ::players[c]->mechanics.sustainedSpellMPUsedThaumaturgy;
@@ -5850,7 +6168,17 @@ int SaveGameInfo::populateFromSession(const int playernum)
 						item.count,
 						item.identified,
 						0,
-						0));
+						0,
+						item.runeGetStoredPWRRaw(),
+						static_cast<Sint8>(item.runeGetCreatorPlayer()),
+						item.runeGetInstanceId(), item.runeGetCreatorIdentity(), item.appliedOil,
+						item.ingredientCounts[0], item.ingredientCounts[1],
+						item.ingredientCounts[2], item.ingredientCounts[3],
+						item.familiarInitialized, item.familiarInstanceId,
+						item.familiarHP, item.familiarMAXHP, item.familiarMP, item.familiarMAXMP,
+						item.familiarLVL, item.familiarEXP, item.familiarSTR, item.familiarDEX,
+						item.familiarCON, item.familiarINT, item.familiarPER, item.familiarCHR,
+						item.wraithLoreInstanceId));
 				}
 			}
 
@@ -5891,6 +6219,16 @@ int SaveGameInfo::populateFromSession(const int playernum)
 								slot.second->identified,
 								slot.second->x,
 								slot.second->y,
+								slot.second->runeGetStoredPWRRaw(),
+								static_cast<Sint8>(slot.second->runeGetCreatorPlayer()),
+								slot.second->runeGetInstanceId(), slot.second->runeGetCreatorIdentity(), slot.second->appliedOil,
+								slot.second->ingredientCounts[0], slot.second->ingredientCounts[1],
+								slot.second->ingredientCounts[2], slot.second->ingredientCounts[3],
+								slot.second->familiarInitialized, slot.second->familiarInstanceId,
+								slot.second->familiarHP, slot.second->familiarMAXHP, slot.second->familiarMP, slot.second->familiarMAXMP,
+								slot.second->familiarLVL, slot.second->familiarEXP, slot.second->familiarSTR, slot.second->familiarDEX,
+								slot.second->familiarCON, slot.second->familiarINT, slot.second->familiarPER, slot.second->familiarCHR,
+								slot.second->wraithLoreInstanceId,
 							}));
 					}
 				}
@@ -5916,6 +6254,16 @@ int SaveGameInfo::populateFromSession(const int playernum)
 					item->identified,
 					item->x,
 					item->y,
+					item->runeGetStoredPWRRaw(),
+					static_cast<Sint8>(item->runeGetCreatorPlayer()),
+					item->runeGetInstanceId(), item->runeGetCreatorIdentity(), item->appliedOil,
+					item->ingredientCounts[0], item->ingredientCounts[1],
+					item->ingredientCounts[2], item->ingredientCounts[3],
+					item->familiarInitialized, item->familiarInstanceId,
+					item->familiarHP, item->familiarMAXHP, item->familiarMP, item->familiarMAXMP,
+					item->familiarLVL, item->familiarEXP, item->familiarSTR, item->familiarDEX,
+					item->familiarCON, item->familiarINT, item->familiarPER, item->familiarCHR,
+					item->wraithLoreInstanceId,
 					});
 			}
 
@@ -5933,6 +6281,16 @@ int SaveGameInfo::populateFromSession(const int playernum)
 					item->identified,
 					item->x,
 					item->y,
+					item->runeGetStoredPWRRaw(),
+					static_cast<Sint8>(item->runeGetCreatorPlayer()),
+					item->runeGetInstanceId(), item->runeGetCreatorIdentity(), item->appliedOil,
+					item->ingredientCounts[0], item->ingredientCounts[1],
+					item->ingredientCounts[2], item->ingredientCounts[3],
+					item->familiarInitialized, item->familiarInstanceId,
+					item->familiarHP, item->familiarMAXHP, item->familiarMP, item->familiarMAXMP,
+					item->familiarLVL, item->familiarEXP, item->familiarSTR, item->familiarDEX,
+					item->familiarCON, item->familiarINT, item->familiarPER, item->familiarCHR,
+					item->wraithLoreInstanceId,
 					});
 			}
 
@@ -5942,96 +6300,109 @@ int SaveGameInfo::populateFromSession(const int playernum)
 				auto entity = uidToEntity(*((Uint32*)node->element));
 				Stat* follower = entity ? entity->getStats() : nullptr;
 				if ( follower ) {
-					SaveGameInfo::Player::stat_t stats;
-					stats.name = follower->name;
-					stats.type = follower->type;
-					stats.sex = follower->sex;
-					stats.statscore_appearance = follower->stat_appearance;
-					stats.HP = follower->HP;
-					stats.maxHP = follower->MAXHP;
-					stats.MP = follower->MP;
-					stats.maxMP = follower->MAXMP;
-					stats.STR = follower->STR;
-					stats.DEX = follower->DEX;
-					stats.CON = follower->CON;
-					stats.INT = follower->INT;
-					stats.PER = follower->PER;
-					stats.CHR = follower->CHR;
-					stats.EXP = follower->EXP;
-					stats.LVL = follower->LVL;
-					stats.GOLD = follower->GOLD;
-					stats.HUNGER = follower->HUNGER;
-					stats.PROFICIENCIES.resize(NUMPROFICIENCIES);
-					for ( int i = 0; i < NUMPROFICIENCIES; ++i ) {
-						stats.PROFICIENCIES[i] = follower->getProficiency(i);
-					}
-					stats.EFFECTS.resize(NUMEFFECTS);
-					stats.EFFECTS_TIMERS.resize(NUMEFFECTS);
-					stats.EFFECTS_ACCRETION_TIME.resize(NUMEFFECTS);
-					for ( int i = 0; i < NUMEFFECTS; ++i ) {
-						stats.EFFECTS[i] = follower->getEffectActive(i);
-						stats.EFFECTS_TIMERS[i] = follower->EFFECTS_TIMERS[i];
-						stats.EFFECTS_ACCRETION_TIME[i] = follower->EFFECTS_ACCRETION_TIME[i];
-					}
-					stats.MISC_FLAGS.resize(NUMMISCFLAGS);
-					for ( int i = 0; i < NUMMISCFLAGS; ++i ) {
-						stats.MISC_FLAGS[i] = follower->MISC_FLAGS[i];
-					}
-					for ( auto& attribute : follower->attributes ) {
-						stats.attributes.push_back(attribute);
-					}
+					SaveGameInfo::Player::stat_t savedFollower;
+					runtimeMonsterStatToSavedStat(*follower, savedFollower);
+					player.followers.push_back(std::move(savedFollower));
+				}
+			}
 
-					// equipment slots
-					const std::vector<std::pair<std::string, Item*>> npc_slots = {
-						{"helmet", follower->helmet},
-						{"breastplate", follower->breastplate},
-						{"gloves", follower->gloves},
-						{"shoes", follower->shoes},
-						{"shield", follower->shield},
-						{"weapon", follower->weapon},
-						{"cloak", follower->cloak},
-						{"amulet", follower->amulet},
-						{"ring", follower->ring},
-						{"mask", follower->mask},
-					};
-					for ( auto& slot : npc_slots ) {
-						if ( slot.second ) {
-							stats.npc_equipment.push_back(std::make_pair(
-								slot.first, SaveGameInfo::Player::stat_t::item_t{
-									(Uint32)slot.second->type,
-									(Uint32)slot.second->status,
-									slot.second->appearance,
-									slot.second->beatitude,
-									slot.second->count,
-									slot.second->identified,
-									slot.second->x,
-									slot.second->y,
-								}));
-						}
-					}
-
-					// inventory
-					for ( node_t* node = follower->inventory.first;
-						node != nullptr; node = node->next ) {
-						auto item = (Item*)node->element;
-						stats.inventory.push_back(
-							SaveGameInfo::Player::stat_t::item_t{
-							(Uint32)item->type,
-							(Uint32)item->status,
-							item->appearance,
-							item->beatitude,
-							item->count,
-							item->identified,
-							item->x,
-							item->y,
-							});
-					}
-
-					// finally, add follower to list
-					player.followers.push_back(stats);
+			if ( multiplayer != CLIENT && stats[c]->playerRace == RACE_WRAITH
+				&& ::players[c]->mechanics.wraith.initialized
+				&& ::players[c]->mechanics.wraith.possessedEntityUid != 0 )
+			{
+				if ( Stat* bodySnapshot = createWraithPossessedBodySnapshot(c) )
+				{
+					bodySnapshot->setAttribute("wraith_possessed_body", "1");
+					SaveGameInfo::Player::stat_t savedBody;
+					runtimeMonsterStatToSavedStat(*bodySnapshot, savedBody);
+					player.followers.push_back(std::move(savedBody));
+					delete bodySnapshot;
 				}
 			}
 		}
+	}
+
+	for ( auto it = info->additional_data.begin(); it != info->additional_data.end(); )
+	{
+		if ( it->first == "stewing_generator_version"
+			|| it->first == "stewing_recipes_0"
+			|| it->first == "stewing_recipes_1"
+			|| it->first == "stewing_recipes_2"
+			|| it->first == "stewing_recipes_3"
+			|| it->first.find("wraith_corporeal_maxhp_") == 0
+			|| it->first.find("wraith_corporeal_maxmp_") == 0
+			|| it->first.find("wraith_known_possessions_") == 0
+			|| it->first.find("wraith_seen_books_") == 0
+			|| it->first.find("wraith_seen_graves_") == 0
+			|| it->first.find("wraith_seen_mail_") == 0
+			|| it->first.find("wraith_read_books_") == 0
+			|| it->first.find("wraith_read_mail_") == 0
+			|| it->first.find("wraith_read_graves_") == 0
+			|| it->first.find("wraith_temp_body_spells_") == 0
+			|| it->first.find("wraith_possession_start_level_") == 0
+			|| it->first.find("wraith_possession_last_level_") == 0
+			|| it->first.find("wraith_suspended_effects_") == 0
+			|| it->first.find("wraith_possession_original_equipment_") == 0 )
+		{
+			it = info->additional_data.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+	info->additional_data.push_back(std::make_pair("stewing_generator_version",
+		std::to_string(getActiveStewingGeneratorVersion())));
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		sanitizeWraithPossessionKnowledge(c);
+		info->additional_data.push_back(std::make_pair(
+			"stewing_recipes_" + std::to_string(c),
+			std::to_string(getStewingRecipeUnlockMask(c))));
+		const auto& wraith = ::players[c]->mechanics.wraith;
+		info->additional_data.push_back(std::make_pair(
+			"wraith_corporeal_maxhp_" + std::to_string(c),
+			std::to_string(wraith.corporealMaxHP)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_corporeal_maxmp_" + std::to_string(c),
+			std::to_string(wraith.corporealMaxMP)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_known_possessions_" + std::to_string(c),
+			serializeWraithLoreSet(wraith.learnedPossessionTypes)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_seen_books_" + std::to_string(c),
+			serializeWraithLoreSet(wraith.seenBookLoreIds)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_seen_graves_" + std::to_string(c),
+			serializeWraithLoreSet(wraith.seenGravestoneLoreIds)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_seen_mail_" + std::to_string(c),
+			serializeWraithLoreSet(wraith.seenMailLoreIds)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_read_books_" + std::to_string(c),
+			serializeWraithLoreSet(wraith.readBookObjectIds)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_read_mail_" + std::to_string(c),
+			serializeWraithLoreSet(wraith.readMailObjectIds)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_read_graves_" + std::to_string(c),
+			serializeWraithLoreSet(wraith.readGravestoneObjectIds)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_temp_body_spells_" + std::to_string(c),
+			serializeWraithLoreSet(wraith.temporaryInnateSpellIds)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_possession_start_level_" + std::to_string(c),
+			std::to_string(wraith.possessionStartPlayerLevel)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_possession_last_level_" + std::to_string(c),
+			std::to_string(wraith.possessionLastPlayerLevel)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_suspended_effects_" + std::to_string(c),
+			serializeWraithSuspendedEffects(wraith)));
+		info->additional_data.push_back(std::make_pair(
+			"wraith_possession_original_equipment_" + std::to_string(c),
+			serializeWraithOriginalEquipmentIndexes(c,
+				wraith.possessionOriginalEquipmentUids)));
 	}
 
 	info->map_messages = ::Player::Minimap_t::mapDetails;
@@ -6349,6 +6720,54 @@ std::string SaveGameInfo::serializeToOnlineHiscore(const int playernum, const in
 	return os.GetString();
 }
 
+static void reserveSavedRuneMetadata(const SaveGameInfo::Player::stat_t& savedStats)
+{
+	reserveRuneCreatorIdentity(savedStats.rune_creator_identity);
+	auto reserveItem = [](const SaveGameInfo::Player::stat_t::item_t& item)
+	{
+		reserveMagicRuneInstanceId(item.runeInstanceId);
+		reserveRuneCreatorIdentity(item.runeCreatorIdentity);
+		reserveFamiliarInstanceId(item.familiarInstanceId);
+		reserveWraithLoreInstanceId(item.wraithLoreInstanceId);
+	};
+	for ( const auto& item : savedStats.inventory ) { reserveItem(item); }
+	for ( const auto& item : savedStats.void_chest_inventory ) { reserveItem(item); }
+	for ( const auto& item : savedStats.npc_equipment ) { reserveItem(item.second); }
+	for ( const auto& loot : savedStats.player_lootbags )
+	{
+		for ( const auto& item : loot.second.items ) { reserveItem(item); }
+	}
+}
+
+static void restoreSavedRuneMetadata(Item& item, const SaveGameInfo::Player::stat_t::item_t& savedItem)
+{
+	item.runeSetStoredPWRRaw(savedItem.runeStoredPWR);
+	item.runeSetCreatorPlayer(savedItem.runeCreatorPlayer);
+	item.runeSetInstanceId(savedItem.runeInstanceId);
+	item.runeSetCreatorIdentity(savedItem.runeCreatorIdentity);
+	item.appliedOil = static_cast<AppliedOil>(std::min<Uint32>(savedItem.appliedOil, APPLIED_OIL_MAX - 1));
+	for ( int i = 0; i < 4; ++i ) { item.ingredientCounts[i] = savedItem.ingredientCounts[i]; }
+	item.familiarInitialized = savedItem.familiarInitialized;
+	item.familiarInstanceId = savedItem.familiarInstanceId;
+	item.familiarHP = savedItem.familiarHP;
+	item.familiarMAXHP = savedItem.familiarMAXHP;
+	item.familiarMP = savedItem.familiarMP;
+	item.familiarMAXMP = savedItem.familiarMAXMP;
+	item.familiarLVL = savedItem.familiarLVL;
+	item.familiarEXP = savedItem.familiarEXP;
+	item.familiarSTR = savedItem.familiarSTR;
+	item.familiarDEX = savedItem.familiarDEX;
+	item.familiarCON = savedItem.familiarCON;
+	item.familiarINT = savedItem.familiarINT;
+	item.familiarPER = savedItem.familiarPER;
+	item.familiarCHR = savedItem.familiarCHR;
+	item.wraithLoreInstanceId = savedItem.wraithLoreInstanceId;
+	reserveFamiliarInstanceId(item.familiarInstanceId);
+	reserveWraithLoreInstanceId(item.wraithLoreInstanceId);
+	item.runeEnsureInstanceId(); // Legacy saves receive a fresh, collision-safe physical Rune ID.
+	item.wraithLoreEnsureInstanceId(); // Legacy books/mail receive a fresh stable physical ID.
+}
+
 int loadGame(int player, const SaveGameInfo& info) {
 	if (player < 0 || player >= MAXPLAYERS) {
 		printlog("loadGame() failed: invalid player index");
@@ -6373,6 +6792,48 @@ int loadGame(int player, const SaveGameInfo& info) {
 		return 1;
 	}
 
+	// Reserve every persisted identifier before allocating IDs for legacy Runes.
+	// loadGame() is invoked per player, so this must cover the whole save each time.
+	for ( size_t savedPlayerIndex = 0; savedPlayerIndex < info.players.size(); ++savedPlayerIndex )
+	{
+		const auto& savedPlayer = info.players[savedPlayerIndex];
+		reserveSavedRuneMetadata(savedPlayer.stats);
+		if ( savedPlayerIndex < info.entrenchStashes.size() && info.entrenchStashes[savedPlayerIndex].valid() )
+		{
+			for ( const auto& content : info.entrenchStashes[savedPlayerIndex].contents )
+			{
+				if ( content.kind == EntrenchStash::Content::ITEM )
+				{
+					reserveMagicRuneInstanceId(content.runeInstanceId);
+					reserveRuneCreatorIdentity(content.runeCreatorIdentity);
+					reserveFamiliarInstanceId(content.familiarInstanceId);
+					reserveWraithLoreInstanceId(content.wraithLoreInstanceId);
+				}
+			}
+		}
+		for ( const auto& follower : savedPlayer.followers )
+		{
+			reserveSavedRuneMetadata(follower);
+		}
+	}
+	// Physical lore IDs remain reserved even when the corresponding book or mail
+	// no longer exists, because the read-history set still owns that identity.
+	for ( const auto& pair : info.additional_data )
+	{
+		if ( pair.first.find("wraith_read_books_") != 0
+			&& pair.first.find("wraith_read_mail_") != 0 )
+		{
+			continue;
+		}
+		for ( Uint64 value : parseWraithLoreSet(pair.second) )
+		{
+			if ( value != 0 && value <= UINT32_MAX )
+			{
+				reserveWraithLoreInstanceId(static_cast<Uint32>(value));
+			}
+		}
+	}
+
 	int statsPlayer = player;
 	if ( info.hiscore_dummy_loading )
 	{
@@ -6380,9 +6841,42 @@ int loadGame(int player, const SaveGameInfo& info) {
 	}
 
 	stats[statsPlayer]->clearStats();
+	players[statsPlayer]->mechanics.wraith = Player::PlayerMechanics_t::WraithPlayerState();
 
 	// load game info
 	uniqueGameKey = info.gamekey;
+	Uint32 loadedStewingGeneratorVersion = STEWING_GENERATOR_VERSION;
+	for ( const auto& pair : info.additional_data )
+	{
+		if ( pair.first != "stewing_generator_version" ) { continue; }
+		const bool decimal = !pair.second.empty() && std::all_of(
+			pair.second.begin(), pair.second.end(), [](char ch) { return ch >= '0' && ch <= '9'; });
+		char* end = nullptr;
+		const unsigned long long value = strtoull(pair.second.c_str(), &end, 10);
+		if ( decimal && end != pair.second.c_str() && *end == '\0'
+			&& value > 0 && value <= std::numeric_limits<Uint32>::max() )
+		{
+			loadedStewingGeneratorVersion = static_cast<Uint32>(value);
+		}
+		break;
+	}
+	setActiveStewingGeneratorVersion(loadedStewingGeneratorVersion);
+	setStewingRecipeUnlockMask(statsPlayer, 0);
+	const std::string stewingRecipeKey = "stewing_recipes_" + std::to_string(player);
+	for ( const auto& pair : info.additional_data )
+	{
+		if ( pair.first != stewingRecipeKey ) { continue; }
+		const bool decimal = !pair.second.empty() && std::all_of(
+			pair.second.begin(), pair.second.end(), [](char ch) { return ch >= '0' && ch <= '9'; });
+		char* end = nullptr;
+		const unsigned long long value = strtoull(pair.second.c_str(), &end, 10);
+		if ( decimal && end != pair.second.c_str() && *end == '\0'
+			&& value <= std::numeric_limits<Uint32>::max() )
+		{
+			setStewingRecipeUnlockMask(statsPlayer, static_cast<Uint32>(value & 0xffffu));
+		}
+		break;
+	}
 	uniqueLobbyKey = info.lobbykey;
 	mapseed = info.mapseed;
 	completionTime = info.gametimer;
@@ -6512,6 +7006,210 @@ int loadGame(int player, const SaveGameInfo& info) {
 	stats[statsPlayer]->MAXHP = p.maxHP;
 	stats[statsPlayer]->MP = p.MP;
 	stats[statsPlayer]->MAXMP = p.maxMP;
+	std::array<int, 10> savedWraithEquipmentIndexes;
+	savedWraithEquipmentIndexes.fill(-1);
+	if ( stats[statsPlayer]->playerRace == RACE_WRAITH )
+	{
+		auto& wraith = players[statsPlayer]->mechanics.wraith;
+		bool duplicateSavedBody = false;
+		const SaveGameInfo::Player::stat_t* savedBody =
+			findSavedWraithPossessedBody(info.players[player], duplicateSavedBody);
+		wraith.possessionTransition = false;
+		wraith.possessedEntityUid = 0;
+		wraith.possessedType = NOTHING;
+		wraith.possessionStartPlayerLevel = 0;
+		wraith.possessionLastPlayerLevel = 0;
+		wraith.possessedBodyOriginalInvisible = false;
+		wraith.possessedBodyOriginalPassable = false;
+		wraith.possessedBodyOriginalBlocksSight = false;
+		wraith.possessedBodyOriginalUnclickable = false;
+		wraith.suspendedWraithEffects.fill(false);
+		wraith.suspendedWraithEffectTimers.fill(0);
+		wraith.temporaryInnateSpellIds.clear();
+		wraith.possessionOriginalEquipmentUids.fill(0);
+		const std::string hpKey = "wraith_corporeal_maxhp_" + std::to_string(player);
+		const std::string mpKey = "wraith_corporeal_maxmp_" + std::to_string(player);
+		const std::string knownKey = "wraith_known_possessions_" + std::to_string(player);
+		const std::string seenBooksKey = "wraith_seen_books_" + std::to_string(player);
+		const std::string seenGravesKey = "wraith_seen_graves_" + std::to_string(player);
+		const std::string seenMailKey = "wraith_seen_mail_" + std::to_string(player);
+		const std::string readBooksKey = "wraith_read_books_" + std::to_string(player);
+		const std::string readMailKey = "wraith_read_mail_" + std::to_string(player);
+		const std::string readGravesKey = "wraith_read_graves_" + std::to_string(player);
+		const std::string temporarySpellsKey = "wraith_temp_body_spells_" + std::to_string(player);
+		const std::string startLevelKey = "wraith_possession_start_level_" + std::to_string(player);
+		const std::string lastLevelKey = "wraith_possession_last_level_" + std::to_string(player);
+		const std::string suspendedEffectsKey = "wraith_suspended_effects_" + std::to_string(player);
+		const std::string originalEquipmentKey =
+			"wraith_possession_original_equipment_" + std::to_string(player);
+		bool foundHP = false;
+		bool foundMP = false;
+		for ( const auto& pair : info.additional_data )
+		{
+			if ( pair.first == startLevelKey || pair.first == lastLevelKey )
+			{
+				long value = 0;
+				if ( parseSignedLong(pair.second, value)
+					&& value >= 0 && value <= std::numeric_limits<Sint32>::max() )
+				{
+					if ( pair.first == startLevelKey )
+					{
+						wraith.possessionStartPlayerLevel = static_cast<Sint32>(value);
+					}
+					else
+					{
+						wraith.possessionLastPlayerLevel = static_cast<Sint32>(value);
+					}
+				}
+				continue;
+			}
+			if ( pair.first == suspendedEffectsKey )
+			{
+				parseWraithSuspendedEffects(pair.second, wraith);
+				continue;
+			}
+			if ( pair.first == originalEquipmentKey )
+			{
+				savedWraithEquipmentIndexes =
+					parseWraithOriginalEquipmentIndexes(pair.second);
+				continue;
+			}
+			if ( pair.first == temporarySpellsKey )
+			{
+				for ( Uint64 value : parseWraithLoreSet(pair.second) )
+				{
+					if ( value <= static_cast<Uint64>(INT_MAX) )
+					{
+						wraith.temporaryInnateSpellIds.insert(static_cast<int>(value));
+					}
+				}
+				continue;
+			}
+			if ( pair.first == knownKey )
+			{
+				for ( Uint64 value : parseWraithLoreSet(pair.second) )
+				{
+					if ( value >= MAX_MONSTER ) { continue; }
+					const Monster type = wraithCanonicalPossessionType(
+						static_cast<Monster>(value));
+					if ( type != HUMAN && type != SKELETON && type != RAT
+						&& wraithPossessionTypeIsLearnable(type) )
+					{
+						wraith.learnedPossessionTypes.insert(type);
+					}
+				}
+				continue;
+			}
+			if ( pair.first == seenBooksKey )
+			{
+				for ( Uint64 value : parseWraithLoreSet(pair.second) )
+				{
+					if ( value <= static_cast<Uint64>(INT_MAX) )
+					{
+						wraith.seenBookLoreIds.insert(static_cast<int>(value));
+					}
+				}
+				continue;
+			}
+			if ( pair.first == seenGravesKey )
+			{
+				for ( Uint64 value : parseWraithLoreSet(pair.second) )
+				{
+					if ( value < 17 ) { wraith.seenGravestoneLoreIds.insert(static_cast<int>(value)); }
+				}
+				continue;
+			}
+			if ( pair.first == seenMailKey )
+			{
+				for ( Uint64 value : parseWraithLoreSet(pair.second) )
+				{
+					if ( value < NUM_SCROLL_MAIL_OPTIONS )
+					{
+						wraith.seenMailLoreIds.insert(static_cast<int>(value));
+					}
+				}
+				continue;
+			}
+			if ( pair.first == readBooksKey || pair.first == readMailKey )
+			{
+				auto& destination = pair.first == readBooksKey
+					? wraith.readBookObjectIds : wraith.readMailObjectIds;
+				for ( Uint64 value : parseWraithLoreSet(pair.second) )
+				{
+					if ( value != 0 && value <= UINT32_MAX )
+					{
+						const Uint32 instanceId = static_cast<Uint32>(value);
+						destination.insert(instanceId);
+						reserveWraithLoreInstanceId(instanceId);
+					}
+				}
+				continue;
+			}
+			if ( pair.first == readGravesKey )
+			{
+				for ( Uint64 value : parseWraithLoreSet(pair.second) )
+				{
+					if ( value != 0 ) { wraith.readGravestoneObjectIds.insert(value); }
+				}
+				continue;
+			}
+			if ( pair.first != hpKey && pair.first != mpKey ) { continue; }
+			const bool valid = !pair.second.empty() && std::all_of(pair.second.begin(), pair.second.end(),
+				[](char ch) { return ch == '-' || (ch >= '0' && ch <= '9'); });
+			if ( !valid ) { continue; }
+			const long value = strtol(pair.second.c_str(), nullptr, 10);
+			if ( pair.first == hpKey )
+			{
+				wraith.corporealMaxHP = std::max<long>(0, value);
+				foundHP = true;
+			}
+			else
+			{
+				wraith.corporealMaxMP = std::max<long>(0, value);
+				foundMP = true;
+			}
+		}
+		sanitizeWraithPossessionKnowledge(statsPlayer);
+		if ( !foundHP || !foundMP )
+		{
+			// A pre-state Wraith save is converted only if it still has corporeal HP.
+			if ( stats[statsPlayer]->MAXHP > 5 )
+			{
+				wraith.corporealMaxHP = stats[statsPlayer]->MAXHP;
+				wraith.corporealMaxMP = stats[statsPlayer]->MAXMP;
+				stats[statsPlayer]->MP += std::max(0, stats[statsPlayer]->HP - 5);
+				stats[statsPlayer]->MAXMP += std::max(0, stats[statsPlayer]->MAXHP - 5);
+				stats[statsPlayer]->HP = 5;
+				stats[statsPlayer]->MAXHP = 5;
+			}
+			else
+			{
+				wraith.corporealMaxHP = std::max(5, stats[statsPlayer]->MAXHP);
+				wraith.corporealMaxMP = stats[statsPlayer]->MAXMP;
+			}
+		}
+		if ( savedBody && savedBody->type > NOTHING && savedBody->type < MAX_MONSTER )
+		{
+			// The map has not been created yet. Hold the loaded possession in transition
+			// until the authoritative body Entity is recreated from this saved Stat.
+			wraith.possessedEntityUid = UINT32_MAX;
+			wraith.possessedType = wraithCanonicalPossessionType(
+				static_cast<Monster>(savedBody->type));
+			wraith.possessionTransition = true;
+		}
+		else if ( p.type > NOTHING && p.type < MAX_MONSTER && p.type != WRAITH )
+		{
+			if ( duplicateSavedBody )
+			{
+				printlog("[WRAITH]: ERROR save contains multiple possessed-body snapshots; using legacy recovery");
+			}
+			// Legacy possession saves have no body Stat to reconstruct. Preserve their
+			// existing safe missing-body recovery behavior.
+			wraith.possessedEntityUid = UINT32_MAX;
+			wraith.possessedType = wraithCanonicalPossessionType(
+				static_cast<Monster>(p.type));
+		}
+	}
 	stats[statsPlayer]->STR = p.STR;
 	stats[statsPlayer]->DEX = p.DEX;
 	stats[statsPlayer]->CON = p.CON;
@@ -6522,6 +7220,16 @@ int loadGame(int player, const SaveGameInfo& info) {
 	stats[statsPlayer]->LVL = p.LVL;
 	stats[statsPlayer]->GOLD = p.GOLD;
 	stats[statsPlayer]->HUNGER = p.HUNGER;
+	stats[statsPlayer]->golemBlessedComposition = p.golem_blessed_composition >= 0
+		? std::min(10000, std::max(0, p.golem_blessed_composition))
+		: (stats[statsPlayer]->sex == MALE ? 10000 : 0);
+	stats[statsPlayer]->runeCreatorIdentity = p.rune_creator_identity;
+	for ( int stat = 0; stat < NUMSTATS; ++stat )
+	{
+		stats[statsPlayer]->tinctureStacks[stat] = stat < static_cast<int>(p.tincture_stacks.size())
+			? p.tincture_stacks[stat] : 0;
+	}
+	reserveRuneCreatorIdentity(stats[statsPlayer]->runeCreatorIdentity);
 	for (int c = 0; c < NUMPROFICIENCIES && c < p.PROFICIENCIES.size(); ++c) {
 		stats[statsPlayer]->setProficiency(c, p.PROFICIENCIES[c]);
 	}
@@ -6557,6 +7265,12 @@ int loadGame(int player, const SaveGameInfo& info) {
 	for (int c = 0; c < NUMMISCFLAGS && c < p.MISC_FLAGS.size(); ++c) {
 		stats[statsPlayer]->MISC_FLAGS[c] = p.MISC_FLAGS[c];
 	}
+	if ( stats[statsPlayer]->playerRace == RACE_WRAITH && players[statsPlayer] )
+	{
+		players[statsPlayer]->mechanics.wraith.wasHumanPolymorphed =
+			stats[statsPlayer]->getEffectActive(EFF_POLYMORPH)
+			&& stats[statsPlayer]->playerPolymorphStorage > NUMMONSTERS;
+	}
 	//stats[statsPlayer]->attributes = p.attributes; // skip attributes for now
 	for ( auto& loot : p.player_lootbags )
 	{
@@ -6577,6 +7291,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 			item.count = _item.count;
 			item.appearance = _item.appearance;
 			item.identified = _item.identified;
+			restoreSavedRuneMetadata(item, _item);
 		}
 	}
 
@@ -6603,12 +7318,31 @@ int loadGame(int player, const SaveGameInfo& info) {
 		bool identified = item.identified;
 		Item* i = newItem(type, status, beatitude, count,
 			appearance, identified, &stats[statsPlayer]->inventory);
+		restoreSavedRuneMetadata(*i, item);
 		i->x = item.x;
 		i->y = item.y;
 
 		if ( appraisalMap.find(inventory_index) != appraisalMap.end() )
 		{
 			players[statsPlayer]->inventoryUI.appraisal.appraisalProgressionItems[i->uid] = appraisalMap[inventory_index];
+		}
+	}
+	if ( stats[statsPlayer]->playerRace == RACE_WRAITH )
+	{
+		auto& originalUids =
+			players[statsPlayer]->mechanics.wraith.possessionOriginalEquipmentUids;
+		for ( int slot = 0; slot < static_cast<int>(originalUids.size()); ++slot )
+		{
+			originalUids[slot] = 0;
+			const int index = savedWraithEquipmentIndexes[slot];
+			if ( index < 0 ) { continue; }
+			if ( node_t* node = list_Node(&stats[statsPlayer]->inventory, index) )
+			{
+				if ( Item* item = static_cast<Item*>(node->element) )
+				{
+					originalUids[slot] = item->uid;
+				}
+			}
 		}
 	}
 
@@ -6622,6 +7356,7 @@ int loadGame(int player, const SaveGameInfo& info) {
 		bool identified = item.identified;
 		Item* i = newItem(type, status, beatitude, count,
 			appearance, identified, &stats[statsPlayer]->void_chest_inventory);
+		restoreSavedRuneMetadata(*i, item);
 		i->x = item.x;
 		i->y = item.y;
 	}
@@ -6670,12 +7405,74 @@ int loadGame(int player, const SaveGameInfo& info) {
 				bool identified = item.second.identified;
 				Item* i = newItem(type, status, beatitude, count,
 					appearance, identified, nullptr);
+				restoreSavedRuneMetadata(*i, item.second);
 				i->x = item.second.x;
 				i->y = item.second.y;
 				slot = i;
 			}
 		}
 	}
+
+	if ( stats[statsPlayer]->playerRace
+			== RACE_WRAITH )
+	{
+		auto& wraith =
+			players[statsPlayer]
+				->mechanics.wraith;
+
+		// Inventory and equipment must be restored
+		// before Wraith inventory restrictions become
+		// active. Otherwise newItem() rejects every
+		// physical saved Item during reconstruction.
+		wraith.initialized = true;
+
+		if ( wraith.possessedEntityUid == 0
+			&& getWraithHeldItem(statsPlayer) )
+		{
+			if ( !setWraithHeldItem(
+					statsPlayer,
+					getWraithHeldItem(statsPlayer)) )
+			{
+				printlog(
+					"[WRAITH]: ERROR failed to restore saved physical hand item");
+			}
+		}
+		else if ( players[statsPlayer]
+			->isLocalPlayer() )
+		{
+			players[statsPlayer]
+				->paperDoll.updateSlots();
+		}
+	}
+
+#ifndef NDEBUG
+	if ( stats[statsPlayer]->playerRace
+			== RACE_WRAITH )
+	{
+		const auto& wraith =
+			players[statsPlayer]
+				->mechanics.wraith;
+
+		if ( wraith.possessedEntityUid == 0
+			&& stats[statsPlayer]->weapon )
+		{
+			assert(
+				stats[statsPlayer]->weapon->node);
+
+			assert(
+				stats[statsPlayer]
+					->weapon->node->list
+				== &stats[statsPlayer]
+					->inventory);
+
+			assert(
+				itemSlot(
+					stats[statsPlayer],
+					stats[statsPlayer]->weapon)
+				== &stats[statsPlayer]->weapon);
+		}
+	}
+#endif
 
 	// assign hotbar items
 	auto& hotbar = players[statsPlayer]->hotbar.slots();
@@ -6792,6 +7589,13 @@ int loadGame(int player, const SaveGameInfo& info) {
 	// player rng stuff
 	{
 		auto& mechanics = players[statsPlayer]->mechanics;
+		if ( !info.hiscore_dummy_loading )
+		{
+			mechanics.entrenchStash = multiplayer != CLIENT && player < info.entrenchStashes.size()
+				&& info.entrenchStashes[player].valid() ? info.entrenchStashes[player] : EntrenchStash();
+			mechanics.entrenchCarriedUid = 0;
+			mechanics.entrenchVisualCarriedUid = 0;
+		}
 		mechanics.itemDegradeRng.clear();
 		mechanics.learnedSpells.clear();
 		mechanics.ducksInARow.clear();
@@ -6851,6 +7655,10 @@ int loadGame(int player, const SaveGameInfo& info) {
 			printlog("loadGame() warning: hash check failed");
 			gameStatistics[STATISTICS_DISABLE_UPLOAD] = 1;
 		}
+	}
+	if ( stats[statsPlayer]->playerRace == RACE_WRAITH )
+	{
+		syncWraithPossessionKnowledge(statsPlayer);
 	}
 
 	return 0;
@@ -6918,6 +7726,16 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 			stats->LVL = follower.LVL;
 			stats->GOLD = follower.GOLD;
 			stats->HUNGER = follower.HUNGER;
+			stats->golemBlessedComposition = follower.golem_blessed_composition >= 0
+				? std::min(10000, std::max(0, follower.golem_blessed_composition))
+				: (stats->sex == MALE ? 10000 : 0);
+			stats->runeCreatorIdentity = follower.rune_creator_identity;
+			reserveRuneCreatorIdentity(stats->runeCreatorIdentity);
+			for ( int stat = 0; stat < NUMSTATS; ++stat )
+			{
+				stats->tinctureStacks[stat] = stat < static_cast<int>(follower.tincture_stacks.size())
+					? follower.tincture_stacks[stat] : 0;
+			}
 			for (int c = 0; c < NUMPROFICIENCIES && c < follower.PROFICIENCIES.size(); ++c) {
 				stats->setProficiency(c, follower.PROFICIENCIES[c]);
 			}
@@ -6965,6 +7783,7 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 				bool identified = item.identified;
 				Item* i = newItem(type, status, beatitude, count,
 					appearance, identified, &stats->inventory);
+				restoreSavedRuneMetadata(*i, item);
 				i->x = item.x;
 				i->y = item.y;
 			}
@@ -6994,6 +7813,7 @@ list_t* loadGameFollowers(const SaveGameInfo& info) {
 					bool identified = item.second.identified;
 					Item* i = newItem(type, status, beatitude, count,
 						appearance, identified, nullptr);
+					restoreSavedRuneMetadata(*i, item.second);
 					i->x = item.second.x;
 					i->y = item.second.y;
 					slot = i;
@@ -7079,14 +7899,59 @@ int SaveGameInfo::Player::isCharacterValidFromDLC()
 			return INVALID_REQUIREDLC3;
 		}
 		break;
+	case RACE_LEONIN: // mod add: Leonin has no DLC requirement
+	case RACE_GOLEM: // mod add: Golem has no DLC requirement
+	case RACE_WRAITH: // mod add: Wraith has no DLC requirement
+		break;
 	default:
 		break;
 	}
 
+	if ( this->char_class == CLASS_WITCH )
+	{
+		if (  this->race == RACE_HUMAN || this->race == RACE_WRAITH )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_WRAITH)
+			? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+	}
 	if ( this->race == RACE_HUMAN )
 	{
 		return VALID_OK_CHARACTER;
 	}
+	// mod add: custom paired classes remain restricted even for aesthetic-only races.
+	if ( this->char_class == CLASS_WHALER )
+	{
+		if ( this->race == RACE_MERROW )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_MERROW)
+			? VALID_OK_CHARACTER
+			: INVALID_REQUIRE_ACHIEVEMENT;
+	}
+	else if ( this->char_class == CLASS_GUNSLINGER )
+	{
+		if ( this->race == RACE_LEONIN )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_LEONIN)
+			? VALID_OK_CHARACTER
+			: INVALID_REQUIRE_ACHIEVEMENT;
+	}
+	else if ( this->char_class == CLASS_RUNESMITH )
+	{
+		if ( this->race == RACE_GOLEM )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_GOLEM)
+			? VALID_OK_CHARACTER
+			: INVALID_REQUIRE_ACHIEVEMENT;
+	}
+	// mod add end
 	else if ( this->race > RACE_HUMAN && this->stats.statscore_appearance == 1 )
 	{
 		return VALID_OK_CHARACTER; // aesthetic only option.

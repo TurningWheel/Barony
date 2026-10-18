@@ -94,13 +94,14 @@ extern bool colorblind_lobby;
 
 // definitions
 extern bool showfps;
+extern bool showgolemstats;
 extern real_t time_diff;
 extern real_t t, ot, frameval[AVERAGEFRAMES];
 extern Uint32 cycles, pingtime;
 extern real_t fps;
-static const int NUMCLASSES = 26;
-#define NUMRACES 18
-#define NUMPLAYABLERACES 14
+static const int NUMCLASSES = 30; // mod add: append Witch
+#define NUMRACES 22 // mod edit: include Merrow, Leonin, Golem, and Wraith race identities
+#define NUMPLAYABLERACES 15
 extern char address[64];
 extern bool loadnextlevel;
 extern int skipLevelsOnLoad;
@@ -159,7 +160,11 @@ enum PlayerClasses : int
 	CLASS_SAPPER,
 	CLASS_SCION,
 	CLASS_HERMIT,
-	CLASS_PALADIN
+	CLASS_PALADIN,
+	CLASS_WHALER, // mod add
+	CLASS_GUNSLINGER, // mod add
+	CLASS_RUNESMITH, // mod add
+	CLASS_WITCH // mod add
 };
 
 static const std::vector<std::string> playerClassInternalNames = {
@@ -188,7 +193,11 @@ static const std::vector<std::string> playerClassInternalNames = {
 	"class_sapper",
 	"class_scion",
 	"class_hermit",
-	"class_paladin"
+	"class_paladin",
+	"class_whaler", // mod add
+	"class_gunslinger", // mod add
+	"class_runesmith", // mod add
+	"class_witch" // mod add
 };
 
 static const int CLASS_SHAMAN_NUM_STARTING_SPELLS = 15;
@@ -213,6 +222,10 @@ enum PlayerRaces : int
 	RACE_DRYAD,
 	RACE_MYCONID,
 	RACE_SALAMANDER,
+	RACE_MERROW, //mod add merrow
+	RACE_LEONIN, // mod add: Leonin
+	RACE_GOLEM, // mod add: Golem
+	RACE_WRAITH, // mod add: Wraith (append-only for save compatibility)
 	RACE_ENUM_END
 };
 
@@ -290,6 +303,8 @@ void actSleepZ(Entity* my);
 Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z);
 Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z);
 Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z);
+Entity* spawnFirearmMuzzleFlash(Sint16 x, Sint16 y, Sint16 z,
+	real_t scale = 0.35, bool spawnMusketSmoke = false); // mod add: replicated firearm presentation
 Entity* spawnPoof(Sint16 x, Sint16 y, Sint16 z, real_t scale, bool updateClients = false);
 Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z);
 Entity* spawnFloatingSpriteMisc(int sprite, Sint16 x, Sint16 y, Sint16 z);

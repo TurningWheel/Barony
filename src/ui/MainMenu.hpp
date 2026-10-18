@@ -192,6 +192,12 @@ namespace MainMenu {
 				return "salamander";
 			case RACE_GNOME:
 				return "gnome";
+			case RACE_LEONIN:
+				return "leonin";
+			case RACE_GOLEM:
+				return "golem";
+			case RACE_WRAITH:
+				return "wraith";
 			default:
 				break;
 			}
@@ -384,6 +390,30 @@ namespace MainMenu {
 			"ClassSelect_Icon_PaladinOn_00.png",
 			"ClassSelect_Icon_PaladinLocked_00.png",
 			}},
+		{"whaler", {
+			DLC::Base,
+			"ClassSelect_Icon_Whaler_00.png",
+			"ClassSelect_Icon_WhalerOn_00.png",
+			"ClassSelect_Icon_WhalerLocked_00.png",
+			}},
+		{"gunslinger", { // mod add
+			DLC::Base,
+			"ClassSelect_Icon_Gunslinger_00.png",
+			"ClassSelect_Icon_GunslingerOn_00.png",
+			"ClassSelect_Icon_GunslingerLocked_00.png",
+			}},
+		{"runesmith", {
+			DLC::Base,
+			"ClassSelect_Icon_Runesmith_00.png",
+			"ClassSelect_Icon_RunesmithOn_00.png",
+			"ClassSelect_Icon_RunesmithLocked_00.png",
+			}},
+		{"witch", {
+			DLC::Base,
+			"ClassSelect_Icon_Witch_00.png",
+			"ClassSelect_Icon_WitchOn_00.png",
+			"ClassSelect_Icon_WitchLocked_00.png",
+			}},
 	};
 
 	static const char* classes_in_order[] = {
@@ -392,7 +422,8 @@ namespace MainMenu {
 		"wizard", "arcanist", "joker", "sexton",
 		"ninja", "monk", "conjurer", "accursed",
 		"mesmer", "brewer", "mechanist", "punisher",
-		"shaman", "hunter", "bard", "sapper", "scion", "hermit", "paladin"
+		"shaman", "hunter", "bard", "sapper", "scion", "hermit", "paladin",
+		"whaler", "gunslinger", "runesmith", "witch" // mod add
 	};
 
 #ifdef STEAMWORKS

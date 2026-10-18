@@ -17,6 +17,7 @@
 
 class Entity; // forward declare
 class Stat; // forward declare
+struct spell_t; // forward declare
 
 // items
 typedef enum ItemType
@@ -545,6 +546,63 @@ typedef enum ItemType
 	SPELLBOOK_SANCTUARY,
 	SPELLBOOK_HOLY_BEAM,
 	SPELLBOOK_DOMINATE,
+		
+	//mod addition:
+	HARPOON,
+	// mod add: firearms
+	FLINTLOCK_PISTOL,
+	MUSKET,
+	// mod add end
+	// mod add: Entrench spellbook. TODO: replace placeholder mod artwork.
+	SPELLBOOK_ENTRENCH,
+	// mod add: offhand scouting utility. TODO: dedicated model/icon in mod assets.
+	SPYGLASS = 528,
+	// mod add: one generic, instance-configured magic rune.
+	MAGIC_RUNE,
+	RUNE_HAMMER,
+	AMULET_FAMILIAR = 531,
+	TINCTURE_STR = 532,
+	TINCTURE_DEX,
+	TINCTURE_CON,
+	TINCTURE_INT,
+	TINCTURE_PER,
+	TINCTURE_CHA,
+	OIL_AETHER,
+	OIL_SILVER,
+	OIL_TOXINS,
+	OIL_BASES,
+	OIL_LEAD,
+	OIL_MINERAL,
+	OIL_BRINE,
+	INK_MYSTICISM,
+	INK_SORCERY,
+	INK_THAUMATURGY,
+
+	INGREDIENT_BAG_SLIME = 548,
+	INGREDIENT_BAG_HUMORIN,
+	INGREDIENT_BAG_WILDBLOOD,
+	INGREDIENT_BAG_ANIMATIC,
+
+	INGREDIENT_GELATIN,
+	INGREDIENT_OOZE,
+	INGREDIENT_GREASE,
+	INGREDIENT_MOLD,
+
+	INGREDIENT_BLOOD,
+	INGREDIENT_PHLEGM,
+	INGREDIENT_BLACK_BILE,
+	INGREDIENT_YELLOW_BILE,
+
+	INGREDIENT_EYE,
+	INGREDIENT_HEART,
+	INGREDIENT_TOOTH,
+	INGREDIENT_LIVER,
+
+	INGREDIENT_SPIRIT,
+	INGREDIENT_CORE,
+	INGREDIENT_DUST,
+	INGREDIENT_FRAGMENTS,
+
 	ITEM_ENUM_MAX
 } ItemType;
 const int NUMITEMS = ITEM_ENUM_MAX;
@@ -577,6 +635,173 @@ typedef enum Status
 	SERVICABLE,
 	EXCELLENT
 } Status;
+
+enum AppliedOil : Uint8
+{
+	APPLIED_OIL_NONE,
+	APPLIED_OIL_AETHER,
+	APPLIED_OIL_SILVER,
+	APPLIED_OIL_TOXINS,
+	APPLIED_OIL_BASES,
+	APPLIED_OIL_LEAD,
+	APPLIED_OIL_MINERAL,
+	APPLIED_OIL_BRINE,
+	APPLIED_OIL_MAX
+};
+
+bool itemTypeIsTincture(ItemType type);
+bool itemTypeIsOil(ItemType type);
+bool itemTypeIsInk(ItemType type);
+bool itemTypeIsWitchbrewConsumable(ItemType type);
+
+enum WitchIngredientCategory : Sint32
+{
+	INGREDIENT_CATEGORY_NONE = 0,
+	INGREDIENT_CATEGORY_SLIME,
+	INGREDIENT_CATEGORY_HUMORIN,
+	INGREDIENT_CATEGORY_WILDBLOOD,
+	INGREDIENT_CATEGORY_ANIMATIC
+};
+
+bool itemTypeIsIngredientBag(ItemType type);
+bool itemTypeIsWitchIngredient(ItemType type);
+bool itemTypeIsWitchbrewGeneratedItem(ItemType type);
+WitchIngredientCategory ingredientCategoryFromBag(ItemType type);
+WitchIngredientCategory ingredientCategoryFromItem(ItemType type);
+ItemType ingredientBagForCategory(WitchIngredientCategory category);
+ItemType ingredientForCategorySlot(WitchIngredientCategory category, int slot);
+int ingredientSlotForItem(ItemType type);
+WitchIngredientCategory getIngredientCategoryForMonster(Entity* monster);
+AppliedOil appliedOilFromItemType(ItemType type);
+const char* getOilIconPath(AppliedOil oil);
+const char* getTinctureIconPath(ItemType type);
+bool itemTypeCanReceiveOil(ItemType type);
+bool itemCanReceiveOil(const Item* item);
+bool oilMatchesTarget(AppliedOil oil, Entity* target);
+void serverSyncAppliedOil(int player, bool shieldSlot);
+void rollOilWearOff(Item* source, int ownerPlayer, bool shieldSlot);
+void rollProjectileOilWearOff(Entity* projectile);
+bool applyTinctureStackToPlayer(ItemType tincture, int player);
+bool spellbookIsEligibleForInk(ItemType book);
+ItemType getInkSpellbookResult(ItemType ink, ItemType sourceSpellbook);
+bool useOilOnItem(Item*& oil, Item* target, int player);
+bool useInkOnSpellbook(Item*& ink, Item* book, int player);
+
+static constexpr int STEWING_MAX_EDUCTS = 8;
+static constexpr int STEWING_RECIPE_COUNT = 20;
+static constexpr int STEWING_RESOURCE_COUNT = 18; // 16 Witch ingredients, Water, Empty Bottle.
+static constexpr Uint32 STEWING_GENERATOR_VERSION = 1;
+
+struct StewingEduct
+{
+	ItemType type = ITEM_ENUM_MAX;
+	Uint32 quantity = 0;
+};
+
+using StewingSelection = std::array<StewingEduct, STEWING_MAX_EDUCTS>;
+
+struct StewingRecipe
+{
+	ItemType result = ITEM_ENUM_MAX;
+	std::array<StewingEduct, STEWING_MAX_EDUCTS> educts{};
+	Uint32 eductCount = 0;
+	bool alwaysUnlocked = false;
+};
+
+enum StewingMatchType : Uint8
+{
+	STEWING_MATCH_EMPTY,
+	STEWING_MATCH_TOO_SMALL,
+	STEWING_MATCH_VALID_RECIPE,
+	STEWING_MATCH_INVALID_POISON,
+	STEWING_MATCH_INVALID_RESOURCE
+};
+
+struct StewingMatch
+{
+	StewingMatchType type = STEWING_MATCH_EMPTY;
+	Sint32 recipeIndex = -1;
+	Uint32 multiplier = 0;
+	ItemType result = ITEM_ENUM_MAX;
+};
+
+// A distinctive appearance prevents Use-brewed oils/inks merging with ordinary bottles.
+constexpr Uint32 STEWING_NO_BOTTLE_APPEARANCE = 0x57535455u;
+
+enum StewingOperation : Uint8
+{
+	STEWING_OPERATION_BREW_INTO,
+	STEWING_OPERATION_APPLY,
+	STEWING_OPERATION_BREW_FOR_USE // Create a no-bottle oil/ink for the Use target picker.
+};
+
+struct StewingTransactionResult
+{
+	bool success = false;
+	StewingSelection remainingSelection{};
+	std::array<Uint32, STEWING_RESOURCE_COUNT> resources{};
+	std::array<Uint32, STEWING_RESOURCE_COUNT> inventoryConsumed{};
+	ItemType newlyUnlockedRecipe = ITEM_ENUM_MAX;
+};
+
+const std::array<StewingRecipe, STEWING_RECIPE_COUNT>& getStewingRecipes();
+Uint32 getActiveStewingGeneratorVersion();
+void setActiveStewingGeneratorVersion(Uint32 version);
+Uint32 getStewingRecipeUnlockMask(int player);
+void setStewingRecipeUnlockMask(int player, Uint32 mask);
+bool playerKnowsStewingRecipe(int player, ItemType result);
+bool unlockStewingRecipe(int player, ItemType result);
+void unlockAllStewingRecipes(int player);
+int getNumKnownStewingRecipes(int player);
+ItemType tryDiscoverStewingRecipe(int player,
+	const std::array<Uint64, STEWING_RESOURCE_COUNT>& consumedResources);
+void tryIncreaseAlchemyFromWitchbrewUse(int player);
+bool stewingResultCanApplyImmediately(ItemType result);
+bool itemTypeIsStewingSelectable(ItemType type);
+int getStewingResourceIndex(ItemType type);
+ItemType getStewingResourceType(int index);
+int getBottleContribution(ItemType educt);
+Uint32 countSelectedStewingResource(const StewingSelection& selection, ItemType type);
+Uint32 countSelectedWitchIngredients(const StewingSelection& selection);
+StewingMatch evaluateStewingMixture(const StewingSelection& selection);
+Uint32 getTotalStewingResource(int player, ItemType resource);
+Uint32 getAvailableStewingIngredient(int player, ItemType ingredient,
+	const StewingSelection& reserved);
+std::array<Uint32, STEWING_RESOURCE_COUNT> getStewingResourceSnapshot(int player);
+std::array<Uint32, STEWING_RESOURCE_COUNT> getStewingInventoryResourceSnapshot(int player);
+void setServerStewingInventoryMirror(int player,
+	const std::array<Uint32, STEWING_RESOURCE_COUNT>& resources);
+void clearServerStewingInventoryMirror(int player);
+bool serverStewingInventoryMirrorIsValid(int player);
+void consumeClientStewingInventoryResources(int player,
+	const std::array<Uint32, STEWING_RESOURCE_COUNT>& resources);
+bool performStewingTransaction(int player, Entity* familiar, StewingOperation operation,
+	const StewingSelection& selection, StewingTransactionResult& result);
+
+// Compact indices stored in MAGIC_RUNE appearance metadata. Deliberately excludes
+// rock, luckstone, worthless glass, and jewel.
+enum RuneGemType : Uint8
+{
+	RUNE_GEM_OBSIDIAN,
+	RUNE_GEM_JADE,
+	RUNE_GEM_FLUORITE,
+	RUNE_GEM_AMETHYST,
+	RUNE_GEM_GARNET,
+	RUNE_GEM_CITRINE,
+	RUNE_GEM_OPAL,
+	RUNE_GEM_JETSTONE,
+	RUNE_GEM_AMBER,
+	RUNE_GEM_AQUAMARINE,
+	RUNE_GEM_JACINTH,
+	RUNE_GEM_EMERALD,
+	RUNE_GEM_SAPPHIRE,
+	RUNE_GEM_RUBY,
+	RUNE_GEM_DIAMOND,
+	RUNE_GEM_COUNT,
+	RUNE_GEM_INVALID = 0xff
+};
+RuneGemType runeGemTypeFromItemType(ItemType type);
+ItemType itemTypeFromRuneGemType(RuneGemType gem);
 
 typedef enum EquipmentType
 {
@@ -637,6 +862,15 @@ enum ItemEquippableSlot : int
 class Item
 {
 public:
+	// MAGIC_RUNE stores its crafter's final bonus-form PWR as signed fixed point.
+	// This deliberately lives outside appearance so the existing Rune durability,
+	// resource-factor, and Dominate-capacity encodings retain their precision.
+	static constexpr Sint32 RUNE_STORED_PWR_INVALID = (-2147483647 - 1);
+	static constexpr real_t RUNE_STORED_PWR_SCALE = 1000000.0;
+	static constexpr Sint8 RUNE_CREATOR_INVALID = -1;
+	static constexpr Uint32 RUNE_INSTANCE_ID_INVALID = 0;
+	static constexpr Uint32 RUNE_CREATOR_IDENTITY_INVALID = 0;
+
 	ItemType type;
 	Status status;
 
@@ -656,6 +890,33 @@ public:
 	bool spellNotifyIcon = false; // if spell can level you up
 	Uint8 itemRequireTradingSkillInShop = 0; // if item hidden in shop view until player has trading req
 	bool itemSpecialShopConsumable = false; // if item is extra non-standard inventory consumable
+	Sint32 runeStoredPWR = RUNE_STORED_PWR_INVALID;
+	Sint8 runeCreatorPlayer = RUNE_CREATOR_INVALID;
+	// Network/save-stable identity of this physical Rune. Generic uid remains
+	// peer-local and must never be used to identify a Rune across the network.
+	Uint32 runeInstanceId = RUNE_INSTANCE_ID_INVALID;
+	// Persistent character/session identity paired with runeCreatorPlayer.
+	Uint32 runeCreatorIdentity = RUNE_CREATOR_IDENTITY_INVALID;
+	AppliedOil appliedOil = APPLIED_OIL_NONE;
+	Uint32 ingredientCounts[4] = { 0, 0, 0, 0 };
+	// The physical Familiar Amulet owns its Familiar's durable progression.
+	// The summoned monster is only a temporary manifestation of this state.
+	bool familiarInitialized = false;
+	Uint32 familiarInstanceId = 0;
+	// Save/network-stable physical identity for readable Wraith lore objects.
+	Uint32 wraithLoreInstanceId = 0;
+	Sint32 familiarHP = 0;
+	Sint32 familiarMAXHP = 0;
+	Sint32 familiarMP = 0;
+	Sint32 familiarMAXMP = 0;
+	Sint32 familiarLVL = 0;
+	Sint32 familiarEXP = 0;
+	Sint32 familiarSTR = 0;
+	Sint32 familiarDEX = 0;
+	Sint32 familiarCON = 0;
+	Sint32 familiarINT = 0;
+	Sint32 familiarPER = 0;
+	Sint32 familiarCHR = 0;
 
 	// weight, category and other generic info reported by function calls
 
@@ -671,6 +932,40 @@ public:
 
 	char* description() const;
 	char* getName() const;
+	bool isMagicRune() const;
+	int runeGetSpellID() const;
+	void runeSetSpellID(int spellID);
+	RuneGemType runeGetGemType() const;
+	void runeSetGemType(RuneGemType gem);
+	int runeGetMagicSchool() const;
+	bool runeIsValid() const;
+	bool runeCanCast() const;
+	ItemType runeGetVisualGemItemType() const;
+	std::string runeGetDisplayName() const;
+	real_t runeGetStoredBreakChance() const;
+	bool runeSetStoredBreakChance(real_t chance);
+	real_t runeGetStoredResourceFactor() const;
+	bool runeSetStoredResourceFactor(real_t factor);
+	int runeGetDominateCapacity() const;
+	bool runeSetDominateCapacity(int capacity);
+	bool runeHasStoredPWR() const;
+	real_t runeGetStoredPWR() const;
+	real_t runeGetStoredPWRDisplayPercent() const;
+	Sint32 runeGetStoredPWRRaw() const;
+	bool runeSetStoredPWR(real_t pwr);
+	void runeSetStoredPWRRaw(Sint32 raw);
+	bool runeHasCreator() const;
+	int runeGetCreatorPlayer() const;
+	void runeSetCreatorPlayer(int player);
+	bool runeHasInstanceId() const;
+	Uint32 runeGetInstanceId() const;
+	void runeSetInstanceId(Uint32 instanceId);
+	Uint32 runeEnsureInstanceId();
+	Uint32 runeGetCreatorIdentity() const;
+	void runeSetCreatorIdentity(Uint32 identity);
+	bool runeCreatorMatchesPlayer(int player) const;
+	Uint32 familiarEnsureInstanceId();
+	Uint32 wraithLoreEnsureInstanceId();
 
 	//General Functions.
 	Sint32 weaponGetAttack(const Stat* wielder = nullptr) const; //Returns the tohit of the weapon.
@@ -717,6 +1012,27 @@ public:
 
 	Sint32 getWeight() const;
 	Sint32 getGoldValue() const;
+
+	// mod add: Firearm loaded state uses a reserved
+	// appearance bit so normal item serialization/networking preserves it.
+	bool isFirearm() const;
+	bool isUnbreakableFromUse() const;
+	static bool firearmAppearanceIsLoaded(ItemType type, Uint32 appearance);
+	static Uint32 setFirearmAppearanceLoaded(ItemType type, Uint32 appearance, bool loaded);
+	bool firearmIsLoaded() const;
+	void setFirearmLoaded(bool loaded);
+	// mod add: The Library Musket's persistent lock is separate from an ordinary jam.
+	static bool musketAppearanceIsQuestJammed(ItemType type, Uint32 appearance);
+	static Uint32 setMusketAppearanceQuestJammed(ItemType type, Uint32 appearance, bool jammed);
+	bool musketQuestJammed() const;
+	void setMusketQuestJammed(bool jammed);
+	ItemType firearmReloadMaterialType() const;
+	Sint32 firearmReloadMaterialCost(Sint32 rawTinkering) const;
+	Sint32 firearmReloadDuration(Sint32 rawTinkering) const;
+	Sint32 firearmJamChancePercent(Sint32 rawTinkering) const;
+	Sint32 firearmJamRecoveryScrapCost(Sint32 rawTinkering) const;
+	Sint32 firearmReloadTrainingCap() const;
+	// mod add end
 
 	void foodTinGetDescriptionIndices(int* a, int* b, int* c) const;
 	void foodTinGetDescription(std::string& cookingMethod, std::string& protein, std::string& sides) const;
@@ -823,12 +1139,12 @@ bool item_PotionParalysis(Item*& item, Entity* entity, Entity* usedBy);
 Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy);
 void item_ScrollMail(Item*& item, int player);
 void item_ScrollIdentify(Item*& item, int player);
-void item_ScrollLight(Item*& item, int player);
+void item_ScrollLight(Item*& item, int player, bool suppressScrollNarration = false);
 void item_ScrollBlank(Item*& item, int player);
 void item_ScrollEnchantWeapon(Item*& item, int player);
 void item_ScrollEnchantArmor(Item*& item, int player);
 void item_ScrollRemoveCurse(Item*& item, int player);
-bool item_ScrollFire(Item*& item, int player); // return true if exploded into fire.
+bool item_ScrollFire(Item*& item, int player, bool suppressScrollNarration = false); // return true if exploded into fire.
 void item_ScrollFood(Item*& item, int player);
 void item_ScrollConjureArrow(Item*& item, int player);
 void item_ScrollMagicMapping(Item*& item, int player);
@@ -844,11 +1160,55 @@ Entity* item_ToolBeartrap(Item*& item, Entity* usedBy);
 void item_Food(Item*& item, int player);
 void item_FoodTin(Item*& item, int player);
 void item_FoodAutomaton(Item*& item, int player);
+static constexpr Sint32 GOLEM_CHARGE_MAX = 2000;
+static constexpr Sint32 GOLEM_POLARITY_SWITCH_POINT = 5000;
+void item_GolemConsume(Item*& item, int player);
 void item_Spellbook(Item*& item, int player);
+void degradeSpellbookFromLearning(Item*& spellbook, int player);
 void item_ToolLootBag(Item*& item, int player);
 
 //General functions.
 Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
+void copyItemPersistentCustomState(Item& destination, const Item& source);
+void copyItemPersistentCustomStateToEntity(Entity& destination, const Item& source);
+void copyItemPersistentCustomStateFromEntity(Item& destination, const Entity& source);
+bool mergeIngredientBags(Item& destination, const Item& source);
+bool ingredientBagIsEmpty(const Item& bag);
+Item* findIngredientBagInInventory(list_t& inventory, WitchIngredientCategory category);
+Item* mergeIngredientBagIntoInventory(list_t& inventory, const Item& source);
+void writeIngredientCountsToPacket(const Item& item, Uint8* data, int offset);
+void readIngredientCountsFromPacket(Item& item, const Uint8* data, int packetLength, int offset);
+static constexpr int FAMILIAR_PERSISTENT_PACKET_BYTES = 14 * static_cast<int>(sizeof(Uint32));
+void writeFamiliarPersistentStateToPacket(const Item& item, Uint8* data, int offset);
+void readFamiliarPersistentStateFromPacket(Item& item, const Uint8* data, int packetLength, int offset);
+Item* newItemFromExistingItem(const Item& source, Sint16 count, list_t* inventory);
+Item* createMagicRune(RuneGemType gem, int spellID, Status status, Sint16 beatitude,
+	bool identified, list_t* inventory = nullptr);
+int getRuneInscriptionManaCost(Status gemstoneStatus, const spell_t* spell, Entity* caster);
+int getRuneInscriptionGoldCost(Status gemstoneStatus, spell_t* spell, int player);
+bool activateMagicRune(int player);
+bool consumeSustainedSpellResource(Entity* caster, spell_t* spell, int manaCost);
+bool runeSpellIsSustained(spell_t* spell);
+real_t getRuneDominateStorageEfficiency(const Item& rune);
+real_t getRuneCrafterCompetence(const spell_t* spell, Entity* creator);
+bool initializeMagicRuneCraftingProfile(Item& rune, spell_t* spell, Entity* creator,
+	const Item& sourceSpellbook);
+real_t getMagicRuneEffectivePWR(const Item& rune, const Entity* caster);
+bool applyMagicRuneEffectivePWR(spell_t& spell, const Item& rune, const Entity* caster);
+bool applyMagicRuneCastStress(Uint32 runeInstanceId, int resourceEquivalent,
+	int requiredOwner = -1);
+Item* findMagicRuneByInstanceId(Uint32 runeInstanceId, int* ownerOut = nullptr,
+	int requiredOwner = -1);
+bool breakMagicRune(Uint32 runeInstanceId, const char* message = nullptr);
+void reserveMagicRuneInstanceId(Uint32 runeInstanceId);
+void reserveFamiliarInstanceId(Uint32 familiarInstanceId);
+void reserveWraithLoreInstanceId(Uint32 instanceId);
+static constexpr int WRAITH_LORE_INSTANCE_PACKET_BYTES = 4;
+void writeWraithLoreInstanceIdToPacket(const Item& item, Uint8* data, int offset);
+void readWraithLoreInstanceIdFromPacket(Item& item, const Uint8* data,
+	int packetLength, int offset);
+Uint32 ensureRuneCreatorIdentity(int player);
+void reserveRuneCreatorIdentity(Uint32 creatorIdentity);
 Item* uidToItem(Uint32 uid);
 ItemType itemLevelCurveEntity(Entity& my, Category cat, int minLevel, int maxLevel, BaronyRNG& rng);
 bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, 
@@ -862,16 +1222,29 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng,
 ItemType itemLevelCurve(Category cat, int minLevel, int maxLevel, BaronyRNG& rng);
 Item* newItemFromEntity(const Entity* entity, bool discardUid = false); //Make sure to call free(item). discardUid will free the new items uid if this is for temp purposes
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count = 1);
+bool inscribeFloorGemWithRuneHammer(int player, Entity* floorItem, int charge);
+bool beginRuneHammerInscription(int player, Uint32 targetUid, int charge);
+void updateRuneHammerInscription(int player);
+bool runeHammerUsesTwoHandedPose(const Stat* stats);
+bool runeHammerHasAttachedOffhand(const Stat* stats);
+namespace RuneHammerInscriptionAnimation
+{
+	constexpr int IMPACT_TICK = 12;
+	constexpr int END_TICK = 24;
+}
 Item** itemSlot(Stat* myStats, Item* item);
 
 enum Category itemCategory(const Item* item);
 Sint32 itemModel(const Item* item, bool shortModel = false, Entity* creature = nullptr);
 Sint32 itemModelFirstperson(const Item* item);
+bool updateGolemPolarityFromComposition(int player);
+void reverseGolemEquipmentBeatitudes(Stat& playerStats, const Item* excludedItem = nullptr);
 void consumeItem(Item*& item, int player); //NOTE: Items have to be unequipped before calling this function on them. NOTE: THIS CAN FREE THE ITEM POINTER. Sets item to nullptr if it does.
 bool dropItem(Item* item, int player, const bool notifyMessage = true, const bool dropAll = false); // return true on free'd item
 bool playerGreasyDropItem(const int player, Item* const item);
 bool playerThrowDuck(const int player, Item* const item, int charge);
-void useItem(Item* item, int player, Entity* usedBy = nullptr, bool unequipForDropping = false, bool serverCheckUse = false);
+void useItem(Item* item, int player, Entity* usedBy = nullptr, bool unequipForDropping = false,
+	bool serverCheckUse = false, bool alternateUse = false);
 enum EquipItemResult : int
 {
 	EQUIP_ITEM_FAIL_CANT_UNEQUIP,
@@ -894,7 +1267,12 @@ enum EquipItemSendToServerSlot : int
 };
 void playerTryEquipItemAndUpdateServer(const int player, Item* item, bool checkInventorySpaceForPaperDoll);
 void clientSendEquipUpdateToServer(EquipItemSendToServerSlot slot, EquipItemResult equipType, int player,
-	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified);
+	ItemType type, Status status, Sint16 beatitude, int count, Uint32 appearance, bool identified,
+	Sint32 runeStoredPWR = Item::RUNE_STORED_PWR_INVALID,
+	Sint8 runeCreatorPlayer = Item::RUNE_CREATOR_INVALID,
+	Uint32 runeInstanceId = Item::RUNE_INSTANCE_ID_INVALID,
+	Uint32 runeCreatorIdentity = Item::RUNE_CREATOR_IDENTITY_INVALID,
+	AppliedOil appliedOil = APPLIED_OIL_NONE);
 void clientUnequipSlotAndUpdateServer(const int player, EquipItemSendToServerSlot slot, Item* item);
 void clientSendAppearanceUpdateToServer(const int player, Item* item, const bool onIdentify);
 void clientSendItemTypeUpdateToServer(const int player, Item* item, ItemType prevItemType);
@@ -919,10 +1297,13 @@ ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Ite
 ItemStackResult getItemStackingBehaviorIntoChest(const int player, Item* itemToCheck, Item* itemDestinationStack, int& newQtyForCheckedItem, int& newQtyForDestItem);
 void getItemEmptySlotStackingBehavior(const int player, Item& itemToCheck, int& newQtyForCheckedItem, int& newQtyForDestItem);
 Item* itemPickup(int player, Item* item, Item* addToSpecificInventoryItem = nullptr, bool forceNewStack = false);
+Item* itemPickupCraftingResult(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
 bool shouldInvertEquipmentBeatitude(const Stat* wielder);
 bool isItemEquippableInShieldSlot(const Item* item);
 bool itemIsConsumableByAutomaton(const Item& item);
+bool itemIsConsumableByGolem(const Item& item);
+int getGolemChargeValue(const Item& item);
 
 extern const real_t potionDamageSkillMultipliers[6];
 extern const real_t thrownDamageSkillMultipliers[6];
@@ -997,6 +1378,27 @@ bool itemTypeIsInstrument(ItemType type);
 bool itemTypeIsThrownBall(ItemType type);
 real_t rangedAttackGetSpeedModifier(const Stat* myStats);
 bool rangedWeaponUseQuiverOnAttack(const Stat* myStats);
+bool tryReloadFirearm(Item& firearm, int player); // mod add: firearm scrap reload
+void updateFirearmReload(int player); // mod add: timed firearm reload completion
+void receiveFirearmReloadResult(int player, ItemType type, Uint32 appearance,
+	bool success, Uint32 token); // authoritative remote reload completion
+void receiveFirearmReloadStart(int player, ItemType type, Uint32 token);
+void receiveFirearmReloadReady(int player, ItemType type, Uint32 token);
+void receiveFirearmReloadPayment(int player, ItemType type, Uint32 token, bool success);
+void cancelFirearmReload(int player, bool endSession = false);
+bool tryJamFirearm(Item& firearm, int player); // mod add: authoritative firearm jam roll
+bool tryQuestJamMusket(Item& firearm, int player); // mod add: persistent quest-jam feedback
+bool firearmUnjamIsActive(int player); // mod add: block firearm actions during clearing
+void playFirearmJamSound(Entity* wielder); // mod add: native Tinkering disassembly feedback
+void receiveFirearmJam(int player, ItemType type, Sint32 duration,
+	bool retainsLoadedShot, Uint32 token); // server correction/presentation only
+void receiveFirearmJamReady(int player, ItemType type, Sint32 duration, Sint32 cost, Uint32 token);
+void receiveFirearmJamPayment(int player, ItemType type, Uint32 token, bool paid);
+void cancelFirearmJamPayment(int player, bool endSession = false);
+void updateFirearmUnjam(int player); // mod add: timed firearm jam clearing
+bool unlockLibraryMusketFromGnomeDeath(); // mod add: authoritative one-time quest unlock
+void receiveLibraryMusketUnlock(); // mod add: mirror the unlock in local client inventory
+Sint32 spoilLoadedFirearmsInInventory(int player, bool giveFeedback); // mod add: water spoils loaded shots
 real_t getArtifactWeaponEffectChance(ItemType type, Stat& wielder, real_t* effectAmount);
 void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten);
 bool playerCanSpawnMoreTinkeringBots(const Stat* myStats);

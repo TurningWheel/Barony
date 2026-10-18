@@ -74,10 +74,109 @@ enum Monster : int
 	MONSTER_UNUSED_6,
 	MONSTER_UNUSED_7,
 	MONSTER_UNUSED_8,
+	MERROW, //mod add merrow
+	LEONIN, // mod add: Leonin
+	GOLEM, // mod add: standalone playable Golem identity
+	BAT_FAMILIAR, // mod add: Amulet of the Familiar companion
+	WRAITH, // mod add: playable Wraith identity
 	MAX_MONSTER
 };
 const int NUMMONSTERS = MAX_MONSTER;
 extern int kills[NUMMONSTERS];
+
+// mod add: dedicated Leonin player model IDs
+enum LeoninModel : Sint32
+{
+	LEONIN_MODEL_ARM_LEFT = 2446,
+	LEONIN_MODEL_ARM_RIGHT = 2447,
+	LEONIN_MODEL_ARM_BENT_LEFT = 2448,
+	LEONIN_MODEL_ARM_BENT_RIGHT = 2449,
+	LEONIN_MODEL_HEAD_MALE = 2450,
+	LEONIN_MODEL_HEAD_FEMALE = 2451,
+	LEONIN_MODEL_LEG_LEFT = 2452,
+	LEONIN_MODEL_LEG_RIGHT = 2453,
+	LEONIN_MODEL_TORSO = 2454,
+	LEONIN_MODEL_TAIL = 2455,
+	LEONIN_MODEL_MANE = 2456,
+	LEONIN_MODEL_HAND_LEFT_FP = 2457,
+	LEONIN_MODEL_HAND_RIGHT_FP = 2458
+};
+
+// mod add: dedicated Blessed/Cursed Golem player model IDs. These are the
+// zero-based positions of the appended entries in the mounted models.txt.
+enum GolemModel : Sint32
+{
+	GOLEM_MODEL_B_ARM_LEFT = 2461,
+	GOLEM_MODEL_B_ARM_RIGHT = 2462,
+	GOLEM_MODEL_B_ARM_BENT_LEFT = 2463,
+	GOLEM_MODEL_B_ARM_BENT_RIGHT = 2464,
+	GOLEM_MODEL_B_HEAD = 2465,
+	GOLEM_MODEL_B_LEG_LEFT = 2466,
+	GOLEM_MODEL_B_LEG_RIGHT = 2467,
+	GOLEM_MODEL_B_TORSO = 2468,
+	GOLEM_MODEL_B_HAND_RIGHT_FP = 2469,
+	GOLEM_MODEL_B_HAND_LEFT_FP = 2470,
+	GOLEM_MODEL_C_ARM_LEFT = 2471,
+	GOLEM_MODEL_C_ARM_RIGHT = 2472,
+	GOLEM_MODEL_C_ARM_BENT_LEFT = 2473,
+	GOLEM_MODEL_C_ARM_BENT_RIGHT = 2474,
+	GOLEM_MODEL_C_HEAD = 2475,
+	GOLEM_MODEL_C_LEG_LEFT = 2476,
+	GOLEM_MODEL_C_LEG_RIGHT = 2477,
+	GOLEM_MODEL_C_TORSO = 2478,
+	GOLEM_MODEL_C_HAND_RIGHT_FP = 2479,
+	GOLEM_MODEL_C_HAND_LEFT_FP = 2480
+};
+
+static_assert(GOLEM_MODEL_B_ARM_BENT_LEFT == GOLEM_MODEL_B_ARM_LEFT + 2
+	&& GOLEM_MODEL_B_ARM_BENT_RIGHT == GOLEM_MODEL_B_ARM_RIGHT + 2
+	&& GOLEM_MODEL_C_ARM_BENT_LEFT == GOLEM_MODEL_C_ARM_LEFT + 2
+	&& GOLEM_MODEL_C_ARM_BENT_RIGHT == GOLEM_MODEL_C_ARM_RIGHT + 2,
+	"Golem arm model ordering must preserve the humanoid +2 bent-arm convention.");
+
+enum BatFamiliarModel : Sint32
+{
+	BAT_FAMILIAR_MODEL_BODY = 2482,
+	BAT_FAMILIAR_MODEL_HEAD = 2483,
+	BAT_FAMILIAR_MODEL_WING_LEFT = 2484,
+	BAT_FAMILIAR_MODEL_WING_RIGHT = 2485,
+	BAT_FAMILIAR_MODEL_CAULDRON = 2504,
+	BAT_FAMILIAR_MODEL_MIMIC_LID = 2505,
+	BAT_FAMILIAR_MODEL_MIMIC_TRUNK = 2506
+};
+
+enum WraithModel : Sint32
+{
+	WRAITH_MODEL_ARM_LEFT = 2507,
+	WRAITH_MODEL_ARM_BENT_LEFT = 2508,
+	WRAITH_MODEL_ARM_RIGHT = 2509,
+	WRAITH_MODEL_ARM_BENT_RIGHT = 2510,
+	WRAITH_MODEL_HEAD = 2511,
+	WRAITH_MODEL_TORSO = 2512,
+	WRAITH_MODEL_HAND_RIGHT_FP = 2513,
+	WRAITH_MODEL_HAND_LEFT_FP = 2514
+};
+
+enum FamiliarForm : Sint32
+{
+	FAMILIAR_FORM_NONE = -1,
+	FAMILIAR_FORM_BAT = 0,
+	FAMILIAR_FORM_MIMIC,
+	FAMILIAR_FORM_CAULDRON
+};
+
+static constexpr Sint32 FAMILIAR_MIMIC_CHEST_VISUAL_SKILL = 7;
+enum FamiliarMimicChestVisualState : Sint32
+{
+	FAMILIAR_MIMIC_CHEST_NORMAL = 0,
+	FAMILIAR_MIMIC_CHEST_OPEN,
+	FAMILIAR_MIMIC_CHEST_CLOSING
+};
+
+static constexpr real_t FAMILIAR_MAX_FORM_DISTANCE = 8.0 * 16.0;
+static constexpr real_t FAMILIAR_BAT_MOVEMENT_SPEED_MULTIPLIER = 2.0;
+static constexpr real_t FAMILIAR_INGREDIENT_COLLECTION_SPEED_MULT = 2.0;
+static constexpr real_t FAMILIAR_INGREDIENT_PICKUP_RADIUS = 8.0;
 
 static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
     // NOTHING
@@ -194,7 +293,8 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
     // MIMIC
     {
 		1247,
-		1792
+		1792,
+		BAT_FAMILIAR_MODEL_MIMIC_TRUNK
     },
 
     // LICH
@@ -368,6 +468,44 @@ static std::vector<Sint32> monsterSprites[NUMMONSTERS] = {
 	{
 	},
 	//MONSTER_UNUSED_8
+	{
+	},
+	// MERROW TO DO: add sprites for merrow
+    {
+        2413, 2414, 2415, 2416, 2417, 2418, 2419, 2420, 2421, 2422, 2423, 2424, //male
+		2425, 2426, 2427, 2428, 2429, 2430, 2431, 2432, 2433, 2434, 2435, 2436 //female
+	},
+	// LEONIN
+	{
+		LEONIN_MODEL_ARM_LEFT, LEONIN_MODEL_ARM_RIGHT,
+		LEONIN_MODEL_ARM_BENT_LEFT, LEONIN_MODEL_ARM_BENT_RIGHT,
+		LEONIN_MODEL_HEAD_MALE, LEONIN_MODEL_HEAD_FEMALE,
+		LEONIN_MODEL_LEG_LEFT, LEONIN_MODEL_LEG_RIGHT,
+		LEONIN_MODEL_TORSO, LEONIN_MODEL_TAIL, LEONIN_MODEL_MANE
+	},
+	// GOLEM
+	{
+		GOLEM_MODEL_B_ARM_LEFT, GOLEM_MODEL_B_ARM_RIGHT,
+		GOLEM_MODEL_B_ARM_BENT_LEFT, GOLEM_MODEL_B_ARM_BENT_RIGHT,
+		GOLEM_MODEL_B_HEAD, GOLEM_MODEL_B_LEG_LEFT,
+		GOLEM_MODEL_B_LEG_RIGHT, GOLEM_MODEL_B_TORSO,
+		GOLEM_MODEL_C_ARM_LEFT, GOLEM_MODEL_C_ARM_RIGHT,
+		GOLEM_MODEL_C_ARM_BENT_LEFT, GOLEM_MODEL_C_ARM_BENT_RIGHT,
+		GOLEM_MODEL_C_HEAD, GOLEM_MODEL_C_LEG_LEFT,
+		GOLEM_MODEL_C_LEG_RIGHT, GOLEM_MODEL_C_TORSO
+	},
+	// BAT_FAMILIAR
+	{
+		BAT_FAMILIAR_MODEL_BODY, BAT_FAMILIAR_MODEL_HEAD,
+		BAT_FAMILIAR_MODEL_WING_LEFT, BAT_FAMILIAR_MODEL_WING_RIGHT,
+		BAT_FAMILIAR_MODEL_CAULDRON
+	},
+	// WRAITH
+	{
+		WRAITH_MODEL_ARM_LEFT, WRAITH_MODEL_ARM_BENT_LEFT,
+		WRAITH_MODEL_ARM_RIGHT, WRAITH_MODEL_ARM_BENT_RIGHT,
+		WRAITH_MODEL_HEAD, WRAITH_MODEL_TORSO
+	}
 };
 
 static char monstertypename[][32] =
@@ -424,7 +562,12 @@ static char monstertypename[][32] =
 	"duck_small",
 	"monster_unused_6",
 	"monster_unused_7",
-	"monster_unused_8"
+	"monster_unused_8",
+	"merrow", //mod add merrow
+	"leonin", // mod add: Leonin
+	"golem", // mod add: Golem
+	"bat_familiar",
+	"wraith"
 };
 
 // body part focal points
@@ -486,9 +629,14 @@ static char gibtype[NUMMONSTERS] =
 	2,  //MOTH_SMALL
 	0,  //EARTH_ELEMENTAL
 	0,  //DUCK_SMALL
-	1,  //MONSTER_UNUSED_6
+	1,  //MONSTER_UNUSED_6 
 	1,  //MONSTER_UNUSED_7
-	1   //MONSTER_UNUSED_8
+	1,  //MONSTER_UNUSED_8
+	1,  //MERROW modd add
+	1,  // LEONIN: standard red blood
+	0,  // GOLEM: construct
+	0,  // BAT_FAMILIAR: no blood/gibs
+	5   // WRAITH: ethereal/undead gibs
 };
 
 // columns go like this:
@@ -548,7 +696,12 @@ static double damagetables[NUMMONSTERS][7] =
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // duck_small
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_6
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_7
-	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }  // monster_unused_8
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // monster_unused_8
+	{ 0.5, 1.f, 0.7, 1.2, 1.1, 1.4, 1.f }, // merrow mod add
+	{ 1.2, 0.8, 1.f, 1.3, 1.f, 0.6, 0.8 }, // leonin mod add
+	{ 1.f, 1.4, 1.f, 0.6, 0.8, 1.f, 1.2 }, // golem mod add
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 0.5 }, // bat familiar (immune; mirrors bat table)
+	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }  // wraith: no generic resistances/weaknesses
 };
 
 enum DamageTableType : int
@@ -592,7 +745,11 @@ static std::vector<std::vector<unsigned int>> classStatGrowth =
 	{	5,	5,	5,	4,	3,	2 },
 	{	2,	3,	2,	8,	4,	5 },
 	{	4,	2,	3,	6,	3,	5 },
-	{	6,	3,	5,	3,	2,	5 }
+	{	6,	3,	5,	3,	2,	5 },
+	{   6,  6,  3,  2,  5,  2 }, // CLASS_WHALER mod add
+	{   2,  6,  3,  5,  6,  2 }, // CLASS_GUNSLINGER mod add
+	{   5,  2,  4,  6,  3,  4 }, // CLASS_RUNESMITH mod add
+	{   1,  1,  1,  1,  1,  1 }  // CLASS_WITCH mod add
 };
 
 enum AllyNPCCommand : int
@@ -793,6 +950,36 @@ void initGyroBot(Entity* my, Stat* myStats);
 void initDummyBot(Entity* my, Stat* myStats);
 void initMimic(Entity* my, Stat* myStats);
 void initBat(Entity* my, Stat* myStats);
+static constexpr Uint16 SFX_CAULDRON_AMBIANCE = 866;
+static constexpr Uint16 SFX_STEW_BUBBLES = 867;
+void removeBatFamiliar(Entity* my);
+void spawnAmuletFamiliarTransformParticles(Entity* entity);
+bool syncAmuletFamiliarPersistentState(Entity* familiar, Item* amulet = nullptr, bool notifyOwner = true);
+bool isAmuletFamiliar(const Entity* entity, const Stat* stats = nullptr);
+FamiliarForm getAmuletFamiliarForm(const Entity* entity);
+bool familiarUsesBatCollisionSemantics(const Entity* entity);
+bool isAmuletFamiliarMimic(const Entity* entity);
+bool familiarFormHasCreatureCollision(const Entity* entity);
+bool familiarFormIsCombatTargetable(const Entity* entity);
+Entity* findAmuletFamiliar(Entity* owner);
+bool familiarCanBecomeMimicAtTile(int tilex, int tiley);
+bool amuletFamiliarPolymorphTargetIsValid(Entity* familiar, real_t targetX, real_t targetY);
+bool amuletFamiliarIsTooWeakToTransform(const Entity* familiar, const Stat* familiarStats = nullptr);
+bool requestAmuletFamiliarPolymorph(Entity* owner, real_t targetX, real_t targetY);
+bool updateAmuletFamiliarSpecialState(Entity* familiar, Stat* familiarStats);
+void transformAmuletFamiliar(Entity* familiar, FamiliarForm form, bool playEffect = true);
+void rebuildAmuletFamiliarVisuals(Entity* familiar);
+void animateAmuletFamiliarCauldron(Entity* familiar);
+void rebuildAmuletFamiliarCauldron(Entity* familiar);
+Entity* getAmuletFamiliarMimicLid(Entity* familiar);
+void reconcileSharedVoidChestInventory();
+Item* mergeIngredientBagIntoVoidChest(const Item& source, int ownerPlayer);
+void syncIngredientBagToOpenVoidChest(const Item& bag, int ownerPlayer);
+void spawnAmuletFamiliarIngredientBag(Entity* recipient, Entity* source);
+void sweepAmuletFamiliarIngredientsOnLevelChange();
+void closeAmuletFamiliarVoidChest(Entity* familiar);
+bool openAmuletFamiliarVoidChest(Entity* familiar, int player);
+bool validateVoidChestPacketSession(int player, bool voidChest);
 void initBugbear(Entity* my, Stat* myStats);
 void initMonsterD(Entity* my, Stat* myStats);
 void initMonsterM(Entity* my, Stat* myStats);
@@ -903,7 +1090,9 @@ void mothDie(Entity* my);
 void earthElementalDie(Entity* my);
 void duckDie(Entity* my);
 
-void monsterAnimate(Entity* my, Stat* myStats, double dist);
+// Wraith visual proxies animate AFTER client ENTU interpolation (game.cpp).
+bool isClientWraithMonsterVisualProxy(Entity* my);
+void monsterAnimate(Entity* my, Stat* myStats, double dist, bool visualOnly = false);
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void ratAnimate(Entity* my, double dist);

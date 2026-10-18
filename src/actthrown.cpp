@@ -142,6 +142,14 @@ void onThrownLandingParticle(Entity* my)
 
 void actThrown(Entity* my)
 {
+	// Projectiles store the coating separately from world items. Make the
+	// thrown Item reconstructed below (and on later ticks) carry that coat.
+	if ( multiplayer != CLIENT && static_cast<ItemType>(my->skill[10]) >= 0
+		&& static_cast<ItemType>(my->skill[10]) < NUMITEMS
+		&& items[my->skill[10]].category == THROWN )
+	{
+		my->itemAppliedOil = my->projectileAppliedOil;
+	}
 	Item* item = nullptr;
 	Category cat = GEM;
 	ItemType type = WOODEN_SHIELD;
@@ -459,6 +467,17 @@ void actThrown(Entity* my)
 			THROWN_VELZ += 0.04;
 			my->z += THROWN_VELZ;
 		}
+		//mod add: harpoon orientation when thrown
+		else if ( type == HARPOON )
+		{
+    		THROWN_VELZ += 0.04;
+    		my->z += THROWN_VELZ;
+
+    		my->yaw = atan2(THROWN_VELY, THROWN_VELX);
+    		my->pitch = PI / 2;
+    		my->roll = 0.0;
+		}
+		//mod add end
 		else
 		{
 			THROWN_VELZ += 0.04;
@@ -575,7 +594,7 @@ void actThrown(Entity* my)
 
 			// landing on the ground.
 			int index = (int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height;
-			if ( map.tiles[index] )
+			if ( map.tiles[index] || my->skill[10] == HARPOON ) //mod add: prevent harpoon from falling in abyss
 			{
 				item = newItemFromEntity(my);
 				bool tinkeringItemCanBePlaced = true;
@@ -666,7 +685,7 @@ void actThrown(Entity* my)
 					list_RemoveNode(my->mynode);
 					return;
 				}
-				else if ( item->type == BOOMERANG && uidToEntity(my->parent) )
+				else if ( (item->type == BOOMERANG || item->type == HARPOON) && uidToEntity(my->parent) ) //mod add: Harpoon 
 				{
 					Entity* parent = uidToEntity(my->parent);
 					Entity* spellEntity = createParticleSapCenter(parent, my, 0, my->sprite, -1);
@@ -680,7 +699,19 @@ void actThrown(Entity* my)
 						spellEntity->skill[13] = 1;
 						spellEntity->skill[14] = item->appearance;
 						spellEntity->skill[15] = item->identified;
+						spellEntity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 					}
+					
+					// mod add: Harpoon: the return entity now represents the weapon,
+    				// so remove the original thrown projectile.
+    				if ( item->type == HARPOON )
+    				{
+        				free(item);
+        				my->removeLightField();
+        				list_RemoveNode(my->mynode);
+        				return;
+    				}
+					//mod add end
 				}
 				else if ( item && (item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)
 					&& !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )
@@ -763,6 +794,7 @@ void actThrown(Entity* my)
 					entity->skill[13] = item->count;
 					entity->skill[14] = item->appearance;
 					entity->skill[15] = item->identified;
+					entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 					if ( item->type == GEM_JEWEL )
 					{
 						entity->parent = my->parent;
@@ -933,6 +965,7 @@ void actThrown(Entity* my)
 					spellEntity->skill[13] = 1;
 					spellEntity->skill[14] = item->appearance;
 					spellEntity->skill[15] = item->identified;
+					spellEntity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 				}
 			}
 			free(item);
@@ -969,6 +1002,7 @@ void actThrown(Entity* my)
 							entity->skill[13] = item->count;
 							entity->skill[14] = item->appearance;
 							entity->skill[15] = item->identified;
+							entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 							entity->itemReturnUID = parent->getUID();
 
 							free(item);
@@ -1073,7 +1107,7 @@ void actThrown(Entity* my)
 			++THROWN_BOUNCES;
 		}
 
-		if ( item->type == BOOMERANG )
+		if ( item->type == BOOMERANG || item->type == HARPOON  ) //modd add: harpoon (return entity)
 		{
 			Entity* parent = uidToEntity(my->parent);
 			if ( parent )
@@ -1089,6 +1123,17 @@ void actThrown(Entity* my)
 					spellEntity->skill[13] = 1;
 					spellEntity->skill[14] = item->appearance;
 					spellEntity->skill[15] = item->identified;
+					spellEntity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+					// mod add: remember entity struck by Harpoon
+					if ( item->type == HARPOON && hit.entity )
+					{
+    					spellEntity->skill[7] = hit.entity->getUID();
+					}
+					else
+					{
+    					spellEntity->skill[7] = 0;
+					}
+					// mod add end
 				}
 			}
 		}
@@ -1292,6 +1337,21 @@ void actThrown(Entity* my)
 						break;
 				}
 				damage = std::max(0, damage);
+				if ( itemTypeIsOil(item->type) && oilMatchesTarget(appliedOilFromItemType(item->type), hit.entity) )
+				{
+					damage = 50;
+				}
+				if ( thrownTypeWeapon && item->appliedOil != APPLIED_OIL_NONE )
+				{
+					if ( damage > 0 && oilMatchesTarget(item->appliedOil, hit.entity) )
+					{
+						damage += damage / 4;
+					}
+					rollProjectileOilWearOff(my);
+					// The weapon was reconstructed before the impact roll. Carry
+					// the post-impact coating into the recoverable/return item.
+					item->appliedOil = static_cast<AppliedOil>(my->projectileAppliedOil);
+				}
 				//messagePlayer(0, "damage: %d", damage);
 				if ( parent && parent->behavior == &actPlayer && parent->checkFriend(hit.entity) && itemCategory(item) == POTION )
 				{
@@ -1308,13 +1368,15 @@ void actThrown(Entity* my)
 					Stat* parentStats = parent->getStats();
 					if ( parentStats && parentStats->getEffectActive(EFF_ENVENOM_WEAPON) && hitstats )
 					{
+						spell_t* activeSpell = parent->getActiveMagicEffect(SPELL_ENVENOM_WEAPON);
+						ScopedSpellPowerOverride spellPowerScope(activeSpell, true);
 						if ( local_rng.rand() % 2 == 0 )
 						{
 							int envenomDamage = std::min(
 								getSpellDamageSecondaryFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent),
 								getSpellDamageFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent));
 
-							hit.entity->modHP(-envenomDamage); // do the damage
+							hit.entity->modHP(-envenomDamage, parent); // do the damage
 							for ( int tmp = 0; tmp < 3; ++tmp )
 							{
 								Entity* gib = spawnGib(hit.entity, 211);
@@ -1347,7 +1409,7 @@ void actThrown(Entity* my)
 				if ( !friendlyHit )
 				{
 					Sint32 oldHP = hitstats->HP;
-					hit.entity->modHP(-damage);
+					hit.entity->modHP(-damage, parent);
 
 					if ( hitstats )
 					{
@@ -1482,12 +1544,39 @@ void actThrown(Entity* my)
 					}
 					if ( !ignorePotion )   // this makes it impossible to bork the end boss :)
 					{
-						if ( local_rng.rand() % 4 == 0 && parent != NULL && itemCategory(item) == POTION && item->type != POTION_EMPTY )
+						if ( local_rng.rand() % 4 == 0 && parent != NULL && itemCategory(item) == POTION
+							&& item->type != POTION_EMPTY && !itemTypeIsWitchbrewConsumable(item->type) )
 						{
 							parent->increaseSkill(PRO_ALCHEMY);
 						}
 						switch ( itemType )
 						{
+							case TINCTURE_STR:
+							case TINCTURE_DEX:
+							case TINCTURE_CON:
+							case TINCTURE_INT:
+							case TINCTURE_PER:
+							case TINCTURE_CHA:
+								if ( hit.entity->behavior == &actPlayer )
+								{
+									const bool applied = applyTinctureStackToPlayer(itemType, hit.entity->skill[2]);
+									if ( applied && multiplayer != CLIENT && parent
+										&& parent->behavior == &actPlayer && local_rng.rand() % 4 == 0 )
+									{
+										parent->increaseSkill(PRO_ALCHEMY);
+									}
+								}
+								usedpotion = true;
+								break;
+							case OIL_AETHER:
+							case OIL_SILVER:
+							case OIL_TOXINS:
+							case OIL_BASES:
+							case OIL_LEAD:
+							case OIL_MINERAL:
+							case OIL_BRINE:
+								usedpotion = true;
+								break;
 							case POTION_WATER:
 								usedpotion = true;
 								item_PotionWater(item, hit.entity, parent);
@@ -1778,6 +1867,9 @@ void actThrown(Entity* my)
 								usedpotion = true;
 								break;
 							}
+							case INK_MYSTICISM:
+							case INK_SORCERY:
+							case INK_THAUMATURGY:
 							case FOOD_CREAMPIE:
 							{
 								skipMessage = true;
@@ -1822,6 +1914,11 @@ void actThrown(Entity* my)
 								{
 									Entity* gib = spawnGib(hit.entity, 863);
 									serverSpawnGibForClient(gib);
+								}
+								if ( itemTypeIsInk(itemType) && multiplayer != CLIENT && parent
+									&& parent->behavior == &actPlayer && local_rng.rand() % 4 == 0 )
+								{
+									parent->increaseSkill(PRO_ALCHEMY);
 								}
 								usedpotion = true;
 								break;
@@ -1915,7 +2012,7 @@ void actThrown(Entity* my)
 
 				if ( friendlyHit && !usedpotion )
 				{
-					if ( item && itemCategory(item) != POTION && item->type != BOOMERANG
+					if ( item && itemCategory(item) != POTION && item->type != BOOMERANG && item->type != HARPOON //mod add: harpoon
 						&& item->type != GREASE_BALL && item->type != DUST_BALL 
 						&& item->type != SLOP_BALL )
 					{
@@ -1941,6 +2038,7 @@ void actThrown(Entity* my)
 						entity->skill[13] = item->count;
 						entity->skill[14] = item->appearance;
 						entity->skill[15] = item->identified;
+						entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 						if ( item->type == GEM_JEWEL )
 						{
 							entity->parent = my->parent;
@@ -2324,6 +2422,10 @@ void actThrown(Entity* my)
 								entityHP = 0;
 
 								hit.entity->colliderKillerUid = parent ? parent->getUID() : 0;
+								if ( oldHP > 0 )
+								{
+									entrenchOnEntityDestroyedByCreature(hit.entity, parent);
+								}
 								if ( parent && parent->behavior == &actPlayer )
 								{
 									if ( hit.entity->getColliderOnBreakLangEntry() != 0 )
@@ -2488,6 +2590,16 @@ void actThrown(Entity* my)
 			list_RemoveNode(my->mynode);
 			return;
 		}
+		//mod add: prevent duplication:
+		else if ( item->type == HARPOON && uidToEntity(my->parent) )
+		{
+    		// Harpoon return entity was created above.
+    		free(item);
+    		my->removeLightField();
+    		list_RemoveNode(my->mynode);
+    		return;
+		}
+		//
 		else if ( item && itemIsThrowableTinkerTool(item) /*&& !(item->type >= TOOL_BOMB && item->type <= TOOL_TELEPORT_BOMB)*/ )
 		{
 			// non-bomb tools will fall to the ground and get placed.
@@ -2563,6 +2675,7 @@ void actThrown(Entity* my)
 				entity->skill[13] = item->count;
 				entity->skill[14] = item->appearance;
 				entity->skill[15] = item->identified;
+				entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
 				if ( item->type == GEM_JEWEL )
 				{
 					entity->parent = my->parent;

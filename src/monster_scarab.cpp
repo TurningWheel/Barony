@@ -553,7 +553,15 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 	            scarabFly += (PI / TICKS_PER_SECOND) * 2.0;
 	            if (scarabFly >= PI / 2.0) {
 	                scarabFly = PI / 2.0;
-	                my->attack(1, 0, nullptr); // munch
+	                if ( monsterIsActiveWraithBody(my) )
+	                {
+	                    MONSTER_ATTACK = 1;
+	                    MONSTER_ATTACKTIME = 0;
+	                }
+	                else
+	                {
+	                    my->attack(1, 0, nullptr); // munch
+	                }
 	            }
 	        }
 	        my->sprite = 1075;
@@ -580,6 +588,28 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 	    }
         my->new_z = my->z = 6.0 - sin(scarabFly) * 6.0;
 		my->creatureHandleLiftZ();
+		if ( monsterIsActiveWraithBody(my) )
+		{
+			// The possessed proxy is snapped to the player before each animation.
+			// Reattach the wings after the attack updates the root's final Z.
+			for ( bodypart = 0, node = my->children.first;
+				node != nullptr; node = node->next, ++bodypart )
+			{
+				if ( bodypart != 2 && bodypart != 3 )
+				{
+					continue;
+				}
+				Entity* wing = static_cast<Entity*>(node->element);
+				if ( !wing )
+				{
+					continue;
+				}
+				wing->x = my->x - 1.1 * cos(my->yaw);
+				wing->y = my->y - 1.1 * sin(my->yaw);
+				wing->z = my->z - 3.4;
+				wing->yaw = my->yaw;
+			}
+		}
 	}
 }
 

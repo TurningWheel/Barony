@@ -816,6 +816,54 @@ namespace ConsoleCommands {
 		showfps = (showfps == false);
 		});
 
+	static ConsoleCommand ccmd_unlockStewingRecipes("/unlock_stewing_recipes",
+		"unlock all stewing recipes (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		unlockAllStewingRecipes(clientnum);
+		messagePlayer(clientnum, MESSAGE_MISC, "Unlocked all Stewing recipes.");
+		});
+
+	static ConsoleCommand ccmd_unlockPossessions("/unlock_possessions",
+		"unlock all Wraith possession knowledge (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		if ( !stats[clientnum] || stats[clientnum]->playerRace != RACE_WRAITH )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "Only a Wraith can unlock possession knowledge.");
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			strcpy(reinterpret_cast<char*>(net_packet->data), "WULK");
+			net_packet->data[4] = static_cast<Uint8>(clientnum);
+			net_packet->address = net_server;
+			net_packet->len = 5;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		else if ( unlockAllWraithPossessions(clientnum) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, "Unlocked all Wraith possession knowledge.");
+		}
+		});
+
+	static ConsoleCommand ccmd_golemstats("/golemstats", "toggle Golem debug HUD (cheat)", []CCMD{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, MESSAGE_MISC, Language::get(277));
+			return;
+		}
+		showgolemstats = !showgolemstats;
+		messagePlayer(clientnum, MESSAGE_MISC, "Golem stats overlay %s.",
+			showgolemstats ? "enabled" : "disabled");
+		});
+
 	static ConsoleCommand ccmd_noclip("/noclip", "toggle noclip mode (cheat)", []CCMD{
 		if (!(svFlags & SV_FLAG_CHEATS))
 		{
@@ -6810,4 +6858,3 @@ namespace ConsoleCommands {
 		Player::Inventory_t::Appraisal_t::readFromFile();
 	});
 }
-

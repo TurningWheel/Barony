@@ -358,8 +358,186 @@ void changeSettingsTab(int option)
 	}
 }
 
+// mod add: persistent custom race / class unlocks
+static constexpr const char* WHALER_UNLOCK_PATH = "savegames/merrow_whaler.unlock";
+static constexpr const char* WHALER_LEGACY_UNLOCK_PATH = "merrow_whaler.unlock";
+static constexpr const char* GUNSLINGER_UNLOCK_PATH = "savegames/leonin_gunslinger.unlock";
+static constexpr const char* RUNESMITH_UNLOCK_PATH = "savegames/golem_runesmith.unlock";
+static constexpr const char* WITCH_UNLOCK_PATH = "savegames/wraith_witch.unlock";
+static bool whalerLegacyUnlockRetainedThisSession = false;
+
+static bool customClassUnlockExists(const char* relativePath)
+{
+	char path[PATH_MAX] = "";
+	completePath(path, relativePath, outputdir);
+
+	File* fp = FileIO::open(path, "rb");
+	if ( !fp )
+	{
+		return false;
+	}
+
+	FileIO::close(fp);
+	return true;
+}
+
+static bool writeCustomClassUnlock(const char* relativePath)
+{
+	if ( customClassUnlockExists(relativePath) )
+	{
+		return true;
+	}
+
+	char path[PATH_MAX] = "";
+	completePath(path, relativePath, outputdir);
+
+	File* fp = FileIO::open(path, "wb");
+	if ( !fp )
+	{
+		return false;
+	}
+
+	const char unlocked = '1';
+	fp->write(&unlocked, sizeof(char), 1);
+	FileIO::close(fp);
+
+	return customClassUnlockExists(relativePath);
+}
+
+static bool isWhalerGloballyUnlocked()
+{
+	if ( customClassUnlockExists(WHALER_UNLOCK_PATH) )
+	{
+		return true;
+	}
+	if ( whalerLegacyUnlockRetainedThisSession )
+	{
+		return true;
+	}
+	if ( !customClassUnlockExists(WHALER_LEGACY_UNLOCK_PATH) )
+	{
+		return false;
+	}
+
+	// A legacy-only marker grants the unlock even if its migration cannot be written.
+	whalerLegacyUnlockRetainedThisSession = true;
+	if ( writeCustomClassUnlock(WHALER_UNLOCK_PATH)
+		&& customClassUnlockExists(WHALER_UNLOCK_PATH) )
+	{
+		char legacyPath[PATH_MAX] = "";
+		completePath(legacyPath, WHALER_LEGACY_UNLOCK_PATH, outputdir);
+		if ( remove(legacyPath) == 0 )
+		{
+			printlog("[MERROW]: Migrated Whaler unlock to savegames.");
+		}
+		else
+		{
+			printlog("[MERROW]: Whaler unlock migrated, but the legacy marker could not be removed.");
+		}
+	}
+	else
+	{
+		printlog("[MERROW]: Failed to migrate Whaler unlock to savegames; retaining the legacy unlock.");
+	}
+	return true;
+}
+
+static bool isGunslingerGloballyUnlocked()
+{
+	return customClassUnlockExists(GUNSLINGER_UNLOCK_PATH);
+}
+
+static bool isRunesmithGloballyUnlocked()
+{
+    return customClassUnlockExists(RUNESMITH_UNLOCK_PATH);
+}
+
+static bool isWitchGloballyUnlocked()
+{
+	return customClassUnlockExists(WITCH_UNLOCK_PATH);
+}
+
+static bool writeWhalerUnlock()
+{
+	if ( customClassUnlockExists(WHALER_UNLOCK_PATH) )
+	{
+		return true;
+	}
+	if ( !writeCustomClassUnlock(WHALER_UNLOCK_PATH) )
+	{
+		printlog("[MERROW]: Failed to save Whaler unlock.");
+		return false;
+	}
+	printlog("[MERROW]: Whaler class unlocked.");
+	return true;
+}
+
+static bool writeGunslingerUnlock()
+{
+	if ( customClassUnlockExists(GUNSLINGER_UNLOCK_PATH) )
+	{
+		return true;
+	}
+	if ( !writeCustomClassUnlock(GUNSLINGER_UNLOCK_PATH) )
+	{
+		printlog("[LEONIN]: Failed to save Gunslinger unlock.");
+		return false;
+	}
+	printlog("[LEONIN]: Gunslinger class unlocked.");
+	return true;
+}
+
+static bool writeRunesmithUnlock()
+{
+    if ( customClassUnlockExists(RUNESMITH_UNLOCK_PATH) )
+    {
+        return true;
+    }
+    if ( !writeCustomClassUnlock(RUNESMITH_UNLOCK_PATH) )
+    {
+        printlog("[GOLEM]: Failed to save Runesmith unlock.");
+        return false;
+    }
+    printlog("[GOLEM]: Runesmith class unlocked.");
+    return true;
+}
+
+static bool writeWitchUnlock()
+{
+	if ( customClassUnlockExists(WITCH_UNLOCK_PATH) )
+	{
+		return true;
+	}
+	if ( !writeCustomClassUnlock(WITCH_UNLOCK_PATH) )
+	{
+		printlog("[WRAITH]: Failed to save Witch unlock.");
+		return false;
+	}
+	printlog("[WRAITH]: Witch class unlocked.");
+	return true;
+}
+// mod add end
+
 bool isAchievementUnlockedForClassUnlock(int race)
 {
+	// mod add: custom race / class unlocks
+	if ( race == RACE_MERROW )
+	{
+		return isWhalerGloballyUnlocked();
+	}
+	else if ( race == RACE_LEONIN )
+	{
+		return isGunslingerGloballyUnlocked();
+	}
+    else if ( race == RACE_GOLEM )
+    {
+        return isRunesmithGloballyUnlocked();
+    }
+	else if ( race == RACE_WRAITH )
+	{
+		return isWitchGloballyUnlocked();
+	}
+	// mod add end
 #ifdef STEAMWORKS
 	bool unlocked = false;
 	if ( enabledDLCPack1 && race == RACE_SKELETON && SteamUserStats()->GetAchievement("BARONY_ACH_BONY_BARON", &unlocked) )
@@ -600,14 +778,59 @@ int isCharacterValidFromDLC(Stat& myStats, int characterClass)
 				}
 			}
 			break;
+		case RACE_LEONIN: // mod add: Leonin has no DLC requirement
+		case RACE_GOLEM: // mod add: Golem has no DLC requirement
+		case RACE_WRAITH: // mod add: Wraith has no DLC requirement
+			break;
 		default:
 			break;
 	}
 
+	if ( characterClass == CLASS_WITCH )
+	{
+		if ( myStats.playerRace == RACE_HUMAN || myStats.playerRace ==RACE_WRAITH )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_WRAITH)
+			? VALID_OK_CHARACTER : INVALID_REQUIRE_ACHIEVEMENT;
+	}
 	if ( myStats.playerRace == RACE_HUMAN )
 	{
 		return VALID_OK_CHARACTER;
 	}
+	// mod add: custom paired classes remain restricted even for aesthetic-only races.
+	if ( characterClass == CLASS_WHALER )
+	{
+		if ( myStats.playerRace == RACE_MERROW )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_MERROW)
+			? VALID_OK_CHARACTER
+			: INVALID_REQUIRE_ACHIEVEMENT;
+	}
+	else if ( characterClass == CLASS_GUNSLINGER )
+	{
+		if ( myStats.playerRace == RACE_LEONIN )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_LEONIN)
+			? VALID_OK_CHARACTER
+			: INVALID_REQUIRE_ACHIEVEMENT;
+	}
+	else if ( characterClass == CLASS_RUNESMITH )
+	{
+		if ( myStats.playerRace == RACE_GOLEM )
+		{
+			return VALID_OK_CHARACTER;
+		}
+		return isAchievementUnlockedForClassUnlock(RACE_GOLEM)
+			? VALID_OK_CHARACTER
+			: INVALID_REQUIRE_ACHIEVEMENT;
+	}
+	// mod add end
 	else if ( myStats.playerRace > RACE_HUMAN && myStats.stat_appearance == 1 )
 	{
 		return VALID_OK_CHARACTER; // aesthetic only option.
@@ -2556,7 +2779,9 @@ static void handleMainMenu(bool mode)
 			{
 				displayedClasses.push_back(*it);
 			}
-
+			// mod add: display all classes that passed availability checks
+			entriesToDisplay = static_cast<int>(displayedClasses.size());
+			// mod add end
 			int drawLockedTooltip = 0;
 			SDL_Rect tooltip;
 			for ( c = 0; c < entriesToDisplay; c++ )
@@ -8972,6 +9197,7 @@ void doNewGame(bool makeHighscore) {
 					GenericGUI[c].assistShrineGUI.onGameStart();
 					stats[c]->clearStats();
 					initClass(c);
+					initializeWraithPlayerForNewGame(c);
 				}
 				else
 				{
@@ -9139,10 +9365,12 @@ void doNewGame(bool makeHighscore) {
 							node_t* gyrobotNode = nullptr;
 							Entity* gyrobotEntity = nullptr;
 							std::vector<node_t*> allyRobotNodes;
+							bool wraithBodyRestoreAttempted = false;
 							for ( node = tempFollowers->first; node != NULL; node = node->next )
 							{
 								Stat* tempStats = (Stat*)node->element;
-								if ( tempStats && tempStats->type == GYROBOT )
+								if ( tempStats && tempStats->type == GYROBOT
+									&& tempStats->getAttribute("wraith_possessed_body") != "1" )
 								{
 									gyrobotNode = node;
 									break;
@@ -9151,6 +9379,20 @@ void doNewGame(bool makeHighscore) {
 							for ( node = tempFollowers->first; node != NULL; node = node->next )
 							{
 								Stat* tempStats = (Stat*)node->element;
+								if ( tempStats
+									&& tempStats->getAttribute("wraith_possessed_body") == "1" )
+								{
+									const auto& wraith = players[c]->mechanics.wraith;
+									if ( !wraithBodyRestoreAttempted
+										&& wraith.possessionTransition
+										&& wraith.possessedEntityUid == UINT32_MAX )
+									{
+										wraithBodyRestoreAttempted = true;
+										restoreWraithPossessedBodyAfterLevelTransition(
+											c, tempStats->copyStats());
+									}
+									continue;
+								}
 								if ( tempStats && (tempStats->type == DUMMYBOT
 									|| tempStats->type == SENTRYBOT
 									|| tempStats->type == SPELLBOT) )
@@ -9297,6 +9539,13 @@ void doNewGame(bool makeHighscore) {
 									}
 								}
 							}
+							if ( players[c]->mechanics.wraith.possessionTransition
+								&& players[c]->mechanics.wraith.possessedEntityUid == UINT32_MAX
+								&& !wraithBodyRestoreAttempted )
+							{
+								printlog("[WRAITH]: ERROR saved possessed body was not available during map initialization");
+								restoreWraithPossessedBodyAfterLevelTransition(c, nullptr);
+							}
 						}
 					}
 				}
@@ -9340,6 +9589,10 @@ void doNewGame(bool makeHighscore) {
 				GenericGUI[c].assistShrineGUI.onGameStart();
 				stats[c]->clearStats();
 				initClass(c);
+				if ( c == clientnum )
+				{
+					initializeWraithPlayerForNewGame(c);
+				}
 			}
 			mapseed = 0;
 			if ( challengeRunCustomStartLevel != "" )
@@ -10159,6 +10412,44 @@ void doEndgame(bool saveHighscore, bool onServerDisconnect) {
 							case RACE_GNOME:
 								steamAchievement("BARONY_ACH_BITTY_BARON");
 								break;
+							// mod add: Merrow / Whaler
+							case RACE_MERROW:
+								if ( !conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+									&& !conductGameChallenges[CONDUCT_LIFESAVING]
+									&& conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]
+										< GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit )
+								{
+									writeWhalerUnlock();
+								}
+								break;
+							case RACE_LEONIN: // mod add: Leonin / Gunslinger
+								if ( !conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+									&& !conductGameChallenges[CONDUCT_LIFESAVING]
+									&& conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]
+										< GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit )
+								{
+									writeGunslingerUnlock();
+								}
+								break;
+							case RACE_GOLEM: // mod add: Golem / Runesmith
+								if ( !conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+									&& !conductGameChallenges[CONDUCT_LIFESAVING]
+									&& conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]
+										< GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit )
+								{
+									writeRunesmithUnlock();
+								}
+								break;
+							case RACE_WRAITH: // mod add: Wraith / Witch
+								if ( !conductGameChallenges[CONDUCT_CHEATS_ENABLED]
+									&& !conductGameChallenges[CONDUCT_LIFESAVING]
+									&& conductGameChallenges[CONDUCT_ASSISTANCE_CLAIMED]
+										< GenericGUIMenu::AssistShrineGUI_t::achievementDisabledLimit )
+								{
+									writeWitchUnlock();
+								}
+								break;
+							// mod add end
 							default:
 								break;
 							}
@@ -11817,7 +12108,9 @@ bool replayLastCharacter(const int index, int multiplayer)
 				{
 					stats[index]->playerRace = RACE_HUMAN;
 				}
-				if ( client_classes[index] > CLASS_MONK )
+				if ( client_classes[index] > CLASS_MONK
+					&& client_classes[index] != CLASS_RUNESMITH
+					&& client_classes[index] != CLASS_WITCH )
 				{
 					client_classes[index] = CLASS_BARBARIAN;
 				}

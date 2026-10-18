@@ -19,6 +19,8 @@
 #include "prng.hpp"
 #include "scores.hpp"
 #include "collision.hpp"
+#include "monster.hpp"
+#include "interface/interface.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -148,8 +150,39 @@ void actCampfire(Entity* my)
 			{
 				if (inrange[i])
 				{
+					// A Familiar Cauldron sharing this active campfire owns the click.
+					// This forwarding prevents taking a torch or consuming fuel first.
+					if ( CAMPFIRE_HEALTH > 0 && players[i] && players[i]->entity )
+					{
+						const int tilex = static_cast<int>(floor(my->x / 16.0));
+						const int tiley = static_cast<int>(floor(my->y / 16.0));
+						list_t* entities = TileEntityList.getTileList(tilex, tiley);
+						Entity* familiarCauldron = nullptr;
+						for ( node_t* node = entities ? entities->first : nullptr; node; node = node->next )
+						{
+							Entity* entity = static_cast<Entity*>(node->element);
+							Stat* entityStats = entity ? entity->getStats() : nullptr;
+							if ( entity && entityStats && isAmuletFamiliar(entity, entityStats)
+								&& getAmuletFamiliarForm(entity) == FAMILIAR_FORM_CAULDRON
+								&& entityStats->leader_uid == players[i]->entity->getUID() )
+							{
+								familiarCauldron = entity;
+								break;
+							}
+						}
+						if ( familiarCauldron && openStewingCauldron(familiarCauldron, i) )
+						{
+							continue;
+						}
+					}
 					if ( CAMPFIRE_HEALTH > 0 )
 					{
+						if ( !wraithCanAcceptPhysicalPickup(i) )
+						{
+							messagePlayer(i, MESSAGE_INVENTORY,
+								"Your spectral hand is already occupied.");
+							continue;
+						}
 						messagePlayer(i, MESSAGE_INTERACTION, Language::get(457));
 						CAMPFIRE_HEALTH--;
 						if ( CAMPFIRE_HEALTH <= 0 )

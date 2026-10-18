@@ -15,6 +15,7 @@
 #define LINETRACE_ATK_CHECK_FRIENDLYFIRE 2
 #define LINETRACE_TELEKINESIS 4
 #define LINETRACE_TOOLTIP_INTERACT 8
+#define LINETRACE_ATK_IGNORE_ENTRENCH_BARRICADE 16 // mod add: player melee first-pass target priority
 
 // function prototypes
 real_t entityDist(Entity* my, Entity* your);

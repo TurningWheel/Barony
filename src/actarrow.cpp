@@ -397,51 +397,92 @@ void actArrow(Entity* my)
 			ARROW_OLDY = my->y;
 
 			my->processEntityWind();
-			bool halfSpeedCheck = false;
-			static ConsoleVariable<bool> cvar_arrow_clip("/arrow_clip_test", true);
-			if ( my->arrowSpeed > 4.0 ) // can clip through thin gates
+			const real_t totalMoveDistance = sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY);
+			static constexpr real_t NORMAL_PROJECTILE_MAX_SPEED = 8.0;
+			static constexpr real_t MAX_SAFE_PROJECTILE_STEP = 4.0;
+			if ( totalMoveDistance > NORMAL_PROJECTILE_MAX_SPEED )
 			{
-				auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
-				for ( auto it : entLists )
+				// mod add: clipMove() samples its destination rather than sweeping the
+				// complete segment. Subdivide genuinely high-speed movement so thin
+				// objects and small creatures cannot fit between collision samples.
+				const int moveSteps = static_cast<int>(std::ceil(totalMoveDistance / MAX_SAFE_PROJECTILE_STEP));
+				const real_t stepVelX = ARROW_VELX / moveSteps;
+				const real_t stepVelY = ARROW_VELY / moveSteps;
+				const real_t stepDistance = sqrt(stepVelX * stepVelX + stepVelY * stepVelY);
+				const real_t intendedX = ARROW_OLDX + ARROW_VELX;
+				const real_t intendedY = ARROW_OLDY + ARROW_VELY;
+				// Include the starting position so a close-range shot spawned inside
+				// a target cannot leave its collision box before the first substep.
+				hit.entity = nullptr;
+				hitSomething = barony_clear(my->x, my->y, my) == 0;
+				for ( int step = 0; step < moveSteps && !hitSomething; ++step )
 				{
-					if ( !*cvar_arrow_clip && (svFlags & SV_FLAG_CHEATS) )
+					const real_t dist = clipMove(&my->x, &my->y, stepVelX, stepVelY, my);
+					if ( dist != stepDistance )
 					{
-						break;
-					}
-					for ( node_t* node = it->first; node != nullptr; node = node->next )
-					{
-						Entity* entity = (Entity*)node->element;
-						if ( entity->behavior == &actGate || entity->behavior == &actDoor || entity->behavior == &actIronDoor )
-						{
-							if ( entityDist(my, entity) <= my->arrowSpeed )
-							{
-								halfSpeedCheck = true;
-								break;
-							}
-						}
-					}
-					if ( halfSpeedCheck )
-					{
+						hitSomething = true;
 						break;
 					}
 				}
-			}
-			
-			if ( !halfSpeedCheck )
-			{
-				real_t dist = clipMove(&my->x, &my->y, ARROW_VELX, ARROW_VELY, my);
-				hitSomething = dist != sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY);
+				if ( !hitSomething )
+				{
+					// Preserve the exact original full-tick displacement after all
+					// collision samples succeed; subdivision must not slow the shot.
+					my->x = intendedX;
+					my->y = intendedY;
+				}
+				// mod add end
 			}
 			else
 			{
-				real_t vel_x = ARROW_VELX / 2.0;
-				real_t vel_y = ARROW_VELY / 2.0;
-				real_t dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
-				hitSomething = dist != sqrt(vel_x * vel_x + vel_y * vel_y);
-				if ( !hitSomething )
+				// Preserve vanilla movement exactly for its normal speed range,
+				// including the existing conditional gate/door half-step workaround.
+				bool halfSpeedCheck = false;
+				static ConsoleVariable<bool> cvar_arrow_clip("/arrow_clip_test", true);
+				if ( my->arrowSpeed > 4.0 ) // can clip through thin gates
 				{
-					dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
+					auto entLists = TileEntityList.getEntitiesWithinRadiusAroundEntity(my, 1);
+					for ( auto it : entLists )
+					{
+						if ( !*cvar_arrow_clip && (svFlags & SV_FLAG_CHEATS) )
+						{
+							break;
+						}
+						for ( node_t* node = it->first; node != nullptr; node = node->next )
+						{
+							Entity* entity = (Entity*)node->element;
+							if ( entity->behavior == &actGate || entity->behavior == &actDoor || entity->behavior == &actIronDoor )
+							{
+								if ( entityDist(my, entity) <= my->arrowSpeed )
+								{
+									halfSpeedCheck = true;
+									break;
+								}
+							}
+						}
+						if ( halfSpeedCheck )
+						{
+							break;
+						}
+					}
+				}
+
+				if ( !halfSpeedCheck )
+				{
+					real_t dist = clipMove(&my->x, &my->y, ARROW_VELX, ARROW_VELY, my);
+					hitSomething = dist != totalMoveDistance;
+				}
+				else
+				{
+					real_t vel_x = ARROW_VELX / 2.0;
+					real_t vel_y = ARROW_VELY / 2.0;
+					real_t dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
 					hitSomething = dist != sqrt(vel_x * vel_x + vel_y * vel_y);
+					if ( !hitSomething )
+					{
+						dist = clipMove(&my->x, &my->y, vel_x, vel_y, my);
+						hitSomething = dist != sqrt(vel_x * vel_x + vel_y * vel_y);
+					}
 				}
 			}
 		}
@@ -451,7 +492,7 @@ void actArrow(Entity* my)
 		index = std::clamp(index, 0, (int)(MAPLAYERS * map.width * map.height) - 1);
 		if ( map.tiles[index] )
 		{
-			if ( my->sprite == PROJECTILE_BOLT_SPRITE || my->sprite == PROJECTILE_ROCK_SPRITE ) // bolt/rock
+			if ( my->arrowUsesBoltSemantics() || my->sprite == PROJECTILE_ROCK_SPRITE ) // bolt/firearm/rock
 			{
 				if ( my->z >= 7 )
 				{
@@ -554,7 +595,10 @@ void actArrow(Entity* my)
 			{
 				Entity* parent = uidToEntity(my->parent);
 				Stat* hitstats = hit.entity->getStats();
-				playSoundEntity(my, 72 + local_rng.rand() % 3, 64);
+				//mod add: Preserve target-specific material/damage reactions below,
+				// but replace the generic projectile contact for firearms only.
+				playSoundEntity(my,
+					my->arrowShotByFirearm() ? 864 : 72 + local_rng.rand() % 3, 64);
 				if ( hit.entity->behavior == &actChest || hit.entity->isInertMimic() )
 				{
 					playSoundEntity(hit.entity, 66, 64); //*tink*
@@ -627,6 +671,10 @@ void actArrow(Entity* my)
 						entityHP = 0;
 
 						hit.entity->colliderKillerUid = parent ? parent->getUID() : 0;
+						if ( oldHP > 0 )
+						{
+							entrenchOnEntityDestroyedByCreature(hit.entity, parent);
+						}
 						if ( parent && parent->behavior == &actPlayer )
 						{
 							if ( oldHP > 0 )
@@ -908,7 +956,21 @@ void actArrow(Entity* my)
 							}
 						}
 					}
-					real_t damageMultiplier = Entity::getDamageTableMultiplier(hit.entity, *hitstats, DAMAGE_TABLE_RANGED);
+					real_t innateRangedMultiplierOverride = -1.0;
+					// mod add: Firearms compress only innate ranged affinity halfway
+					// toward neutral. A zero affinity remains untouched so an existing
+					// true-immunity path can never be converted into partial damage.
+					if ( my->arrowShotByFirearm() )
+					{
+						const real_t innateRangedMultiplier =
+							damagetables[hitstats->type][DAMAGE_TABLE_RANGED];
+						innateRangedMultiplierOverride = innateRangedMultiplier > 0.0
+							? 0.5 + 0.5 * innateRangedMultiplier
+							: innateRangedMultiplier;
+					}
+					real_t damageMultiplier = Entity::getDamageTableMultiplier(
+						hit.entity, *hitstats, DAMAGE_TABLE_RANGED, nullptr, nullptr,
+						innateRangedMultiplierOverride);
 					if ( huntingDamage || silverDamage )
 					{
 						damageMultiplier = std::max(0.75, damageMultiplier);
@@ -970,8 +1032,28 @@ void actArrow(Entity* my)
 
 					/*messagePlayer(0, "My damage: %d, AC: %d, Pierce: %d", my->arrowPower, AC(hitstats), my->arrowArmorPierce);
 					messagePlayer(0, "Resolved to %d damage.", damage);*/
+					// mod add: Firearms critically hit the first creature reached by the
+					// projectile. Keep this after all normal ranged modifiers and immediately
+					// before HP removal; the native creature-damage path owns hit validity.
+					bool firearmFirstHitCritApplied = false;
+					if ( my->arrowShotByFirearm()
+						&& !my->arrowFirearmCritConsumed )
+					{
+						damage *= 2;
+						my->arrowFirearmCritConsumed = true;
+						firearmFirstHitCritApplied = true;
+					}
+					// mod add end
+					const AppliedOil projectileOil = static_cast<AppliedOil>(my->projectileAppliedOil);
+					if ( damage > 0 && oilMatchesTarget(projectileOil, hit.entity) )
+					{
+						damage += damage / 4;
+					}
+					// Oil was applied to the whole ammunition stack. Hitting with
+					// this spent arrow cannot strip oil from the remaining arrows.
+
 					Sint32 oldHP = hitstats->HP;
-					hit.entity->modHP(-damage);
+					hit.entity->modHP(-damage, parent);
 
 					if ( hitstats )
 					{
@@ -1166,8 +1248,11 @@ void actArrow(Entity* my)
 							}
 						}
 
-						int chance = 10;
-						if ( doSkillIncrease && (local_rng.rand() % chance == 0) && parent && parent->getStats() )
+						const bool firearmShot = my->arrowShotByFirearm();
+						const int chance = firearmShot ? 4 : 10; //mod add: Damaging firearm hits have a 25% Ranged progression chance.
+						if ( doSkillIncrease
+							&& (!firearmShot || oldHP > hitstats->HP)
+							&& (local_rng.rand() % chance == 0) && parent && parent->getStats() )
 						{
 							if ( hitstats->type != DUMMYBOT 
 								|| (hitstats->type == DUMMYBOT && parent->getStats()->getProficiency(PRO_RANGED) < SKILL_LEVEL_BASIC) )
@@ -1208,13 +1293,15 @@ void actArrow(Entity* my)
 						Stat* parentStats = parent->getStats();
 						if ( parentStats && parentStats->getEffectActive(EFF_ENVENOM_WEAPON) && hitstats )
 						{
+							spell_t* activeSpell = parent->getActiveMagicEffect(SPELL_ENVENOM_WEAPON);
+							ScopedSpellPowerOverride spellPowerScope(activeSpell, true);
 							if ( local_rng.rand() % 2 == 0 )
 							{
 								int envenomDamage = std::min(
 									getSpellDamageSecondaryFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent),
 									getSpellDamageFromID(SPELL_ENVENOM_WEAPON, parent, parentStats, parent));
 
-								hit.entity->modHP(-envenomDamage); // do the damage
+								hit.entity->modHP(-envenomDamage, parent); // do the damage
 								for ( int tmp = 0; tmp < 3; ++tmp )
 								{
 									Entity* gib = spawnGib(hit.entity, 211);
@@ -1342,7 +1429,7 @@ void actArrow(Entity* my)
 									// rock.
 									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT_BASIC, color, Language::get(2512));
 								}
-								else if (my->sprite == PROJECTILE_BOLT_SPRITE )
+								else if ( my->arrowUsesBoltSemantics() )
 								{
 									// bolt.
 									messagePlayerColor(hit.entity->skill[2], MESSAGE_COMBAT_BASIC, color, Language::get(2511));
@@ -1721,6 +1808,8 @@ void actArrow(Entity* my)
 							&& !itemTypeIsQuiver(hitstats->shield->type) && itemCategory(hitstats->shield) != SPELLBOOK
 							&& !itemTypeIsFoci(hitstats->shield->type)
 							&& !(hitstats->shield->type >= INSTRUMENT_FLUTE && hitstats->shield->type <= INSTRUMENT_HORN)
+							&& hitstats->shield->type != SPYGLASS // mod add: utility optics are not shields for degradation
+							&& hitstats->shield->type != MAGIC_RUNE // Rune durability is governed only by Rune casting stress.
 							&& hitstats->shield->type != TOOL_TINKERING_KIT && hitstats->shield->type != TOOL_FRYING_PAN )
 						{
 							if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )
@@ -1910,6 +1999,12 @@ void actArrow(Entity* my)
 					{
 						dmgGib = DMG_STRONGER;
 					}
+					if ( firearmFirstHitCritApplied )
+					{
+						// mod add: Match vanilla charged-melee crit presentation. An
+						// already-strong matchup promotes to the strongest crit tier.
+						dmgGib = damageMultiplier >= 1.15 ? DMG_STRONGEST : DMG_STRONGER;
+					}
 					if ( !strcmp(hitstats->name, "") )
 					{
 						updateEnemyBar(parent, hit.entity, getMonsterLocalizedName(hitstats->type).c_str(), hitstats->HP, hitstats->MAXHP, 
@@ -1962,7 +2057,20 @@ void actArrow(Entity* my)
 			}
 			else
 			{
-				playSoundEntity(my, 72 + local_rng.rand() % 3, 64);
+				//mod add: Firearm wall/floor impacts use the dedicated bullet report;
+				// arrows, bolts, and all other projectiles retain their vanilla family.
+				playSoundEntity(my,
+					my->arrowShotByFirearm() ? 864 : 72 + local_rng.rand() % 3, 64);
+				if ( my->arrowShotByFirearm() && ARROW_STUCK > 0 )
+				{
+					// mod add: Entity impacts are already removed by the native branch
+					// above. Remove terminal firearm wall/floor impacts after their normal
+					// button, bomb, sound, and collision processing instead of displaying
+					// an embedded projectile. Piercing shots keep ARROW_STUCK at zero.
+					my->removeLightField();
+					list_RemoveNode(my->mynode);
+					return;
+				}
 			}
 		}
 	}

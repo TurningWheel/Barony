@@ -24,6 +24,206 @@
 
 list_t channeledSpells[MAXPLAYERS];
 
+namespace
+{
+	thread_local bool activeSpellPowerOverride = false;
+	thread_local real_t activeSpellPowerBonus = 0.0;
+	thread_local bool activeRuneCastSource = false;
+	thread_local Sint8 activeRuneCreatorPlayer = -1;
+	thread_local Uint32 activeRuneInstanceId = 0;
+	thread_local Uint32 activeRuneCreatorIdentity = 0;
+	thread_local bool activeGolemWildMagicProjectileCast = false;
+}
+
+ScopedSpellPowerOverride::ScopedSpellPowerOverride(bool enabled, real_t bonus)
+	: previousEnabled(activeSpellPowerOverride), previousBonus(activeSpellPowerBonus),
+	previousRuneCast(activeRuneCastSource), previousRuneCreatorPlayer(activeRuneCreatorPlayer),
+	previousRuneInstanceId(activeRuneInstanceId),
+	previousRuneCreatorIdentity(activeRuneCreatorIdentity)
+{
+	if ( enabled )
+	{
+		activeSpellPowerOverride = true;
+		activeSpellPowerBonus = bonus;
+	}
+}
+
+ScopedSpellPowerOverride::ScopedSpellPowerOverride(const spell_t* spell)
+	: ScopedSpellPowerOverride(spell, false)
+{
+}
+
+ScopedSpellPowerOverride::ScopedSpellPowerOverride(const spell_t* spell, bool replaceMissingOverride)
+	: previousEnabled(activeSpellPowerOverride), previousBonus(activeSpellPowerBonus),
+	previousRuneCast(activeRuneCastSource), previousRuneCreatorPlayer(activeRuneCreatorPlayer),
+	previousRuneInstanceId(activeRuneInstanceId),
+	previousRuneCreatorIdentity(activeRuneCreatorIdentity)
+{
+	if ( spell && spell->hasSpellPowerOverride )
+	{
+		activeSpellPowerOverride = true;
+		activeSpellPowerBonus = spell->spellPowerOverride;
+	}
+	else if ( replaceMissingOverride )
+	{
+		activeSpellPowerOverride = false;
+		activeSpellPowerBonus = 0.0;
+	}
+	if ( spell && spell->runeInstanceId != 0 )
+	{
+		activeRuneCastSource = true;
+		activeRuneCreatorPlayer = spell->runeCreatorPlayer;
+		activeRuneInstanceId = spell->runeInstanceId;
+		activeRuneCreatorIdentity = spell->runeCreatorIdentity;
+	}
+	else if ( replaceMissingOverride )
+	{
+		activeRuneCastSource = false;
+		activeRuneCreatorPlayer = -1;
+		activeRuneInstanceId = 0;
+		activeRuneCreatorIdentity = 0;
+	}
+}
+
+ScopedSpellPowerOverride::ScopedSpellPowerOverride(const Entity* effectEntity)
+	: ScopedSpellPowerOverride(effectEntity, false)
+{
+}
+
+ScopedSpellPowerOverride::ScopedSpellPowerOverride(const Entity* effectEntity, bool replaceMissingOverride)
+	: previousEnabled(activeSpellPowerOverride), previousBonus(activeSpellPowerBonus),
+	previousRuneCast(activeRuneCastSource), previousRuneCreatorPlayer(activeRuneCreatorPlayer),
+	previousRuneInstanceId(activeRuneInstanceId),
+	previousRuneCreatorIdentity(activeRuneCreatorIdentity)
+{
+	if ( effectEntity && effectEntity->hasSpellPowerOverride )
+	{
+		activeSpellPowerOverride = true;
+		activeSpellPowerBonus = effectEntity->spellPowerOverride;
+	}
+	else if ( replaceMissingOverride )
+	{
+		activeSpellPowerOverride = false;
+		activeSpellPowerBonus = 0.0;
+	}
+	if ( effectEntity && effectEntity->magicCastFromRune )
+	{
+		activeRuneCastSource = true;
+		activeRuneCreatorPlayer = effectEntity->magicRuneCreatorPlayer;
+		activeRuneInstanceId = effectEntity->magicRuneInstanceId;
+		activeRuneCreatorIdentity = effectEntity->magicRuneCreatorIdentity;
+	}
+	else if ( replaceMissingOverride )
+	{
+		activeRuneCastSource = false;
+		activeRuneCreatorPlayer = -1;
+		activeRuneInstanceId = 0;
+		activeRuneCreatorIdentity = 0;
+	}
+}
+
+ScopedSpellPowerOverride::ScopedSpellPowerOverride(const Item* runeItem,
+	const Entity* runeCaster, bool replaceMissingOverride)
+	: previousEnabled(activeSpellPowerOverride), previousBonus(activeSpellPowerBonus),
+	previousRuneCast(activeRuneCastSource), previousRuneCreatorPlayer(activeRuneCreatorPlayer),
+	previousRuneInstanceId(activeRuneInstanceId),
+	previousRuneCreatorIdentity(activeRuneCreatorIdentity)
+{
+	if ( runeItem && runeItem->isMagicRune() )
+	{
+		if ( runeItem->runeHasStoredPWR() )
+		{
+			activeSpellPowerOverride = true;
+			activeSpellPowerBonus = getMagicRuneEffectivePWR(*runeItem, runeCaster);
+		}
+		else if ( replaceMissingOverride )
+		{
+			activeSpellPowerOverride = false;
+			activeSpellPowerBonus = 0.0;
+		}
+		activeRuneCastSource = true;
+		activeRuneCreatorPlayer = static_cast<Sint8>(runeItem->runeGetCreatorPlayer());
+		activeRuneInstanceId = runeItem->runeGetInstanceId();
+		activeRuneCreatorIdentity = runeItem->runeGetCreatorIdentity();
+	}
+	else if ( replaceMissingOverride )
+	{
+		activeSpellPowerOverride = false;
+		activeSpellPowerBonus = 0.0;
+		activeRuneCastSource = false;
+		activeRuneCreatorPlayer = -1;
+		activeRuneInstanceId = 0;
+		activeRuneCreatorIdentity = 0;
+	}
+}
+
+ScopedSpellPowerOverride::~ScopedSpellPowerOverride()
+{
+	activeSpellPowerOverride = previousEnabled;
+	activeSpellPowerBonus = previousBonus;
+	activeRuneCastSource = previousRuneCast;
+	activeRuneCreatorPlayer = previousRuneCreatorPlayer;
+	activeRuneInstanceId = previousRuneInstanceId;
+	activeRuneCreatorIdentity = previousRuneCreatorIdentity;
+}
+
+bool getActiveSpellPowerOverride(real_t& bonus)
+{
+	if ( !activeSpellPowerOverride ) { return false; }
+	bonus = activeSpellPowerBonus;
+	return true;
+}
+
+void inheritActiveSpellPowerOverride(Entity& entity)
+{
+	real_t bonus = 0.0;
+	if ( getActiveSpellPowerOverride(bonus) )
+	{
+		entity.hasSpellPowerOverride = true;
+		entity.spellPowerOverride = bonus;
+	}
+}
+
+bool getActiveRuneCastSource(Sint8& creatorPlayer, Uint32* runeInstanceId,
+	Uint32* creatorIdentity)
+{
+	if ( !activeRuneCastSource ) { return false; }
+	creatorPlayer = activeRuneCreatorPlayer;
+	if ( runeInstanceId ) { *runeInstanceId = activeRuneInstanceId; }
+	if ( creatorIdentity ) { *creatorIdentity = activeRuneCreatorIdentity; }
+	return true;
+}
+
+void inheritActiveRuneCastSource(Entity& entity)
+{
+	Sint8 creatorPlayer = -1;
+	Uint32 runeInstanceId = 0;
+	Uint32 creatorIdentity = 0;
+	if ( getActiveRuneCastSource(creatorPlayer, &runeInstanceId, &creatorIdentity) )
+	{
+		entity.magicCastFromRune = true;
+		entity.magicRuneCreatorPlayer = creatorPlayer;
+		entity.magicRuneInstanceId = runeInstanceId;
+		entity.magicRuneCreatorIdentity = creatorIdentity;
+	}
+}
+
+ScopedGolemWildMagicProjectileCast::ScopedGolemWildMagicProjectileCast()
+	: previousActive(activeGolemWildMagicProjectileCast)
+{
+	activeGolemWildMagicProjectileCast = true;
+}
+
+ScopedGolemWildMagicProjectileCast::~ScopedGolemWildMagicProjectileCast()
+{
+	activeGolemWildMagicProjectileCast = previousActive;
+}
+
+void inheritGolemWildMagicProjectileCast(Entity& entity)
+{
+	entity.golemWildMagicCastEntity = activeGolemWildMagicProjectileCast;
+}
+
 spellElement_t spellElement_unintelligible;
 spellElement_t spellElement_missile;
 spellElement_t spellElement_missile_trio;
@@ -143,6 +343,286 @@ spell_t spell_slime_fire;
 spell_t spell_slime_tar;
 spell_t spell_slime_metal;
 std::map<int, spell_t> spellMap;
+
+bool grantTemporaryEquipmentSpell(int player, int spellID)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| !players[player]->isLocalPlayer() )
+	{
+		return false;
+	}
+	spell_t* definition = getSpellFromID(spellID);
+	if ( !definition )
+	{
+		return false;
+	}
+
+	bool changed = false;
+	bool foundSpell = false;
+	for ( node_t* node = players[player]->magic.spellList.first; node; node = node->next )
+	{
+		spell_t* spell = static_cast<spell_t*>(node->element);
+		if ( spell && spell->ID == spellID )
+		{
+			foundSpell = true;
+			break;
+		}
+	}
+	if ( !foundSpell )
+	{
+		spell_t* spell = copySpell(definition);
+		if ( !spell )
+		{
+			return false;
+		}
+		node_t* node = list_AddNodeLast(&players[player]->magic.spellList);
+		node->element = spell;
+		node->size = sizeof(spell_t);
+		node->deconstructor = &spellDeconstructor;
+		changed = true;
+	}
+
+	bool foundItem = false;
+	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->type == SPELL_ITEM && item->appearance == static_cast<Uint32>(spellID) )
+		{
+			foundItem = true;
+			break;
+		}
+	}
+	if ( !foundItem )
+	{
+		newItem(SPELL_ITEM, SERVICABLE, 0, 1, spellID, true, &stats[player]->inventory);
+		changed = true;
+	}
+	return changed;
+}
+
+void removeTemporaryEquipmentSpell(int player, int spellID)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| !players[player]->isLocalPlayer() )
+	{
+		return;
+	}
+
+	std::vector<Uint32> removedItemUids;
+	for ( node_t* node = stats[player]->inventory.first, *next = nullptr; node; node = next )
+	{
+		next = node->next;
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->type == SPELL_ITEM && item->appearance == static_cast<Uint32>(spellID) )
+		{
+			removedItemUids.push_back(item->uid);
+			list_RemoveNode(node);
+		}
+	}
+	auto clearRemovedHotbarItems = [&removedItemUids](auto& slots)
+	{
+		for ( auto& slot : slots )
+		{
+			if ( std::find(removedItemUids.begin(), removedItemUids.end(), slot.item) != removedItemUids.end() )
+			{
+				slot.item = 0;
+				slot.resetLastItem();
+			}
+		}
+	};
+	clearRemovedHotbarItems(players[player]->hotbar.slots());
+	for ( auto& slots : players[player]->hotbar.slotsAlternate() )
+	{
+		clearRemovedHotbarItems(slots);
+	}
+
+	for ( node_t* node = players[player]->magic.spellList.first, *next = nullptr; node; node = next )
+	{
+		next = node->next;
+		spell_t* spell = static_cast<spell_t*>(node->element);
+		if ( !spell || spell->ID != spellID )
+		{
+			continue;
+		}
+		if ( players[player]->magic.selectedSpell() == spell )
+		{
+			players[player]->magic.equipSpell(nullptr);
+			players[player]->magic.selected_spell_last_appearance = -1;
+		}
+		for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
+		{
+			if ( players[player]->magic.selected_spell_alternate[i] == spell )
+			{
+				players[player]->magic.selected_spell_alternate[i] = nullptr;
+			}
+		}
+		list_RemoveNode(node);
+	}
+}
+
+bool grantTemporaryWraithPossessionSpell(int player, int spellID)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| !players[player]->isLocalPlayer() )
+	{
+		return false;
+	}
+	spell_t* definition = getSpellFromID(spellID);
+	if ( !definition ) { return false; }
+
+	bool changed = false;
+	if ( !spellInList(&players[player]->magic.spellList, definition) )
+	{
+		spell_t* spell = copySpell(definition);
+		if ( !spell ) { return false; }
+		node_t* node = list_AddNodeLast(&players[player]->magic.spellList);
+		node->element = spell;
+		node->size = sizeof(spell_t);
+		node->deconstructor = &spellDeconstructor;
+		changed = true;
+	}
+
+	Item* temporaryItem = nullptr;
+	const Uint32 temporaryAppearance = static_cast<Uint32>(1000 + spellID);
+	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->type == SPELL_ITEM && item->appearance == temporaryAppearance )
+		{
+			temporaryItem = item;
+			break;
+		}
+	}
+	if ( !temporaryItem )
+	{
+		temporaryItem = newItem(SPELL_ITEM, SERVICABLE, 0, 1,
+			temporaryAppearance, true, &stats[player]->inventory);
+		changed |= temporaryItem != nullptr;
+		if ( temporaryItem )
+		{
+			bool placed = false;
+			for ( int y = 0; !placed; ++y )
+			{
+				for ( int x = 0; x < Player::Inventory_t::MAX_SPELLS_X; ++x )
+				{
+					bool occupied = false;
+					for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+					{
+						const Item* other = static_cast<const Item*>(node->element);
+						if ( other && other != temporaryItem && other->type == SPELL_ITEM
+							&& other->x == x && other->y == y )
+						{
+							occupied = true;
+							break;
+						}
+					}
+					if ( !occupied )
+					{
+						temporaryItem->x = x;
+						temporaryItem->y = y;
+						placed = true;
+						break;
+					}
+				}
+			}
+		}
+	}
+	if ( temporaryItem )
+	{
+		bool onHotbar = false;
+		for ( const auto& slot : players[player]->hotbar.slots() )
+		{
+			if ( slot.item == temporaryItem->uid ) { onHotbar = true; break; }
+		}
+		if ( !onHotbar )
+		{
+			for ( auto& slot : players[player]->hotbar.slots() )
+			{
+				if ( slot.item == 0 )
+				{
+					slot.item = temporaryItem->uid;
+					break;
+				}
+			}
+		}
+	}
+	return changed;
+}
+
+void removeTemporaryWraithPossessionSpell(int player, int spellID)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| (!players[player]->isLocalPlayer() && multiplayer == CLIENT) )
+	{
+		return;
+	}
+	const Uint32 temporaryAppearance = static_cast<Uint32>(1000 + spellID);
+	std::vector<Uint32> removedItemUids;
+	for ( node_t* node = stats[player]->inventory.first, *next = nullptr; node; node = next )
+	{
+		next = node->next;
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->type == SPELL_ITEM && item->appearance == temporaryAppearance )
+		{
+			removedItemUids.push_back(item->uid);
+			list_RemoveNode(node);
+		}
+	}
+	auto clearRemovedHotbarItems = [&removedItemUids](auto& slots)
+	{
+		for ( auto& slot : slots )
+		{
+			if ( std::find(removedItemUids.begin(), removedItemUids.end(), slot.item)
+				!= removedItemUids.end() )
+			{
+				slot.item = 0;
+				slot.resetLastItem();
+			}
+		}
+	};
+	clearRemovedHotbarItems(players[player]->hotbar.slots());
+	for ( auto& slots : players[player]->hotbar.slotsAlternate() )
+	{
+		clearRemovedHotbarItems(slots);
+	}
+
+	bool permanent = players[player]->mechanics.learnedSpells.find(spellID)
+		!= players[player]->mechanics.learnedSpells.end();
+	for ( node_t* node = stats[player]->inventory.first; node && !permanent; node = node->next )
+	{
+		const Item* item = static_cast<const Item*>(node->element);
+		permanent = item && item->type == SPELL_ITEM
+			&& item->appearance == static_cast<Uint32>(spellID);
+	}
+	int matchingSpells = 0;
+	for ( node_t* node = players[player]->magic.spellList.first; node; node = node->next )
+	{
+		const spell_t* spell = static_cast<const spell_t*>(node->element);
+		if ( spell && spell->ID == spellID ) { ++matchingSpells; }
+	}
+	const int spellsToKeep = permanent ? 1 : 0;
+	for ( node_t* node = players[player]->magic.spellList.first, *next = nullptr;
+		node && matchingSpells > spellsToKeep; node = next )
+	{
+		next = node->next;
+		spell_t* spell = static_cast<spell_t*>(node->element);
+		if ( !spell || spell->ID != spellID ) { continue; }
+		if ( players[player]->magic.selectedSpell() == spell )
+		{
+			players[player]->magic.equipSpell(nullptr);
+			players[player]->magic.selected_spell_last_appearance = -1;
+		}
+		for ( int i = 0; i < NUM_HOTBAR_ALTERNATES; ++i )
+		{
+			if ( players[player]->magic.selected_spell_alternate[i] == spell )
+			{
+				players[player]->magic.selected_spell_alternate[i] = nullptr;
+			}
+		}
+		list_RemoveNode(node);
+		--matchingSpells;
+	}
+}
 
 bool addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -778,6 +1258,7 @@ spellElement_t* copySpellElement(spellElement_t* spellElement)
 
 int getGoldCostOfSpell(spell_t* spell, int player)
 {
+	ScopedSpellPowerOverride spellPowerScope(spell);
 	if ( player < 0 || player >= MAXPLAYERS ) { return 0; }
 	if ( !spell )
 	{
@@ -810,6 +1291,7 @@ int getGoldCostOfSpell(spell_t* spell, int player)
 
 int getSustainCostOfSpell(spell_t* spell, Entity* caster)
 {
+	ScopedSpellPowerOverride spellPowerScope(spell);
 	int cost = 0;
 	if ( !spell )
 	{
@@ -827,6 +1309,7 @@ int getSustainCostOfSpell(spell_t* spell, Entity* caster)
 
 int getCostOfSpell(spell_t* spell, Entity* caster)
 {
+	ScopedSpellPowerOverride spellPowerScope(spell);
 	int cost = 0;
 	if ( !spell )
 	{
@@ -1002,6 +1485,11 @@ real_t getSpellBonusFromCasterINT(Entity* caster, Stat* casterStats, int skillID
 
 real_t getBonusFromCasterOfSpellElement(Entity* caster, Stat* casterStats, spellElement_t* spellElement, int spellID, int proficiencyWhenNoSpell)
 {
+	real_t storedPowerBonus = 0.0;
+	if ( getActiveSpellPowerOverride(storedPowerBonus) )
+	{
+		return storedPowerBonus;
+	}
 	if ( !casterStats && caster )
 	{
 		casterStats = caster->getStats();
@@ -1474,6 +1962,9 @@ int getSpellbookFromSpellID(int spellID)
 
 	switch (spellID)
 	{
+		case SPELL_ENTRENCH: // mod add: Entrench fallback mapping
+			itemType = SPELLBOOK_ENTRENCH;
+			break;
 		case SPELL_FORCEBOLT:
 			itemType = SPELLBOOK_FORCEBOLT;
 			break;
@@ -1678,6 +2169,8 @@ int getSpellIDFromSpellbook(int spellbookType)
 
 	switch (spellbookType )
 	{
+		case SPELLBOOK_ENTRENCH: // mod add: Entrench fallback mapping
+			return SPELL_ENTRENCH;
 		case SPELLBOOK_FORCEBOLT:
 			return spell_forcebolt.ID;
 		case SPELLBOOK_MAGICMISSILE:
@@ -1898,6 +2391,10 @@ spell_t* getSpellFromItem(const int player, Item* item, bool usePlayerInventory)
 	{
 		return nullptr;
 	}
+	if ( item->isMagicRune() )
+	{
+		return getSpellFromID(item->runeGetSpellID());
+	}
 	if ( item->type != SPELL_ITEM )
 	{
 		return nullptr;
@@ -1939,8 +2436,26 @@ spell_t* getSpellFromItem(const int player, Item* item, bool usePlayerInventory)
 	return nullptr;
 }
 
+int canUseWraithPossessionSpellInCurrentBody(const int player, Item& item)
+{
+	if ( itemCategory(&item) != SPELL_CAT || item.appearance < 1000 ) { return -1; }
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| stats[player]->playerRace != RACE_WRAITH
+		|| !players[player]->mechanics.wraith.initialized )
+	{
+		return -1;
+	}
+	if ( players[player]->mechanics.wraith.possessedEntityUid == 0 ) { return 0; }
+	spell_t* spell = getSpellFromItem(player, &item, false);
+	if ( !spell ) { return 0; }
+	const auto innate = getWraithPossessionInnateSpells(getWraithEffectiveMonsterType(player));
+	return std::find(innate.begin(), innate.end(), spell->ID) != innate.end() ? 1 : 0;
+}
+
 int canUseShapeshiftSpellInCurrentForm(const int player, Item& item)
 {
+	const int wraithResult = canUseWraithPossessionSpellInCurrentBody(player, item);
+	if ( wraithResult != -1 ) { return wraithResult; }
 	if ( itemCategory(&item) != SPELL_CAT )
 	{
 		return -1;

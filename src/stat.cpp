@@ -422,6 +422,14 @@ void Stat::clearStats()
 	this->CHR = 0;
 	this->GOLD = 0;
 	this->HUNGER = 1000;
+	this->wraithFormerPossessor = -1;
+	this->wraithBodyLootChestSpawned = false;
+	this->golemBlessedComposition = (this->sex == MALE) ? 10000 : 0;
+	this->runeCreatorIdentity = 0;
+	for ( int stat = 0; stat < NUMSTATS; ++stat )
+	{
+		this->tinctureStacks[stat] = 0;
+	}
 	this->LVL = 1;
 	this->EXP = 0;
 	list_FreeAll(&this->FOLLOWERS);
@@ -657,6 +665,14 @@ Stat* Stat::copyStats()
 	newStat->LVL = this->LVL;
 	newStat->GOLD = this->GOLD;
 	newStat->HUNGER = this->HUNGER;
+	newStat->wraithFormerPossessor = this->wraithFormerPossessor;
+	newStat->wraithBodyLootChestSpawned = this->wraithBodyLootChestSpawned;
+	newStat->golemBlessedComposition = this->golemBlessedComposition;
+	newStat->runeCreatorIdentity = this->runeCreatorIdentity;
+	for ( int stat = 0; stat < NUMSTATS; ++stat )
+	{
+		newStat->tinctureStacks[stat] = this->tinctureStacks[stat];
+	}
 
 	for (c = 0; c < NUMPROFICIENCIES; c++)
 	{
@@ -941,7 +957,9 @@ int Stat::pickRandomEquippedItemToDegradeOnHit(Item** returnItem, bool excludeWe
 		|| shield->type == TOOL_FRYING_PAN
 		|| itemTypeIsFoci(shield->type)
 		|| itemTypeIsInstrument(shield->type)
-		|| shield->type == TOOL_DUCK )
+		|| shield->type == TOOL_DUCK
+		|| shield->type == SPYGLASS // mod add: utility optics do not absorb equipment degradation
+		|| shield->type == MAGIC_RUNE ) // Rune durability is governed only by Rune casting stress.
 		 )
 	{
 		excludeShield = true;
@@ -1128,6 +1146,14 @@ void Stat::copyNPCStatsAndInventoryFrom(Stat& src)
 	this->LVL = src.LVL;
 
 	this->GOLD = src.GOLD;
+	this->wraithFormerPossessor = src.wraithFormerPossessor;
+	this->wraithBodyLootChestSpawned = src.wraithBodyLootChestSpawned;
+	this->golemBlessedComposition = src.golemBlessedComposition;
+	this->runeCreatorIdentity = src.runeCreatorIdentity;
+	for ( int stat = 0; stat < NUMSTATS; ++stat )
+	{
+		this->tinctureStacks[stat] = src.tinctureStacks[stat];
+	}
 	bool oldIntro = intro;
 	if ( player >= 0 && players[player]->isLocalPlayer() )
 	{
@@ -1700,9 +1726,45 @@ Uint32 Stat::getLootingBagKey(const int player)
 	return lootingBagKey;
 }
 
-void Stat::addItemToLootingBag(const int player, const real_t x, const real_t y, Item& item)
+bool Stat::allocateUniqueLootingBagKey(int player, Uint32& outKey)
 {
-	if ( item.type == TOOL_DUCK )
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return false;
+	}
+
+	for ( Uint32 serial = 0; serial < 0x08000000u; ++serial )
+	{
+		const Uint32 candidate =
+			0x80000000u
+			| (serial << 4)
+			| (static_cast<Uint32>(player) & 0xFu);
+		bool occupied = false;
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( stats[i]
+				&& stats[i]->player_lootbags.find(candidate)
+					!= stats[i]->player_lootbags.end() )
+			{
+				occupied = true;
+				break;
+			}
+		}
+		if ( !occupied )
+		{
+			outKey = candidate;
+			return true;
+		}
+	}
+
+	printlog("[WRAITH]: ERROR unique loot-bag key namespace exhausted for player %d", player);
+	return false;
+}
+
+void Stat::addItemToLootingBag(const int player, const real_t x, const real_t y, Item& item,
+	bool spawnOnGround)
+{
+	if ( item.type == TOOL_DUCK && spawnOnGround )
 	{
 		item.applyDuck(achievementObserver.playerUids[player], x, y, nullptr, false);
 		return;
@@ -1714,7 +1776,7 @@ void Stat::addItemToLootingBag(const int player, const real_t x, const real_t y,
 		player_lootbags[lootingBagKey].spawn_x = x;
 		player_lootbags[lootingBagKey].spawn_y = y;
 
-		if ( !player_lootbags[lootingBagKey].spawnedOnGround )
+		if ( spawnOnGround && !player_lootbags[lootingBagKey].spawnedOnGround )
 		{
 			Entity* entity = newEntity(-1, 1, map.entities, nullptr); //Item entity.
 			entity->flags[INVISIBLE] = true;
@@ -1738,7 +1800,7 @@ void Stat::addItemToLootingBag(const int player, const real_t x, const real_t y,
 			entity->skill[15] = true;
 		}
 		
-		player_lootbags[lootingBagKey].spawnedOnGround = true;
+		player_lootbags[lootingBagKey].spawnedOnGround = spawnOnGround;
 	}
 	auto& loot = player_lootbags[lootingBagKey];
 	loot.items.push_back(Item());
@@ -1774,6 +1836,12 @@ bool Stat::emptyLootingBag(const int player, Uint32 key)
 						item_loot.beatitude, item_loot.count, item_loot.appearance, item_loot.identified, nullptr);
 					if ( item2 )
 					{
+						item2->runeSetStoredPWRRaw(item_loot.runeGetStoredPWRRaw());
+						item2->runeSetCreatorPlayer(item_loot.runeGetCreatorPlayer());
+						item2->runeSetInstanceId(item_loot.runeGetInstanceId());
+						item2->runeSetCreatorIdentity(item_loot.runeGetCreatorIdentity());
+						item2->appliedOil = item_loot.appliedOil;
+						copyItemPersistentCustomState(*item2, item_loot);
 						int pickedUpCount = item2->count;
 						Item* item = itemPickup(player, item2);
 						if ( item )

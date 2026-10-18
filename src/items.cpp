@@ -25,8 +25,12 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "mod_tools.hpp"
+#include "monster.hpp"
+#include "collision.hpp"
 
+#include <algorithm>
 #include <assert.h>
+#include <limits>
 
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
@@ -36,6 +40,158 @@ Uint32 enchantedFeatherScrollSeed;
 std::vector<int> enchantedFeatherScrollsShuffled;
 bool overrideTinkeringLimit = false;
 int decoyBoxRange = 15;
+
+namespace
+{
+	Uint32 nextMagicRuneInstanceId = 1;
+	Uint32 nextRuneCreatorIdentity = 1;
+	Uint32 nextFamiliarInstanceId = 1;
+	Uint32 nextWraithLoreInstanceId = 1;
+
+	Uint32 allocateNonzeroId(Uint32& nextId)
+	{
+		if ( nextId == 0 ) { nextId = 1; }
+		const Uint32 result = nextId++;
+		if ( nextId == 0 ) { nextId = 1; }
+		return result;
+	}
+}
+
+void reserveFamiliarInstanceId(Uint32 familiarInstanceId)
+{
+	if ( familiarInstanceId != 0 && familiarInstanceId >= nextFamiliarInstanceId )
+	{
+		nextFamiliarInstanceId = familiarInstanceId + 1;
+		if ( nextFamiliarInstanceId == 0 ) { nextFamiliarInstanceId = 1; }
+	}
+}
+
+void reserveWraithLoreInstanceId(Uint32 instanceId)
+{
+	if ( instanceId != 0 && instanceId >= nextWraithLoreInstanceId )
+	{
+		nextWraithLoreInstanceId = instanceId + 1;
+		if ( nextWraithLoreInstanceId == 0 ) { nextWraithLoreInstanceId = 1; }
+	}
+}
+
+void writeWraithLoreInstanceIdToPacket(const Item& item, Uint8* data, int offset)
+{
+	SDLNet_Write32(item.wraithLoreInstanceId, &data[offset]);
+}
+
+void readWraithLoreInstanceIdFromPacket(Item& item, const Uint8* data,
+	int packetLength, int offset)
+{
+	if ( data && offset >= 0
+		&& packetLength >= offset + WRAITH_LORE_INSTANCE_PACKET_BYTES )
+	{
+		item.wraithLoreInstanceId = SDLNet_Read32(&data[offset]);
+	}
+	reserveWraithLoreInstanceId(item.wraithLoreInstanceId);
+	item.wraithLoreEnsureInstanceId();
+}
+
+void reserveMagicRuneInstanceId(Uint32 runeInstanceId)
+{
+	if ( runeInstanceId != 0 && runeInstanceId >= nextMagicRuneInstanceId )
+	{
+		nextMagicRuneInstanceId = runeInstanceId + 1;
+		if ( nextMagicRuneInstanceId == 0 ) { nextMagicRuneInstanceId = 1; }
+	}
+}
+
+void reserveRuneCreatorIdentity(Uint32 creatorIdentity)
+{
+	if ( creatorIdentity != 0 && creatorIdentity >= nextRuneCreatorIdentity )
+	{
+		nextRuneCreatorIdentity = creatorIdentity + 1;
+		if ( nextRuneCreatorIdentity == 0 ) { nextRuneCreatorIdentity = 1; }
+	}
+}
+
+Uint32 ensureRuneCreatorIdentity(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] ) { return 0; }
+	if ( stats[player]->runeCreatorIdentity != 0 )
+	{
+		reserveRuneCreatorIdentity(stats[player]->runeCreatorIdentity);
+		return stats[player]->runeCreatorIdentity;
+	}
+	if ( multiplayer == CLIENT ) { return 0; }
+	stats[player]->runeCreatorIdentity = allocateNonzeroId(nextRuneCreatorIdentity);
+	return stats[player]->runeCreatorIdentity;
+}
+
+static bool itemQualifiesForGolemPolarityReversal(const Item& item)
+{
+	if ( item.type == AMULET_SEXCHANGE || items[item.type].item_slot == NO_EQUIP )
+	{
+		return false;
+	}
+
+	switch ( itemCategory(&item) )
+	{
+		case POTION:
+		case FOOD:
+		case SCROLL:
+		case SPELL_CAT:
+			return false;
+		default:
+			return true;
+	}
+}
+
+bool updateGolemPolarityFromComposition(int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return false;
+	}
+
+	Stat& playerStats = *stats[player];
+	// This identifies the persistent natural-Golem identity without consulting
+	// its temporary polymorph/shapeshift body. Only sex is changed below.
+	if ( playerStats.playerRace != RACE_GOLEM || playerStats.stat_appearance != 0 )
+	{
+		return false;
+	}
+
+	sex_t newPolarity = playerStats.sex;
+	if ( playerStats.sex == MALE
+		&& playerStats.golemBlessedComposition < GOLEM_POLARITY_SWITCH_POINT )
+	{
+		newPolarity = FEMALE;
+	}
+	else if ( playerStats.sex == FEMALE
+		&& playerStats.golemBlessedComposition > GOLEM_POLARITY_SWITCH_POINT )
+	{
+		newPolarity = MALE;
+	}
+
+	if ( newPolarity == playerStats.sex )
+	{
+		return false;
+	}
+	playerStats.sex = newPolarity;
+	serverUpdateSexChange(player);
+	return true;
+}
+
+void reverseGolemEquipmentBeatitudes(Stat& playerStats, const Item* excludedItem)
+{
+	// Player equipment slots point at these same inventory objects, so this single
+	// authoritative pass also updates equipped gear without double-flipping it.
+	for ( node_t* node = playerStats.inventory.first; node; node = node->next )
+	{
+		Item* inventoryItem = static_cast<Item*>(node->element);
+		if ( inventoryItem && inventoryItem != excludedItem
+			&& itemQualifiesForGolemPolarityReversal(*inventoryItem) )
+		{
+			inventoryItem->beatitude = -inventoryItem->beatitude;
+		}
+	}
+}
 
 bool autoHotbarSoftReserveItem(Item& item)
 {
@@ -211,6 +367,7 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 		Status::BROKEN : ((int)status > EXCELLENT ? EXCELLENT : status);
 	item->beatitude = std::min(std::max((Sint16)-100, beatitude), (Sint16)100);
 	item->count = std::max(count, (Sint16)1);
+	if ( itemTypeIsIngredientBag(item->type) ) { item->count = 1; }
 	item->appearance = appearance;
 	item->identified = identified;
 	item->uid = itemuids;
@@ -220,6 +377,31 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->itemHiddenFromShop = false;
 	item->itemRequireTradingSkillInShop = 0;
 	item->itemSpecialShopConsumable = false;
+	item->runeStoredPWR = Item::RUNE_STORED_PWR_INVALID;
+	item->runeCreatorPlayer = Item::RUNE_CREATOR_INVALID;
+	item->runeInstanceId = Item::RUNE_INSTANCE_ID_INVALID;
+	item->runeCreatorIdentity = Item::RUNE_CREATOR_IDENTITY_INVALID;
+	item->appliedOil = APPLIED_OIL_NONE;
+	item->ingredientCounts[0] = 0;
+	item->ingredientCounts[1] = 0;
+	item->ingredientCounts[2] = 0;
+	item->ingredientCounts[3] = 0;
+	item->familiarInitialized = false;
+	item->familiarInstanceId = 0;
+	item->wraithLoreInstanceId = 0;
+	item->familiarHP = 0;
+	item->familiarMAXHP = 0;
+	item->familiarMP = 0;
+	item->familiarMAXMP = 0;
+	item->familiarLVL = 0;
+	item->familiarEXP = 0;
+	item->familiarSTR = 0;
+	item->familiarDEX = 0;
+	item->familiarCON = 0;
+	item->familiarINT = 0;
+	item->familiarPER = 0;
+	item->familiarCHR = 0;
+	item->wraithLoreEnsureInstanceId();
 	item->interactNPCUid = 0;
 	item->notifyIcon = false;
 	item->spellNotifyIcon = false;
@@ -275,6 +457,2029 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	}
 
 	itemuids++;
+	return item;
+}
+
+void copyItemPersistentCustomState(Item& destination, const Item& source)
+{
+	destination.runeSetStoredPWRRaw(source.runeGetStoredPWRRaw());
+	destination.runeSetCreatorPlayer(source.runeGetCreatorPlayer());
+	destination.runeSetInstanceId(source.runeGetInstanceId());
+	destination.runeSetCreatorIdentity(source.runeGetCreatorIdentity());
+	destination.appliedOil = source.appliedOil;
+	for ( int i = 0; i < 4; ++i )
+	{
+		destination.ingredientCounts[i] = source.ingredientCounts[i];
+	}
+	destination.familiarInitialized = source.familiarInitialized;
+	destination.familiarInstanceId = source.familiarInstanceId;
+	destination.wraithLoreInstanceId = source.wraithLoreInstanceId;
+	destination.familiarHP = source.familiarHP;
+	destination.familiarMAXHP = source.familiarMAXHP;
+	destination.familiarMP = source.familiarMP;
+	destination.familiarMAXMP = source.familiarMAXMP;
+	destination.familiarLVL = source.familiarLVL;
+	destination.familiarEXP = source.familiarEXP;
+	destination.familiarSTR = source.familiarSTR;
+	destination.familiarDEX = source.familiarDEX;
+	destination.familiarCON = source.familiarCON;
+	destination.familiarINT = source.familiarINT;
+	destination.familiarPER = source.familiarPER;
+	destination.familiarCHR = source.familiarCHR;
+	reserveFamiliarInstanceId(destination.familiarInstanceId);
+	reserveWraithLoreInstanceId(destination.wraithLoreInstanceId);
+	destination.wraithLoreEnsureInstanceId();
+}
+
+void copyItemPersistentCustomStateToEntity(Entity& destination, const Item& source)
+{
+	destination.itemRuneStoredPWR = source.runeGetStoredPWRRaw();
+	destination.itemRuneStoredPWRValid = source.runeHasStoredPWR() ? 1 : 0;
+	destination.itemRuneCreatorPlayer = source.runeGetCreatorPlayer();
+	destination.itemRuneCreatorPlayerValid = source.runeHasCreator() ? 1 : 0;
+	destination.itemRuneInstanceId = static_cast<Sint32>(source.runeGetInstanceId());
+	destination.itemRuneCreatorIdentity = static_cast<Sint32>(source.runeGetCreatorIdentity());
+	destination.itemAppliedOil = static_cast<Sint32>(source.appliedOil);
+	destination.itemIngredientCount0 = 0;
+	destination.itemIngredientCount1 = 0;
+	destination.itemIngredientCount2 = 0;
+	destination.itemIngredientCount3 = 0;
+	destination.itemIngredientCount0 = static_cast<Sint32>(source.ingredientCounts[0]);
+	destination.itemIngredientCount1 = static_cast<Sint32>(source.ingredientCounts[1]);
+	destination.itemIngredientCount2 = static_cast<Sint32>(source.ingredientCounts[2]);
+	destination.itemIngredientCount3 = static_cast<Sint32>(source.ingredientCounts[3]);
+	destination.itemFamiliarInitialized = source.familiarInitialized ? 1 : 0;
+	destination.itemFamiliarInstanceId = static_cast<Sint32>(source.familiarInstanceId);
+	destination.itemFamiliarHP = source.familiarHP;
+	destination.itemFamiliarMAXHP = source.familiarMAXHP;
+	destination.itemFamiliarMP = source.familiarMP;
+	destination.itemFamiliarMAXMP = source.familiarMAXMP;
+	destination.itemFamiliarLVL = source.familiarLVL;
+	destination.itemFamiliarEXP = source.familiarEXP;
+	destination.itemFamiliarSTR = source.familiarSTR;
+	destination.itemFamiliarDEX = source.familiarDEX;
+	destination.itemFamiliarCON = source.familiarCON;
+	destination.itemFamiliarINT = source.familiarINT;
+	destination.itemFamiliarPER = source.familiarPER;
+	destination.itemFamiliarCHR = source.familiarCHR;
+	destination.itemWraithLoreInstanceId = static_cast<Sint32>(source.wraithLoreInstanceId);
+}
+
+void copyItemPersistentCustomStateFromEntity(Item& destination, const Entity& source)
+{
+	destination.runeSetStoredPWRRaw(source.itemRuneStoredPWRValid
+		? source.itemRuneStoredPWR : Item::RUNE_STORED_PWR_INVALID);
+	destination.runeSetCreatorPlayer(source.itemRuneCreatorPlayerValid
+		? source.itemRuneCreatorPlayer : Item::RUNE_CREATOR_INVALID);
+	destination.runeSetInstanceId(static_cast<Uint32>(source.itemRuneInstanceId));
+	destination.runeSetCreatorIdentity(static_cast<Uint32>(source.itemRuneCreatorIdentity));
+	destination.appliedOil = static_cast<AppliedOil>(std::max(0, std::min(source.itemAppliedOil,
+		static_cast<Sint32>(APPLIED_OIL_MAX) - 1)));
+	destination.ingredientCounts[0] = static_cast<Uint32>(source.itemIngredientCount0);
+	destination.ingredientCounts[1] = static_cast<Uint32>(source.itemIngredientCount1);
+	destination.ingredientCounts[2] = static_cast<Uint32>(source.itemIngredientCount2);
+	destination.ingredientCounts[3] = static_cast<Uint32>(source.itemIngredientCount3);
+	destination.familiarInitialized = source.itemFamiliarInitialized != 0;
+	destination.familiarInstanceId = static_cast<Uint32>(source.itemFamiliarInstanceId);
+	destination.familiarHP = source.itemFamiliarHP;
+	destination.familiarMAXHP = source.itemFamiliarMAXHP;
+	destination.familiarMP = source.itemFamiliarMP;
+	destination.familiarMAXMP = source.itemFamiliarMAXMP;
+	destination.familiarLVL = source.itemFamiliarLVL;
+	destination.familiarEXP = source.itemFamiliarEXP;
+	destination.familiarSTR = source.itemFamiliarSTR;
+	destination.familiarDEX = source.itemFamiliarDEX;
+	destination.familiarCON = source.itemFamiliarCON;
+	destination.familiarINT = source.itemFamiliarINT;
+	destination.familiarPER = source.itemFamiliarPER;
+	destination.familiarCHR = source.itemFamiliarCHR;
+	destination.wraithLoreInstanceId = static_cast<Uint32>(source.itemWraithLoreInstanceId);
+	reserveFamiliarInstanceId(destination.familiarInstanceId);
+	reserveWraithLoreInstanceId(destination.wraithLoreInstanceId);
+	destination.wraithLoreEnsureInstanceId();
+}
+
+bool itemTypeIsTincture(ItemType type)
+{
+	return type >= TINCTURE_STR && type <= TINCTURE_CHA;
+}
+
+bool itemTypeIsOil(ItemType type)
+{
+	return type >= OIL_AETHER && type <= OIL_BRINE;
+}
+
+bool itemTypeIsInk(ItemType type)
+{
+	return type >= INK_MYSTICISM && type <= INK_THAUMATURGY;
+}
+
+bool itemTypeIsWitchbrewConsumable(ItemType type)
+{
+	return itemTypeIsTincture(type) || itemTypeIsOil(type) || itemTypeIsInk(type);
+}
+
+bool itemTypeIsIngredientBag(ItemType type)
+{
+	return type >= INGREDIENT_BAG_SLIME && type <= INGREDIENT_BAG_ANIMATIC;
+}
+
+bool itemTypeIsWitchIngredient(ItemType type)
+{
+	return type >= INGREDIENT_GELATIN && type <= INGREDIENT_FRAGMENTS;
+}
+
+bool itemTypeIsWitchbrewGeneratedItem(ItemType type)
+{
+	return itemTypeIsIngredientBag(type) || itemTypeIsWitchIngredient(type);
+}
+
+WitchIngredientCategory ingredientCategoryFromBag(ItemType type)
+{
+	if ( !itemTypeIsIngredientBag(type) ) { return INGREDIENT_CATEGORY_NONE; }
+	return static_cast<WitchIngredientCategory>(INGREDIENT_CATEGORY_SLIME
+		+ static_cast<int>(type - INGREDIENT_BAG_SLIME));
+}
+
+WitchIngredientCategory ingredientCategoryFromItem(ItemType type)
+{
+	if ( !itemTypeIsWitchIngredient(type) ) { return INGREDIENT_CATEGORY_NONE; }
+	return static_cast<WitchIngredientCategory>(INGREDIENT_CATEGORY_SLIME
+		+ static_cast<int>(type - INGREDIENT_GELATIN) / 4);
+}
+
+ItemType ingredientBagForCategory(WitchIngredientCategory category)
+{
+	if ( category < INGREDIENT_CATEGORY_SLIME || category > INGREDIENT_CATEGORY_ANIMATIC )
+	{
+		return ITEM_ENUM_MAX;
+	}
+	return static_cast<ItemType>(INGREDIENT_BAG_SLIME + category - INGREDIENT_CATEGORY_SLIME);
+}
+
+ItemType ingredientForCategorySlot(WitchIngredientCategory category, int slot)
+{
+	if ( category < INGREDIENT_CATEGORY_SLIME || category > INGREDIENT_CATEGORY_ANIMATIC
+		|| slot < 0 || slot >= 4 )
+	{
+		return ITEM_ENUM_MAX;
+	}
+	return static_cast<ItemType>(INGREDIENT_GELATIN
+		+ (category - INGREDIENT_CATEGORY_SLIME) * 4 + slot);
+}
+
+int ingredientSlotForItem(ItemType type)
+{
+	return itemTypeIsWitchIngredient(type) ? static_cast<int>(type - INGREDIENT_GELATIN) % 4 : -1;
+}
+
+WitchIngredientCategory getIngredientCategoryForMonster(Entity* monster)
+{
+	Stat* monsterStats = monster ? monster->getStats() : nullptr;
+	if ( !monsterStats ) { return INGREDIENT_CATEGORY_NONE; }
+	if ( monsterStats->type == SLIME ) { return INGREDIENT_CATEGORY_SLIME; }
+	auto found = CompendiumEntries.monsters.find(monstertypename[monsterStats->type]);
+	if ( found == CompendiumEntries.monsters.end() ) { return INGREDIENT_CATEGORY_NONE; }
+	switch ( found->second.species )
+	{
+		case Compendium_t::CompendiumMonsters_t::SPECIES_HUMANOID:
+		case Compendium_t::CompendiumMonsters_t::SPECIES_DEMONOID:
+			return INGREDIENT_CATEGORY_HUMORIN;
+		case Compendium_t::CompendiumMonsters_t::SPECIES_BEAST:
+		case Compendium_t::CompendiumMonsters_t::SPECIES_BEASTFOLK:
+			return INGREDIENT_CATEGORY_WILDBLOOD;
+		case Compendium_t::CompendiumMonsters_t::SPECIES_UNDEAD:
+		case Compendium_t::CompendiumMonsters_t::SPECIES_CONSTRUCT:
+			return INGREDIENT_CATEGORY_ANIMATIC;
+		default:
+			return INGREDIENT_CATEGORY_NONE;
+	}
+}
+
+bool ingredientBagIsEmpty(const Item& bag)
+{
+	if ( !itemTypeIsIngredientBag(bag.type) ) { return true; }
+	return bag.ingredientCounts[0] == 0 && bag.ingredientCounts[1] == 0
+		&& bag.ingredientCounts[2] == 0 && bag.ingredientCounts[3] == 0;
+}
+
+bool mergeIngredientBags(Item& destination, const Item& source)
+{
+	if ( !itemTypeIsIngredientBag(destination.type) || !itemTypeIsIngredientBag(source.type)
+		|| ingredientCategoryFromBag(destination.type) != ingredientCategoryFromBag(source.type) )
+	{
+		return false;
+	}
+	for ( int i = 0; i < 4; ++i )
+	{
+		const Uint32 room = std::numeric_limits<Uint32>::max() - destination.ingredientCounts[i];
+		destination.ingredientCounts[i] += std::min(room, source.ingredientCounts[i]);
+	}
+	destination.count = 1;
+	serverSyncPersistentCustomItemStateForOwner(&destination);
+	return true;
+}
+
+Item* findIngredientBagInInventory(list_t& inventory, WitchIngredientCategory category)
+{
+	for ( node_t* node = inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && ingredientCategoryFromBag(item->type) == category ) { return item; }
+	}
+	return nullptr;
+}
+
+Item* mergeIngredientBagIntoInventory(list_t& inventory, const Item& source)
+{
+	const WitchIngredientCategory category = ingredientCategoryFromBag(source.type);
+	if ( category == INGREDIENT_CATEGORY_NONE || ingredientBagIsEmpty(source) ) { return nullptr; }
+	if ( Item* existing = findIngredientBagInInventory(inventory, category) )
+	{
+		mergeIngredientBags(*existing, source);
+		return existing;
+	}
+	Item* created = newItem(ingredientBagForCategory(category), EXCELLENT, 0, 1, 0, true, &inventory);
+	copyItemPersistentCustomState(*created, source);
+	created->count = 1;
+	return created;
+}
+
+namespace
+{
+	std::array<std::array<Uint32, STEWING_RESOURCE_COUNT>, MAXPLAYERS> serverStewingInventoryMirrors{};
+	std::array<bool, MAXPLAYERS> serverStewingInventoryMirrorValid{};
+	std::array<Uint32, MAXPLAYERS> learnedStewingRecipeMasks{};
+	Uint32 activeStewingGeneratorVersion = STEWING_GENERATOR_VERSION;
+
+	using SymbolicStewingRecipe = std::array<std::array<Uint8, 4>, 4>;
+	using StewingCategoryMappings = std::array<std::array<ItemType, 4>, 4>;
+
+	struct GeneratedStewingRecipeBook
+	{
+		std::array<StewingRecipe, STEWING_RECIPE_COUNT> recipes{};
+		std::array<SymbolicStewingRecipe, STEWING_RECIPE_COUNT> symbolicRecipes{};
+		StewingCategoryMappings categoryMappings{};
+		std::array<bool, 4> highTinctureCategories{};
+	};
+
+	template <typename T>
+	void stewingShuffle(std::vector<T>& values, BaronyRNG& rng)
+	{
+		for ( int i = static_cast<int>(values.size()) - 1; i > 0; --i )
+		{
+			const int j = rng.uniform(0, i);
+			std::swap(values[i], values[j]);
+		}
+	}
+
+	template <typename T, size_t Size>
+	void stewingShuffle(std::array<T, Size>& values, BaronyRNG& rng)
+	{
+		for ( int i = static_cast<int>(Size) - 1; i > 0; --i )
+		{
+			const int j = rng.uniform(0, i);
+			std::swap(values[i], values[j]);
+		}
+	}
+
+	StewingCategoryMappings generateStewingCategoryMappings(BaronyRNG& rng)
+	{
+		StewingCategoryMappings mappings{};
+		for ( int category = 0; category < 4; ++category )
+		{
+			const auto ingredientCategory = static_cast<WitchIngredientCategory>(
+				static_cast<int>(INGREDIENT_CATEGORY_SLIME) + category);
+			for ( int slot = 0; slot < 4; ++slot )
+			{
+				mappings[category][slot] = ingredientForCategorySlot(ingredientCategory, slot);
+			}
+			stewingShuffle(mappings[category], rng);
+		}
+		return mappings;
+	}
+
+	bool symbolicRecipeAlreadyUsed(const SymbolicStewingRecipe& candidate,
+		const std::array<SymbolicStewingRecipe, STEWING_RECIPE_COUNT>& recipes,
+		int first, int count)
+	{
+		for ( int i = 0; i < count; ++i )
+		{
+			if ( recipes[first + i] == candidate ) { return true; }
+		}
+		return false;
+	}
+
+	bool generateTinctureRecipes(GeneratedStewingRecipeBook& book, BaronyRNG& rng)
+	{
+		std::array<int, 4> categoryOrder{ { 0, 1, 2, 3 } };
+		stewingShuffle(categoryOrder, rng);
+		std::array<int, 4> doubledTargets{};
+		std::array<std::array<int, 2>, 4> resourceTargets{};
+		for ( int i = 0; i < 4; ++i )
+		{
+			const int category = categoryOrder[i];
+			const bool high = i < 2;
+			book.highTinctureCategories[category] = high;
+			doubledTargets[category] = high ? 2 : 1;
+			if ( high )
+			{
+				resourceTargets[category] = { { 4, 4 } };
+			}
+			else if ( rng.uniform(0, 1) == 0 )
+			{
+				resourceTargets[category] = { { 4, 3 } };
+			}
+			else
+			{
+				resourceTargets[category] = { { 3, 4 } };
+			}
+		}
+
+		struct Candidate
+		{
+			SymbolicStewingRecipe recipe{};
+			int doubledCategory = 0;
+		};
+		std::array<int, 4> doubledUsed{};
+		std::array<std::array<int, 2>, 4> resourceUsed{};
+		std::function<bool(int)> solve = [&](int row)
+		{
+			if ( row == 6 )
+			{
+				return doubledUsed == doubledTargets && resourceUsed == resourceTargets;
+			}
+			std::vector<Candidate> candidates;
+			for ( int doubled = 0; doubled < 4; ++doubled )
+			{
+				if ( doubledUsed[doubled] >= doubledTargets[doubled] ) { continue; }
+				for ( int choices = 0; choices < 8; ++choices )
+				{
+					Candidate candidate;
+					candidate.doubledCategory = doubled;
+					candidate.recipe[doubled][0] = 1;
+					candidate.recipe[doubled][1] = 1;
+					int choiceBit = 0;
+					for ( int category = 0; category < 4; ++category )
+					{
+						if ( category == doubled ) { continue; }
+						const int symbol = (choices >> choiceBit) & 1;
+						candidate.recipe[category][symbol] = 1;
+						++choiceBit;
+					}
+					bool valid = !symbolicRecipeAlreadyUsed(candidate.recipe,
+						book.symbolicRecipes, 4, row);
+					for ( int category = 0; category < 4 && valid; ++category )
+					{
+						for ( int symbol = 0; symbol < 2; ++symbol )
+						{
+							if ( resourceUsed[category][symbol]
+								+ candidate.recipe[category][symbol] > resourceTargets[category][symbol] )
+							{
+								valid = false;
+							}
+						}
+					}
+					if ( valid ) { candidates.push_back(candidate); }
+				}
+			}
+			stewingShuffle(candidates, rng);
+			for ( const Candidate& candidate : candidates )
+			{
+				book.symbolicRecipes[4 + row] = candidate.recipe;
+				++doubledUsed[candidate.doubledCategory];
+				for ( int category = 0; category < 4; ++category )
+				{
+					for ( int symbol = 0; symbol < 2; ++symbol )
+					{
+						resourceUsed[category][symbol] += candidate.recipe[category][symbol];
+					}
+				}
+				if ( solve(row + 1) ) { return true; }
+				--doubledUsed[candidate.doubledCategory];
+				for ( int category = 0; category < 4; ++category )
+				{
+					for ( int symbol = 0; symbol < 2; ++symbol )
+					{
+						resourceUsed[category][symbol] -= candidate.recipe[category][symbol];
+					}
+				}
+			}
+			book.symbolicRecipes[4 + row] = SymbolicStewingRecipe{};
+			return false;
+		};
+		return solve(0);
+	}
+
+	bool generateOilRecipes(GeneratedStewingRecipeBook& book, BaronyRNG& rng)
+	{
+		static const std::array<std::array<Uint8, 4>, 12> categoryPatterns{ {
+			{ { 3, 2, 2, 1 } }, { { 3, 2, 1, 2 } }, { { 3, 1, 2, 2 } },
+			{ { 2, 3, 2, 1 } }, { { 2, 3, 1, 2 } },
+			{ { 2, 2, 3, 1 } }, { { 2, 2, 1, 3 } },
+			{ { 2, 1, 3, 2 } }, { { 2, 1, 2, 3 } },
+			{ { 1, 3, 2, 2 } }, { { 1, 2, 3, 2 } }, { { 1, 2, 2, 3 } }
+		} };
+		std::array<std::array<int, 2>, 4> resourceUsed{};
+		std::function<bool(int)> solve = [&](int row)
+		{
+			if ( row == 7 )
+			{
+				for ( const auto& category : resourceUsed )
+				{
+					if ( category[0] != 7 || category[1] != 7 ) { return false; }
+				}
+				return true;
+			}
+			std::vector<SymbolicStewingRecipe> candidates;
+			for ( const auto& pattern : categoryPatterns )
+			{
+				for ( int tripleOrientation = 0; tripleOrientation < 2; ++tripleOrientation )
+				{
+					for ( int singleOrientation = 0; singleOrientation < 2; ++singleOrientation )
+					{
+						SymbolicStewingRecipe candidate{};
+						for ( int category = 0; category < 4; ++category )
+						{
+							if ( pattern[category] == 3 )
+							{
+								candidate[category][2] = tripleOrientation == 0 ? 2 : 1;
+								candidate[category][3] = tripleOrientation == 0 ? 1 : 2;
+							}
+							else if ( pattern[category] == 2 )
+							{
+								candidate[category][2] = 1;
+								candidate[category][3] = 1;
+							}
+							else
+							{
+								candidate[category][2 + singleOrientation] = 1;
+							}
+						}
+						bool valid = !symbolicRecipeAlreadyUsed(candidate,
+							book.symbolicRecipes, 10, row);
+						for ( int category = 0; category < 4 && valid; ++category )
+						{
+							for ( int symbol = 0; symbol < 2; ++symbol )
+							{
+								if ( resourceUsed[category][symbol]
+									+ candidate[category][2 + symbol] > 7 )
+								{
+									valid = false;
+								}
+							}
+						}
+						if ( valid ) { candidates.push_back(candidate); }
+					}
+				}
+			}
+			stewingShuffle(candidates, rng);
+			for ( const SymbolicStewingRecipe& candidate : candidates )
+			{
+				book.symbolicRecipes[10 + row] = candidate;
+				for ( int category = 0; category < 4; ++category )
+				{
+					for ( int symbol = 0; symbol < 2; ++symbol )
+					{
+						resourceUsed[category][symbol] += candidate[category][2 + symbol];
+					}
+				}
+				if ( solve(row + 1) ) { return true; }
+				for ( int category = 0; category < 4; ++category )
+				{
+					for ( int symbol = 0; symbol < 2; ++symbol )
+					{
+						resourceUsed[category][symbol] -= candidate[category][2 + symbol];
+					}
+				}
+			}
+			book.symbolicRecipes[10 + row] = SymbolicStewingRecipe{};
+			return false;
+		};
+		return solve(0);
+	}
+
+	void generateInkRecipes(GeneratedStewingRecipeBook& book, BaronyRNG& rng)
+	{
+		std::array<std::array<bool, 2>, 4> omitExtra{};
+		for ( int category = 0; category < 4; ++category )
+		{
+			if ( book.highTinctureCategories[category] )
+			{
+				omitExtra[category][rng.uniform(0, 1)] = true;
+			}
+		}
+		std::vector<std::array<int, 2>> extras;
+		for ( int category = 0; category < 4; ++category )
+		{
+			for ( int symbol = 0; symbol < 2; ++symbol )
+			{
+				if ( !omitExtra[category][symbol] )
+				{
+					extras.push_back({ { category, symbol + 2 } });
+				}
+			}
+		}
+		stewingShuffle(extras, rng);
+		for ( int row = 0; row < 3; ++row )
+		{
+			SymbolicStewingRecipe& recipe = book.symbolicRecipes[17 + row];
+			for ( int category = 0; category < 4; ++category )
+			{
+				recipe[category][2] = 2;
+				recipe[category][3] = 2;
+			}
+			for ( int extra = 0; extra < 2; ++extra )
+			{
+				const auto& resource = extras[row * 2 + extra];
+				++recipe[resource[0]][resource[1]];
+			}
+		}
+	}
+
+	StewingRecipe symbolicRecipeToConcrete(const SymbolicStewingRecipe& symbolic,
+		const StewingCategoryMappings& mappings, ItemType result, bool addWater)
+	{
+		StewingRecipe recipe;
+		recipe.result = result;
+		recipe.alwaysUnlocked = addWater;
+		recipe.educts.fill(StewingEduct{});
+		recipe.eductCount = 0;
+		for ( int category = 0; category < 4; ++category )
+		{
+			for ( int symbol = 0; symbol < 4; ++symbol )
+			{
+				const Uint8 quantity = symbolic[category][symbol];
+				if ( quantity == 0 ) { continue; }
+				assert(recipe.eductCount < STEWING_MAX_EDUCTS);
+				recipe.educts[recipe.eductCount++] = { mappings[category][symbol], quantity };
+			}
+		}
+		if ( addWater )
+		{
+			assert(recipe.eductCount < STEWING_MAX_EDUCTS);
+			recipe.educts[recipe.eductCount++] = { POTION_WATER, 1 };
+		}
+		return recipe;
+	}
+
+	bool stewingValidationFailure(const char* invariant)
+	{
+		printlog("[Stewing] recipe generator validation failed: %s", invariant);
+		return false;
+	}
+
+	bool validateStewingRecipeBook(const GeneratedStewingRecipeBook& book)
+	{
+		static const std::array<ItemType, STEWING_RECIPE_COUNT> expectedResults{ {
+			POTION_ACID, POTION_BOOZE, POTION_JUICE, POTION_INVISIBILITY,
+			TINCTURE_STR, TINCTURE_DEX, TINCTURE_CON, TINCTURE_INT, TINCTURE_PER, TINCTURE_CHA,
+			OIL_AETHER, OIL_SILVER, OIL_TOXINS, OIL_BASES, OIL_LEAD, OIL_MINERAL, OIL_BRINE,
+			INK_MYSTICISM, INK_SORCERY, INK_THAUMATURGY
+		} };
+		std::array<std::array<Uint32, STEWING_RESOURCE_COUNT>, STEWING_RECIPE_COUNT> concrete{};
+		for ( int row = 0; row < STEWING_RECIPE_COUNT; ++row )
+		{
+			const StewingRecipe& recipe = book.recipes[row];
+			if ( recipe.result != expectedResults[row] )
+			{
+				return stewingValidationFailure("result order/uniqueness");
+			}
+			if ( recipe.eductCount > STEWING_MAX_EDUCTS )
+			{
+				return stewingValidationFailure("eductCount exceeds STEWING_MAX_EDUCTS");
+			}
+			for ( Uint32 i = 0; i < recipe.eductCount; ++i )
+			{
+				const int resource = getStewingResourceIndex(recipe.educts[i].type);
+				if ( recipe.educts[i].quantity == 0 )
+				{
+					return stewingValidationFailure("zero-quantity stored educt");
+				}
+				if ( resource < 0 || concrete[row][resource] != 0 )
+				{
+					return stewingValidationFailure("invalid or duplicate concrete educt");
+				}
+				concrete[row][resource] = recipe.educts[i].quantity;
+			}
+			for ( int previous = 0; previous < row; ++previous )
+			{
+				if ( concrete[previous] == concrete[row] )
+				{
+					return stewingValidationFailure("duplicate full concrete recipe");
+				}
+			}
+		}
+
+		std::array<Uint32, 4> wholeCategoryTotals{};
+		for ( int row = 0; row < STEWING_RECIPE_COUNT; ++row )
+		{
+			for ( int category = 0; category < 4; ++category )
+			{
+				for ( int symbol = 0; symbol < 4; ++symbol )
+				{
+					wholeCategoryTotals[category] += book.symbolicRecipes[row][category][symbol];
+				}
+			}
+		}
+
+		for ( int row = 0; row < 4; ++row )
+		{
+			if ( !book.recipes[row].alwaysUnlocked || concrete[row][16] != 1 )
+			{
+				return stewingValidationFailure("starting Potion unlock/Water invariant");
+			}
+			Uint32 witchTotal = 0;
+			for ( int category = 0; category < 4; ++category )
+			{
+				for ( int symbol = 0; symbol < 4; ++symbol )
+				{
+					const Uint8 expected = category == row ? 1 : 0;
+					if ( book.symbolicRecipes[row][category][symbol] != expected )
+					{
+						return stewingValidationFailure("starting Potion category A+B+C+D invariant");
+					}
+					witchTotal += book.symbolicRecipes[row][category][symbol];
+				}
+			}
+			if ( witchTotal != 4 ) { return stewingValidationFailure("starting Potion cost"); }
+		}
+		for ( int row = 4; row < STEWING_RECIPE_COUNT; ++row )
+		{
+			if ( book.recipes[row].alwaysUnlocked || concrete[row][16] != 0 )
+			{
+				return stewingValidationFailure("non-Potion lock/Water invariant");
+			}
+		}
+
+		std::array<Uint32, 4> tinctureCategoryTotals{};
+		std::array<std::array<Uint32, 2>, 4> tinctureResourceTotals{};
+		for ( int row = 4; row < 10; ++row )
+		{
+			std::array<int, 4> categoryTotals{};
+			int total = 0;
+			for ( int category = 0; category < 4; ++category )
+			{
+				if ( book.symbolicRecipes[row][category][2] != 0
+					|| book.symbolicRecipes[row][category][3] != 0 )
+				{
+					return stewingValidationFailure("Tincture uses C/D");
+				}
+				for ( int symbol = 0; symbol < 2; ++symbol )
+				{
+					const Uint32 quantity = book.symbolicRecipes[row][category][symbol];
+					categoryTotals[category] += quantity;
+					tinctureResourceTotals[category][symbol] += quantity;
+					tinctureCategoryTotals[category] += quantity;
+					total += quantity;
+				}
+				if ( categoryTotals[category] == 2
+					&& (book.symbolicRecipes[row][category][0] != 1
+						|| book.symbolicRecipes[row][category][1] != 1) )
+				{
+					return stewingValidationFailure("Tincture doubled category is not A+B");
+				}
+			}
+			std::sort(categoryTotals.begin(), categoryTotals.end());
+			if ( total != 5 || categoryTotals != std::array<int, 4>{ { 1, 1, 1, 2 } } )
+			{
+				return stewingValidationFailure("Tincture row cost/category multiplicity");
+			}
+		}
+		auto sortedTinctureCategories = tinctureCategoryTotals;
+		std::sort(sortedTinctureCategories.begin(), sortedTinctureCategories.end());
+		if ( sortedTinctureCategories != std::array<Uint32, 4>{ { 7, 7, 8, 8 } } )
+		{
+			return stewingValidationFailure("Tincture global category totals");
+		}
+		int tinctureThrees = 0;
+		std::array<bool, 4> categoryHasThree{};
+		for ( int category = 0; category < 4; ++category )
+		{
+			if ( (tinctureCategoryTotals[category] == 8) != book.highTinctureCategories[category] )
+			{
+				return stewingValidationFailure("Tincture high-category identity");
+			}
+			for ( int symbol = 0; symbol < 2; ++symbol )
+			{
+				const Uint32 total = tinctureResourceTotals[category][symbol];
+				if ( total == 3 ) { ++tinctureThrees; categoryHasThree[category] = true; }
+				else if ( total != 4 ) { return stewingValidationFailure("Tincture A/B total is not 3 or 4"); }
+			}
+		}
+		int categoriesWithThree = 0;
+		for ( bool hasThree : categoryHasThree ) { categoriesWithThree += hasThree ? 1 : 0; }
+		if ( tinctureThrees != 2 || categoriesWithThree != 2 )
+		{
+			return stewingValidationFailure("Tincture two 3-use resources in distinct categories");
+		}
+
+		std::array<std::array<Uint32, 2>, 4> oilResourceTotals{};
+		for ( int row = 10; row < 17; ++row )
+		{
+			std::array<int, 4> categoryTotals{};
+			int total = 0;
+			for ( int category = 0; category < 4; ++category )
+			{
+				if ( book.symbolicRecipes[row][category][0] != 0
+					|| book.symbolicRecipes[row][category][1] != 0 )
+				{
+					return stewingValidationFailure("Oil uses A/B");
+				}
+				for ( int symbol = 0; symbol < 2; ++symbol )
+				{
+					const Uint32 quantity = book.symbolicRecipes[row][category][2 + symbol];
+					categoryTotals[category] += quantity;
+					oilResourceTotals[category][symbol] += quantity;
+					total += quantity;
+				}
+				if ( categoryTotals[category] >= 2
+					&& (book.symbolicRecipes[row][category][2] == 0
+						|| book.symbolicRecipes[row][category][3] == 0) )
+				{
+					return stewingValidationFailure("Oil category >=2 lacks C or D");
+				}
+			}
+			std::sort(categoryTotals.begin(), categoryTotals.end());
+			if ( total != 8 || categoryTotals != std::array<int, 4>{ { 1, 2, 2, 3 } } )
+			{
+				return stewingValidationFailure("Oil row cost/category multiplicity");
+			}
+		}
+		for ( const auto& category : oilResourceTotals )
+		{
+			if ( category[0] != 7 || category[1] != 7 )
+			{
+				return stewingValidationFailure("Oil global C/D totals");
+			}
+		}
+
+		std::array<std::array<Uint32, 2>, 4> inkResourceTotals{};
+		for ( int row = 17; row < 20; ++row )
+		{
+			int total = 0;
+			for ( int category = 0; category < 4; ++category )
+			{
+				if ( book.symbolicRecipes[row][category][0] != 0
+					|| book.symbolicRecipes[row][category][1] != 0
+					|| book.symbolicRecipes[row][category][2] < 2
+					|| book.symbolicRecipes[row][category][3] < 2 )
+				{
+					return stewingValidationFailure("Ink row baseline/C-D-only invariant");
+				}
+				for ( int symbol = 0; symbol < 2; ++symbol )
+				{
+					const Uint32 quantity = book.symbolicRecipes[row][category][2 + symbol];
+					inkResourceTotals[category][symbol] += quantity;
+					total += quantity;
+				}
+			}
+			if ( total != 18 ) { return stewingValidationFailure("Ink row cost"); }
+		}
+		int inkSixes = 0;
+		std::array<bool, 4> inkSixCategories{};
+		for ( int category = 0; category < 4; ++category )
+		{
+			for ( int symbol = 0; symbol < 2; ++symbol )
+			{
+				const Uint32 total = inkResourceTotals[category][symbol];
+				if ( total == 6 ) { ++inkSixes; inkSixCategories[category] = true; }
+				else if ( total != 7 ) { return stewingValidationFailure("Ink global C/D total is not 6 or 7"); }
+			}
+		}
+		int inkSixCategoryCount = 0;
+		for ( int category = 0; category < 4; ++category )
+		{
+			inkSixCategoryCount += inkSixCategories[category] ? 1 : 0;
+			if ( inkSixCategories[category] != book.highTinctureCategories[category] )
+			{
+				return stewingValidationFailure("Ink 6-use category does not match high Tincture category");
+			}
+		}
+		if ( inkSixes != 2 || inkSixCategoryCount != 2 )
+		{
+			return stewingValidationFailure("Ink two 6-use resources in distinct categories");
+		}
+
+		if ( wholeCategoryTotals != std::array<Uint32, 4>{ { 39, 39, 39, 39 } } )
+		{
+			return stewingValidationFailure("whole-book category totals are not 39/39/39/39");
+		}
+		return true;
+	}
+
+	bool buildStewingRecipeBook(GeneratedStewingRecipeBook& book, Uint32 gameKey, Uint32 generatorVersion)
+	{
+		book = GeneratedStewingRecipeBook{};
+		BaronyRNG stewingRng;
+		const Uint32 seedWords[] = { gameKey, 0x53544557u, generatorVersion };
+		stewingRng.seedBytes(seedWords, sizeof(seedWords));
+		book.categoryMappings = generateStewingCategoryMappings(stewingRng);
+
+		for ( int potion = 0; potion < 4; ++potion )
+		{
+			for ( int symbol = 0; symbol < 4; ++symbol )
+			{
+				book.symbolicRecipes[potion][potion][symbol] = 1;
+			}
+		}
+		if ( !generateTinctureRecipes(book, stewingRng) )
+		{
+			printlog("[Stewing] Tincture exhaustive solver failed");
+			return false;
+		}
+		if ( !generateOilRecipes(book, stewingRng) )
+		{
+			printlog("[Stewing] Oil exhaustive solver failed");
+			return false;
+		}
+		generateInkRecipes(book, stewingRng);
+
+		static const std::array<ItemType, STEWING_RECIPE_COUNT> results{ {
+			POTION_ACID, POTION_BOOZE, POTION_JUICE, POTION_INVISIBILITY,
+			TINCTURE_STR, TINCTURE_DEX, TINCTURE_CON, TINCTURE_INT, TINCTURE_PER, TINCTURE_CHA,
+			OIL_AETHER, OIL_SILVER, OIL_TOXINS, OIL_BASES, OIL_LEAD, OIL_MINERAL, OIL_BRINE,
+			INK_MYSTICISM, INK_SORCERY, INK_THAUMATURGY
+		} };
+		for ( int row = 0; row < STEWING_RECIPE_COUNT; ++row )
+		{
+			book.recipes[row] = symbolicRecipeToConcrete(book.symbolicRecipes[row],
+				book.categoryMappings, results[row], row < 4);
+		}
+		return validateStewingRecipeBook(book);
+	}
+
+	std::array<Uint64, STEWING_RESOURCE_COUNT> stewingSelectionAmounts(const StewingSelection& selection,
+		bool* invalidResource = nullptr)
+	{
+		std::array<Uint64, STEWING_RESOURCE_COUNT> amounts{};
+		bool invalid = false;
+		for ( const StewingEduct& educt : selection )
+		{
+			if ( educt.quantity == 0 ) { continue; }
+			const int index = getStewingResourceIndex(educt.type);
+			if ( index < 0 || educt.type == POTION_EMPTY )
+			{
+				invalid = true;
+				continue;
+			}
+			amounts[index] += educt.quantity;
+			if ( amounts[index] > std::numeric_limits<Uint32>::max() )
+			{
+				invalid = true;
+			}
+		}
+		if ( invalidResource ) { *invalidResource = invalid; }
+		return amounts;
+	}
+
+	StewingSelection stewingSelectionFromAmounts(
+		const std::array<Uint64, STEWING_RESOURCE_COUNT>& amounts)
+	{
+		StewingSelection selection{};
+		int slot = 0;
+		for ( int i = 0; i < STEWING_RESOURCE_COUNT && slot < STEWING_MAX_EDUCTS; ++i )
+		{
+			if ( amounts[i] == 0 || getStewingResourceType(i) == POTION_EMPTY ) { continue; }
+			selection[slot].type = getStewingResourceType(i);
+			selection[slot].quantity = static_cast<Uint32>(amounts[i]);
+			++slot;
+		}
+		return selection;
+	}
+
+	Uint64 countStewingResourceInList(const list_t& inventory, ItemType resource)
+	{
+		Uint64 total = 0;
+		if ( itemTypeIsWitchIngredient(resource) )
+		{
+			const WitchIngredientCategory category = ingredientCategoryFromItem(resource);
+			const int ingredientSlot = ingredientSlotForItem(resource);
+			for ( node_t* node = inventory.first; node; node = node->next )
+			{
+				const Item* item = static_cast<const Item*>(node->element);
+				if ( item && ingredientCategoryFromBag(item->type) == category )
+				{
+					total += item->ingredientCounts[ingredientSlot];
+				}
+			}
+		}
+		else
+		{
+			for ( node_t* node = inventory.first; node; node = node->next )
+			{
+				const Item* item = static_cast<const Item*>(node->element);
+				if ( item && item->type == resource && item->count > 0 )
+				{
+					total += static_cast<Uint32>(item->count);
+				}
+			}
+		}
+		return total;
+	}
+
+	Uint32 consumeStewingIngredientFromList(list_t& inventory, ItemType ingredient, Uint32 amount,
+		const int player, std::vector<Item*>* changedBags = nullptr)
+	{
+		const WitchIngredientCategory category = ingredientCategoryFromItem(ingredient);
+		const int ingredientSlot = ingredientSlotForItem(ingredient);
+		Uint32 consumed = 0;
+		for ( node_t* node = inventory.first; node && consumed < amount; )
+		{
+			node_t* next = node->next;
+			Item* bag = static_cast<Item*>(node->element);
+			if ( bag && ingredientCategoryFromBag(bag->type) == category )
+			{
+				const Uint32 take = std::min(amount - consumed, bag->ingredientCounts[ingredientSlot]);
+				bag->ingredientCounts[ingredientSlot] -= take;
+				consumed += take;
+				if ( ingredientBagIsEmpty(*bag)
+					&& stats[0]
+					&& node->list == &stats[0]->void_chest_inventory )
+				{
+					// Retain an empty bag's category and slot in its owner's Void Chest.
+					// Otherwise the client keeps a stale bag until reopening the chest.
+					if ( changedBags && std::find(changedBags->begin(), changedBags->end(), bag)
+						== changedBags->end() ) { changedBags->push_back(bag); }
+				}
+				else if ( ingredientBagIsEmpty(*bag) )
+				{
+					if ( changedBags )
+					{
+						changedBags->erase(std::remove(changedBags->begin(), changedBags->end(), bag),
+							changedBags->end());
+					}
+					if ( player >= 0
+						&& player < MAXPLAYERS
+						&& stats[player]
+						&& node->list == &stats[player]->inventory )
+					{
+						Item* bagToConsume = static_cast<Item*>(node->element);
+						consumeItem(bagToConsume, player);
+					}
+					else
+					{
+						list_RemoveNode(node);
+					}
+				}
+				else if ( changedBags && take > 0
+					&& std::find(changedBags->begin(), changedBags->end(), bag) == changedBags->end() )
+				{
+					changedBags->push_back(bag);
+				}
+			}
+			node = next;
+		}
+		return consumed;
+	}
+
+	Uint32 consumeStewingOrdinaryItemFromList(list_t& inventory, ItemType type, Uint32 amount)
+	{
+		Uint32 consumed = 0;
+		for ( node_t* node = inventory.first; node && consumed < amount; )
+		{
+			node_t* next = node->next;
+			Item* item = static_cast<Item*>(node->element);
+			if ( item && item->type == type && item->count > 0 )
+			{
+				const Uint32 take = std::min<Uint32>(amount - consumed,
+					static_cast<Uint32>(item->count));
+				item->count -= static_cast<Sint16>(take);
+				consumed += take;
+				if ( item->count <= 0 )
+				{
+					list_RemoveNode(node);
+				}
+			}
+			node = next;
+		}
+		return consumed;
+	}
+
+	static bool consumeStewingPhysicalItem(const int player, const ItemType type)
+	{
+		if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
+		{
+			return false;
+		}
+
+		Item* itemToConsume = nullptr;
+		for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+		{
+			Item* candidate = static_cast<Item*>(node->element);
+			if ( candidate && candidate->type == type )
+			{
+				itemToConsume = candidate;
+				break;
+			}
+		}
+		if ( !itemToConsume ) { return false; }
+
+#ifndef NDEBUG
+		if ( playerIsInWraithForm(player) && getWraithHeldItem(player) == itemToConsume )
+		{
+			assert(itemToConsume->node
+				&& itemToConsume->node->list == &stats[player]->inventory);
+		}
+#endif
+		consumeItem(itemToConsume, player);
+		return true;
+	}
+
+	static bool consumeStewingPhysicalItems(const int player, const ItemType type, Uint32 amount)
+	{
+		while ( amount > 0 )
+		{
+			if ( !consumeStewingPhysicalItem(player, type) ) { return false; }
+			--amount;
+		}
+		return true;
+	}
+
+	void giveStewingItem(int player, ItemType type, Uint64 amount, bool noBottleUse = false)
+	{
+		const int resourceIndex = getStewingResourceIndex(type);
+		const Uint64 originalAmount = amount;
+		while ( amount > 0 )
+		{
+			const Sint16 count = static_cast<Sint16>(std::min<Uint64>(amount,
+				static_cast<Uint64>(std::numeric_limits<Sint16>::max())));
+				Item* item = newItem(type, SERVICABLE, 0, count,
+					noBottleUse ? STEWING_NO_BOTTLE_APPEARANCE : 0, true, nullptr);
+				if ( !item )
+				{
+					return;
+				}
+
+				if ( player >= 0
+					&& player < MAXPLAYERS
+					&& stats[player]
+					&& players[player]
+					&& players[player]->entity
+					&& playerIsInWraithForm(player)
+					&& item->type != SPELL_ITEM
+					&& getWraithHeldItem(player) )
+				{
+					// The Wraith spectral hand is already occupied.
+					// Do NOT call itemPickup() here:
+					// itemPickup() may stack this crafted result into the existing held Item,
+					// making its return value alias the held hybrid Item.
+					//
+					// The design for Wraith crafting is one physical hand:
+					// occupied hand => drop the NEW crafted result instead.
+					dropItemMonster(
+						item,
+						players[player]->entity,
+						nullptr,
+						item->count);
+					return;
+				}
+
+				itemPickup(player, item);
+				free(item);
+			amount -= count;
+		}
+		if ( multiplayer == SERVER && player > 0 && player < MAXPLAYERS
+			&& players[player] && !players[player]->isLocalPlayer()
+			&& serverStewingInventoryMirrorValid[player] && resourceIndex >= 0 )
+		{
+			const Uint64 updated = static_cast<Uint64>(serverStewingInventoryMirrors[player][resourceIndex])
+				+ originalAmount;
+			serverStewingInventoryMirrors[player][resourceIndex] = static_cast<Uint32>(
+				std::min<Uint64>(updated, std::numeric_limits<Uint32>::max()));
+		}
+	}
+
+	bool playerCanApplyStewingResult(int player)
+	{
+		if ( player < 0 || player >= MAXPLAYERS || !players[player] || !players[player]->entity
+			|| !stats[player] || playerIsPanicking(player) )
+		{
+			return false;
+		}
+		if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_STRANGULATION
+			&& stats[player]->type != SKELETON )
+		{
+			return false;
+		}
+		return !stats[player]->getEffectActive(EFF_VOMITING);
+	}
+
+	bool applyStewingResult(int player, ItemType result)
+	{
+		if ( !playerCanApplyStewingResult(player) ) { return false; }
+		Item* item = newItem(result, SERVICABLE, 0, 1, 0, true, nullptr);
+		Entity* entity = players[player]->entity;
+		bool applied = false;
+		switch ( result )
+		{
+			case POTION_ACID: applied = item_PotionAcid(item, entity, entity); break;
+			case POTION_BOOZE: applied = item_PotionBooze(item, entity, entity); break;
+			case POTION_JUICE: applied = item_PotionJuice(item, entity, entity); break;
+			case POTION_INVISIBILITY: applied = item_PotionInvisibility(item, entity, entity); break;
+			case POTION_SICKNESS: applied = item_PotionSickness(item, entity, entity); break;
+			default:
+				if ( itemTypeIsTincture(result) )
+				{
+					applied = applyTinctureStackToPlayer(result, player);
+					if ( applied ) { tryIncreaseAlchemyFromWitchbrewUse(player); }
+				}
+				break;
+		}
+		if ( item ) { free(item); }
+		return applied;
+	}
+}
+
+const std::array<StewingRecipe, STEWING_RECIPE_COUNT>& getStewingRecipes()
+{
+	static bool initialized = false;
+	static Uint32 cachedGameKey = 0;
+	static Uint32 cachedGeneratorVersion = 0;
+	static GeneratedStewingRecipeBook book;
+	const Uint32 generatorVersion = getActiveStewingGeneratorVersion();
+	if ( !initialized || cachedGameKey != uniqueGameKey
+		|| cachedGeneratorVersion != generatorVersion )
+	{
+		const bool success = buildStewingRecipeBook(book, uniqueGameKey, generatorVersion);
+		if ( !success )
+		{
+			printlog("[Stewing] failed to build recipe book for key %u, version %u",
+				uniqueGameKey, generatorVersion);
+			assert(success);
+		}
+		cachedGameKey = uniqueGameKey;
+		cachedGeneratorVersion = generatorVersion;
+		initialized = true;
+	}
+	return book.recipes;
+}
+
+Uint32 getActiveStewingGeneratorVersion()
+{
+	return activeStewingGeneratorVersion;
+}
+
+void setActiveStewingGeneratorVersion(Uint32 version)
+{
+	activeStewingGeneratorVersion = version == 0 ? STEWING_GENERATOR_VERSION : version;
+}
+
+Uint32 getStewingRecipeUnlockMask(int player)
+{
+	return player >= 0 && player < MAXPLAYERS ? learnedStewingRecipeMasks[player] : 0;
+}
+
+void setStewingRecipeUnlockMask(int player, Uint32 mask)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return; }
+	learnedStewingRecipeMasks[player] = mask & 0xffffu;
+}
+
+bool playerKnowsStewingRecipe(int player, ItemType result)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
+	for ( const StewingRecipe& recipe : getStewingRecipes() )
+	{
+		if ( recipe.result == result && recipe.alwaysUnlocked ) { return true; }
+	}
+	const int bit = static_cast<int>(result) - static_cast<int>(TINCTURE_STR);
+	return bit >= 0 && bit < 16
+		&& (learnedStewingRecipeMasks[player] & (1u << bit)) != 0;
+}
+
+bool unlockStewingRecipe(int player, ItemType result)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
+	const int bit = static_cast<int>(result) - static_cast<int>(TINCTURE_STR);
+	if ( bit < 0 || bit >= 16 ) { return false; }
+	const Uint32 flag = 1u << bit;
+	if ( (learnedStewingRecipeMasks[player] & flag) != 0 ) { return false; }
+	learnedStewingRecipeMasks[player] |= flag;
+	return true;
+}
+
+void unlockAllStewingRecipes(int player)
+{
+	setStewingRecipeUnlockMask(player, 0xffffu);
+}
+
+int getNumKnownStewingRecipes(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return 0; }
+	Uint32 mask = learnedStewingRecipeMasks[player];
+	int count = 4;
+	while ( mask != 0 )
+	{
+		count += mask & 1u;
+		mask >>= 1;
+	}
+	return count;
+}
+
+ItemType tryDiscoverStewingRecipe(int player,
+	const std::array<Uint64, STEWING_RESOURCE_COUNT>& consumedResources)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return ITEM_ENUM_MAX;
+	}
+
+	std::vector<ItemType> eligibleTinctures;
+	std::vector<ItemType> eligibleAdvanced;
+	for ( const StewingRecipe& recipe : getStewingRecipes() )
+	{
+		if ( recipe.alwaysUnlocked || playerKnowsStewingRecipe(player, recipe.result) )
+		{
+			continue;
+		}
+		bool sharesUsedIngredient = false;
+		for ( Uint32 i = 0; i < recipe.eductCount; ++i )
+		{
+			const int resourceIndex = getStewingResourceIndex(recipe.educts[i].type);
+			if ( resourceIndex >= 0 && resourceIndex < 16
+				&& consumedResources[resourceIndex] > 0 )
+			{
+				sharesUsedIngredient = true;
+				break;
+			}
+		}
+		if ( !sharesUsedIngredient )
+		{
+			continue;
+		}
+		if ( itemTypeIsTincture(recipe.result) )
+		{
+			eligibleTinctures.push_back(recipe.result);
+		}
+		else if ( itemTypeIsOil(recipe.result) || itemTypeIsInk(recipe.result) )
+		{
+			eligibleAdvanced.push_back(recipe.result);
+		}
+	}
+
+	if ( eligibleTinctures.empty() && eligibleAdvanced.empty() )
+	{
+		return ITEM_ENUM_MAX;
+	}
+	const int chance = std::clamp(stats[player]->getProficiency(PRO_ALCHEMY), 0, 100);
+	if ( local_rng.rand() % 100 >= chance )
+	{
+		return ITEM_ENUM_MAX;
+	}
+
+	const std::vector<ItemType>* selectedGroup = nullptr;
+	if ( eligibleTinctures.empty() )
+	{
+		selectedGroup = &eligibleAdvanced;
+	}
+	else if ( eligibleAdvanced.empty() )
+	{
+		selectedGroup = &eligibleTinctures;
+	}
+	else
+	{
+		selectedGroup = local_rng.rand() % 100 < 80
+			? &eligibleTinctures : &eligibleAdvanced;
+	}
+	const ItemType candidate = (*selectedGroup)[local_rng.rand() % selectedGroup->size()];
+	if ( unlockStewingRecipe(player, candidate) )
+	{
+		if ( players[player] && players[player]->entity )
+		{
+			players[player]->entity->increaseSkill(PRO_ALCHEMY);
+		}
+		return candidate;
+	}
+	return ITEM_ENUM_MAX;
+}
+
+void tryIncreaseAlchemyFromWitchbrewUse(int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !players[player]
+		|| !players[player]->entity || !stats[player] )
+	{
+		return;
+	}
+	if ( local_rng.rand() % 20 == 0 )
+	{
+		players[player]->entity->increaseSkill(PRO_ALCHEMY);
+	}
+}
+
+bool stewingResultCanApplyImmediately(ItemType result)
+{
+	switch ( result )
+	{
+		case POTION_ACID:
+		case POTION_BOOZE:
+		case POTION_JUICE:
+		case POTION_INVISIBILITY:
+		case POTION_SICKNESS:
+			return true;
+		default:
+			return itemTypeIsTincture(result);
+	}
+}
+
+bool itemTypeIsStewingSelectable(ItemType type)
+{
+	return itemTypeIsWitchIngredient(type) || type == POTION_WATER;
+}
+
+int getStewingResourceIndex(ItemType type)
+{
+	if ( itemTypeIsWitchIngredient(type) )
+	{
+		return static_cast<int>(type) - static_cast<int>(INGREDIENT_GELATIN);
+	}
+	if ( type == POTION_WATER ) { return 16; }
+	if ( type == POTION_EMPTY ) { return 17; }
+	return -1;
+}
+
+ItemType getStewingResourceType(int index)
+{
+	if ( index >= 0 && index < 16 )
+	{
+		return static_cast<ItemType>(static_cast<int>(INGREDIENT_GELATIN) + index);
+	}
+	if ( index == 16 ) { return POTION_WATER; }
+	if ( index == 17 ) { return POTION_EMPTY; }
+	return ITEM_ENUM_MAX;
+}
+
+int getBottleContribution(ItemType educt)
+{
+	return educt == POTION_WATER ? 1 : 0;
+}
+
+Uint32 countSelectedStewingResource(const StewingSelection& selection, ItemType type)
+{
+	Uint64 total = 0;
+	for ( const StewingEduct& educt : selection )
+	{
+		if ( educt.type == type ) { total += educt.quantity; }
+	}
+	return static_cast<Uint32>(std::min<Uint64>(total, std::numeric_limits<Uint32>::max()));
+}
+
+Uint32 countSelectedWitchIngredients(const StewingSelection& selection)
+{
+	Uint64 total = 0;
+	for ( const StewingEduct& educt : selection )
+	{
+		if ( itemTypeIsWitchIngredient(educt.type) ) { total += educt.quantity; }
+	}
+	return static_cast<Uint32>(std::min<Uint64>(total, std::numeric_limits<Uint32>::max()));
+}
+
+StewingMatch evaluateStewingMixture(const StewingSelection& selection)
+{
+	StewingMatch match;
+	bool invalidResource = false;
+	const auto selected = stewingSelectionAmounts(selection, &invalidResource);
+	Uint64 total = 0;
+	Uint64 witchIngredients = 0;
+	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+	{
+		total += selected[i];
+		if ( i < 16 ) { witchIngredients += selected[i]; }
+	}
+	if ( invalidResource )
+	{
+		match.type = STEWING_MATCH_INVALID_RESOURCE;
+		return match;
+	}
+	if ( total == 0 )
+	{
+		match.type = STEWING_MATCH_EMPTY;
+		return match;
+	}
+	if ( witchIngredients < 4 )
+	{
+		match.type = STEWING_MATCH_TOO_SMALL;
+		return match;
+	}
+
+	const auto& recipes = getStewingRecipes();
+	for ( int recipeIndex = 0; recipeIndex < STEWING_RECIPE_COUNT; ++recipeIndex )
+	{
+		const StewingRecipe& recipe = recipes[recipeIndex];
+		std::array<Uint64, STEWING_RESOURCE_COUNT> required{};
+		for ( Uint32 i = 0; i < recipe.eductCount; ++i )
+		{
+			const int index = getStewingResourceIndex(recipe.educts[i].type);
+			if ( index >= 0 ) { required[index] = recipe.educts[i].quantity; }
+		}
+		Uint64 multiplier = 0;
+		bool valid = true;
+		for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+		{
+			if ( required[i] == 0 )
+			{
+				if ( selected[i] != 0 ) { valid = false; break; }
+				continue;
+			}
+			if ( selected[i] == 0 || selected[i] % required[i] != 0 )
+			{
+				valid = false;
+				break;
+			}
+			const Uint64 ratio = selected[i] / required[i];
+			if ( ratio == 0 || (multiplier != 0 && ratio != multiplier) )
+			{
+				valid = false;
+				break;
+			}
+			multiplier = ratio;
+		}
+		if ( valid && multiplier >= 1 && multiplier <= std::numeric_limits<Uint32>::max() )
+		{
+			match.type = STEWING_MATCH_VALID_RECIPE;
+			match.recipeIndex = recipeIndex;
+			match.multiplier = static_cast<Uint32>(multiplier);
+			match.result = recipe.result;
+			return match;
+		}
+	}
+	match.type = STEWING_MATCH_INVALID_POISON;
+	match.multiplier = 1;
+	match.result = POTION_SICKNESS;
+	return match;
+}
+
+std::array<Uint32, STEWING_RESOURCE_COUNT> getStewingInventoryResourceSnapshot(int player)
+{
+	std::array<Uint32, STEWING_RESOURCE_COUNT> resources{};
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] ) { return resources; }
+	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+	{
+		resources[i] = static_cast<Uint32>(std::min<Uint64>(
+			countStewingResourceInList(stats[player]->inventory, getStewingResourceType(i)),
+			std::numeric_limits<Uint32>::max()));
+	}
+	return resources;
+}
+
+void setServerStewingInventoryMirror(int player,
+	const std::array<Uint32, STEWING_RESOURCE_COUNT>& resources)
+{
+	if ( player <= 0 || player >= MAXPLAYERS ) { return; }
+	serverStewingInventoryMirrors[player] = resources;
+	serverStewingInventoryMirrorValid[player] = true;
+}
+
+void clearServerStewingInventoryMirror(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS ) { return; }
+	serverStewingInventoryMirrors[player].fill(0);
+	serverStewingInventoryMirrorValid[player] = false;
+}
+
+bool serverStewingInventoryMirrorIsValid(int player)
+{
+	return player >= 0 && player < MAXPLAYERS && serverStewingInventoryMirrorValid[player];
+}
+
+Uint32 getTotalStewingResource(int player, ItemType resource)
+{
+	const int index = getStewingResourceIndex(resource);
+	if ( index < 0 || player < 0 || player >= MAXPLAYERS || !stats[player] ) { return 0; }
+	Uint64 total = 0;
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer()
+		&& serverStewingInventoryMirrorValid[player] )
+	{
+		total = serverStewingInventoryMirrors[player][index];
+	}
+	else
+	{
+		total = countStewingResourceInList(stats[player]->inventory, resource);
+	}
+	if ( multiplayer != CLIENT ) { reconcileSharedVoidChestInventory(); }
+	if ( stats[0] )
+	{
+		total += countStewingResourceInList(stats[0]->void_chest_inventory, resource);
+	}
+	return static_cast<Uint32>(std::min<Uint64>(total, std::numeric_limits<Uint32>::max()));
+}
+
+Uint32 getAvailableStewingIngredient(int player, ItemType ingredient,
+	const StewingSelection& reserved)
+{
+	const Uint32 total = getTotalStewingResource(player, ingredient);
+	const Uint32 selected = countSelectedStewingResource(reserved, ingredient);
+	return selected >= total ? 0 : total - selected;
+}
+
+std::array<Uint32, STEWING_RESOURCE_COUNT> getStewingResourceSnapshot(int player)
+{
+	std::array<Uint32, STEWING_RESOURCE_COUNT> resources{};
+	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+	{
+		resources[i] = getTotalStewingResource(player, getStewingResourceType(i));
+	}
+	return resources;
+}
+
+void consumeClientStewingInventoryResources(int player,
+	const std::array<Uint32, STEWING_RESOURCE_COUNT>& resources)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] ) { return; }
+	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+	{
+		if ( resources[i] == 0 ) { continue; }
+		const ItemType type = getStewingResourceType(i);
+		if ( itemTypeIsWitchIngredient(type) )
+		{
+			consumeStewingIngredientFromList(stats[player]->inventory, type, resources[i], player);
+		}
+		else if ( type == POTION_WATER || type == POTION_EMPTY )
+		{
+			if ( !consumeStewingPhysicalItems(player, type, resources[i]) ) { return; }
+		}
+		else
+		{
+			consumeStewingOrdinaryItemFromList(stats[player]->inventory, type, resources[i]);
+		}
+	}
+}
+
+bool performStewingTransaction(int player, Entity* familiar, StewingOperation operation,
+	const StewingSelection& selection, StewingTransactionResult& result)
+{
+	result = StewingTransactionResult{};
+	result.remainingSelection = selection;
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !stats[player]
+		|| !validateStewingCauldronAccess(familiar, player) )
+	{
+		return false;
+	}
+	const bool remotePlayer = multiplayer == SERVER && player > 0
+		&& !players[player]->isLocalPlayer();
+	if ( remotePlayer && !serverStewingInventoryMirrorValid[player] ) { return false; }
+
+	const StewingMatch match = evaluateStewingMixture(selection);
+	if ( match.type != STEWING_MATCH_VALID_RECIPE && match.type != STEWING_MATCH_INVALID_POISON )
+	{
+		return false;
+	}
+	if ( operation != STEWING_OPERATION_BREW_INTO && operation != STEWING_OPERATION_APPLY
+		&& operation != STEWING_OPERATION_BREW_FOR_USE )
+	{
+		return false;
+	}
+	if ( operation == STEWING_OPERATION_BREW_FOR_USE
+		&& (match.type != STEWING_MATCH_VALID_RECIPE
+			|| (!itemTypeIsOil(match.result) && !itemTypeIsInk(match.result))))
+	{
+		return false;
+	}
+	if ( operation == STEWING_OPERATION_APPLY
+		&& !stewingResultCanApplyImmediately(match.result) )
+	{
+		return false;
+	}
+	if ( operation == STEWING_OPERATION_APPLY && !playerCanApplyStewingResult(player) )
+	{
+		return false;
+	}
+
+	std::array<Uint64, STEWING_RESOURCE_COUNT> consumeAmounts{};
+	if ( match.type == STEWING_MATCH_VALID_RECIPE )
+	{
+		const StewingRecipe& recipe = getStewingRecipes()[match.recipeIndex];
+		for ( Uint32 i = 0; i < recipe.eductCount; ++i )
+		{
+			const int index = getStewingResourceIndex(recipe.educts[i].type);
+			consumeAmounts[index] += recipe.educts[i].quantity;
+		}
+	}
+	else
+	{
+		consumeAmounts = stewingSelectionAmounts(selection);
+	}
+
+	Uint64 contributedBottles = 0;
+	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+	{
+		if ( consumeAmounts[i] > getTotalStewingResource(player, getStewingResourceType(i)) )
+		{
+			return false;
+		}
+		contributedBottles += consumeAmounts[i]
+			* static_cast<Uint64>(getBottleContribution(getStewingResourceType(i)));
+	}
+	const Uint32 requiredEmptyBottles = operation == STEWING_OPERATION_BREW_INTO
+		&& contributedBottles == 0 ? 1 : 0;
+	if ( requiredEmptyBottles > getTotalStewingResource(player, POTION_EMPTY) )
+	{
+		return false;
+	}
+	consumeAmounts[getStewingResourceIndex(POTION_EMPTY)] += requiredEmptyBottles;
+
+	std::vector<Item*> changedIngredientBags;
+	for ( int i = 0; i < STEWING_RESOURCE_COUNT; ++i )
+	{
+		Uint32 amount = static_cast<Uint32>(consumeAmounts[i]);
+		if ( amount == 0 ) { continue; }
+		const ItemType type = getStewingResourceType(i);
+		if ( multiplayer != CLIENT ) { reconcileSharedVoidChestInventory(); }
+		Uint32 consumedFromInventory = 0;
+		if ( remotePlayer )
+		{
+			consumedFromInventory = std::min(amount, serverStewingInventoryMirrors[player][i]);
+			serverStewingInventoryMirrors[player][i] -= consumedFromInventory;
+		}
+		else if ( itemTypeIsWitchIngredient(type) )
+		{
+			consumedFromInventory = consumeStewingIngredientFromList(
+				stats[player]->inventory, type, amount, player, &changedIngredientBags);
+		}
+		else if ( type == POTION_WATER || type == POTION_EMPTY )
+		{
+			consumedFromInventory = static_cast<Uint32>(std::min<Uint64>(amount,
+				countStewingResourceInList(stats[player]->inventory, type)));
+			if ( !consumeStewingPhysicalItems(player, type, consumedFromInventory) )
+			{
+				return false;
+			}
+		}
+		else
+		{
+			consumedFromInventory = consumeStewingOrdinaryItemFromList(
+				stats[player]->inventory, type, amount);
+		}
+		result.inventoryConsumed[i] = consumedFromInventory;
+		const Uint32 remaining = amount - consumedFromInventory;
+		if ( remaining > 0 )
+		{
+			const Uint32 consumedFromVoid = itemTypeIsWitchIngredient(type)
+				? consumeStewingIngredientFromList(stats[0]->void_chest_inventory, type, remaining, player,
+					&changedIngredientBags)
+				: consumeStewingOrdinaryItemFromList(stats[0]->void_chest_inventory, type, remaining);
+			if ( consumedFromVoid != remaining )
+			{
+				return false; // Prevalidation makes this unreachable in the authoritative tick.
+			}
+		}
+	}
+	for ( Item* bag : changedIngredientBags )
+	{
+		if ( stats[0] && bag->node && bag->node->list == &stats[0]->void_chest_inventory )
+		{
+			syncIngredientBagToOpenVoidChest(*bag, player);
+		}
+		else
+		{
+			serverSyncPersistentCustomItemStateForOwner(bag);
+		}
+	}
+
+	const Uint64 emptyBottleReturns = operation == STEWING_OPERATION_BREW_FOR_USE ? 0
+		: (operation == STEWING_OPERATION_APPLY
+			? contributedBottles : (contributedBottles > 0 ? contributedBottles - 1 : 0));
+	if ( emptyBottleReturns > 0 )
+	{
+		giveStewingItem(player, POTION_EMPTY, emptyBottleReturns);
+	}
+	if ( operation == STEWING_OPERATION_BREW_INTO || operation == STEWING_OPERATION_BREW_FOR_USE )
+	{
+		giveStewingItem(player, match.result, 1, operation == STEWING_OPERATION_BREW_FOR_USE);
+	}
+	else if ( !applyStewingResult(player, match.result) )
+	{
+		return false;
+	}
+	if ( match.type == STEWING_MATCH_VALID_RECIPE )
+	{
+		auto remaining = stewingSelectionAmounts(selection);
+		const StewingRecipe& recipe = getStewingRecipes()[match.recipeIndex];
+		for ( Uint32 i = 0; i < recipe.eductCount; ++i )
+		{
+			remaining[getStewingResourceIndex(recipe.educts[i].type)] -= recipe.educts[i].quantity;
+		}
+		result.remainingSelection = stewingSelectionFromAmounts(remaining);
+	}
+	else
+	{
+		result.remainingSelection = StewingSelection{};
+	}
+	result.success = true;
+	playSoundEntity(familiar, SFX_STEW_BUBBLES, 96);
+	spawnAmuletFamiliarTransformParticles(familiar);
+	result.newlyUnlockedRecipe = tryDiscoverStewingRecipe(player, consumeAmounts);
+	if ( match.type == STEWING_MATCH_VALID_RECIPE )
+	{
+		if ( local_rng.rand() % 10 == 0 )
+		{
+			players[player]->entity->increaseSkill(PRO_ALCHEMY);
+		}
+	}
+	else
+	{
+		const bool raiseSkill = local_rng.rand() % 10 == 0;
+		if ( raiseSkill && local_rng.rand() % 2 == 0 )
+		{
+			players[player]->entity->increaseSkill(PRO_ALCHEMY);
+		}
+	}
+	result.resources = getStewingResourceSnapshot(player);
+	return true;
+}
+
+void writeIngredientCountsToPacket(const Item& item, Uint8* data, int offset)
+{
+	if ( !data ) { return; }
+	for ( int i = 0; i < 4; ++i )
+	{
+		SDLNet_Write32(item.ingredientCounts[i], &data[offset + i * 4]);
+	}
+}
+
+void readIngredientCountsFromPacket(Item& item, const Uint8* data, int packetLength, int offset)
+{
+	item.ingredientCounts[0] = 0;
+	item.ingredientCounts[1] = 0;
+	item.ingredientCounts[2] = 0;
+	item.ingredientCounts[3] = 0;
+	if ( !data || offset < 0 ) { return; }
+	for ( int i = 0; i < 4; ++i )
+	{
+		const int fieldEnd = offset + (i + 1) * static_cast<int>(sizeof(Uint32));
+		if ( packetLength >= fieldEnd )
+		{
+			item.ingredientCounts[i] = SDLNet_Read32(&data[offset + i * sizeof(Uint32)]);
+		}
+	}
+}
+
+void writeFamiliarPersistentStateToPacket(const Item& item, Uint8* data, int offset)
+{
+	if ( !data ) { return; }
+	const Uint32 fields[14] = {
+		item.familiarInitialized ? 1u : 0u, item.familiarInstanceId,
+		static_cast<Uint32>(item.familiarHP), static_cast<Uint32>(item.familiarMAXHP),
+		static_cast<Uint32>(item.familiarMP), static_cast<Uint32>(item.familiarMAXMP),
+		static_cast<Uint32>(item.familiarLVL), static_cast<Uint32>(item.familiarEXP),
+		static_cast<Uint32>(item.familiarSTR), static_cast<Uint32>(item.familiarDEX),
+		static_cast<Uint32>(item.familiarCON), static_cast<Uint32>(item.familiarINT),
+		static_cast<Uint32>(item.familiarPER), static_cast<Uint32>(item.familiarCHR)
+	};
+	for ( int i = 0; i < 14; ++i )
+	{
+		SDLNet_Write32(fields[i], &data[offset + i * sizeof(Uint32)]);
+	}
+}
+
+void readFamiliarPersistentStateFromPacket(Item& item, const Uint8* data, int packetLength, int offset)
+{
+	item.familiarInitialized = false;
+	item.familiarInstanceId = 0;
+	item.familiarHP = item.familiarMAXHP = item.familiarMP = item.familiarMAXMP = 0;
+	item.familiarLVL = item.familiarEXP = 0;
+	item.familiarSTR = item.familiarDEX = item.familiarCON = 0;
+	item.familiarINT = item.familiarPER = item.familiarCHR = 0;
+	if ( !data || offset < 0 || packetLength < offset + FAMILIAR_PERSISTENT_PACKET_BYTES ) { return; }
+	Uint32 fields[14];
+	for ( int i = 0; i < 14; ++i )
+	{
+		fields[i] = SDLNet_Read32(&data[offset + i * sizeof(Uint32)]);
+	}
+	item.familiarInitialized = fields[0] != 0;
+	item.familiarInstanceId = fields[1];
+	item.familiarHP = static_cast<Sint32>(fields[2]);
+	item.familiarMAXHP = static_cast<Sint32>(fields[3]);
+	item.familiarMP = static_cast<Sint32>(fields[4]);
+	item.familiarMAXMP = static_cast<Sint32>(fields[5]);
+	item.familiarLVL = static_cast<Sint32>(fields[6]);
+	item.familiarEXP = static_cast<Sint32>(fields[7]);
+	item.familiarSTR = static_cast<Sint32>(fields[8]);
+	item.familiarDEX = static_cast<Sint32>(fields[9]);
+	item.familiarCON = static_cast<Sint32>(fields[10]);
+	item.familiarINT = static_cast<Sint32>(fields[11]);
+	item.familiarPER = static_cast<Sint32>(fields[12]);
+	item.familiarCHR = static_cast<Sint32>(fields[13]);
+	reserveFamiliarInstanceId(item.familiarInstanceId);
+}
+
+AppliedOil appliedOilFromItemType(ItemType type)
+{
+	switch ( type )
+	{
+		case OIL_AETHER: return APPLIED_OIL_AETHER;
+		case OIL_SILVER: return APPLIED_OIL_SILVER;
+		case OIL_TOXINS: return APPLIED_OIL_TOXINS;
+		case OIL_BASES: return APPLIED_OIL_BASES;
+		case OIL_LEAD: return APPLIED_OIL_LEAD;
+		case OIL_MINERAL: return APPLIED_OIL_MINERAL;
+		case OIL_BRINE: return APPLIED_OIL_BRINE;
+		default: return APPLIED_OIL_NONE;
+	}
+}
+
+const char* getOilIconPath(AppliedOil oil)
+{
+	static const char* paths[] = {
+		"", "images/ui/Inventory/oils/aether.png", "images/ui/Inventory/oils/silver.png",
+		"images/ui/Inventory/oils/toxins.png", "images/ui/Inventory/oils/bases.png",
+		"images/ui/Inventory/oils/lead.png", "images/ui/Inventory/oils/mineral.png",
+		"images/ui/Inventory/oils/brine.png"
+	};
+	return oil > APPLIED_OIL_NONE && oil < APPLIED_OIL_MAX ? paths[oil] : "";
+}
+
+const char* getTinctureIconPath(ItemType type)
+{
+	static const char* paths[] = {
+		"images/ui/Inventory/tinctures/tincture_STR.png",
+		"images/ui/Inventory/tinctures/tincture_DEX.png",
+		"images/ui/Inventory/tinctures/tincture_CON.png",
+		"images/ui/Inventory/tinctures/tincture_INT.png",
+		"images/ui/Inventory/tinctures/tincture_PER.png",
+		"images/ui/Inventory/tinctures/tincture_CHA.png"
+	};
+	return itemTypeIsTincture(type) ? paths[type - TINCTURE_STR] : "";
+}
+
+bool itemTypeCanReceiveOil(ItemType type)
+{
+	if ( type < 0 || type >= NUMITEMS ) { return false; }
+	if ( itemTypeIsQuiver(type) || items[type].category == THROWN ) { return true; }
+	if ( items[type].category != WEAPON ) { return false; }
+	Item item{};
+	item.type = type;
+	return getWeaponSkill(&item) != PRO_RANGED;
+}
+
+bool itemCanReceiveOil(const Item* item)
+{
+	return item && itemTypeCanReceiveOil(item->type);
+}
+
+bool oilMatchesTarget(AppliedOil oil, Entity* target)
+{
+	if ( oil <= APPLIED_OIL_NONE || oil >= APPLIED_OIL_MAX || !target ) { return false; }
+	Stat* targetStats = target->getStats();
+	if ( !targetStats ) { return false; }
+	if ( oil == APPLIED_OIL_AETHER && targetStats->type == WRAITH )
+	{
+		return true;
+	}
+	if ( oil == APPLIED_OIL_BASES )
+	{
+		return targetStats->type == SLIME;
+	}
+	auto found = CompendiumEntries.monsters.find(monstertypename[targetStats->type]);
+	if ( found == CompendiumEntries.monsters.end() ) { return false; }
+	const auto species = found->second.species;
+	switch ( oil )
+	{
+		case APPLIED_OIL_AETHER: return species == Compendium_t::CompendiumMonsters_t::SPECIES_UNDEAD;
+		case APPLIED_OIL_SILVER: return species == Compendium_t::CompendiumMonsters_t::SPECIES_DEMONOID;
+		case APPLIED_OIL_TOXINS: return species == Compendium_t::CompendiumMonsters_t::SPECIES_HUMANOID;
+		case APPLIED_OIL_LEAD: return species == Compendium_t::CompendiumMonsters_t::SPECIES_BEASTFOLK;
+		case APPLIED_OIL_MINERAL: return species == Compendium_t::CompendiumMonsters_t::SPECIES_BEAST;
+		case APPLIED_OIL_BRINE: return species == Compendium_t::CompendiumMonsters_t::SPECIES_CONSTRUCT;
+		default: return false;
+	}
+}
+
+void serverSyncTinctureStacks(int player)
+{
+	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS
+		|| client_disconnected[player] || !players[player]
+		|| players[player]->isLocalPlayer() || !stats[player] )
+	{
+		return;
+	}
+	strcpy(reinterpret_cast<char*>(net_packet->data), "WTCS");
+	net_packet->data[4] = static_cast<Uint8>(player);
+	for ( int stat = 0; stat < 6; ++stat )
+	{
+		SDLNet_Write32(stats[player]->tinctureStacks[stat], &net_packet->data[5 + stat * 4]);
+	}
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	net_packet->len = 29;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
+void serverSyncAppliedOil(int player, bool shieldSlot)
+{
+	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS || !stats[player] ) { return; }
+	Item* target = shieldSlot ? stats[player]->shield : stats[player]->weapon;
+	strcpy(reinterpret_cast<char*>(net_packet->data), "OILU");
+	net_packet->data[4] = shieldSlot ? 1 : 0;
+	net_packet->data[5] = target ? static_cast<Uint8>(target->appliedOil) : APPLIED_OIL_NONE;
+	net_packet->address = net_clients[player - 1];
+	net_packet->len = 6;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
+void rollOilWearOff(Item* source, int ownerPlayer, bool shieldSlot)
+{
+	if ( multiplayer == CLIENT || !source || source->appliedOil == APPLIED_OIL_NONE ) { return; }
+	if ( local_rng.rand() % 40 != 0 ) { return; }
+	source->appliedOil = APPLIED_OIL_NONE;
+	serverSyncPersistentCustomItemStateForOwner(source);
+	messagePlayer(ownerPlayer, MESSAGE_EQUIPMENT, "The oil coating on %s wears off.", source->getName());
+}
+
+void rollProjectileOilWearOff(Entity* projectile)
+{
+	if ( multiplayer == CLIENT || !projectile ) { return; }
+	if ( projectile->projectileAppliedOil == APPLIED_OIL_NONE
+		|| local_rng.rand() % 40 != 0 ) { return; }
+	// A thrown weapon has already been detached from its inventory stack.
+	// Only that one projectile's coating can wear off; the remaining stack
+	// stays oiled. Its eventual floor/returned Item inherits this new state.
+	projectile->projectileAppliedOil = APPLIED_OIL_NONE;
+	projectile->itemAppliedOil = APPLIED_OIL_NONE;
+}
+
+bool applyTinctureStackToPlayer(ItemType tincture, int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !stats[player]
+		|| !itemTypeIsTincture(tincture) ) { return false; }
+	const int stat = static_cast<int>(tincture) - static_cast<int>(TINCTURE_STR);
+	if ( stats[player]->tinctureStacks[stat] != UINT32_MAX )
+	{
+		++stats[player]->tinctureStacks[stat];
+		serverSyncTinctureStacks(player);
+	}
+	return true;
+}
+
+bool spellbookIsEligibleForInk(ItemType book)
+{
+	if ( book < 0 || book >= NUMITEMS || items[book].category != SPELLBOOK )
+	{
+		return false;
+	}
+	switch ( book )
+	{
+		case SPELLBOOK_9:
+		case SPELLBOOK_10:
+		case SPELLBOOK_ENTRENCH:
+		case SPELLBOOK_VAMPIRIC_AURA:
+			return false;
+		default:
+			break;
+	}
+	const int spellID = getSpellIDFromSpellbook(book);
+	if ( spellID == SPELL_NONE )
+	{
+		return false;
+	}
+	const spell_t* spell = getSpellFromID(spellID);
+	if ( !spell || spell->ID != spellID || spell->hide_from_ui || spell->drop_table < 0 )
+	{
+		return false;
+	}
+	return getSpellbookFromSpellID(spell->ID) == static_cast<int>(book);
+}
+
+ItemType getInkSpellbookResult(ItemType ink, ItemType sourceSpellbook)
+{
+	if ( !itemTypeIsInk(ink) || sourceSpellbook < 0 || sourceSpellbook >= NUMITEMS
+		|| items[sourceSpellbook].category != SPELLBOOK ) { return ITEM_ENUM_MAX; }
+	const int sourceSpellID = getSpellIDFromSpellbook(sourceSpellbook);
+	spell_t* source = sourceSpellID != SPELL_NONE ? getSpellFromID(sourceSpellID) : nullptr;
+	if ( !source || source->ID != sourceSpellID ) { return ITEM_ENUM_MAX; }
+	const int targetSkill = ink == INK_MYSTICISM ? PRO_MYSTICISM
+		: (ink == INK_SORCERY ? PRO_SORCERY : PRO_THAUMATURGY);
+	auto tierOf = [](const spell_t* spell)
+	{
+		return spell ? std::min(5, std::max(0, spell->difficulty / 20)) : -1;
+	};
+	const int sourceTier = tierOf(source);
+	std::vector<ItemType> sameTier;
+	std::vector<ItemType> nextTier;
+	for ( int type = 0; type < NUMITEMS; ++type )
+	{
+		if ( !spellbookIsEligibleForInk(static_cast<ItemType>(type)) ) { continue; }
+		spell_t* candidate = getSpellFromID(getSpellIDFromSpellbook(static_cast<ItemType>(type)));
+		if ( !candidate || candidate->skillID != targetSkill ) { continue; }
+		if ( tierOf(candidate) == sourceTier ) { sameTier.push_back(static_cast<ItemType>(type)); }
+		else if ( tierOf(candidate) == sourceTier + 1 ) { nextTier.push_back(static_cast<ItemType>(type)); }
+	}
+	if ( sameTier.empty() ) { return ITEM_ENUM_MAX; }
+	auto* pool = &sameTier;
+	if ( source->skillID == targetSkill && !nextTier.empty() && local_rng.rand() % 4 == 0 )
+	{
+		pool = &nextTier;
+	}
+	return (*pool)[local_rng.rand() % pool->size()];
+}
+
+Item* newItemFromExistingItem(const Item& source, const Sint16 count, list_t* const inventory)
+{
+	Item* item = newItem(source.type, source.status, source.beatitude, count,
+		source.appearance, source.identified, inventory);
+	copyItemPersistentCustomState(*item, source);
+	// This reconstructs the same physical item: preserve its Rune identity while
+	// retaining the fresh allocation-local Item::uid assigned by newItem().
 	return item;
 }
 
@@ -432,7 +2637,9 @@ bool itemLevelCurvePostProcess(Entity* my, Item* item, BaronyRNG& rng, int itemL
 					{
 						if ( auto spell = find->second )
 						{
-							if ( spell->ID != SPELL_NONE && !spell->hide_from_ui && itemLevel >= spell->drop_table )
+							if ( spell->ID != SPELL_NONE
+								&& spell->ID != SPELL_ENTRENCH //mod add: Entrench has explicit acquisition sources only
+								&& !spell->hide_from_ui && itemLevel >= spell->drop_table )
 							{
 								if ( (spell->difficulty / 20) <= (1 + (itemLevel / 5))
 									/*&& (spell->difficulty >= minDifficulty)*/ )
@@ -640,6 +2847,11 @@ ItemType itemLevelCurve(const Category cat, const int minLevel, const int maxLev
 	for ( c = 0; c < numitems; ++c )
 	{
 		chances[c] = false;
+		if ( itemTypeIsWitchbrewConsumable(static_cast<ItemType>(c))
+			|| itemTypeIsWitchbrewGeneratedItem(static_cast<ItemType>(c)) )
+		{
+			continue;
+		}
 		if ( items[c].category == cat )
 		{
 			if ( items[c].level != -1 && (items[c].level >= minLevel && items[c].level <= maxLevel) )
@@ -824,7 +3036,7 @@ char* Item::description() const
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				if ( type == POTION_EMPTY )
+				if ( type == POTION_EMPTY || itemTypeIsWitchbrewConsumable(type) )
 				{
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(982 + status), beatitude);
@@ -865,6 +3077,11 @@ char* Item::description() const
 				{
 					snprintf(&tempstr[c], 1024 - c, Language::get(6850), getTomeLabel());
 				}
+				else if ( isMagicRune() )
+				{
+					const std::string name = runeGetDisplayName();
+					snprintf(&tempstr[c], 1024 - c, "%s", name.c_str());
+				}
 				else
 				{
 					snprintf(&tempstr[c], 1024 - c, "%s", items[type].getIdentifiedName());
@@ -902,7 +3119,7 @@ char* Item::description() const
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				if ( type == POTION_EMPTY )
+				if ( type == POTION_EMPTY || itemTypeIsWitchbrewConsumable(type) )
 				{
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(1008 + status), count, beatitude);
@@ -983,7 +3200,7 @@ char* Item::description() const
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				if ( type == POTION_EMPTY )
+				if ( type == POTION_EMPTY || itemTypeIsWitchbrewConsumable(type) )
 				{
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(1034 + status), beatitude);
@@ -1064,7 +3281,7 @@ char* Item::description() const
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				if ( type == POTION_EMPTY )
+				if ( type == POTION_EMPTY || itemTypeIsWitchbrewConsumable(type) )
 				{
 					//No fancy descriptives for empty potions.
 					snprintf(tempstr, 1024, Language::get(1060 + status), count);
@@ -1153,7 +3370,12 @@ char* Item::getName() const
 	{
 		if ( identified )
 		{
-			if ( itemCategory(this) == BOOK )
+			if ( isMagicRune() )
+			{
+				const std::string name = runeGetDisplayName();
+				stringCopy(tempstr, name.c_str(), sizeof(tempstr) - 1, name.size());
+			}
+			else if ( itemCategory(this) == BOOK )
 			{
 				snprintf(tempstr, sizeof(tempstr), Language::get(1007), getBookLocalizedNameFromIndex(appearance % numbooks).c_str());
 			}
@@ -1187,6 +3409,739 @@ char* Item::getName() const
 		snprintf(tempstr, sizeof(tempstr), "ITEM%03d", type);
 	}
 	return tempstr;
+}
+
+namespace
+{
+	// New Rune appearance format. The gem nibble is stored as gem + 1, so its
+	// nonzero value is a collision-free format tag: legacy spell IDs use only
+	// bits 0..7 and therefore always leave bits 8..11 clear.
+	// Common fields: spell[0..7], biased gem[8..11], payload[12..31]. Dominate
+	// divides payload into factor[12..19] and exact capacity[20..31].
+	constexpr Uint32 RUNE_SPELL_BITS = 8;
+	constexpr Uint32 RUNE_SPELL_MASK = (1u << RUNE_SPELL_BITS) - 1u;
+	constexpr Uint32 RUNE_GEM_SHIFT = RUNE_SPELL_BITS;
+	constexpr Uint32 RUNE_GEM_BITS = 4;
+	constexpr Uint32 RUNE_GEM_MASK = ((1u << RUNE_GEM_BITS) - 1u) << RUNE_GEM_SHIFT;
+	constexpr Uint32 RUNE_GEM_FORMAT_BIAS = 1;
+	constexpr Uint32 RUNE_PAYLOAD_SHIFT = RUNE_GEM_SHIFT + RUNE_GEM_BITS;
+	constexpr Uint32 RUNE_PAYLOAD_BITS = 20;
+	constexpr Uint32 RUNE_PAYLOAD_MAX = (1u << RUNE_PAYLOAD_BITS) - 1u;
+	constexpr Uint32 RUNE_PAYLOAD_MASK = RUNE_PAYLOAD_MAX << RUNE_PAYLOAD_SHIFT;
+	constexpr Uint32 RUNE_DOMINATE_FACTOR_BITS = 8;
+	constexpr Uint32 RUNE_DOMINATE_FACTOR_MAX = (1u << RUNE_DOMINATE_FACTOR_BITS) - 1u;
+	constexpr Uint32 RUNE_DOMINATE_FACTOR_MASK = RUNE_DOMINATE_FACTOR_MAX << RUNE_PAYLOAD_SHIFT;
+	constexpr real_t RUNE_DOMINATE_FACTOR_MIN = 1.0 / 1024.0;
+	constexpr Uint32 RUNE_DOMINATE_CAPACITY_SHIFT = RUNE_PAYLOAD_SHIFT + RUNE_DOMINATE_FACTOR_BITS;
+	constexpr Uint32 RUNE_DOMINATE_CAPACITY_BITS = 12;
+	constexpr Uint32 RUNE_DOMINATE_CAPACITY_MASK =
+		((1u << RUNE_DOMINATE_CAPACITY_BITS) - 1u) << RUNE_DOMINATE_CAPACITY_SHIFT;
+	constexpr int RUNE_DOMINATE_CAPACITY_MAX = (1 << RUNE_DOMINATE_CAPACITY_BITS) - 1;
+	// Legacy format is read only so pre-rework Runes retain spell/gem/capacity.
+	constexpr Uint32 RUNE_LEGACY_SPELL_MASK = (1u << 12) - 1u;
+	constexpr Uint32 RUNE_LEGACY_GEM_SHIFT = 12;
+	constexpr Uint32 RUNE_LEGACY_GEM_MASK = ((1u << 5) - 1u) << RUNE_LEGACY_GEM_SHIFT;
+	constexpr Uint32 RUNE_LEGACY_DOMINATE_CAPACITY_SHIFT = 20;
+	constexpr Uint32 RUNE_LEGACY_DOMINATE_CAPACITY_MASK = ((1u << 12) - 1u) << 20;
+	static_assert(NUM_SPELLS <= (1 << RUNE_SPELL_BITS), "Rune spell field is too small");
+	static_assert(RUNE_GEM_COUNT < (1 << RUNE_GEM_BITS), "Rune gem field is too small");
+
+	constexpr real_t RUNE_VALUE_TRADING_FACTOR = 0.70;
+	constexpr real_t RUNE_MP_COIN_RATIO = 0.75;
+	constexpr real_t RUNE_AVERAGE_QUALITY = 2.50;
+	constexpr real_t RUNE_GEM_VALUE_MIN = 200.0;
+	constexpr real_t RUNE_GEM_VALUE_MAX = 3000.0;
+	constexpr real_t RUNE_INSCRIPTION_DECREPIT_MULT = 1.20;
+	constexpr real_t RUNE_INSCRIPTION_WORN_MULT = 2.20;
+	constexpr real_t RUNE_INSCRIPTION_SERVICABLE_MULT = 3.00;
+	constexpr real_t RUNE_INSCRIPTION_EXCELLENT_MULT = 3.60;
+
+	real_t runeInscriptionConditionMultiplier(Status status)
+	{
+		switch ( status )
+		{
+			case DECREPIT: return RUNE_INSCRIPTION_DECREPIT_MULT;
+			case WORN: return RUNE_INSCRIPTION_WORN_MULT;
+			case SERVICABLE: return RUNE_INSCRIPTION_SERVICABLE_MULT;
+			case EXCELLENT: return RUNE_INSCRIPTION_EXCELLENT_MULT;
+			default: return 0.0;
+		}
+	}
+
+	bool runeUsesVariableMPFactor(const spell_t* spell)
+	{
+		if ( !spell ) { return false; }
+		return runeSpellIsSustained(const_cast<spell_t*>(spell))
+			|| spell->ID == SPELL_DOMINATE || spell->ID == SPELL_SUMMON
+			|| spell->ID == SPELL_BREATHE_FIRE || spell->ID == SPELL_TELEPORTATION
+			|| spell->ID == SPELL_TELEPULL || spell->ID == SPELL_SANCTUARY
+			// Item-targeting spells have a distinct, target-dependent MP event
+			// after their initial cast. One general factor represents both events.
+			|| spell->ID == SPELL_ALTER_INSTRUMENT || spell->ID == SPELL_METALLURGY
+			|| spell->ID == SPELL_GEOMANCY || spell->ID == SPELL_FORGE_KEY
+			|| spell->ID == SPELL_FORGE_JEWEL || spell->ID == SPELL_ENHANCE_WEAPON
+			|| spell->ID == SPELL_RESHAPE_WEAPON || spell->ID == SPELL_ALTER_ARROW
+			|| spell->ID == SPELL_VANDALISE || spell->ID == SPELL_RESTORE
+			|| spell->ID == SPELL_SANCTIFY_WATER;
+	}
+
+	real_t runeEncodeClamp(real_t value)
+	{
+		return std::max<real_t>(0.0, std::min<real_t>(1.0, value));
+	}
+
+	Uint32 encodeRuneDominateFactor(real_t factor)
+	{
+		factor = runeEncodeClamp(factor);
+		if ( factor <= 0.0 ) { return 0; }
+		const real_t normalized = (log2(std::max(RUNE_DOMINATE_FACTOR_MIN, factor)) + 10.0) / 10.0;
+		return 1u + static_cast<Uint32>(std::max<real_t>(0.0,
+			std::min<real_t>(1.0, normalized)) * (RUNE_DOMINATE_FACTOR_MAX - 1) + 0.5);
+	}
+
+	real_t decodeRuneDominateFactor(Uint32 encoded)
+	{
+		if ( encoded == 0 ) { return 0.0; }
+		const real_t normalized = (encoded - 1) / static_cast<real_t>(RUNE_DOMINATE_FACTOR_MAX - 1);
+		return pow(2.0, -10.0 + normalized * 10.0);
+	}
+
+}
+
+bool runeSpellIsSustained(spell_t* spell)
+{
+	if ( !spell ) { return false; }
+	if ( spell_isChanneled(spell) ) { return true; }
+	const auto definition = ItemTooltips.spellItems.find(spell->ID);
+	return definition != ItemTooltips.spellItems.end()
+		&& definition->second.spellType == ItemTooltips_t::SpellItemTypes::SPELL_TYPE_SELF_SUSTAIN;
+}
+
+bool Item::isMagicRune() const { return type == MAGIC_RUNE; }
+
+int Item::runeGetSpellID() const
+{
+	if ( !isMagicRune() ) { return SPELL_NONE; }
+	return static_cast<int>(appearance & ((appearance & RUNE_GEM_MASK)
+		? RUNE_SPELL_MASK : RUNE_LEGACY_SPELL_MASK));
+}
+
+void Item::runeSetSpellID(int spellID)
+{
+	if ( !isMagicRune() ) { return; }
+	appearance = (appearance & ~RUNE_SPELL_MASK)
+		| (static_cast<Uint32>(spellID) & RUNE_SPELL_MASK);
+}
+
+RuneGemType Item::runeGetGemType() const
+{
+	if ( !isMagicRune() ) { return RUNE_GEM_INVALID; }
+	const bool current = (appearance & RUNE_GEM_MASK) != 0;
+	const Uint32 gem = current
+		? (((appearance & RUNE_GEM_MASK) >> RUNE_GEM_SHIFT) - RUNE_GEM_FORMAT_BIAS)
+		: ((appearance & RUNE_LEGACY_GEM_MASK) >> RUNE_LEGACY_GEM_SHIFT);
+	return gem < RUNE_GEM_COUNT ? static_cast<RuneGemType>(gem) : RUNE_GEM_INVALID;
+}
+
+void Item::runeSetGemType(RuneGemType gem)
+{
+	if ( !isMagicRune() || gem >= RUNE_GEM_COUNT ) { return; }
+	if ( !(appearance & RUNE_GEM_MASK) )
+	{
+		// Converting a newly-created/legacy layout must not retain old payload bits.
+		appearance &= RUNE_SPELL_MASK;
+	}
+	appearance = (appearance & ~RUNE_GEM_MASK) | (((static_cast<Uint32>(gem)
+		+ RUNE_GEM_FORMAT_BIAS) << RUNE_GEM_SHIFT) & RUNE_GEM_MASK);
+}
+
+ItemType Item::runeGetVisualGemItemType() const
+{
+	return itemTypeFromRuneGemType(runeGetGemType());
+}
+
+ItemType itemTypeFromRuneGemType(RuneGemType gem)
+{
+	switch ( gem )
+	{
+		case RUNE_GEM_OBSIDIAN: return GEM_OBSIDIAN;
+		case RUNE_GEM_JADE: return GEM_JADE;
+		case RUNE_GEM_FLUORITE: return GEM_FLUORITE;
+		case RUNE_GEM_AMETHYST: return GEM_AMETHYST;
+		case RUNE_GEM_GARNET: return GEM_GARNET;
+		case RUNE_GEM_CITRINE: return GEM_CITRINE;
+		case RUNE_GEM_OPAL: return GEM_OPAL;
+		case RUNE_GEM_JETSTONE: return GEM_JETSTONE;
+		case RUNE_GEM_AMBER: return GEM_AMBER;
+		case RUNE_GEM_AQUAMARINE: return GEM_AQUAMARINE;
+		case RUNE_GEM_JACINTH: return GEM_JACINTH;
+		case RUNE_GEM_EMERALD: return GEM_EMERALD;
+		case RUNE_GEM_SAPPHIRE: return GEM_SAPPHIRE;
+		case RUNE_GEM_RUBY: return GEM_RUBY;
+		case RUNE_GEM_DIAMOND: return GEM_DIAMOND;
+		default: return GEM_OBSIDIAN;
+	}
+}
+
+RuneGemType runeGemTypeFromItemType(ItemType type)
+{
+	switch ( type )
+	{
+		case GEM_OBSIDIAN: return RUNE_GEM_OBSIDIAN;
+		case GEM_JADE: return RUNE_GEM_JADE;
+		case GEM_FLUORITE: return RUNE_GEM_FLUORITE;
+		case GEM_AMETHYST: return RUNE_GEM_AMETHYST;
+		case GEM_GARNET: return RUNE_GEM_GARNET;
+		case GEM_CITRINE: return RUNE_GEM_CITRINE;
+		case GEM_OPAL: return RUNE_GEM_OPAL;
+		case GEM_JETSTONE: return RUNE_GEM_JETSTONE;
+		case GEM_AMBER: return RUNE_GEM_AMBER;
+		case GEM_AQUAMARINE: return RUNE_GEM_AQUAMARINE;
+		case GEM_JACINTH: return RUNE_GEM_JACINTH;
+		case GEM_EMERALD: return RUNE_GEM_EMERALD;
+		case GEM_SAPPHIRE: return RUNE_GEM_SAPPHIRE;
+		case GEM_RUBY: return RUNE_GEM_RUBY;
+		case GEM_DIAMOND: return RUNE_GEM_DIAMOND;
+		default: return RUNE_GEM_INVALID;
+	}
+}
+
+int Item::runeGetMagicSchool() const
+{
+	if ( auto spell = getSpellFromID(runeGetSpellID()) ) { return spell->skillID; }
+	return -1;
+}
+
+bool Item::runeIsValid() const
+{
+	return isMagicRune() && runeGetGemType() != RUNE_GEM_INVALID
+		&& runeGetSpellID() > SPELL_NONE && getSpellFromID(runeGetSpellID()) != nullptr;
+}
+
+bool Item::runeCanCast() const
+{
+	if ( status == BROKEN || !runeIsValid() || !runeHasStoredPWR() ) { return false; }
+	spell_t* spell = getSpellFromID(runeGetSpellID());
+	return spell && spell->elements.first;
+}
+
+real_t Item::runeGetStoredBreakChance() const
+{
+	if ( !isMagicRune() || !(appearance & RUNE_GEM_MASK) ) { return 1.0; }
+	return static_cast<real_t>((appearance & RUNE_PAYLOAD_MASK) >> RUNE_PAYLOAD_SHIFT)
+		/ static_cast<real_t>(RUNE_PAYLOAD_MAX);
+}
+
+bool Item::runeSetStoredBreakChance(real_t chance)
+{
+	if ( !isMagicRune() || runeGetSpellID() == SPELL_DOMINATE ) { return false; }
+	const Uint32 encoded = static_cast<Uint32>(runeEncodeClamp(chance) * RUNE_PAYLOAD_MAX + 0.5);
+	appearance = (appearance & ~RUNE_PAYLOAD_MASK) | (encoded << RUNE_PAYLOAD_SHIFT);
+	return true;
+}
+
+real_t Item::runeGetStoredResourceFactor() const
+{
+	if ( !isMagicRune() || !(appearance & RUNE_GEM_MASK) ) { return 1.0; }
+	if ( runeGetSpellID() == SPELL_DOMINATE )
+	{
+		return decodeRuneDominateFactor((appearance & RUNE_DOMINATE_FACTOR_MASK) >> RUNE_PAYLOAD_SHIFT);
+	}
+	return runeGetStoredBreakChance();
+}
+
+bool Item::runeSetStoredResourceFactor(real_t factor)
+{
+	if ( !isMagicRune() ) { return false; }
+	if ( runeGetSpellID() == SPELL_DOMINATE )
+	{
+		const Uint32 encoded = encodeRuneDominateFactor(factor);
+		appearance = (appearance & ~RUNE_DOMINATE_FACTOR_MASK) | (encoded << RUNE_PAYLOAD_SHIFT);
+	}
+	else
+	{
+		return runeSetStoredBreakChance(factor);
+	}
+	return true;
+}
+
+int Item::runeGetDominateCapacity() const
+{
+	if ( !isMagicRune() ) { return 0; }
+	return (appearance & RUNE_GEM_MASK)
+		? static_cast<int>((appearance & RUNE_DOMINATE_CAPACITY_MASK) >> RUNE_DOMINATE_CAPACITY_SHIFT)
+		: static_cast<int>((appearance & RUNE_LEGACY_DOMINATE_CAPACITY_MASK) >> RUNE_LEGACY_DOMINATE_CAPACITY_SHIFT);
+}
+
+bool Item::runeSetDominateCapacity(int capacity)
+{
+	if ( !isMagicRune() || capacity < 0 || capacity > RUNE_DOMINATE_CAPACITY_MAX ) { return false; }
+	appearance = (appearance & ~RUNE_DOMINATE_CAPACITY_MASK)
+		| ((static_cast<Uint32>(capacity) << RUNE_DOMINATE_CAPACITY_SHIFT) & RUNE_DOMINATE_CAPACITY_MASK);
+	return true;
+}
+
+bool Item::runeHasStoredPWR() const
+{
+	return isMagicRune() && runeStoredPWR != RUNE_STORED_PWR_INVALID;
+}
+
+real_t Item::runeGetStoredPWR() const
+{
+	return runeHasStoredPWR() ? runeStoredPWR / RUNE_STORED_PWR_SCALE : 0.0;
+}
+
+real_t Item::runeGetStoredPWRDisplayPercent() const
+{
+	return 100.0 + runeGetStoredPWR() * 100.0;
+}
+
+Sint32 Item::runeGetStoredPWRRaw() const
+{
+	return runeStoredPWR;
+}
+
+bool Item::runeSetStoredPWR(real_t pwr)
+{
+	if ( !isMagicRune() || !std::isfinite(pwr) ) { return false; }
+	const real_t scaled = pwr * RUNE_STORED_PWR_SCALE;
+	// INT32_MIN remains reserved as the invalid/pre-change sentinel.
+	if ( scaled < static_cast<real_t>(RUNE_STORED_PWR_INVALID + 1)
+		|| scaled > static_cast<real_t>(INT32_MAX) )
+	{
+		return false;
+	}
+	runeStoredPWR = static_cast<Sint32>(llround(scaled));
+	return true;
+}
+
+void Item::runeSetStoredPWRRaw(Sint32 raw)
+{
+	runeStoredPWR = isMagicRune() ? raw : RUNE_STORED_PWR_INVALID;
+}
+
+bool Item::runeHasCreator() const
+{
+	return isMagicRune() && runeCreatorPlayer >= 0 && runeCreatorPlayer < MAXPLAYERS;
+}
+
+int Item::runeGetCreatorPlayer() const
+{
+	return runeHasCreator() ? runeCreatorPlayer : RUNE_CREATOR_INVALID;
+}
+
+void Item::runeSetCreatorPlayer(int player)
+{
+	runeCreatorPlayer = isMagicRune() && player >= 0 && player < MAXPLAYERS
+		? static_cast<Sint8>(player) : RUNE_CREATOR_INVALID;
+}
+
+bool Item::runeHasInstanceId() const
+{
+	return isMagicRune() && runeInstanceId != RUNE_INSTANCE_ID_INVALID;
+}
+
+Uint32 Item::runeGetInstanceId() const
+{
+	return runeHasInstanceId() ? runeInstanceId : RUNE_INSTANCE_ID_INVALID;
+}
+
+void Item::runeSetInstanceId(Uint32 instanceId)
+{
+	runeInstanceId = isMagicRune() ? instanceId : RUNE_INSTANCE_ID_INVALID;
+	reserveMagicRuneInstanceId(runeInstanceId);
+}
+
+Uint32 Item::runeEnsureInstanceId()
+{
+	if ( !isMagicRune() ) { return RUNE_INSTANCE_ID_INVALID; }
+	if ( !runeHasInstanceId() && multiplayer != CLIENT )
+	{
+		runeInstanceId = allocateNonzeroId(nextMagicRuneInstanceId);
+	}
+	return runeInstanceId;
+}
+
+Uint32 Item::familiarEnsureInstanceId()
+{
+	if ( type != AMULET_FAMILIAR ) { return 0; }
+	if ( familiarInstanceId == 0 && multiplayer != CLIENT )
+	{
+		familiarInstanceId = allocateNonzeroId(nextFamiliarInstanceId);
+	}
+	reserveFamiliarInstanceId(familiarInstanceId);
+	return familiarInstanceId;
+}
+
+Uint32 Item::wraithLoreEnsureInstanceId()
+{
+	if ( type != READABLE_BOOK && type != SCROLL_MAIL ) { return 0; }
+	if ( wraithLoreInstanceId == 0 && multiplayer != CLIENT )
+	{
+		wraithLoreInstanceId = allocateNonzeroId(nextWraithLoreInstanceId);
+	}
+	reserveWraithLoreInstanceId(wraithLoreInstanceId);
+	return wraithLoreInstanceId;
+}
+
+Uint32 Item::runeGetCreatorIdentity() const
+{
+	return isMagicRune() ? runeCreatorIdentity : RUNE_CREATOR_IDENTITY_INVALID;
+}
+
+void Item::runeSetCreatorIdentity(Uint32 identity)
+{
+	runeCreatorIdentity = isMagicRune() ? identity : RUNE_CREATOR_IDENTITY_INVALID;
+	reserveRuneCreatorIdentity(runeCreatorIdentity);
+}
+
+bool Item::runeCreatorMatchesPlayer(int player) const
+{
+	return runeHasCreator() && runeCreatorIdentity != RUNE_CREATOR_IDENTITY_INVALID
+		&& player == runeGetCreatorPlayer() && player >= 0 && player < MAXPLAYERS
+		&& stats[player] && stats[player]->runeCreatorIdentity == runeCreatorIdentity;
+}
+
+real_t getRuneDominateStorageEfficiency(const Item& rune)
+{
+	// Retain 60% at the least valuable supported gem, scaling linearly to 100%
+	// at the most valuable.
+	const real_t value = std::min(RUNE_GEM_VALUE_MAX,
+		std::max(RUNE_GEM_VALUE_MIN, static_cast<real_t>(items[rune.runeGetVisualGemItemType()].gold_value)));
+	return 0.60 + 0.40 * ((value - RUNE_GEM_VALUE_MIN) / (RUNE_GEM_VALUE_MAX - RUNE_GEM_VALUE_MIN));
+}
+
+real_t getRuneCrafterCompetence(const spell_t* spell, Entity* creator)
+{
+	if ( !spell || !creator || !creator->getStats() ) { return 0.0; }
+	Stat* creatorStats = creator->getStats();
+	if ( spell->skillID != PRO_SORCERY && spell->skillID != PRO_MYSTICISM
+		&& spell->skillID != PRO_THAUMATURGY )
+	{
+		printlog("[Rune]: Spell %d uses unsupported crafting proficiency %d", spell->ID, spell->skillID);
+		return 0.0;
+	}
+	const int school = creatorStats->getModifiedProficiency(spell->skillID);
+	const int ability = std::max(0, std::min(100, school + statGetINT(creatorStats, creator)));
+	const real_t cFizzle = ability < 20 ? 1.0 - 0.36 * (1.0 - ability / 100.0) : 1.0;
+	const real_t cExtraMP = ability < 40 ? ability / 100.0 : 1.0;
+	real_t castBonus = getSpellBonusFromCasterINT(creator, creatorStats, spell->skillID);
+	if ( school >= SKILL_LEVEL_LEGENDARY ) { castBonus += 1.0; }
+	const real_t traditionalTime = std::max<real_t>(1.0,
+		2.0 - statGetDEX(creatorStats, creator) * (1.0 + std::max<real_t>(0.0, castBonus)) / 100.0);
+	const real_t cCast = std::min<real_t>(1.0, 1.0 / traditionalTime);
+	return runeEncodeClamp(cFizzle * cExtraMP * cCast);
+}
+
+namespace
+{
+	real_t getFavorableItemBeatitudePWRBonus(const Item& item, const Stat* wielder)
+	{
+		const int effectiveBeatitude = shouldInvertEquipmentBeatitude(wielder)
+			? -static_cast<int>(item.beatitude) : static_cast<int>(item.beatitude);
+		return std::max(0, effectiveBeatitude) * 0.10;
+	}
+}
+
+bool initializeMagicRuneCraftingProfile(Item& rune, spell_t* spell, Entity* creator,
+	const Item& sourceSpellbook)
+{
+	if ( !rune.isMagicRune() || !spell || !creator || !creator->getStats() ) { return false; }
+	spellElement_t* primaryElement = nullptr;
+	if ( spell->elements.first )
+	{
+		primaryElement = static_cast<spellElement_t*>(spell->elements.first->element);
+		if ( primaryElement && primaryElement->elements.first )
+		{
+			primaryElement = static_cast<spellElement_t*>(primaryElement->elements.first->element);
+		}
+	}
+	const real_t storedPWR = getBonusFromCasterOfSpellElement(creator,
+		creator->getStats(), primaryElement, spell->ID, spell->skillID)
+		+ getFavorableItemBeatitudePWRBonus(sourceSpellbook, creator->getStats());
+	if ( !rune.runeSetStoredPWR(storedPWR) ) { return false; }
+	const ItemType gemType = rune.runeGetVisualGemItemType();
+	const real_t gemValue = std::max(0, items[gemType].gold_value);
+	const real_t competence = getRuneCrafterCompetence(spell, creator);
+	real_t mpFactor = 0.0;
+	real_t goldFactor = 0.0;
+	if ( competence <= 0.0 || gemValue <= 0.0 )
+	{
+		mpFactor = goldFactor = 1.0;
+	}
+	else
+	{
+		mpFactor = RUNE_AVERAGE_QUALITY
+			/ (gemValue * RUNE_VALUE_TRADING_FACTOR * RUNE_MP_COIN_RATIO * competence);
+		goldFactor = RUNE_AVERAGE_QUALITY
+			/ (gemValue * RUNE_VALUE_TRADING_FACTOR * competence);
+	}
+	if ( spell->ID == SPELL_LEAD_BOLT )
+	{
+		return rune.runeSetStoredResourceFactor(goldFactor);
+	}
+	if ( runeUsesVariableMPFactor(spell) )
+	{
+		return rune.runeSetStoredResourceFactor(mpFactor);
+	}
+	const int fixedCost = std::max(0, getCostOfSpell(spell, creator));
+	return rune.runeSetStoredBreakChance(fixedCost > 0 ? fixedCost * mpFactor : 0.0);
+}
+
+real_t getMagicRuneEffectivePWR(const Item& rune, const Entity* caster)
+{
+	if ( !rune.runeHasStoredPWR() ) { return 0.0; }
+	return rune.runeGetStoredPWR() + (caster
+		? getFavorableItemBeatitudePWRBonus(rune, caster->getStats()) : 0.0);
+}
+
+bool applyMagicRuneEffectivePWR(spell_t& spell, const Item& rune, const Entity* caster)
+{
+	if ( !rune.runeCanCast() || rune.runeGetSpellID() != spell.ID )
+	{
+		return false;
+	}
+	spell.hasSpellPowerOverride = true;
+	spell.spellPowerOverride = getMagicRuneEffectivePWR(rune, caster);
+	spell.runeCreatorPlayer = static_cast<Sint8>(rune.runeGetCreatorPlayer());
+	spell.runeCreatorIdentity = rune.runeGetCreatorIdentity();
+	spell.runeInstanceId = rune.runeGetInstanceId();
+	return true;
+}
+
+int getRuneInscriptionManaCost(Status gemstoneStatus, const spell_t* spell, Entity* caster)
+{
+	if ( !spell || !caster || gemstoneStatus <= BROKEN || gemstoneStatus > EXCELLENT ) { return -1; }
+	const real_t multiplier = runeInscriptionConditionMultiplier(gemstoneStatus);
+	const int normalCost = getCostOfSpell(const_cast<spell_t*>(spell), caster);
+	return normalCost < 0 ? -1 : static_cast<int>(ceil(normalCost * multiplier));
+}
+
+int getRuneInscriptionGoldCost(Status gemstoneStatus, spell_t* spell, int player)
+{
+	if ( !spell || gemstoneStatus <= BROKEN || gemstoneStatus > EXCELLENT ) { return -1; }
+	const int normalCost = getGoldCostOfSpell(spell, player);
+	return normalCost < 0 ? -1
+		: static_cast<int>(ceil(normalCost * runeInscriptionConditionMultiplier(gemstoneStatus)));
+}
+
+bool activateMagicRune(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !players[player]->entity
+		|| !stats[player] || !stats[player]->shield || !stats[player]->shield->isMagicRune() )
+	{
+		return false;
+	}
+	Item* rune = stats[player]->shield;
+	if ( rune->runeGetSpellID() == SPELL_ENTRENCH
+		&& (players[player]->mechanics.entrenchCarriedUid != 0
+			|| players[player]->mechanics.entrenchStash.valid())
+		&& players[player]->isLocalPlayer() )
+	{
+		return resumeEntrenchPlacementAnimation(player);
+	}
+	if ( rune->status == BROKEN )
+	{
+		messagePlayer(player, MESSAGE_EQUIPMENT, "The broken rune can no longer release its magic.");
+		return false;
+	}
+	if ( !rune->runeIsValid() )
+	{
+		messagePlayer(player, MESSAGE_STATUS, "The rune's stored magic is invalid.");
+		return false;
+	}
+	if ( !rune->runeHasStoredPWR() )
+	{
+		messagePlayer(player, MESSAGE_STATUS,
+			"This legacy rune has no stored PWR snapshot and cannot be cast.");
+		return false;
+	}
+	spell_t* spell = getSpellFromID(rune->runeGetSpellID());
+	if ( !rune->runeCanCast() )
+	{
+		messagePlayer(player, MESSAGE_STATUS, "The rune cannot release its stored magic.");
+		return false;
+	}
+	// Every Rune uses the explicit zero-resource Rune animation path. The cast
+	// packet is sent only when that animation reaches its completion/target stage.
+	if ( players[player]->isLocalPlayer() )
+	{
+		return castMagicRuneInit(player, spell, rune->runeGetInstanceId());
+	}
+	return false;
+}
+
+Item* findMagicRuneByInstanceId(Uint32 runeInstanceId, int* ownerOut, int requiredOwner)
+{
+	const int firstPlayer = requiredOwner >= 0 ? requiredOwner : 0;
+	const int lastPlayer = requiredOwner >= 0 ? requiredOwner + 1 : MAXPLAYERS;
+	for ( int player = firstPlayer; player < lastPlayer; ++player )
+	{
+		if ( player < 0 || player >= MAXPLAYERS || !stats[player] ) { continue; }
+		for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+		{
+			Item* candidate = static_cast<Item*>(node->element);
+			if ( candidate && candidate->isMagicRune()
+				&& candidate->runeGetInstanceId() == runeInstanceId )
+			{
+				if ( ownerOut ) { *ownerOut = player; }
+				return candidate;
+			}
+		}
+	}
+	return nullptr;
+}
+
+static void terminateSustainedSpellsForRune(Uint32 runeInstanceId)
+{
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( !stats[player] ) { continue; }
+		for ( node_t* node = stats[player]->magic_effects.first; node; node = node->next )
+		{
+			spell_t* sustained = static_cast<spell_t*>(node->element);
+			if ( sustained && sustained->runeInstanceId == runeInstanceId )
+			{
+				sustained->sustain = false;
+			}
+		}
+		for ( node_t* node = channeledSpells[player].first; node; node = node->next )
+		{
+			spell_t* sustained = static_cast<spell_t*>(node->element);
+			if ( sustained && sustained->runeInstanceId == runeInstanceId )
+			{
+				sustained->sustain = false;
+			}
+		}
+	}
+}
+
+bool breakMagicRune(Uint32 runeInstanceId, const char* message)
+{
+	if ( multiplayer == CLIENT ) { return false; }
+	int owner = -1;
+	Item* rune = findMagicRuneByInstanceId(runeInstanceId, &owner);
+	if ( !rune ) { return false; }
+	rune->status = BROKEN;
+	terminateSustainedSpellsForRune(runeInstanceId);
+	if ( message ) { messagePlayer(owner, MESSAGE_EQUIPMENT, "%s", message); }
+	if ( multiplayer == SERVER && owner > 0 && !players[owner]->isLocalPlayer() )
+	{
+		strcpy((char*)net_packet->data, "RUSD");
+		SDLNet_Write32(rune->runeGetInstanceId(), &net_packet->data[4]);
+		net_packet->data[8] = rune->status;
+		SDLNet_Write32(rune->appearance, &net_packet->data[9]);
+		SDLNet_Write32(static_cast<Uint32>(rune->runeGetStoredPWRRaw()), &net_packet->data[13]);
+		net_packet->data[17] = static_cast<Uint8>(rune->runeGetCreatorPlayer());
+		SDLNet_Write32(rune->runeGetCreatorIdentity(), &net_packet->data[18]);
+		net_packet->address.host = net_clients[owner - 1].host;
+		net_packet->address.port = net_clients[owner - 1].port;
+		net_packet->len = 22;
+		sendPacketSafe(net_sock, -1, net_packet, owner - 1);
+	}
+	return true;
+}
+
+bool applyMagicRuneCastStress(Uint32 runeInstanceId, int resourceEquivalent, int requiredOwner)
+{
+	if ( multiplayer == CLIENT ) { return true; }
+	int owner = -1;
+	Item* rune = findMagicRuneByInstanceId(runeInstanceId, &owner, requiredOwner);
+	if ( !rune || rune->status == BROKEN ) { return false; }
+	spell_t* spell = getSpellFromID(rune->runeGetSpellID());
+	real_t breakChance = 0.0;
+	if ( spell && spell->ID == SPELL_LEAD_BOLT )
+	{
+		breakChance = std::max(0, resourceEquivalent) * rune->runeGetStoredResourceFactor();
+	}
+	else if ( runeUsesVariableMPFactor(spell) )
+	{
+		breakChance = std::max(0, resourceEquivalent) * rune->runeGetStoredResourceFactor();
+	}
+	else
+	{
+		breakChance = rune->runeGetStoredBreakChance();
+	}
+	breakChance = runeEncodeClamp(breakChance);
+	if ( breakChance >= 1.0 || (breakChance > 0.0
+		&& local_rng.getU32() < static_cast<Uint32>(breakChance * UINT32_MAX)) )
+	{
+		Entity* ownerEntity = owner >= 0 && owner < MAXPLAYERS && players[owner]
+			? players[owner]->entity : nullptr;
+		if ( ownerEntity && ownerEntity->spellEffectPreserveItem(rune) )
+		{
+			return true;
+		}
+		rune->status = static_cast<Status>(rune->status - 1);
+		messagePlayer(owner, MESSAGE_EQUIPMENT, rune->status == BROKEN
+			? "The rune cracks and its magic goes dark."
+			: "The rune cracks slightly as it releases its magic.");
+		if ( rune->status == BROKEN )
+		{
+			// Teardown follows the original caster, regardless of current Rune owner.
+			terminateSustainedSpellsForRune(runeInstanceId);
+		}
+	}
+	if ( multiplayer == SERVER && owner > 0 && !players[owner]->isLocalPlayer() )
+	{
+		strcpy((char*)net_packet->data, "RUSD");
+		SDLNet_Write32(rune->runeGetInstanceId(), &net_packet->data[4]);
+		net_packet->data[8] = rune->status;
+		SDLNet_Write32(rune->appearance, &net_packet->data[9]);
+		SDLNet_Write32(static_cast<Uint32>(rune->runeGetStoredPWRRaw()), &net_packet->data[13]);
+		net_packet->data[17] = static_cast<Uint8>(rune->runeGetCreatorPlayer());
+		SDLNet_Write32(rune->runeGetCreatorIdentity(), &net_packet->data[18]);
+		net_packet->address.host = net_clients[owner - 1].host;
+		net_packet->address.port = net_clients[owner - 1].port;
+		net_packet->len = 22;
+		sendPacketSafe(net_sock, -1, net_packet, owner - 1);
+	}
+	return rune->status != BROKEN;
+}
+
+bool consumeSustainedSpellResource(Entity* caster, spell_t* spell, int manaCost)
+{
+	if ( !spell || spell->runeInstanceId == 0 )
+	{
+		return caster && caster->safeConsumeMP(manaCost);
+	}
+	const int originalPlayer = spell->runeCasterPlayer;
+	if ( originalPlayer < 0 || originalPlayer >= MAXPLAYERS || !caster
+		|| !players[originalPlayer] || players[originalPlayer]->entity != caster
+		|| caster->getUID() != spell->runeCasterEntityUid
+		|| !findMagicRuneByInstanceId(spell->runeInstanceId, nullptr, originalPlayer)
+		|| !applyMagicRuneCastStress(spell->runeInstanceId, manaCost, originalPlayer) )
+	{
+		spell->sustain = false;
+		return false;
+	}
+	return true;
+}
+
+std::string Item::runeGetDisplayName() const
+{
+	if ( !runeIsValid() ) { return items[MAGIC_RUNE].getIdentifiedName(); }
+	std::string gemName = items[runeGetVisualGemItemType()].getIdentifiedName();
+	if ( !gemName.empty() ) { gemName[0] = static_cast<char>(toupper(gemName[0])); }
+	return gemName + " Rune of " + getSpellFromID(runeGetSpellID())->getSpellName();
+}
+
+Item* createMagicRune(RuneGemType gem, int spellID, Status status, Sint16 beatitude,
+	bool identified, list_t* inventory)
+{
+	if ( gem >= RUNE_GEM_COUNT || spellID <= SPELL_NONE
+		|| spellID > static_cast<int>(RUNE_SPELL_MASK) || !getSpellFromID(spellID) )
+	{
+		return nullptr;
+	}
+	Item* rune = newItem(MAGIC_RUNE, status, beatitude, 1, 0, identified, inventory);
+	if ( rune )
+	{
+		rune->runeEnsureInstanceId();
+		rune->runeSetGemType(gem);
+		rune->runeSetSpellID(spellID);
+	}
+	return rune;
 }
 
 int getItemVariationFromSpellbookOrTome(const Item& item)
@@ -1272,6 +4227,15 @@ Sint32 itemModel(const Item* const item, bool shortModel, Entity* creature)
 	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return 0;
+	}
+	if ( item->isMagicRune() )
+	{
+		const ItemType gem = item->runeGetVisualGemItemType();
+		return shortModel ? items[gem].indexShort : items[gem].index;
+	}
+	if ( item->type == RUNE_HAMMER )
+	{
+		return shortModel ? items[RUNE_HAMMER].indexShort : items[RUNE_HAMMER].index;
 	}
 
 	if ( creature && creature->behavior == &actMonster )
@@ -1403,6 +4367,55 @@ Sint32 itemModelFirstperson(const Item* const item)
 	{
 		return 0;
 	}
+	if ( item->isMagicRune() )
+	{
+		return items[item->runeGetVisualGemItemType()].fpindex;
+	}
+	if ( item->type == RUNE_HAMMER )
+	{
+		return items[RUNE_HAMMER].fpindex;
+	}
+
+	if ( item->type == TOOL_PLAYER_LOOT_BAG )
+	{
+		const Sint32 index =
+			items[item->type].fpindex;
+
+		if ( colorblind_lobby )
+		{
+			const int playerOwner =
+				item->getLootBagPlayer();
+
+			Uint32 playerIndex = 4;
+
+			switch ( playerOwner )
+			{
+				case 0:
+					playerIndex = 2;
+					break;
+
+				case 1:
+					playerIndex = 3;
+					break;
+
+				case 2:
+					playerIndex = 1;
+					break;
+
+				case 3:
+					playerIndex = 4;
+					break;
+
+				default:
+					break;
+			}
+
+			return index + playerIndex;
+		}
+
+		return index
+			+ item->getLootBagPlayer();
+	}
 
 	if ( item->type == MAGICSTAFF_SCEPTER )
 	{
@@ -1469,6 +4482,48 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 	{
 		return 1;
 	}
+	if ( item1->isMagicRune() && item1->runeGetStoredPWRRaw() != item2->runeGetStoredPWRRaw() )
+	{
+		return 1;
+	}
+	if ( item1->isMagicRune() && item1->runeGetCreatorPlayer() != item2->runeGetCreatorPlayer() )
+	{
+		return 1;
+	}
+	if ( item1->isMagicRune() && (item1->runeGetInstanceId() != item2->runeGetInstanceId()
+		|| item1->runeGetCreatorIdentity() != item2->runeGetCreatorIdentity()) )
+	{
+		return 1;
+	}
+	auto loreItemOwnedByWraith = [](const Item* item)
+	{
+		for ( int player = 0; player < MAXPLAYERS; ++player )
+		{
+			if ( !stats[player] || stats[player]->playerRace != RACE_WRAITH ) { continue; }
+			for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+			{
+				if ( node->element == item ) { return true; }
+			}
+		}
+		return false;
+	};
+	if ( (item1->type == READABLE_BOOK || item1->type == SCROLL_MAIL)
+		&& item1 != item2
+		&& (loreItemOwnedByWraith(item1) || loreItemOwnedByWraith(item2)) )
+	{
+		return 1;
+	}
+	if ( item1->appliedOil != item2->appliedOil )
+	{
+		return 1;
+	}
+	if ( itemTypeIsIngredientBag(item1->type) )
+	{
+		for ( int i = 0; i < 4; ++i )
+		{
+			if ( item1->ingredientCounts[i] != item2->ingredientCounts[i] ) { return 1; }
+		}
+	}
 	if ( itemCategory(item1) != THROWN && !itemTypeIsQuiver(item1->type) )
 	{
 		if (item1->status != item2->status)
@@ -1477,6 +4532,14 @@ int itemCompare(const Item* const item1, const Item* const item2, bool checkAppe
 		}
 	}
 	if (item1->beatitude != item2->beatitude)
+	{
+		return 1;
+	}
+	//mod add: malformed/outdated mod item data can leave newly added item
+	// slots without image variations. Never modulo by zero while comparing
+	// those items; treating them as non-matching is the safest fallback.
+	if ( item1->type < 0 || item1->type >= NUMITEMS
+		|| items[item1->type].variations <= 0 )
 	{
 		return 1;
 	}
@@ -1602,6 +4665,14 @@ bool playerThrowDuck(const int player, Item* const item, int charge)
 		entity->skill[13] = 1;
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
+		entity->itemRuneStoredPWR = item->runeGetStoredPWRRaw();
+		entity->itemRuneStoredPWRValid = item->runeHasStoredPWR() ? 1 : 0;
+		entity->itemRuneCreatorPlayer = item->runeGetCreatorPlayer();
+		entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
+		entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
+		entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+		entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+		copyItemPersistentCustomStateToEntity(*entity, *item);
 
 		real_t speed = 1.f + 4.f * (-30 + std::min(50, std::max(30, charge))) / (real_t)(20);
 		entity->vel_x = speed * cos(players[player]->entity->yaw);
@@ -1732,6 +4803,14 @@ bool playerGreasyDropItem(const int player, Item* const item)
 		entity->skill[13] = item->count;
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
+		entity->itemRuneStoredPWR = item->runeGetStoredPWRRaw();
+		entity->itemRuneStoredPWRValid = item->runeHasStoredPWR() ? 1 : 0;
+		entity->itemRuneCreatorPlayer = item->runeGetCreatorPlayer();
+		entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
+		entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
+		entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+		entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+		copyItemPersistentCustomStateToEntity(*entity, *item);
 		entity->parent = players[player]->entity->getUID();
 		entity->itemOriginalOwner = entity->parent;
 
@@ -1817,9 +4896,18 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage, cons
 		SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
 		net_packet->data[24] = item->identified;
 		net_packet->data[25] = clientnum;
+		SDLNet_Write32(static_cast<Uint32>(item->runeGetStoredPWRRaw()), &net_packet->data[26]);
+		net_packet->data[30] = static_cast<Uint8>(item->runeGetCreatorPlayer());
+		SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[31]);
+		SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[35]);
+		net_packet->data[39] = static_cast<Uint8>(item->appliedOil);
+		writeIngredientCountsToPacket(*item, net_packet->data, 40);
+		writeFamiliarPersistentStateToPacket(*item, net_packet->data, 56);
+		writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+			56 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 26;
+		net_packet->len = 116;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		if ( item == players[player]->bookGUI.openBookItem )
 		{
@@ -1920,6 +5008,14 @@ bool dropItem(Item* const item, const int player, const bool notifyMessage, cons
 		entity->skill[13] = qtyToDrop;
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
+		entity->itemRuneStoredPWR = item->runeGetStoredPWRRaw();
+		entity->itemRuneStoredPWRValid = item->runeHasStoredPWR() ? 1 : 0;
+		entity->itemRuneCreatorPlayer = item->runeGetCreatorPlayer();
+		entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
+		entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
+		entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+		entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+		copyItemPersistentCustomStateToEntity(*entity, *item);
 		entity->parent = players[player]->entity->getUID();
 		entity->itemOriginalOwner = entity->parent;
 
@@ -2149,6 +5245,14 @@ Entity* dropItemMonster(Item* const item, Entity* const monster, Stat* const mon
 		entity->skill[13] = count;
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
+		entity->itemRuneStoredPWR = item->runeGetStoredPWRRaw();
+		entity->itemRuneStoredPWRValid = item->runeHasStoredPWR() ? 1 : 0;
+		entity->itemRuneCreatorPlayer = item->runeGetCreatorPlayer();
+		entity->itemRuneCreatorPlayerValid = item->runeHasCreator() ? 1 : 0;
+		entity->itemRuneInstanceId = static_cast<Sint32>(item->runeEnsureInstanceId());
+		entity->itemRuneCreatorIdentity = static_cast<Sint32>(item->runeGetCreatorIdentity());
+		entity->itemAppliedOil = static_cast<Sint32>(item->appliedOil);
+		copyItemPersistentCustomStateToEntity(*entity, *item);
 		entity->itemOriginalOwner = item->ownerUid;
 		entity->parent = monster->getUID();
 
@@ -2328,6 +5432,85 @@ void consumeItem(Item*& item, const int player)
 EquipItemResult equipItem(Item* const item, Item** const slot, const int player, bool checkInventorySpaceForPaperDoll)
 {
 	int oldcount;
+	if ( playerIsInWraithForm(player) )
+	{
+		const bool handSlot =
+			slot == &stats[player]->weapon;
+
+		const bool ringSlot =
+			slot == &stats[player]->ring;
+
+		const bool amuletSlot =
+			slot == &stats[player]->amulet;
+
+		if ( !handSlot && !ringSlot && !amuletSlot )
+		{
+			messagePlayer(
+				player,
+				MESSAGE_EQUIPMENT,
+				"Wraith Form cannot equip that.");
+
+			return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+		}
+
+		const bool alreadyInTargetSlot =
+			(*slot == item);
+
+		if ( !alreadyInTargetSlot
+			&& (ringSlot || amuletSlot) )
+		{
+			// New jewelry can only move from the Wraith hand.
+			if ( getWraithHeldItem(player) != item )
+			{
+				return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+			}
+
+			// No swapping equipped jewelry.
+			if ( *slot != nullptr )
+			{
+				messagePlayer(
+					player,
+					MESSAGE_EQUIPMENT,
+					"Drop your worn jewelry first.");
+
+				return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+			}
+
+			// Remove it from the hand before normal equip logic assigns jewelry.
+			setWraithHeldItem(player, nullptr);
+		}
+
+		if ( !alreadyInTargetSlot
+			&& handSlot
+			&& getWraithHeldItem(player) != nullptr )
+		{
+			return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+		}
+	}
+	else if ( !intro
+		&& player >= 0 && player < MAXPLAYERS && players[player] && stats[player]
+		&& stats[player]->playerRace == RACE_WRAITH
+		&& players[player]->mechanics.wraith.initialized
+		&& players[player]->mechanics.wraith.possessedEntityUid != 0
+		&& *slot != item )
+	{
+		int category = -1;
+		if ( slot == &stats[player]->helmet ) { category = 0; }
+		else if ( slot == &stats[player]->weapon ) { category = 1; }
+		else if ( slot == &stats[player]->shield ) { category = 2; }
+		else if ( slot == &stats[player]->breastplate ) { category = 3; }
+		else if ( slot == &stats[player]->shoes ) { category = 4; }
+		else if ( slot == &stats[player]->ring ) { category = 5; }
+		else if ( slot == &stats[player]->amulet ) { category = 6; }
+		else if ( slot == &stats[player]->cloak ) { category = 7; }
+		else if ( slot == &stats[player]->mask ) { category = 8; }
+		else if ( slot == &stats[player]->gloves ) { category = 9; }
+		if ( category >= 0 && !wraithPossessedBodyCanEquipSlot(player, category) )
+		{
+			messagePlayer(player, MESSAGE_EQUIPMENT, "This body cannot equip that.");
+			return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
+		}
+	}
 
 	if ( players[player]->isLocalPlayer() && players[player]->hud.pickaxeGimpTimer > 0 && !intro )
 	{
@@ -2345,7 +5528,11 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 		return EQUIP_ITEM_FAIL_CANT_UNEQUIP;
 	}
 
-	if ( itemCompare(*slot, item, true) )
+	const bool exactSameItem =
+		(*slot == item);
+
+	if ( !exactSameItem
+		&& itemCompare(*slot, item, true) )
 	{
 		// if items are different... (excluding the quantity of both item nodes)
 		if ( *slot != nullptr )
@@ -2548,6 +5735,14 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 		}
 		if ( !players[player]->isLocalPlayer() && multiplayer == SERVER )
 		{
+			if ( exactSameItem )
+			{
+				// Authoritative systems may unequip the actual server inventory object.
+				// Keep that object/node alive; only the equipment pointer changes.
+				*slot = nullptr;
+				players[player]->paperDoll.updateSlots();
+				return EQUIP_ITEM_SUCCESS_UNEQUIP;
+			}
 			if ( item->node )
 			{
 				list_RemoveNode(item->node);
@@ -2594,7 +5789,140 @@ EquipItemResult equipItem(Item* const item, Item** const slot, const int player,
 
 -------------------------------------------------------------------------------*/
 
-void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDropping, bool serverCheckUse)
+static void witchbrewReturnEmptyBottle(int player)
+{
+	if ( multiplayer == CLIENT ) { return; }
+	Item* bottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
+	itemPickup(player, bottle);
+	messagePlayer(player, MESSAGE_INTERACTION, "You recover an empty bottle.");
+	free(bottle);
+}
+
+static bool useTincture(Item*& item, int player)
+{
+	if ( !item || !stats[player] || !itemTypeIsTincture(item->type) ) { return false; }
+	if ( multiplayer != CLIENT )
+	{
+		const int stat = static_cast<int>(item->type) - static_cast<int>(TINCTURE_STR);
+		if ( !applyTinctureStackToPlayer(item->type, player) ) { return false; }
+		tryIncreaseAlchemyFromWitchbrewUse(player);
+		static const char* statNames[NUMSTATS] = { "Strength", "Dexterity", "Constitution", "Intelligence", "Perception", "Charisma" };
+		messagePlayer(player, MESSAGE_STATUS, "%s affinity tincture stored (%u).",
+			statNames[stat], stats[player]->tinctureStacks[stat]);
+		witchbrewReturnEmptyBottle(player);
+	}
+	consumeItem(item, player);
+	return true;
+}
+
+static Item* chooseOilTarget(int player, bool reversePriority, bool* shieldSlot)
+{
+	Item* weapon = itemCanReceiveOil(stats[player]->weapon) ? stats[player]->weapon : nullptr;
+	Item* quiver = stats[player]->shield && itemTypeIsQuiver(stats[player]->shield->type)
+		? stats[player]->shield : nullptr;
+	Item* first = reversePriority ? quiver : weapon;
+	Item* second = reversePriority ? weapon : quiver;
+	Item* result = (first && first->appliedOil == APPLIED_OIL_NONE) ? first
+		: ((second && second->appliedOil == APPLIED_OIL_NONE) ? second : (first ? first : second));
+	if ( shieldSlot ) { *shieldSlot = result && result == quiver; }
+	return result;
+}
+
+static bool useOil(Item*& item, int player)
+{
+	if ( !item || !stats[player] || !itemTypeIsOil(item->type) ) { return false; }
+	bool shieldSlot = false;
+	Item* target = chooseOilTarget(player, false, &shieldSlot);
+	if ( !target )
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			messagePlayer(player, MESSAGE_HINT, "Equip a melee weapon, throwing weapon, or quiver first.");
+			playSoundPlayer(player, 90, 64);
+		}
+		return false;
+	}
+	target->appliedOil = appliedOilFromItemType(item->type);
+	if ( multiplayer != CLIENT )
+	{
+		tryIncreaseAlchemyFromWitchbrewUse(player);
+		serverSyncPersistentCustomItemStateForOwner(target);
+		if ( item->appearance != STEWING_NO_BOTTLE_APPEARANCE ) { witchbrewReturnEmptyBottle(player); }
+	}
+	// Item::getName() returns the shared tempstr buffer. Copy both names before
+	// formatting or the second lookup overwrites the first one.
+	const std::string targetName = target->getName();
+	const std::string oilName = item->getName();
+	messagePlayer(player, MESSAGE_EQUIPMENT, "You coat %s with %s.", targetName.c_str(), oilName.c_str());
+	consumeItem(item, player);
+	return true;
+}
+
+bool useOilOnItem(Item*& oil, Item* target, int player)
+{
+	if ( !oil || !target || !itemTypeIsOil(oil->type) || !itemCanReceiveOil(target)
+		|| player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return false;
+	}
+	const AppliedOil coating = appliedOilFromItemType(oil->type);
+	if ( multiplayer == CLIENT )
+	{
+		strcpy(reinterpret_cast<char*>(net_packet->data), "WOIL");
+		SDLNet_Write32(static_cast<Uint32>(oil->type), &net_packet->data[4]);
+		SDLNet_Write32(target->uid, &net_packet->data[8]);
+		SDLNet_Write32(static_cast<Uint32>(target->type), &net_packet->data[12]);
+		net_packet->data[16] = static_cast<Uint8>(player);
+		SDLNet_Write32(oil->uid, &net_packet->data[17]);
+		net_packet->data[21] = target == stats[player]->weapon ? 1
+			: (target == stats[player]->shield ? 2 : 0);
+		net_packet->address = net_server;
+		net_packet->data[22] = oil->appearance == STEWING_NO_BOTTLE_APPEARANCE ? 1 : 0;
+		net_packet->len = 23;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+		return true;
+	}
+	target->appliedOil = coating;
+	tryIncreaseAlchemyFromWitchbrewUse(player);
+	serverSyncPersistentCustomItemStateForOwner(target);
+	const std::string targetName = target->getName();
+	const std::string oilName = oil->getName();
+	messagePlayer(player, MESSAGE_EQUIPMENT, "You coat %s with %s.", targetName.c_str(), oilName.c_str());
+	if ( oil->appearance != STEWING_NO_BOTTLE_APPEARANCE ) { witchbrewReturnEmptyBottle(player); }
+	consumeItem(oil, player);
+	return true;
+}
+
+bool useInkOnSpellbook(Item*& ink, Item* book, int player)
+{
+	if ( !ink || !book || !itemTypeIsInk(ink->type) || !stats[player]
+		|| itemCategory(book) != SPELLBOOK ) { return false; }
+	if ( multiplayer == CLIENT )
+	{
+		strcpy(reinterpret_cast<char*>(net_packet->data), "WINK");
+		SDLNet_Write32(static_cast<Uint32>(ink->type), &net_packet->data[4]);
+		SDLNet_Write32(book->uid, &net_packet->data[8]);
+		SDLNet_Write32(static_cast<Uint32>(book->type), &net_packet->data[12]);
+		net_packet->data[16] = static_cast<Uint8>(player);
+		SDLNet_Write32(ink->uid, &net_packet->data[17]);
+		net_packet->data[21] = itemIsEquipped(book, player) ? 1 : 0;
+		net_packet->address = net_server;
+		net_packet->data[22] = ink->appearance == STEWING_NO_BOTTLE_APPEARANCE ? 1 : 0;
+		net_packet->len = 23;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+		return true;
+	}
+	const ItemType result = getInkSpellbookResult(ink->type, book->type);
+	if ( result == ITEM_ENUM_MAX ) { return false; }
+	book->type = result;
+	tryIncreaseAlchemyFromWitchbrewUse(player);
+	messagePlayer(player, MESSAGE_INVENTORY, "The spellbook becomes %s.", book->getName());
+	if ( ink->appearance != STEWING_NO_BOTTLE_APPEARANCE ) { witchbrewReturnEmptyBottle(player); }
+	consumeItem(ink, player);
+	return true;
+}
+
+void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDropping, bool serverCheckUse, bool alternateUse)
 {
 	if ( item == nullptr )
 	{
@@ -2605,6 +5933,15 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 	{
 		// assume used by the player unless otherwise (a fountain potion effect e.g)
 		usedBy = players[player]->entity;
+	}
+	// mod add: Inventory browsing remains available while Panicking, but using
+	// an item is a deliberate character action. Environmental item effects that
+	// supply a different source entity are left untouched.
+	if ( player >= 0 && player < MAXPLAYERS && players[player]
+		&& usedBy == players[player]->entity && playerIsPanicking(player)
+		&& !unequipForDropping )
+	{
+		return;
 	}
 
 
@@ -2663,6 +6000,16 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		Sint16 count = 1;
 		Uint32 appearance = 0;
 		bool identified = false;
+		Sint32 runeStoredPWR = Item::RUNE_STORED_PWR_INVALID;
+		Sint8 runeCreatorPlayer = Item::RUNE_CREATOR_INVALID;
+		Uint32 runeInstanceId = 0;
+		Uint32 runeCreatorIdentity = 0;
+		AppliedOil appliedOil = APPLIED_OIL_NONE;
+		Item familiarState{};
+		Uint32 loreInstanceId = 0;
+		Sint32 x = 0;
+		Sint32 y = 0;
+		bool alternateUse = false;
 		bool sendToServer = false;
 		void setItem(Item& item)
 		{
@@ -2672,6 +6019,15 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			count = item.count;
 			appearance = item.appearance;
 			identified = item.identified;
+			runeStoredPWR = item.runeGetStoredPWRRaw();
+			runeCreatorPlayer = static_cast<Sint8>(item.runeGetCreatorPlayer());
+			runeInstanceId = item.runeGetInstanceId();
+			runeCreatorIdentity = item.runeGetCreatorIdentity();
+			appliedOil = item.appliedOil;
+			x = item.x;
+			y = item.y;
+			copyItemPersistentCustomState(familiarState, item);
+			loreInstanceId = item.wraithLoreInstanceId;
 			sendToServer = true;
 		}
 		void send()
@@ -2685,13 +6041,28 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			SDLNet_Write32(static_cast<Uint32>(appearance), &net_packet->data[20]);
 			net_packet->data[24] = identified;
 			net_packet->data[25] = clientnum;
+			SDLNet_Write32(static_cast<Uint32>(runeStoredPWR), &net_packet->data[26]);
+			net_packet->data[30] = static_cast<Uint8>(runeCreatorPlayer);
+			SDLNet_Write32(runeInstanceId, &net_packet->data[31]);
+			SDLNet_Write32(runeCreatorIdentity, &net_packet->data[35]);
+			net_packet->data[39] = static_cast<Uint8>(appliedOil);
+			net_packet->data[40] = alternateUse ? 1 : 0;
+			writeFamiliarPersistentStateToPacket(familiarState, net_packet->data, 41);
+			SDLNet_Write32(static_cast<Uint32>(x),
+				&net_packet->data[41 + FAMILIAR_PERSISTENT_PACKET_BYTES]);
+			SDLNet_Write32(static_cast<Uint32>(y),
+				&net_packet->data[45 + FAMILIAR_PERSISTENT_PACKET_BYTES]);
+			// Stable host-issued physical lore instance, never a client-created ID.
+			SDLNet_Write32(loreInstanceId,
+				&net_packet->data[49 + FAMILIAR_PERSISTENT_PACKET_BYTES]);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
-			net_packet->len = 26;
+			net_packet->len = 53 + FAMILIAR_PERSISTENT_PACKET_BYTES;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 	};
 	ItemDetailsForServer itemDetailsForServer;
+	itemDetailsForServer.alternateUse = alternateUse;
 
 	if ( multiplayer == CLIENT && !intro )
 	{
@@ -2705,6 +6076,12 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		{
 			itemDetailsForServer.setItem(*item);
 		}
+	}
+	if ( multiplayer == CLIENT && players[player] && players[player]->entity
+		&& players[player]->entity->isBlind()
+		&& (item->type == READABLE_BOOK || item->type == SCROLL_MAIL) )
+	{
+		itemDetailsForServer.sendToServer = false;
 	}
 
 	bool drankPotion = false;
@@ -2731,10 +6108,70 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 
 	switch ( item->type )
 	{
+		case TINCTURE_STR:
+		case TINCTURE_DEX:
+		case TINCTURE_CON:
+		case TINCTURE_INT:
+		case TINCTURE_PER:
+		case TINCTURE_CHA:
+			useTincture(item, player);
+			break;
+		case OIL_AETHER:
+		case OIL_SILVER:
+		case OIL_TOXINS:
+		case OIL_BASES:
+		case OIL_LEAD:
+		case OIL_MINERAL:
+		case OIL_BRINE:
+			// Alternate action always wields/unequips the Oil. Primary action
+			// applies it to an eligible equipped weapon/quiver, or equips the
+			// bottle if neither slot contains a valid coating target.
+			// Equipment updates must use EQUI, never a synthetic USEI use.
+			if ( alternateUse || !chooseOilTarget(player, false, nullptr) )
+			{
+				itemDetailsForServer.sendToServer = false;
+				if ( !serverCheckUse && players[player]->isLocalPlayer() )
+				{
+					playerTryEquipItemAndUpdateServer(player, item, true);
+				}
+			}
+			else if ( !useOil(item, player) )
+			{
+				itemDetailsForServer.sendToServer = false;
+			}
+			break;
+		case INK_MYSTICISM:
+		case INK_SORCERY:
+		case INK_THAUMATURGY:
+			itemDetailsForServer.sendToServer = false;
+			if ( players[player]->isLocalPlayer() )
+			{
+				bool hasSpellbook = false;
+				for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+				{
+					Item* candidate = static_cast<Item*>(node->element);
+					if ( candidate && itemCategory(candidate) == SPELLBOOK )
+					{
+						hasSpellbook = true;
+						break;
+					}
+				}
+				if ( hasSpellbook )
+				{
+					GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
+				}
+				else
+				{
+					messagePlayer(player, MESSAGE_HINT, "You need a spellbook to use this ink.");
+					playSoundPlayer(player, 90, 64);
+				}
+			}
+			break;
 		case WOODEN_SHIELD:
 			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case QUARTERSTAFF:
+		case RUNE_HAMMER:
 		case BRONZE_SWORD:
 		case BRONZE_MACE:
 		case BRONZE_AXE:
@@ -2758,6 +6195,10 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			equipItemResult = equipItem(item, &stats[player]->shield, player, checkInventorySpaceForPaperDoll);
 			break;
 		case SHORTBOW:
+		// mod add: firearms equip in the main hand.
+		case FLINTLOCK_PISTOL:
+		case MUSKET:
+		// mod add end
 		case STEEL_HALBERD:
 		case STEEL_SWORD:
 		case STEEL_MACE:
@@ -2766,6 +6207,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case CRYSTAL_SPEAR:
 		case CRYSTAL_BATTLEAXE:
 		case CRYSTAL_MACE:
+		case HARPOON:     //Mod addon
 		case BRONZE_TOMAHAWK:
 		case IRON_DAGGER:
 		case STEEL_CHAKRAM:
@@ -2968,6 +6410,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			break;
 		case AMULET_POISONRESISTANCE:
 		case AMULET_BURNINGRESIST:
+		case AMULET_FAMILIAR:
 			equipItemResult = equipItem(item, &stats[player]->amulet, player, checkInventorySpaceForPaperDoll);
 			break;
 		case POTION_WATER:
@@ -3312,6 +6755,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case SPELLBOOK_SANCTUARY:
 		case SPELLBOOK_HOLY_BEAM:
 		case SPELLBOOK_DOMINATE:
+		case SPELLBOOK_ENTRENCH: // mod add: Entrench spellbook
 			item_Spellbook(item, player);
 			break;
 		case TOME_SORCERY:
@@ -3366,6 +6810,8 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 		case TOOL_TORCH:
 		case TOOL_LANTERN:
 		case TOOL_CRYSTALSHARD:
+		case SPYGLASS: // mod add: normal offhand equip/use dispatch
+		case MAGIC_RUNE:
 		case TOOL_TINKERING_KIT:
 		case QUIVER_SILVER:
 		case QUIVER_PIERCE:
@@ -3409,7 +6855,7 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			item_ToolTowel(item, player);
 			if ( multiplayer == CLIENT )
 			{
-				if ( stats[player]->getEffectActive(EFF_BLEEDING) )
+				if ( stats[player]->getEffectActive(EFF_BLEEDING) || (players[player] && players[player]->entity && players[player]->entity->isMerrowPlayer())  ) //mod add Merrow
 				{
 					consumeItem(item, player);
 				}
@@ -3612,7 +7058,6 @@ void useItem(Item* item, const int player, Entity* usedBy, bool unequipForDroppi
 			printlog("error: item %d used, but it has no use case!\n", static_cast<int>(item->type));
 			break;
 	}
-
 	if ( players[player]->isLocalPlayer() )
 	{
 		if ( checkInventorySpaceForPaperDoll && equipItemResult == EquipItemResult::EQUIP_ITEM_FAIL_CANT_UNEQUIP )
@@ -3860,6 +7305,33 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 	{
 		return nullptr;
 	}
+	const bool wraithPickup = playerIsInWraithForm(player) && item->type != SPELL_ITEM;
+	if ( wraithPickup && getWraithHeldItem(player) )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY, "Your spectral hand is already occupied.");
+		return nullptr;
+	}
+	if ( wraithPickup )
+	{
+		forceNewStack = true;
+	}
+	if ( itemTypeIsWitchIngredient(item->type) )
+	{
+		const WitchIngredientCategory category = ingredientCategoryFromItem(item->type);
+		const int slot = ingredientSlotForItem(item->type);
+		const Uint32 amount = static_cast<Uint32>(std::max<Sint16>(1, item->count));
+		item->type = ingredientBagForCategory(category);
+		item->count = 1;
+		if ( slot >= 0 )
+		{
+			const Uint32 room = std::numeric_limits<Uint32>::max() - item->ingredientCounts[slot];
+			item->ingredientCounts[slot] += std::min(room, amount);
+		}
+	}
+	if ( itemTypeIsIngredientBag(item->type) )
+	{
+		item->count = 1;
+	}
 	Item* item2;
 
 	/*if ( stats[player]->getProficiency(PRO_APPRAISAL) >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
@@ -3906,22 +7378,38 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 
 	if ( player != 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
 	{
-		// send the client info on the item it just picked up
-		strcpy((char*)net_packet->data, "ITEM");
-		SDLNet_Write32(static_cast<Uint32>(item->type), &net_packet->data[4]);
-		SDLNet_Write32(static_cast<Uint32>(item->status), &net_packet->data[8]);
-		SDLNet_Write32(static_cast<Uint32>(item->beatitude), &net_packet->data[12]);
-		SDLNet_Write32(static_cast<Uint32>(item->count), &net_packet->data[16]);
-		SDLNet_Write32(static_cast<Uint32>(item->appearance), &net_packet->data[20]);
-		SDLNet_Write32(static_cast<Uint32>(item->ownerUid), &net_packet->data[24]);
-		net_packet->data[28] = item->identified ? 1 : 0;
-		net_packet->address.host = net_clients[player - 1].host;
-		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 29;
-		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		serverSendItemToPickup(player, item);
+		if ( wraithPickup )
+		{
+			Item* held = newItem(item->type, item->status, item->beatitude, item->count,
+				item->appearance, item->identified, nullptr);
+			copyItemPersistentCustomState(*held, *item);
+			setWraithHeldItem(player, held);
+		}
 	}
 	else
 	{
+		if ( itemTypeIsIngredientBag(item->type) )
+		{
+			if ( ingredientBagIsEmpty(*item) ) { return nullptr; }
+			Item* existing = nullptr;
+			if ( addToSpecificInventoryItem
+				&& ingredientCategoryFromBag(addToSpecificInventoryItem->type)
+					== ingredientCategoryFromBag(item->type) )
+			{
+				existing = addToSpecificInventoryItem;
+			}
+			else
+			{
+				existing = findIngredientBagInInventory(stats[player]->inventory,
+					ingredientCategoryFromBag(item->type));
+			}
+			if ( existing )
+			{
+				mergeIngredientBags(*existing, *item);
+				return existing;
+			}
+		}
 		std::unordered_set<Uint32> appearancesOfSimilarItems;
 		bool doSpecificItemCheck = (addToSpecificInventoryItem != nullptr);
 		bool hasRunSpecificItemCheck = false;
@@ -3996,12 +7484,14 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 							if ( slot == &stats[player]->weapon )
 							{
 								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
-									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified,
+									item2->runeGetStoredPWRRaw(), static_cast<Sint8>(item2->runeGetCreatorPlayer()), item2->runeGetInstanceId(), item2->runeGetCreatorIdentity(), item2->appliedOil);
 							}
 							else if ( slot == &stats[player]->shield )
 							{
 								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
-									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified,
+									item2->runeGetStoredPWRRaw(), static_cast<Sint8>(item2->runeGetCreatorPlayer()), item2->runeGetInstanceId(), item2->runeGetCreatorIdentity(), item2->appliedOil);
 							}
 						}
 					}
@@ -4035,12 +7525,14 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 							if ( slot == &stats[player]->weapon )
 							{
 								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
-									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified,
+									item2->runeGetStoredPWRRaw(), static_cast<Sint8>(item2->runeGetCreatorPlayer()), item2->runeGetInstanceId(), item2->runeGetCreatorIdentity(), item2->appliedOil);
 							}
 							else if ( slot == &stats[player]->shield )
 							{
 								clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
-									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified);
+									item2->type, item2->status, item2->beatitude, item2->count, item2->appearance, item2->identified,
+									item2->runeGetStoredPWRRaw(), static_cast<Sint8>(item2->runeGetCreatorPlayer()), item2->runeGetInstanceId(), item2->runeGetCreatorIdentity(), item2->appliedOil);
 							}
 						}
 					}
@@ -4055,14 +7547,27 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 				}
 			}
 		}
-		if ( !appearancesOfSimilarItems.empty() && item && item->type >= 0 && item->type < NUMITEMS )
+		if ( !appearancesOfSimilarItems.empty() && item && !item->isMagicRune()
+			&& item->type >= 0 && item->type < NUMITEMS )
 		{
 			Item::itemFindUniqueAppearance(item, appearancesOfSimilarItems);
 		}
 
 		item2 = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &stats[player]->inventory);
+		copyItemPersistentCustomState(*item2, *item);
 		item2->ownerUid = item->ownerUid;
 		item2->notifyIcon = item->notifyIcon;
+		if ( wraithPickup )
+		{
+			if ( !setWraithHeldItem(player, item2) )
+			{
+				if ( item2->node )
+				{
+					list_RemoveNode(item2->node);
+				}
+				return nullptr;
+			}
+		}
 
 		if ( item2->type == TOOL_DUCK && !stats[player]->shield )
 		{
@@ -4096,6 +7601,73 @@ Item* itemPickup(const int player, Item* const item, Item* addToSpecificInventor
 	}
 
 	return item;
+}
+
+Item* itemPickupCraftingResult(const int player, Item* const item)
+{
+	if ( !item || player < 0 || player >= MAXPLAYERS
+		|| !players[player] || !players[player]->entity || !stats[player] )
+	{
+		return nullptr;
+	}
+
+	if ( !playerIsInWraithForm(player) || !getWraithHeldItem(player) )
+	{
+		return itemPickup(player, item);
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		dropItemMonster(item, players[player]->entity, nullptr, item->count);
+		return nullptr;
+	}
+
+	// DROP has no drop-all field. Send only quantities that its server receiver
+	// consumes completely, so no temporary remote inventory remainder survives.
+	Sint16 remaining = item->count;
+	while ( remaining > 0 )
+	{
+		Sint16 dropCount = 1;
+		if ( itemTypeIsQuiver(item->type) )
+		{
+			dropCount = remaining;
+		}
+		else if ( (item->type == TOOL_METAL_SCRAP || item->type == TOOL_MAGIC_SCRAP)
+			&& remaining >= 10 )
+		{
+			dropCount = 10;
+		}
+
+		Item* temporary = newItem(item->type, item->status, item->beatitude,
+			dropCount, item->appearance, item->identified, nullptr);
+		if ( !temporary )
+		{
+			break;
+		}
+		copyItemPersistentCustomState(*temporary, *item);
+		temporary->ownerUid = item->ownerUid;
+		temporary->notifyIcon = item->notifyIcon;
+		temporary->node = list_AddNodeLast(&stats[player]->inventory);
+		temporary->node->element = temporary;
+		temporary->node->deconstructor = &defaultDeconstructor;
+		temporary->node->size = sizeof(Item);
+
+		if ( !dropItem(temporary, player, false, true) )
+		{
+			if ( temporary->node )
+			{
+				list_RemoveNode(temporary->node);
+			}
+			else
+			{
+				free(temporary);
+			}
+			break;
+		}
+		remaining -= dropCount;
+	}
+
+	return nullptr;
 }
 
 int Item::getMaxStackLimit(int player) const
@@ -4133,6 +7705,26 @@ ItemStackResult getItemStackingBehaviorIndividualItemCheck(const int player, Ite
 	if ( !itemToCheck || !itemDestinationStack )
 	{
 		itemStackResult.resultType = ITEM_STACKING_ERROR;
+		return itemStackResult;
+	}
+	if ( itemTypeIsIngredientBag(itemToCheck->type) || itemTypeIsIngredientBag(itemDestinationStack->type) )
+	{
+		newQtyForCheckedItem = itemToCheck->count;
+		newQtyForDestItem = itemDestinationStack->count;
+		if ( itemToCheck != itemDestinationStack
+			&& ingredientCategoryFromBag(itemToCheck->type) != INGREDIENT_CATEGORY_NONE
+			&& ingredientCategoryFromBag(itemToCheck->type)
+				== ingredientCategoryFromBag(itemDestinationStack->type) )
+		{
+			newQtyForCheckedItem = 0;
+			newQtyForDestItem = 1;
+			itemStackResult.resultType = ITEM_ADDED_ENTIRELY_TO_DESTINATION_STACK;
+			itemStackResult.itemToStackInto = itemDestinationStack;
+		}
+		else
+		{
+			itemStackResult.resultType = ITEM_DESTINATION_NOT_SAME_ITEM;
+		}
 		return itemStackResult;
 	}
 
@@ -4282,6 +7874,11 @@ ItemStackResult getItemStackingBehaviorIntoChest(const int player, Item* itemToC
 	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
 	newQtyForCheckedItem = itemToCheck->count;
 	newQtyForDestItem = 0;
+	if ( itemTypeIsIngredientBag(itemToCheck->type) && itemToCheck->node
+		&& itemToCheck->node->list == chest_inventory )
+	{
+		return itemStackResult;
+	}
 
 	for ( node_t* node = chest_inventory->first; node != nullptr; node = node->next )
 	{
@@ -4391,6 +7988,11 @@ ItemStackResult getItemStackingBehavior(const int player, Item* itemToCheck, Ite
 	itemStackResult.resultType = ITEM_ADDED_WITHOUT_NEEDING_STACK;
 	newQtyForCheckedItem = itemToCheck->count;
 	newQtyForDestItem = 0;
+	if ( itemTypeIsIngredientBag(itemToCheck->type) && itemToCheck->node
+		&& itemToCheck->node->list == &stats[player]->inventory )
+	{
+		return itemStackResult;
+	}
 
 	for ( node_t* node = stats[player]->inventory.first; node != nullptr; node = node->next )
 	{
@@ -4466,6 +8068,8 @@ Item* newItemFromEntity(const Entity* const entity, bool discardUid)
 		item->uid = 0;
 	}
 	item->ownerUid = static_cast<Uint32>(entity->itemOriginalOwner);
+	copyItemPersistentCustomStateFromEntity(*item, *entity);
+	if ( multiplayer != CLIENT ) { item->runeEnsureInstanceId(); }
 	item->interactNPCUid = static_cast<Uint32>(entity->interactedByMonster);
 	return item;
 }
@@ -4484,6 +8088,46 @@ Item** itemSlot(Stat* const myStats, Item* const item)
 	if ( !myStats || !item )
 	{
 		return nullptr;
+	}
+	if ( item == myStats->helmet )
+	{
+		return &myStats->helmet;
+	}
+	if ( item == myStats->breastplate )
+	{
+		return &myStats->breastplate;
+	}
+	if ( item == myStats->gloves )
+	{
+		return &myStats->gloves;
+	}
+	if ( item == myStats->shoes )
+	{
+		return &myStats->shoes;
+	}
+	if ( item == myStats->shield )
+	{
+		return &myStats->shield;
+	}
+	if ( item == myStats->weapon )
+	{
+		return &myStats->weapon;
+	}
+	if ( item == myStats->cloak )
+	{
+		return &myStats->cloak;
+	}
+	if ( item == myStats->amulet )
+	{
+		return &myStats->amulet;
+	}
+	if ( item == myStats->ring )
+	{
+		return &myStats->ring;
+	}
+	if ( item == myStats->mask )
+	{
+		return &myStats->mask;
 	}
 	if (!itemCompare(item, myStats->helmet, true))
 	{
@@ -4545,6 +8189,19 @@ bool itemIsEquipped(const Item* const item, const int player)
 	if ( !item->node || item->node->list != &stats[player]->inventory )
 	{
 		return false;
+	}
+	if ( item == stats[player]->helmet
+		|| item == stats[player]->breastplate
+		|| item == stats[player]->gloves
+		|| item == stats[player]->shoes
+		|| item == stats[player]->shield
+		|| item == stats[player]->weapon
+		|| item == stats[player]->cloak
+		|| item == stats[player]->amulet
+		|| item == stats[player]->ring
+		|| item == stats[player]->mask )
+	{
+		return true;
 	}
 	if ( !itemCompare(item, stats[player]->helmet, true) )
 	{
@@ -4638,6 +8295,11 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 4;
 	}
+	else if ( type == RUNE_HAMMER )
+	{
+		// Conservative first pass: +2 over Quarterstaff.
+		attack += 6;
+	}
 	else if ( type == ANELACE_SWORD )
 	{
 		attack += 1;
@@ -4678,6 +8340,10 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 5;
 	}
+	else if ( type == HARPOON ) //mod addon
+	{							//mod addon
+		attack += 5;			//mod addon
+	}							//mod addon
 	else if ( type == BONE_AXE )
 	{
 		attack += 5;
@@ -4814,6 +8480,16 @@ Sint32 Item::weaponGetAttack(const Stat* const wielder) const
 	{
 		attack += 14;
 	}
+	// mod add: firearm base attack
+	else if ( type == FLINTLOCK_PISTOL)
+	{
+		attack += 24;
+	}
+	else if ( type == MUSKET )
+	{
+		attack += 30;
+	}
+	// mod add end
 	else if ( type == COMPOUND_BOW )
 	{
 		attack += 9;
@@ -5431,6 +9107,21 @@ Sint32 Item::getWeight() const
 {
 	if ( type >= 0 && type < NUMITEMS )
 	{
+		if ( itemTypeIsIngredientBag(type) )
+		{
+			Uint64 total = 0;
+			const WitchIngredientCategory category = ingredientCategoryFromBag(type);
+			for ( int i = 0; i < 4; ++i )
+			{
+				const ItemType ingredient = ingredientForCategorySlot(category, i);
+				if ( ingredient >= 0 && ingredient < NUMITEMS )
+				{
+					total += static_cast<Uint64>(ingredientCounts[i])
+						* static_cast<Uint64>(std::max(0, items[ingredient].weight));
+				}
+			}
+			return static_cast<Sint32>(std::min<Uint64>(total, std::numeric_limits<Sint32>::max()));
+		}
 		if ( itemTypeIsQuiver(type) )
 		{
 			return std::max(1, items[type].weight * count / 5);
@@ -6556,6 +10247,10 @@ bool isRangedWeapon(const ItemType type)
 	case BRANCH_BOW_INFECTED:
 	case BLACKIRON_CROSSBOW:
 	case BONE_SHORTBOW:
+	// mod add: firearms use normal ranged proficiency/attack paths.
+	case FLINTLOCK_PISTOL:
+	case MUSKET:
+	// mod add end
 		return true;
 	default:
 		return false;
@@ -6599,6 +10294,12 @@ bool swapMonsterWeaponWithInventoryItem(Entity* const my, Stat* const myStats, n
 	}
 
 	item = static_cast<Item*>(inventoryNode->element);
+	// mod add: Non-player holders may carry a Musket but can never move one
+	// into the firing slot through native AI weapon-selection helpers.
+	if ( my && my->behavior != &actPlayer && item && item->type == MUSKET )
+	{
+		return false;
+	}
 	
 	if ( item->count == 1 || moveStack )
 	{
@@ -6735,6 +10436,7 @@ void copyItem(Item* const itemToSet, const Item* const itemToCopy) //This should
 	itemToSet->beatitude = itemToCopy->beatitude;
 	itemToSet->count = itemToCopy->count;
 	itemToSet->appearance = itemToCopy->appearance;
+	copyItemPersistentCustomState(*itemToSet, *itemToCopy);
 	itemToSet->identified = itemToCopy->identified;
 	itemToSet->uid = itemToCopy->uid;
 	itemToSet->ownerUid = itemToCopy->ownerUid;
@@ -6857,6 +10559,24 @@ bool Item::isThisABetterArmor(const Item& newArmor, const Item* const armorAlrea
 
 bool Item::shouldItemStack(const int player, bool ignoreStackLimit) const
 {
+	if ( (type == READABLE_BOOK || type == SCROLL_MAIL)
+		&& player >= 0 && player < MAXPLAYERS && stats[player]
+		&& stats[player]->playerRace == RACE_WRAITH )
+	{
+		return false;
+	}
+	if ( type == AMULET_FAMILIAR )
+	{
+		return false;
+	}
+	if ( itemTypeIsIngredientBag(type) )
+	{
+		return false;
+	}
+	if ( isMagicRune() )
+	{
+		return false;
+	}
 	if ( player >= 0 )
 	{
 		if ( (!itemIsEquipped(this, player)
@@ -6957,6 +10677,14 @@ bool shouldInvertEquipmentBeatitude(const Stat* const wielder)
 	if ( wielder->type == SUCCUBUS || wielder->type == INCUBUS )
 	{
 		return true;
+	}
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( stats[player] == wielder && players[player] && players[player]->entity
+			&& players[player]->entity->isCursedGolemPlayer() )
+		{
+			return true;
+		}
 	}
 	return false;
 }
@@ -7294,6 +11022,12 @@ bool rangedWeaponUseQuiverOnAttack(const Stat* const myStats)
 	{
 		return false;
 	}
+	// mod add: Firearms reload from scrap and never use quivers.
+	if ( myStats->weapon->isFirearm() )
+	{
+		return false;
+	}
+	// mod add end
 
 	if ( myStats->shield && itemTypeIsQuiver(myStats->shield->type) && !(myStats->weapon && myStats->weapon->type == SLING) )
 	{
@@ -7301,6 +11035,1111 @@ bool rangedWeaponUseQuiverOnAttack(const Stat* const myStats)
 	}
 	return false;
 }
+
+// mod add: firearm state and reload behavior.
+static const Uint32 FIREARM_LOADED_APPEARANCE_BIT = 0x80000000u;
+static const Uint32 MUSKET_QUEST_JAMMED_APPEARANCE_BIT = 0x40000000u;
+
+bool Item::isFirearm() const
+{
+	return type == FLINTLOCK_PISTOL || type == MUSKET;
+}
+
+bool Item::isUnbreakableFromUse() const
+{
+	//mod add: Firearms protected from use wear may still be dropped, traded, or deliberately
+	// salvaged, and repaired when acquired damaged; only ordinary use/combat
+	// durability loss is suppressed.
+	return type == FLINTLOCK_PISTOL || type == MUSKET || type == RUNE_HAMMER;
+}
+
+bool Item::firearmAppearanceIsLoaded(ItemType type, Uint32 appearance)
+{
+	return (type == FLINTLOCK_PISTOL || type == MUSKET)
+		&& (appearance & FIREARM_LOADED_APPEARANCE_BIT) != 0;
+}
+
+Uint32 Item::setFirearmAppearanceLoaded(ItemType type, Uint32 appearance, bool loaded)
+{
+	if ( type != FLINTLOCK_PISTOL && type != MUSKET )
+	{
+		return appearance;
+	}
+	if ( loaded )
+	{
+		return appearance | FIREARM_LOADED_APPEARANCE_BIT;
+	}
+	return appearance & ~FIREARM_LOADED_APPEARANCE_BIT;
+}
+
+bool Item::firearmIsLoaded() const
+{
+	return firearmAppearanceIsLoaded(type, appearance);
+}
+
+void Item::setFirearmLoaded(bool loaded)
+{
+	appearance = setFirearmAppearanceLoaded(type, appearance, loaded);
+}
+
+bool Item::musketAppearanceIsQuestJammed(ItemType type, Uint32 appearance)
+{
+	return type == MUSKET
+		&& (appearance & MUSKET_QUEST_JAMMED_APPEARANCE_BIT) != 0;
+}
+
+Uint32 Item::setMusketAppearanceQuestJammed(ItemType type, Uint32 appearance, bool jammed)
+{
+	if ( type != MUSKET )
+	{
+		return appearance;
+	}
+	if ( jammed )
+	{
+		return appearance | MUSKET_QUEST_JAMMED_APPEARANCE_BIT;
+	}
+	return appearance & ~MUSKET_QUEST_JAMMED_APPEARANCE_BIT;
+}
+
+bool Item::musketQuestJammed() const
+{
+	return musketAppearanceIsQuestJammed(type, appearance);
+}
+
+void Item::setMusketQuestJammed(bool jammed)
+{
+	appearance = setMusketAppearanceQuestJammed(type, appearance, jammed);
+}
+
+static bool clearQuestJamFromItem(Item* item)
+{
+	if ( !item || !item->musketQuestJammed() )
+	{
+		return false;
+	}
+	item->setMusketQuestJammed(false);
+	return true;
+}
+
+static bool clearQuestJamFromInventory(Stat* carrierStats)
+{
+	if ( !carrierStats )
+	{
+		return false;
+	}
+
+	bool found = false;
+	for ( node_t* node = carrierStats->inventory.first; node; node = node->next )
+	{
+		found |= clearQuestJamFromItem(static_cast<Item*>(node->element));
+	}
+
+	// Equipment normally points into inventory, but checking the slots explicitly
+	// also covers inventory-owning entities whose equipped item is stored separately.
+	Item* equipment[] = {
+		carrierStats->helmet, carrierStats->breastplate, carrierStats->gloves,
+		carrierStats->shoes, carrierStats->shield, carrierStats->weapon,
+		carrierStats->cloak, carrierStats->amulet, carrierStats->ring,
+		carrierStats->mask
+	};
+	for ( Item* item : equipment )
+	{
+		found |= clearQuestJamFromItem(item);
+	}
+	return found;
+}
+
+void receiveLibraryMusketUnlock()
+{
+	// mod add: Only the local inventory needs mirroring. Remote inventories are
+	// authoritative on the server and their equipment presentation has no jam state.
+	gameStatistics[STATISTICS_MUSKET_QUEST_UNLOCKED] = 1;
+	if ( clientnum >= 0 && clientnum < MAXPLAYERS )
+	{
+		clearQuestJamFromInventory(stats[clientnum]);
+	}
+}
+
+bool unlockLibraryMusketFromGnomeDeath()
+{
+	if ( multiplayer == CLIENT
+		|| gameStatistics[STATISTICS_MUSKET_QUEST_UNLOCKED] != 0 )
+	{
+		return false;
+	}
+
+	bool found = false;
+	real_t originX = 0.0;
+	real_t originY = 0.0;
+	real_t originZ = 0.0;
+	auto rememberOrigin = [&](Entity* carrier)
+	{
+		if ( !found && carrier )
+		{
+			originX = carrier->x;
+			originY = carrier->y;
+			originZ = carrier->z - 1.0;
+		}
+		found = true;
+	};
+
+	// Prefer player ownership when resolving the audiovisual origin.
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		if ( !players[c] || !players[c]->entity || !stats[c] )
+		{
+			continue;
+		}
+		if ( clearQuestJamFromInventory(stats[c]) )
+		{
+			rememberOrigin(players[c]->entity);
+		}
+	}
+
+	// Then inspect every creature inventory, including equipped-only items.
+	if ( map.creatures )
+	{
+		for ( node_t* node = map.creatures->first; node; node = node->next )
+		{
+			Entity* carrier = static_cast<Entity*>(node->element);
+			if ( carrier && clearQuestJamFromInventory(carrier->getStats()) )
+			{
+				rememberOrigin(carrier);
+			}
+		}
+	}
+
+	// Finally find the ordinary dropped/map Item entity at its exact world position.
+	if ( map.entities )
+	{
+		for ( node_t* node = map.entities->first; node; node = node->next )
+		{
+			Entity* entity = static_cast<Entity*>(node->element);
+			if ( !entity || entity->behavior != &actItem
+				|| entity->skill[10] != MUSKET
+				|| !Item::musketAppearanceIsQuestJammed(MUSKET,
+					static_cast<Uint32>(entity->skill[14])) )
+			{
+				continue;
+			}
+			entity->skill[14] = static_cast<Sint32>(Item::setMusketAppearanceQuestJammed(
+				MUSKET, static_cast<Uint32>(entity->skill[14]), false));
+			serverUpdateEntitySkill(entity, 14);
+			if ( !found )
+			{
+				originX = entity->x;
+				originY = entity->y;
+				originZ = entity->z;
+			}
+			found = true;
+		}
+	}
+
+	// A valid quest placement always supplies the marked Musket. Do not fabricate
+	// an awakening at the Gnome if a malformed map omitted it.
+	if ( !found )
+	{
+		return false;
+	}
+
+	gameStatistics[STATISTICS_MUSKET_QUEST_UNLOCKED] = 1;
+	if ( multiplayer == SERVER )
+	{
+		for ( int c = 1; c < MAXPLAYERS; ++c )
+		{
+			if ( client_disconnected[c] || !players[c] || players[c]->isLocalPlayer() )
+			{
+				continue;
+			}
+			strcpy((char*)net_packet->data, "MUQU");
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 4;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+
+	playSoundPos(originX, originY, 863, 128);
+	spawnFirearmMuzzleFlash(static_cast<Sint16>(originX),
+		static_cast<Sint16>(originY), static_cast<Sint16>(originZ), 0.0, true);
+	for ( int c = 0; c < MAXPLAYERS; ++c )
+	{
+		if ( players[c] && (c == 0 || !client_disconnected[c]) )
+		{
+			messagePlayer(c, MESSAGE_WORLD, "Ak-kelte finally speaks again");
+		}
+	}
+	return true;
+}
+
+Sint32 spoilLoadedFirearmsInInventory(int player, bool giveFeedback)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return 0;
+	}
+
+	Sint32 spoiled = 0;
+	Item* singleFirearm = nullptr;
+	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->firearmIsLoaded() )
+		{
+			item->setFirearmLoaded(false);
+			singleFirearm = item;
+			++spoiled;
+		}
+	}
+
+	if ( giveFeedback && spoiled > 0 && players[player] && players[player]->isLocalPlayer() )
+	{
+		if ( spoiled == 1 )
+		{
+			messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(6999), singleFirearm->getName());
+		}
+		else
+		{
+			messagePlayer(player, MESSAGE_EQUIPMENT, Language::get(7000), spoiled);
+		}
+	}
+	return spoiled;
+}
+
+ItemType Item::firearmReloadMaterialType() const
+{
+	// mod add: centralized weapon-specific scrap material mapping.
+	switch ( type )
+	{
+		case FLINTLOCK_PISTOL:
+			return TOOL_METAL_SCRAP;
+		case MUSKET:
+			return TOOL_MAGIC_SCRAP;
+		default:
+			return WOODEN_SHIELD;
+	}
+}
+
+Sint32 Item::firearmReloadMaterialCost(Sint32 rawTinkering) const
+{
+	// Reload efficiency uses raw Tinkering only, with no further discount at 100.
+	const Sint32 discount = rawTinkering < 50 ? 0
+		: std::min<Sint32>(5, 1 + (rawTinkering - 50) / 10);
+	switch ( type )
+	{
+		case FLINTLOCK_PISTOL:
+			return std::max<Sint32>(1, 10 - discount);
+		case MUSKET:
+			return std::max<Sint32>(1, 15 - discount);
+		default:
+			return 0;
+	}
+}
+
+Sint32 Item::firearmReloadDuration(Sint32 rawTinkering) const
+{
+	const bool legendary = rawTinkering >= SKILL_LEVEL_LEGENDARY;
+	switch ( type )
+	{
+		case FLINTLOCK_PISTOL:
+			return legendary ? 3 * TICKS_PER_SECOND / 2 : 2 * TICKS_PER_SECOND;
+		case MUSKET:
+			return legendary ? 2 * TICKS_PER_SECOND : 3 * TICKS_PER_SECOND;
+		default:
+			return 0;
+	}
+}
+
+Sint32 Item::firearmJamChancePercent(Sint32 rawTinkering) const
+{
+	// mod add: Jams deliberately use raw Tinkering (PRO_LOCKPICKING), without
+	// equipment, race, or other modified-proficiency bonuses.
+	switch ( type )
+	{
+		case FLINTLOCK_PISTOL:
+			return std::max<Sint32>(0, 25 - rawTinkering / 4);
+		case MUSKET:
+			return std::max<Sint32>(0, 50 - rawTinkering / 2);
+		default:
+			return 0;
+	}
+}
+
+Sint32 Item::firearmJamRecoveryScrapCost(Sint32 rawTinkering) const
+{
+	// mod add: Only Musket jams have a recovery cost. Clamp the lower end so
+	// raw proficiency 0-5 is the first five-point band and 51+ is always free.
+	if ( type != MUSKET || rawTinkering >= 51 )
+	{
+		return 0;
+	}
+	return 10 - ((std::max<Sint32>(rawTinkering, 1) - 1) / 5);
+}
+
+Sint32 Item::firearmReloadTrainingCap() const
+{
+	switch ( type )
+	{
+		case FLINTLOCK_PISTOL:
+			return 60;
+		case MUSKET:
+			return 100;
+		default:
+			return 0;
+	}
+}
+
+static Sint32 playerCountInventoryItemType(int player, ItemType type)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return 0;
+	}
+	Sint32 total = 0;
+	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->type == type )
+		{
+			total += item->count;
+		}
+	}
+	return total;
+}
+
+static bool playerConsumeInventoryItemType(int player, ItemType type, Sint32 amount)
+{
+	if ( amount <= 0 )
+	{
+		return true;
+	}
+	// Preflight the complete cost. Never partially consume a recovery/reload fee.
+	if ( playerCountInventoryItemType(player, type) < amount )
+	{
+		return false;
+	}
+
+	Sint32 remaining = amount;
+	for ( node_t* node = stats[player]->inventory.first; node && remaining > 0; )
+	{
+		node_t* next = node->next;
+		Item* item = static_cast<Item*>(node->element);
+		if ( item && item->type == type )
+		{
+			while ( item && remaining > 0 )
+			{
+				consumeItem(item, player);
+				--remaining;
+			}
+		}
+		node = next;
+	}
+	return remaining == 0;
+}
+
+bool firearmUnjamIsActive(int player)
+{
+	return player >= 0 && player < MAXPLAYERS && players[player]
+		&& (players[player]->mechanics.firearmUnjamTicks > 0
+			|| players[player]->mechanics.firearmJamAwaitingPayment);
+}
+
+void playFirearmJamSound(Entity* wielder)
+{
+	if ( !wielder )
+	{
+		return;
+	}
+	// mod add: Native common Tinkering salvage/disassembly sounds.
+	playSoundEntity(wielder, 462 + local_rng.rand() % 2, 64);
+}
+
+static void beginFirearmUnjam(Item& firearm, int player, Sint32 duration,
+	bool retainsLoadedShot, bool questJammed = false)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player]
+		|| !firearm.isFirearm() || duration <= 0 )
+	{
+		return;
+	}
+
+	Player::PlayerMechanics_t& mechanics = players[player]->mechanics;
+	if ( mechanics.firearmUnjamTicks > 0 )
+	{
+		return;
+	}
+	mechanics.firearmUnjamTicks = duration;
+	mechanics.firearmUnjamItemUid = firearm.uid;
+	mechanics.firearmUnjamItemType = firearm.type;
+	mechanics.firearmUnjamRetainsLoadedShot = retainsLoadedShot;
+	mechanics.firearmUnjamWasQuestJammed = questJammed;
+	if ( multiplayer != CLIENT )
+	{
+		playFirearmJamSound(players[player]->entity);
+		// The authoritative message path also delivers this to remote owners.
+		messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT,
+			Language::get(7001), firearm.getName());
+		if ( !retainsLoadedShot && !questJammed )
+		{
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT,
+				Language::get(7017));
+		}
+	}
+}
+
+// Paid jam recovery is independent of reload: payment is immediate and never refunded.
+static Uint32 firearmJamSequence = 0;
+
+static void sendFirearmJamResult(int player, ItemType type, Sint32 duration,
+	bool retained, Uint32 token)
+{
+	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS
+		|| !players[player] || players[player]->isLocalPlayer() || client_disconnected[player]
+		|| !net_packet || !net_clients ) { return; }
+	strcpy((char*)net_packet->data, "FJAM");
+	SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
+	SDLNet_Write16(static_cast<Uint16>(duration), &net_packet->data[8]);
+	net_packet->data[10] = retained ? 1 : 0;
+	SDLNet_Write32(token, &net_packet->data[11]);
+	net_packet->address = net_clients[player - 1];
+	net_packet->len = 15;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
+static void clearFirearmJamPayment(int player)
+{
+	auto& m = players[player]->mechanics;
+	m.firearmJamToken = 0;
+	m.firearmJamAwaitingPayment = false;
+	m.firearmJamPaymentCommitted = false;
+	m.firearmJamRecoveryCost = 0;
+}
+
+void cancelFirearmJamPayment(int player, bool endSession)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] ) { return; }
+	auto& m = players[player]->mechanics;
+	if ( m.firearmJamAwaitingPayment )
+	{
+		// Duration zero closes the transaction without touching a replacement gun.
+		sendFirearmJamResult(player, m.firearmUnjamItemType, 0, false, m.firearmJamToken);
+		m.firearmUnjamTicks = 0;
+		m.firearmUnjamItemUid = 0;
+		m.firearmUnjamItemType = WOODEN_SHIELD;
+	}
+	clearFirearmJamPayment(player);
+	m.firearmJamAttackItemUid = 0;
+	if ( endSession ) { m.firearmJamLastToken = 0; }
+}
+
+static void sendFirearmJamPayment(int player, ItemType type, Uint32 token, bool paid)
+{
+	strcpy((char*)net_packet->data, "FJCP");
+	net_packet->data[4] = player;
+	SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[5]);
+	SDLNet_Write32(token, &net_packet->data[9]);
+	net_packet->data[13] = paid ? 1 : 0;
+	net_packet->address = net_server;
+	net_packet->len = 14;
+	sendPacketSafe(net_sock, -1, net_packet, 0);
+}
+
+void receiveFirearmJamReady(int player, ItemType type, Sint32 duration,
+	Sint32 cost, Uint32 token)
+{
+	if ( multiplayer != CLIENT || player != clientnum || player < 0 || player >= MAXPLAYERS
+		|| !players[player] || !stats[player] || !token || type != MUSKET
+		|| duration != TICKS_PER_SECOND / 2 || cost <= 0 ) { return; }
+	auto& m = players[player]->mechanics;
+	if ( token == m.firearmJamToken && m.firearmJamAwaitingPayment )
+	{
+		// Cache failures too: newly acquired Scrap cannot change this jam's decision.
+		sendFirearmJamPayment(player, m.firearmUnjamItemType, token, m.firearmJamPaymentCommitted);
+		return;
+	}
+	if ( token <= m.firearmJamLastToken ) { return; }
+	if ( m.firearmJamAwaitingPayment )
+	{
+		sendFirearmJamPayment(player, type, token, false);
+		return;
+	}
+	Item* firearm = stats[player]->weapon;
+	// Use the maximum from the unchanged cost helper, not a second cost formula.
+	Item costProbe = {};
+	costProbe.type = MUSKET;
+	if ( cost > costProbe.firearmJamRecoveryScrapCost(0) ) { return; }
+	const bool valid = players[player]->entity && stats[player]->HP > 0
+		&& !client_disconnected[player] && firearm && firearm->type == type
+		&& firearm->uid == m.firearmJamAttackItemUid && !firearm->musketQuestJammed()
+		&& !firearm->firearmIsLoaded() && m.firearmUnjamTicks == 0;
+	m.firearmJamLastToken = token;
+	m.firearmJamToken = token;
+	m.firearmJamAwaitingPayment = true;
+	m.firearmJamRecoveryCost = cost;
+	m.firearmUnjamItemUid = valid ? firearm->uid : 0;
+	m.firearmUnjamItemType = type;
+	m.firearmUnjamTicks = duration; // held until final FJAM, never advanced while pending
+	m.firearmJamAttackItemUid = 0;
+	m.firearmJamPaymentCommitted = valid
+		&& playerConsumeInventoryItemType(player, TOOL_MAGIC_SCRAP, cost);
+	sendFirearmJamPayment(player, type, token, m.firearmJamPaymentCommitted);
+}
+
+void receiveFirearmJamPayment(int player, ItemType type, Uint32 token, bool paid)
+{
+	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS
+		|| !players[player] || players[player]->isLocalPlayer() || client_disconnected[player] ) { return; }
+	auto& m = players[player]->mechanics;
+	if ( !token || token != m.firearmJamToken || !m.firearmJamAwaitingPayment
+		|| type != m.firearmUnjamItemType ) { return; }
+	Item* firearm = stats[player] ? stats[player]->weapon : nullptr;
+	const bool valid = players[player]->entity && stats[player] && stats[player]->HP > 0
+		&& firearm && firearm->uid == m.firearmUnjamItemUid && firearm->type == type
+		&& firearm->firearmIsLoaded() && !firearm->musketQuestJammed();
+	const Sint32 duration = valid ? m.firearmUnjamTicks : 0;
+	// Disarm before callbacks; a duplicate FJCP cannot start a second clearing action.
+	m.firearmUnjamTicks = 0;
+	m.firearmUnjamItemUid = 0;
+	m.firearmUnjamItemType = WOODEN_SHIELD;
+	clearFirearmJamPayment(player);
+	if ( valid )
+	{
+		firearm->setFirearmLoaded(paid);
+		beginFirearmUnjam(*firearm, player, duration, paid);
+	}
+	sendFirearmJamResult(player, type, duration, paid, token);
+}
+
+bool tryQuestJamMusket(Item& firearm, int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS
+		|| !players[player] || !stats[player] || !players[player]->entity
+		|| playerIsPanicking(player)
+		|| !firearm.musketQuestJammed() )
+	{
+		return false;
+	}
+
+	Player::PlayerMechanics_t& mechanics = players[player]->mechanics;
+	if ( mechanics.firearmReloadTicks > 0 || firearmUnjamIsActive(player) )
+	{
+		return true;
+	}
+
+	const Sint32 duration = TICKS_PER_SECOND / 2;
+	const bool retainsLoadedShot = firearm.firearmIsLoaded();
+	beginFirearmUnjam(firearm, player, duration, retainsLoadedShot, true);
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+	{
+		sendFirearmJamResult(player, firearm.type, duration, retainsLoadedShot, 0);
+	}
+	return true;
+}
+
+bool tryJamFirearm(Item& firearm, int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS
+		|| !players[player] || !stats[player] || !players[player]->entity
+		|| playerIsPanicking(player)
+		|| !firearm.isFirearm() || firearm.musketQuestJammed()
+		|| !firearm.firearmIsLoaded() )
+	{
+		return false;
+	}
+
+	Player::PlayerMechanics_t& mechanics = players[player]->mechanics;
+	if ( mechanics.firearmReloadTicks > 0 || firearmUnjamIsActive(player) )
+	{
+		return false;
+	}
+
+	const Sint32 rawTinkering = stats[player]->getProficiency(PRO_LOCKPICKING);
+	const Sint32 jamChance = firearm.firearmJamChancePercent(rawTinkering);
+	if ( jamChance <= 0 || local_rng.rand() % 100 >= jamChance )
+	{
+		return false;
+	}
+
+	bool retainsLoadedShot = true;
+	const Sint32 recoveryCost = firearm.firearmJamRecoveryScrapCost(rawTinkering);
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer()
+		&& firearm.type == MUSKET && recoveryCost > 0 )
+	{
+		if ( ++firearmJamSequence == 0 ) { ++firearmJamSequence; }
+		mechanics.firearmJamToken = firearmJamSequence;
+		mechanics.firearmJamAwaitingPayment = true;
+		mechanics.firearmJamRecoveryCost = recoveryCost;
+		mechanics.firearmUnjamItemUid = firearm.uid;
+		mechanics.firearmUnjamItemType = firearm.type;
+		mechanics.firearmUnjamTicks = TICKS_PER_SECOND / 2;
+		mechanics.firearmUnjamRetainsLoadedShot = true;
+		mechanics.firearmUnjamWasQuestJammed = false;
+		strcpy((char*)net_packet->data, "FJRD");
+		SDLNet_Write32(static_cast<Uint32>(firearm.type), &net_packet->data[4]);
+		SDLNet_Write16(static_cast<Uint16>(mechanics.firearmUnjamTicks), &net_packet->data[8]);
+		net_packet->data[10] = static_cast<Uint8>(recoveryCost);
+		SDLNet_Write32(mechanics.firearmJamToken, &net_packet->data[11]);
+		net_packet->address = net_clients[player - 1];
+		net_packet->len = 15;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		return true; // this trigger pull jammed; never resume it as a shot
+	}
+	if ( recoveryCost > 0 )
+	{
+		if ( !playerConsumeInventoryItemType(player, TOOL_MAGIC_SCRAP, recoveryCost) )
+		{
+			// The full recovery price cannot be paid: consume nothing and spoil
+			// the chambered shot while retaining the short jam-clear action.
+			retainsLoadedShot = false;
+			firearm.setFirearmLoaded(false);
+		}
+	}
+
+	const Sint32 duration = TICKS_PER_SECOND / 2;
+	beginFirearmUnjam(firearm, player, duration, retainsLoadedShot);
+	if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() )
+	{
+		sendFirearmJamResult(player, firearm.type, duration, retainsLoadedShot, 0);
+	}
+	return true;
+}
+
+void receiveFirearmJam(int player, ItemType type, Sint32 duration,
+	bool retainsLoadedShot, Uint32 token)
+{
+	if ( multiplayer != CLIENT || player != clientnum || player < 0 || player >= MAXPLAYERS
+		|| !stats[player] || !players[player] ) { return; }
+	auto& m = players[player]->mechanics;
+	Item* firearm = stats[player]->weapon;
+	bool matches = firearm && firearm->isFirearm() && firearm->type == type;
+	if ( token )
+	{
+		if ( token != m.firearmJamToken || !m.firearmJamAwaitingPayment
+			|| type != m.firearmUnjamItemType )
+		{
+			// SAFE is reliable but not ordered. A cancellation can precede FJRD;
+			// remember it so the delayed request cannot charge a later interaction.
+			if ( duration == 0 && token > m.firearmJamLastToken )
+			{
+				m.firearmJamLastToken = token;
+			}
+			return;
+		}
+		matches = matches && firearm->uid == m.firearmUnjamItemUid;
+		m.firearmUnjamTicks = 0;
+		m.firearmUnjamItemUid = 0;
+		m.firearmUnjamItemType = WOODEN_SHIELD;
+		clearFirearmJamPayment(player);
+	}
+	else if ( m.firearmJamAwaitingPayment ) { return; }
+	m.firearmJamAttackItemUid = 0;
+	// Payment was already committed at FJRD. A zero-duration result only closes
+	// an invalidated transaction and must not alter a replacement firearm.
+	if ( !matches || duration <= 0 ) { return; }
+	firearm->setFirearmLoaded(retainsLoadedShot);
+	beginFirearmUnjam(*firearm, player, duration, retainsLoadedShot,
+		firearm->musketQuestJammed());
+}
+
+void updateFirearmUnjam(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] )
+	{
+		return;
+	}
+
+	Player::PlayerMechanics_t& mechanics = players[player]->mechanics;
+	if ( mechanics.firearmJamAwaitingPayment )
+	{
+		if ( !players[player]->entity || !stats[player] || stats[player]->HP <= 0
+			|| client_disconnected[player] ) { cancelFirearmJamPayment(player); }
+		return; // the normal half-second clear starts only after the payment decision
+	}
+	if ( mechanics.firearmUnjamTicks <= 0 )
+	{
+		return;
+	}
+	// mod add: A jam-clear cannot finish while Panicking. Pause the existing
+	// action instead of restarting it or charging its already-decided recovery
+	// cost again; it resumes normally when the effect ends.
+	if ( playerIsPanicking(player) )
+	{
+		return;
+	}
+
+	Item* firearm = stats[player] ? stats[player]->weapon : nullptr;
+	const bool actionStillValid = players[player]->entity && stats[player] && stats[player]->HP > 0
+		&& firearm && firearm->uid == mechanics.firearmUnjamItemUid
+		&& firearm->type == mechanics.firearmUnjamItemType
+		&& firearm->isFirearm()
+		&& firearm->firearmIsLoaded() == mechanics.firearmUnjamRetainsLoadedShot;
+	if ( !actionStillValid )
+	{
+		mechanics.firearmUnjamTicks = 0;
+		mechanics.firearmUnjamItemUid = 0;
+		mechanics.firearmUnjamItemType = WOODEN_SHIELD;
+		mechanics.firearmUnjamRetainsLoadedShot = true;
+		mechanics.firearmUnjamWasQuestJammed = false;
+		return;
+	}
+
+	--mechanics.firearmUnjamTicks;
+	if ( mechanics.firearmUnjamTicks > 0 )
+	{
+		return;
+	}
+
+	// Clear first so completion cannot be observed twice, including during the
+	// callbacks and network updates performed by increaseSkill().
+	const ItemType completedFirearmType = mechanics.firearmUnjamItemType;
+	const bool completedQuestJam = mechanics.firearmUnjamWasQuestJammed;
+	mechanics.firearmUnjamItemUid = 0;
+	mechanics.firearmUnjamItemType = WOODEN_SHIELD;
+	mechanics.firearmUnjamRetainsLoadedShot = true;
+	mechanics.firearmUnjamWasQuestJammed = false;
+	if ( !completedQuestJam && players[player]->isLocalPlayer() )
+	{
+		messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT,
+			Language::get(7002), firearm->getName());
+	}
+	if ( multiplayer != CLIENT )
+	{
+		const Sint32 rawTinkering = stats[player]->getProficiency(PRO_LOCKPICKING);
+		// Flintlock retains its existing guaranteed call. Musket progression is
+		// reserved for established tinkerers and stops at raw proficiency 100.
+		if ( !completedQuestJam && (completedFirearmType == FLINTLOCK_PISTOL
+			|| (completedFirearmType == MUSKET
+				&& rawTinkering >= 60 && rawTinkering < 100)) )
+		{
+			players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+		}
+	}
+}
+
+static Sint32 playerCountFirearmReloadMaterials(const Item& firearm, int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] || !firearm.isFirearm() )
+	{
+		return 0;
+	}
+	return playerCountInventoryItemType(player, firearm.firearmReloadMaterialType());
+}
+
+static bool playerConsumeFirearmReloadMaterials(const Item& firearm, int player)
+{
+	// Match the preflight cost even if proficiency changes during this reload.
+	const Sint32 materialCost = players[player]->mechanics.firearmReloadMaterialCost;
+	return playerConsumeInventoryItemType(player,
+		firearm.firearmReloadMaterialType(), materialCost);
+}
+
+// Tokens are action identities, never Item UIDs. Keep the sequence across player init.
+static Uint32 firearmReloadSequence = 0;
+
+static bool remoteFirearmOwner(int player)
+{
+	return multiplayer == SERVER && player > 0 && players[player]
+		&& !players[player]->isLocalPlayer();
+}
+
+static void sendFirearmReloadResult(int player, ItemType type,
+	Uint32 appearance, bool success, Uint32 token)
+{
+	if ( !remoteFirearmOwner(player) || client_disconnected[player] || !net_packet || !net_clients ) { return; }
+	strcpy((char*)net_packet->data, "FRLD");
+	SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[4]);
+	SDLNet_Write32(appearance, &net_packet->data[8]);
+	net_packet->data[12] = success ? 1 : 0;
+	SDLNet_Write32(token, &net_packet->data[13]);
+	net_packet->address = net_clients[player - 1];
+	net_packet->len = 17;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
+static void clearFirearmReload(int player)
+{
+	auto& m = players[player]->mechanics;
+	m.firearmReloadTicks = 0;
+	m.firearmReloadTotalTicks = 0;
+	m.firearmReloadMaterialCost = 0;
+	m.firearmReloadItemUid = 0;
+	m.firearmReloadItemType = WOODEN_SHIELD;
+	m.firearmReloadToken = 0;
+	m.firearmReloadAwaitingPayment = false;
+	m.firearmReloadMaterialsCommitted = false;
+	m.firearmReloadCommittedMaterialType = WOODEN_SHIELD;
+	m.firearmReloadCommittedMaterialCost = 0;
+	m.firearmReloadRefundOnGround = false;
+	m.firearmReloadDeathX = 0;
+	m.firearmReloadDeathY = 0;
+}
+
+static bool firearmReloadValid(int player)
+{
+	auto& m = players[player]->mechanics;
+	Item* firearm = stats[player] ? stats[player]->weapon : nullptr;
+	return players[player]->entity && stats[player] && stats[player]->HP > 0
+		&& !client_disconnected[player] && !playerIsPanicking(player)
+		&& m.firearmReloadTicks > 0 && m.firearmUnjamTicks == 0
+		&& firearm && firearm->uid == m.firearmReloadItemUid
+		&& firearm->type == m.firearmReloadItemType && firearm->isFirearm()
+		&& !firearm->firearmIsLoaded() && !firearm->musketQuestJammed();
+}
+
+static void refundFirearmReload(int player)
+{
+	auto& m = players[player]->mechanics;
+	if ( !m.firearmReloadMaterialsCommitted || !stats[player] ) { return; }
+	// Clear before inventory callbacks: a repeated result must never refund twice.
+	m.firearmReloadMaterialsCommitted = false;
+	Item* material = newItem(m.firearmReloadCommittedMaterialType, DECREPIT,
+		0, m.firearmReloadCommittedMaterialCost, 0, true, nullptr);
+	if ( m.firearmReloadRefundOnGround && net_packet )
+	{
+		// Death already sent ordinary inventory through DIEI. Add the late refund
+		// to that same death drop, instead of an inventory that respawn will erase.
+		strcpy((char*)net_packet->data, "DIEI");
+		SDLNet_Write32(static_cast<Uint32>(material->type), &net_packet->data[4]);
+		SDLNet_Write32(static_cast<Uint32>(material->status), &net_packet->data[8]);
+		SDLNet_Write32(0, &net_packet->data[12]);
+		SDLNet_Write32(material->count, &net_packet->data[16]);
+		SDLNet_Write32(0, &net_packet->data[20]);
+		net_packet->data[24] = 1;
+		net_packet->data[25] = player;
+		net_packet->data[26] = m.firearmReloadDeathX;
+		net_packet->data[27] = m.firearmReloadDeathY;
+		net_packet->address = net_server;
+		net_packet->len = 28;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+	else { itemPickup(player, material); }
+	free(material);
+}
+
+void cancelFirearmReload(int player, bool endSession)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] ) { return; }
+	auto& m = players[player]->mechanics;
+	if ( m.firearmReloadToken )
+	{
+		sendFirearmReloadResult(player, m.firearmReloadItemType, 0, false, m.firearmReloadToken);
+	}
+	// A paid transaction survives entity removal until the server result arrives.
+	// Refunding speculatively could refund a reload the server already completed.
+	if ( multiplayer == CLIENT && m.firearmReloadMaterialsCommitted && !endSession )
+	{
+		m.firearmReloadTicks = 0;
+		return;
+	}
+	if ( multiplayer == CLIENT ) { refundFirearmReload(player); }
+	clearFirearmReload(player);
+}
+
+void receiveFirearmReloadResult(int player, ItemType type, Uint32 appearance,
+	bool success, Uint32 token)
+{
+	if ( multiplayer != CLIENT || player < 0 || player >= MAXPLAYERS
+		|| !players[player] || !stats[player] ) { return; }
+	auto& m = players[player]->mechanics;
+	if ( !token || token != m.firearmReloadToken || type != m.firearmReloadItemType ) { return; }
+	Item* firearm = stats[player]->weapon;
+	if ( success && m.firearmReloadMaterialsCommitted && firearm
+		&& firearm->uid == m.firearmReloadItemUid && firearm->type == type && firearm->isFirearm() )
+	{
+		firearm->appearance = appearance;
+		messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT,
+			Language::get(7005), firearm->getName());
+	}
+	if ( !success ) { refundFirearmReload(player); }
+	clearFirearmReload(player);
+}
+
+static void sendFirearmReloadPayment(int player, ItemType type, Uint32 token, bool success)
+{
+	strcpy((char*)net_packet->data, "FRCP");
+	net_packet->data[4] = player;
+	SDLNet_Write32(static_cast<Uint32>(type), &net_packet->data[5]);
+	SDLNet_Write32(token, &net_packet->data[9]);
+	net_packet->data[13] = success ? 1 : 0;
+	net_packet->address = net_server;
+	net_packet->len = 14;
+	sendPacketSafe(net_sock, -1, net_packet, 0);
+}
+
+void receiveFirearmReloadReady(int player, ItemType type, Uint32 token)
+{
+	if ( multiplayer != CLIENT || player < 0 || player >= MAXPLAYERS || !players[player] ) { return; }
+	auto& m = players[player]->mechanics;
+	if ( !token || m.firearmReloadToken != token || m.firearmReloadItemType != type )
+	{
+		sendFirearmReloadPayment(player, type, token, false);
+		return;
+	}
+	if ( m.firearmReloadMaterialsCommitted ) { return; } // reliable payment already queued
+	bool paid = false;
+	if ( firearmReloadValid(player) )
+	{
+		Item& firearm = *stats[player]->weapon;
+		// Reload materials are committed only at completion, from the owning inventory.
+		paid = playerConsumeFirearmReloadMaterials(firearm, player);
+		if ( paid )
+		{
+			m.firearmReloadMaterialsCommitted = true;
+			m.firearmReloadCommittedMaterialType = firearm.firearmReloadMaterialType();
+			m.firearmReloadCommittedMaterialCost = m.firearmReloadMaterialCost;
+		}
+		else
+		{
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(7006),
+				items[firearm.firearmReloadMaterialType()].getIdentifiedName(), firearm.getName());
+			playSoundPlayer(player, 90, 64);
+		}
+	}
+	sendFirearmReloadPayment(player, type, token, paid);
+	if ( !paid ) { clearFirearmReload(player); }
+}
+
+static void completeFirearmReload(int player)
+{
+	auto& mechanics = players[player]->mechanics;
+	Item* firearm = stats[player]->weapon;
+	firearm->setFirearmLoaded(true);
+	sendFirearmReloadResult(player, firearm->type, firearm->appearance, true, mechanics.firearmReloadToken);
+	clearFirearmReload(player); // disarm before sound/training callbacks
+	if ( multiplayer != CLIENT )
+	{
+		// mod add: Dedicated loaded/ready report at the successful transition.
+		playSoundEntity(players[player]->entity, 861, 255);
+	}
+	// mod add: Only a completed, paid reload may train raw Tinkering.
+	// The authoritative side owns both the 20% roll and skill award.
+	const Sint32 rawTinkering = stats[player]->getProficiency(PRO_LOCKPICKING);
+	if ( multiplayer != CLIENT && rawTinkering < firearm->firearmReloadTrainingCap()
+		&& local_rng.rand() % 100 < 20 && players[player]->entity )
+	{
+		players[player]->entity->increaseSkill(PRO_LOCKPICKING);
+	}
+	if ( players[player]->isLocalPlayer() )
+	{
+		messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT,
+			Language::get(7005), firearm->getName());
+	}
+}
+
+void receiveFirearmReloadPayment(int player, ItemType type, Uint32 token, bool success)
+{
+	if ( player <= 0 || player >= MAXPLAYERS || !remoteFirearmOwner(player) ) { return; }
+	auto& m = players[player]->mechanics;
+	if ( !token || token != m.firearmReloadToken || type != m.firearmReloadItemType
+		|| !m.firearmReloadAwaitingPayment ) { return; }
+	if ( success && firearmReloadValid(player) )
+	{
+		// Disarm before sound/training callbacks; payment cannot commit twice.
+		m.firearmReloadAwaitingPayment = false;
+		completeFirearmReload(player);
+	}
+	else { cancelFirearmReload(player); }
+}
+
+bool tryReloadFirearm(Item& firearm, int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| !players[player]->entity || stats[player]->HP <= 0 || stats[player]->weapon != &firearm
+		|| (playerIsUsingSpyglass(players[player]->entity) && firearm.type != MUSKET)
+		|| playerIsPanicking(player) || !firearm.isFirearm() || firearm.musketQuestJammed()
+		|| firearm.firearmIsLoaded() ) { return false; }
+	auto& m = players[player]->mechanics;
+	if ( m.firearmReloadTicks > 0 || m.firearmUnjamTicks > 0
+		|| m.firearmReloadMaterialsCommitted ) { return false; }
+	const ItemType materialType = firearm.firearmReloadMaterialType();
+	const Sint32 rawTinkering = stats[player]->getProficiency(PRO_LOCKPICKING);
+	const Sint32 materialCost = firearm.firearmReloadMaterialCost(rawTinkering);
+	if ( !remoteFirearmOwner(player) && playerCountFirearmReloadMaterials(firearm, player) < materialCost )
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(7003),
+				materialCost, items[materialType].getIdentifiedName(), firearm.getName());
+			playSoundPlayer(player, 90, 64);
+		}
+		return false;
+	}
+	// Sample cost and timing once; payment, refund and HUD use this transaction.
+	m.firearmReloadMaterialCost = materialCost;
+	m.firearmReloadTotalTicks = firearm.firearmReloadDuration(rawTinkering);
+	m.firearmReloadTicks = m.firearmReloadTotalTicks;
+	m.firearmReloadItemUid = firearm.uid;
+	m.firearmReloadItemType = firearm.type;
+	if ( multiplayer == CLIENT )
+	{
+		if ( ++firearmReloadSequence == 0 ) { ++firearmReloadSequence; }
+		m.firearmReloadToken = firearmReloadSequence;
+		strcpy((char*)net_packet->data, "FRST");
+		net_packet->data[4] = player;
+		SDLNet_Write32(static_cast<Uint32>(firearm.type), &net_packet->data[5]);
+		SDLNet_Write32(m.firearmReloadToken, &net_packet->data[9]);
+		net_packet->address = net_server;
+		net_packet->len = 13;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+	else { playFirearmJamSound(players[player]->entity); }
+	if ( players[player]->isLocalPlayer() )
+	{
+		messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(7004), firearm.getName());
+	}
+	return true;
+}
+
+void receiveFirearmReloadStart(int player, ItemType type, Uint32 token)
+{
+	if ( player <= 0 || player >= MAXPLAYERS || !remoteFirearmOwner(player)
+		|| client_disconnected[player] || !token ) { return; }
+	auto& m = players[player]->mechanics;
+	if ( token <= m.firearmReloadLastToken ) { return; }
+	m.firearmReloadLastToken = token;
+	Item* firearm = stats[player] ? stats[player]->weapon : nullptr;
+	if ( firearm && firearm->type == type && tryReloadFirearm(*firearm, player) )
+	{
+		m.firearmReloadToken = token;
+	}
+	else { sendFirearmReloadResult(player, type, 0, false, token); }
+}
+
+void updateFirearmReload(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] ) { return; }
+	auto& m = players[player]->mechanics;
+	if ( m.firearmReloadTicks <= 0 ) { return; }
+	if ( !firearmReloadValid(player) ) { cancelFirearmReload(player); return; }
+	if ( m.firearmReloadAwaitingPayment || (multiplayer == CLIENT && m.firearmReloadTicks == 1) ) { return; }
+	if ( --m.firearmReloadTicks > 0 ) { return; }
+	Item* firearm = stats[player]->weapon;
+	if ( remoteFirearmOwner(player) )
+	{
+		m.firearmReloadTicks = 1; // retain action/weapon lock until payment or cancellation
+		m.firearmReloadAwaitingPayment = true;
+		strcpy((char*)net_packet->data, "FRDY");
+		SDLNet_Write32(static_cast<Uint32>(firearm->type), &net_packet->data[4]);
+		SDLNet_Write32(m.firearmReloadToken, &net_packet->data[8]);
+		net_packet->address = net_clients[player - 1];
+		net_packet->len = 12;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		return;
+	}
+	// Host/singleplayer inventory is authoritative; preserve completion-time payment.
+	if ( playerConsumeFirearmReloadMaterials(*firearm, player) ) { completeFirearmReload(player); }
+	else
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_EQUIPMENT, Language::get(7006),
+				items[firearm->firearmReloadMaterialType()].getIdentifiedName(), firearm->getName());
+			playSoundPlayer(player, 90, 64);
+		}
+		clearFirearmReload(player);
+	}
+}
+// mod add end
 
 real_t getArtifactWeaponEffectChance(const ItemType type, Stat& wielder, real_t* const effectAmount)
 {
@@ -7506,6 +12345,11 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 		const int count = item->count;
 		const Uint32 appearance = item->appearance;
 		const bool identified = item->identified;
+		const Sint32 runeStoredPWR = item->runeGetStoredPWRRaw();
+		const Sint8 runeCreatorPlayer = static_cast<Sint8>(item->runeGetCreatorPlayer());
+		const Uint32 runeInstanceId = item->runeGetInstanceId();
+		const Uint32 runeCreatorIdentity = item->runeGetCreatorIdentity();
+		const AppliedOil appliedOil = item->appliedOil;
 
 		const Category cat = itemCategory(item);
 
@@ -7528,13 +12372,15 @@ void playerTryEquipItemAndUpdateServer(const int player, Item* const item, bool 
 				if ( !cast_animation[player].active_spellbook )
 				{
 					clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_SHIELD, equipResult, player,
-						type, status, beatitude, count, appearance, identified);
+						type, status, beatitude, count, appearance, identified, runeStoredPWR, runeCreatorPlayer,
+						runeInstanceId, runeCreatorIdentity, appliedOil);
 				}
 			}
 			else
 			{
 				clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, equipResult, player,
-					type, status, beatitude, count, appearance, identified);
+				type, status, beatitude, count, appearance, identified, runeStoredPWR, runeCreatorPlayer,
+				runeInstanceId, runeCreatorIdentity, appliedOil);
 			}
 		}
 	}
@@ -7603,8 +12449,22 @@ void clientSendItemTypeUpdateToServer(const int player, Item* item, ItemType pre
 }
 
 void clientSendEquipUpdateToServer(const EquipItemSendToServerSlot slot, const EquipItemResult equipType, const int player,
-	const ItemType type, const Status status, const Sint16 beatitude, const int count, const Uint32 appearance, const bool identified)
+	const ItemType type, const Status status, const Sint16 beatitude, const int count, const Uint32 appearance, const bool identified,
+	const Sint32 runeStoredPWR, const Sint8 runeCreatorPlayer, const Uint32 runeInstanceId,
+	const Uint32 runeCreatorIdentity, const AppliedOil appliedOil)
 {
+	AppliedOil oilToSend = appliedOil;
+	// Older quantity-only call sites do not have the item metadata at hand. Preserve
+	// the equipped instance's oil rather than silently clearing it on the server.
+	if ( oilToSend == APPLIED_OIL_NONE && player >= 0 && player < MAXPLAYERS && stats[player] )
+	{
+		Item* equipped = slot == EQUIP_ITEM_SLOT_WEAPON ? stats[player]->weapon
+			: (slot == EQUIP_ITEM_SLOT_SHIELD ? stats[player]->shield : nullptr);
+		if ( equipped && equipped->type == type && equipped->appearance == appearance )
+		{
+			oilToSend = equipped->appliedOil;
+		}
+	}
 	if ( slot == EQUIP_ITEM_SLOT_SHIELD )
 	{
 		strcpy((char*)net_packet->data, "EQUS");
@@ -7626,9 +12486,22 @@ void clientSendEquipUpdateToServer(const EquipItemSendToServerSlot slot, const E
 	net_packet->data[25] = player;
 	net_packet->data[26] = equipType;
 	net_packet->data[27] = slot;
+	SDLNet_Write32(static_cast<Uint32>(runeStoredPWR), &net_packet->data[28]);
+	net_packet->data[32] = static_cast<Uint8>(runeCreatorPlayer);
+	SDLNet_Write32(runeInstanceId, &net_packet->data[33]);
+	SDLNet_Write32(runeCreatorIdentity, &net_packet->data[37]);
+	net_packet->data[41] = static_cast<Uint8>(oilToSend);
+	Item* familiarItem = nullptr;
+	if ( type == AMULET_FAMILIAR && player >= 0 && player < MAXPLAYERS && stats[player] )
+	{
+		familiarItem = stats[player]->amulet;
+	}
+	Item emptyFamiliarState{};
+	writeFamiliarPersistentStateToPacket(familiarItem ? *familiarItem : emptyFamiliarState,
+		net_packet->data, 42);
 	net_packet->address.host = net_server.host;
 	net_packet->address.port = net_server.port;
-	net_packet->len = 28;
+	net_packet->len = 42 + FAMILIAR_PERSISTENT_PACKET_BYTES;
 	sendPacketSafe(net_sock, -1, net_packet, 0);
 }
 
@@ -7678,7 +12551,9 @@ void clientUnequipSlotAndUpdateServer(const int player, const EquipItemSendToSer
 	}
 
 	clientSendEquipUpdateToServer(slot, equipType, player,
-		item->type, item->status, item->beatitude, item->count, item->appearance, item->identified);
+		item->type, item->status, item->beatitude, item->count, item->appearance, item->identified,
+		item->runeGetStoredPWRRaw(), static_cast<Sint8>(item->runeGetCreatorPlayer()),
+		item->runeGetInstanceId(), item->runeGetCreatorIdentity(), item->appliedOil);
 }
 
 int Item::getDuckPlayer() const
@@ -7711,6 +12586,14 @@ int Item::getLootBagNumItems() const
 
 void Item::itemFindUniqueAppearance(Item* tempItem, std::unordered_set<Uint32>& appearancesOfSimilarItems)
 {
+	// MAGIC_RUNE appearance is structured persistent metadata, not disposable
+	// cosmetic uniqueness data. Separate Rune instances are distinguished by UID.
+	// TOOL_PLAYER_LOOT_BAG appearance is its persistent loot-bag key, so it must
+	// never be rerolled as cosmetic uniqueness data.
+	if ( !tempItem || tempItem->isMagicRune() || tempItem->type == TOOL_PLAYER_LOOT_BAG )
+	{
+		return;
+	}
 	if ( !appearancesOfSimilarItems.empty() && tempItem )
 	{
 		Uint32 originalAppearance = tempItem->appearance;

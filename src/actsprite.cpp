@@ -20,6 +20,8 @@
 #include "items.hpp"
 #include "player.hpp"
 #include "prng.hpp"
+#include "files.hpp"
+#include "monster.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -119,6 +121,128 @@ void actSprite(Entity* my)
 	}
 }
 
+// mod add: Resolve the smoke model from the currently mounted models.txt so the
+// source does not depend on a guessed mod-specific model index.
+static Sint32 getMusketBlackSmokeModelIndex()
+{
+	static Sint32 modelIndex = -2;
+	if ( modelIndex != -2 )
+	{
+		return modelIndex;
+	}
+
+	modelIndex = -1;
+	const char* realDir = PHYSFS_getRealDir("models/models.txt");
+	if ( realDir )
+	{
+		std::string modelsPath = realDir;
+		modelsPath.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+		if ( File* fp = openDataFile(modelsPath.c_str(), "rb") )
+		{
+			char modelName[PATH_MAX];
+			for ( Sint32 index = 0; !fp->eof(); ++index )
+			{
+				if ( !fp->gets2(modelName, PATH_MAX) )
+				{
+					break;
+				}
+				std::string normalizedPath = modelName;
+				std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+				if ( normalizedPath == "models/particles/black_smoke.vox" )
+				{
+					modelIndex = index;
+					break;
+				}
+			}
+			FileIO::close(fp);
+		}
+	}
+
+	if ( modelIndex < 0 || modelIndex >= static_cast<Sint32>(nummodels) )
+	{
+		modelIndex = -1;
+		printlog("[MODELS]: models/particles/black_smoke.vox is not registered in the mounted models.txt; Musket smoke is disabled.");
+	}
+	return modelIndex;
+}
+
+static void actMusketSmokeParticle(Entity* my)
+{
+	static constexpr Sint32 RAPID_RISE_TICKS = 8;
+	static constexpr Sint32 FADE_START_TICKS = 30;
+	static constexpr Sint32 LIFETIME_TICKS = 70;
+
+	my->x += my->vel_x;
+	my->y += my->vel_y;
+	my->z += my->vel_z;
+	my->vel_x *= 0.94;
+	my->vel_y *= 0.94;
+	if ( my->ticks < RAPID_RISE_TICKS )
+	{
+		my->vel_z *= 0.74;
+	}
+	else
+	{
+		my->vel_z *= 0.98;
+	}
+	my->yaw += my->fskill[0];
+	my->roll += my->fskill[1];
+
+	if ( my->ticks >= FADE_START_TICKS )
+	{
+		my->scalex *= 0.95;
+		my->scaley *= 0.95;
+		my->scalez *= 0.95;
+	}
+	if ( my->ticks >= LIFETIME_TICKS || my->scalex <= 0.05 )
+	{
+		list_RemoveNode(my->mynode);
+	}
+}
+
+static void spawnMusketBlackSmoke(Sint16 x, Sint16 y, Sint16 z)
+{
+	const Sint32 smokeModel = getMusketBlackSmokeModelIndex();
+	if ( smokeModel < 0 )
+	{
+		return;
+	}
+
+	for ( Sint32 i = 0; i < 4; ++i )
+	{
+		Entity* smoke = newEntity(smokeModel, 1, map.entities, nullptr);
+		smoke->x = x + (-8 + local_rng.rand() % 17) / 10.0;
+		smoke->y = y + (-8 + local_rng.rand() % 17) / 10.0;
+		smoke->z = z + (-3 + local_rng.rand() % 7) / 10.0;
+		smoke->vel_x = (-12 + local_rng.rand() % 25) / 100.0;
+		smoke->vel_y = (-12 + local_rng.rand() % 25) / 100.0;
+		smoke->vel_z = -(0.85 + (local_rng.rand() % 26) / 100.0);
+		const real_t scale = 0.55 + (local_rng.rand() % 16) / 100.0;
+		smoke->scalex = scale;
+		smoke->scaley = scale;
+		smoke->scalez = scale;
+		smoke->yaw = (local_rng.rand() % 360) * PI / 180.0;
+		smoke->roll = (local_rng.rand() % 360) * PI / 180.0;
+		smoke->fskill[0] = (-5 + local_rng.rand() % 11) / 500.0;
+		smoke->fskill[1] = (-5 + local_rng.rand() % 11) / 500.0;
+		smoke->sizex = 1;
+		smoke->sizey = 1;
+		smoke->ditheringDisabled = true;
+		smoke->flags[PASSABLE] = true;
+		smoke->flags[NOCLIP_CREATURES] = true;
+		smoke->flags[UNCLICKABLE] = true;
+		smoke->flags[NOUPDATE] = true;
+		smoke->flags[UPDATENEEDED] = false;
+		smoke->behavior = &actMusketSmokeParticle;
+		if ( multiplayer != CLIENT )
+		{
+			--entity_uids;
+		}
+		smoke->setUID(-3);
+	}
+}
+// mod add end
+
 void actSpriteNametag(Entity* my)
 {
 	Entity* parent = uidToEntity(my->parent);
@@ -198,7 +322,7 @@ void actSpriteWorldTooltip(Entity* my)
 			}
 		}
 
-		if ( parent->flags[INVISIBLE] )
+		if ( parent->flags[INVISIBLE] && !isAmuletFamiliarMimic(parent) )
 		{
 			skipUpdating = true;
 		}
@@ -407,6 +531,70 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	}
 	entity->setUID(-3);
 	return explosion;
+}
+
+Entity* spawnFirearmMuzzleFlash(Sint16 x, Sint16 y, Sint16 z, real_t scale,
+	bool spawnMusketSmoke)
+{
+	// mod add: Replicate only a short-lived sprite effect. Unlike spawnExplosion(),
+	// this creates no sound, flames, damage, collision, or gameplay light.
+	if ( multiplayer == SERVER )
+	{
+		for ( int c = 1; c < MAXPLAYERS; ++c )
+		{
+			if ( client_disconnected[c] || players[c]->isLocalPlayer() )
+			{
+				continue;
+			}
+			strcpy((char*)net_packet->data, "FMUZ");
+			SDLNet_Write16(x, &net_packet->data[4]);
+			SDLNet_Write16(y, &net_packet->data[6]);
+			SDLNet_Write16(z, &net_packet->data[8]);
+			SDLNet_Write16(static_cast<Uint16>(std::max<real_t>(0.0, scale) * 100.0), &net_packet->data[10]);
+			net_packet->data[12] = spawnMusketSmoke ? 1 : 0;
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 13;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+
+	Entity* entity = nullptr;
+	//mod add: A zero scale reuses the Musket smoke replication without
+	// manufacturing an invisible muzzle-flash entity for the quest awakening.
+	if ( scale > 0.0 )
+	{
+		entity = newEntity(49, 1, map.entities, nullptr);
+		entity->x = x;
+		entity->y = y;
+		entity->z = z;
+		entity->scalex = scale;
+		entity->scaley = scale;
+		entity->scalez = scale;
+		entity->ditheringDisabled = true;
+		entity->flags[SPRITE] = true;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		entity->flags[BRIGHT] = true;
+		entity->behavior = &actSprite;
+		entity->skill[0] = 1;
+		entity->skill[1] = 10;
+		entity->skill[2] = 1;
+	}
+	if ( spawnMusketSmoke )
+	{
+		spawnMusketBlackSmoke(x, y, z);
+	}
+	if ( entity && multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	if ( entity )
+	{
+		entity->setUID(-3);
+	}
+	return entity;
 }
 
 Entity* spawnExplosionFromSprite(Uint16 sprite, Sint16 x, Sint16 y, Sint16 z)

@@ -1129,7 +1129,14 @@ void glBeginCamera(view_t* camera, bool useHDR, map_t& map)
             if ( players[player]->entity )
             {
                 Sint32 PER = std::min(50, std::max(0, statGetPER(stats[player], players[player]->entity)));
-                if ( darkmap )
+				const bool darkvision = stats[player]->getEffectActive(EFF_DARKVISION)
+					&& !playerDarkvisionSuppressed(player);
+				if ( darkvision )
+				{
+					// mod add: local rendering floor only; never write back to player PER.
+					PER = std::max<Sint32>(20, PER);
+				}
+                else if ( darkmap )
                 {
                     PER = std::min(3, PER);
                 }
@@ -1459,6 +1466,15 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
             HSVtoRGB(&remap.z, &hsv); // blue
 #endif
         }
+		else if ( entity->flags[USERFLAG2]
+			&& (entity->behavior == &actPlayer
+				|| entity->behavior == &actPlayerLimb) )
+		{
+			remap = mat4x4_t(0.f);
+			remap.x.y = 1.f;
+			remap.y.z = 1.f;
+			remap.z.x = 1.f;
+		}
         GL_CHECK_ERR(glUniformMatrix4fv(shader.uniform("uColorRemap"), 1, false, (float*)&remap));
         const float b = std::max(0.5f, camera->luminance * 4.f);
         const GLfloat factor[4] = { 1.f, 1.f, 1.f, 1.f };

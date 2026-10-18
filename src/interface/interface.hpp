@@ -326,7 +326,8 @@ enum GUICurrentType
 	GUI_TYPE_SCRIBING,
 	GUI_TYPE_ITEMFX,
 	GUI_TYPE_ASSIST,
-	GUI_TYPE_MAILBOX
+	GUI_TYPE_MAILBOX,
+	GUI_TYPE_STEWING
 };
 
 // Generic GUI Stuff (repair/alchemy)
@@ -422,6 +423,7 @@ public:
 		itemfxGUI(*this),
 		assistShrineGUI(*this),
 		mailboxGUI(*this)
+		, stewingGUI(*this)
 	{
 		tinkeringTotalItems.first = nullptr;
 		tinkeringTotalItems.last = nullptr;
@@ -743,7 +745,9 @@ public:
 			ITEMFX_MODE_SANCTIFY_WATER,
 			ITEMFX_MODE_CLEANSE_FOOD,
 			ITEMFX_MODE_ADORCISE_INSTRUMENT,
-			ITEMFX_MODE_SCEPTER_CHARGE
+			ITEMFX_MODE_SCEPTER_CHARGE,
+			ITEMFX_MODE_INK_SPELLBOOK,
+			ITEMFX_MODE_OIL_ITEM
 		};
 		void openItemEffectMenu(ItemEffectModes mode);
 		ItemEffectModes currentMode = ITEMFX_MODE_NONE;
@@ -1421,8 +1425,97 @@ public:
 		static int heightOffsetWhenNotCompact;
 	};
 	AlchemyGUI_t alchemyGUI;
+
+	struct StewingGUI_t
+	{
+		GenericGUIMenu& parentGUI;
+		Frame* stewFrame = nullptr;
+		Frame* recipesFrame = nullptr;
+		struct StewingRecipes_t
+		{
+			StewingGUI_t& stewing;
+			real_t animx = 0.0;
+			real_t scrollPercent = 0.0;
+			real_t scrollInertia = 0.0;
+			int scrollSetpoint = 0;
+			real_t scrollAnimateX = 0.0;
+			bool isInteractable = false;
+			bool bOpen = false;
+			bool bFirstTimeSnapCursor = false;
+			int currentScrollRow = 0;
+			bool panelJustifyInverted = false;
+			int hoveredRecipeIndex = -1;
+			int activeRecipeIndex = -1;
+			const int kNumRecipesToDisplayVertical = 6;
+			std::unordered_map<int, Frame*> slotFrames;
+			std::unordered_map<int, Frame::image_t*> stones;
+
+			StewingRecipes_t(StewingGUI_t& s) : stewing(s) {}
+			int getNumRecipesToDisplayVertical() const { return kNumRecipesToDisplayVertical; }
+			Frame* getSlotFrame(int x, int y) const;
+			void openRecipePanel();
+			void closeRecipePanel();
+			void updateRecipePanel();
+		} recipes;
+		real_t animx = 0.0;
+		bool bOpen = false;
+		bool isInteractable = false;
+		bool bFirstTimeSnapCursor = false;
+		bool transactionPending = false;
+		// Reliable remote brewing: retry the receipt, NEVER the brew itself.
+		// One pending sequence is matched with precisely one authoritative result.
+		Uint32 transactionSequence = 0;
+		Uint32 pendingTransactionSequence = 0;
+		Uint32 pendingTransactionLastCheck = 0;
+		StewingOperation pendingTransactionOperation = STEWING_OPERATION_BREW_INTO;
+		StewingSelection pendingTransactionSelection{};
+		// Controller focus is an index into the fixed stewing button layout.
+		// Never retain Widget pointers across frame rebuilds or menu closure.
+		int controllerFocus = 0;
+		// Oils and inks brew a physical item, then open the existing target picker.
+		// The picker never owns or reserves ingredients and can be cancelled safely.
+		ItemType handoffResult = ITEM_ENUM_MAX;
+		Uint32 handoffBaseline = 0;
+		bool handoffAwaitingResult = false;
+		Uint32 handoffWaitStartedAt = 0;
+		Uint32 cauldronUid = 0;
+		StewingSelection selection{};
+		std::array<Uint32, STEWING_RESOURCE_COUNT> resources{};
+		Item emptyBottleCount;
+
+		StewingGUI_t(GenericGUIMenu& gui) : parentGUI(gui), recipes(*this)
+		{
+			emptyBottleCount.type = POTION_EMPTY;
+			emptyBottleCount.status = SERVICABLE;
+			emptyBottleCount.count = 0;
+			emptyBottleCount.appearance = 0;
+			emptyBottleCount.identified = true;
+			emptyBottleCount.uid = 0;
+			emptyBottleCount.node = nullptr;
+			emptyBottleCount.isDroppable = false;
+		}
+		void openStewingMenu(Uint32 familiarUid,
+			const std::array<Uint32, STEWING_RESOURCE_COUNT>& available);
+		void closeStewingMenu();
+		void clearSelection();
+		void createStewingMenu();
+		void updateStewingMenu();
+		bool inventoryItemAllowedInGUI(Item* item) const;
+		bool addResource(ItemType type);
+		void removeResourceSlot(int slot);
+		void autofillRecipe(int recipeIndex);
+		void requestTransaction(StewingOperation operation);
+		void receiveTransaction(bool success, const StewingSelection& remaining,
+			const std::array<Uint32, STEWING_RESOURCE_COUNT>& available);
+		Uint32 getRemainingResource(ItemType type) const;
+	};
+	StewingGUI_t stewingGUI;
 };
 extern GenericGUIMenu GenericGUI[MAXPLAYERS];
+
+bool openStewingCauldron(Entity* familiar, int player);
+bool validateStewingCauldronAccess(Entity* cauldron, int player);
+void closeStewingForCauldron(Entity* familiar);
 
 /*
  * Returns true if the mouse is in the specified bounds, with x1 and y1 specifying the top left corner, and x2 and y2 specifying the bottom right corner.

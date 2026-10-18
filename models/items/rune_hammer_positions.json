@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "first_person": {
+    "normal": {
+      "x": 0.0, "y": 0.0, "z": 0.0,
+      "focalx": 0.0, "focaly": 0.0, "focalz": 0.0,
+      "yaw": 0.0, "pitch": 0.0, "roll": 0.0,
+      "scalex": 1.0, "scaley": 1.0, "scalez": 1.0
+    },
+    "two_handed": {
+      "x": 0.0, "y": 0.0, "z": 0.0,
+      "focalx": 0.0, "focaly": 0.0, "focalz": 0.0,
+      "yaw": 0.0, "pitch": 0.0, "roll": 0.0,
+      "scalex": 1.0, "scaley": 1.0, "scalez": 1.0
+    },
+    "attached_offhand": {
+      "_comment": "Additional Hammer-local adjustments applied after the final first-person two_handed Hammer transform.",
+      "x": 0.0, "y": 0.0, "z": 0.0,
+      "focalx": 0.0, "focaly": 0.0, "focalz": 0.0,
+      "yaw": 0.0, "pitch": 0.0, "roll": 0.0,
+      "scalex": 1.0, "scaley": 1.0, "scalez": 1.0
+    }
+  },
+  "third_person": {
+    "normal": {
+      "x": 0.0, "y": 0.0, "z": 0.0,
+      "focalx": 0.0, "focaly": 0.0, "focalz": 0.0,
+      "yaw": 0.0, "pitch": 0.0, "roll": 0.0,
+      "scalex": 1.0, "scaley": 1.0, "scalez": 1.0
+    },
+    "two_handed": {
+      "x": 0.0, "y": 0.0, "z": 0.0,
+      "focalx": 0.0, "focaly": 0.0, "focalz": 0.0,
+      "yaw": 0.0, "pitch": 0.0, "roll": 0.0,
+      "scalex": 1.0, "scaley": 1.0, "scalez": 1.0
+    },
+    "attached_offhand": {
+      "_comment": "Additional Hammer-local adjustments applied after the final third-person two_handed Hammer transform.",
+      "x": 0.0, "y": 0.0, "z": 0.0,
+      "focalx": 0.0, "focaly": 0.0, "focalz": 0.0,
+      "yaw": 0.0, "pitch": 0.0, "roll": 0.0,
+      "scalex": 1.0, "scaley": 1.0, "scalez": 1.0
+    },
+    "two_handed_race_groups": {
+      "succubus_incubus_merrow": {
+        "races": [
+          "succubus",
+          "incubus",
+          "merrow"
+        ],
+        "offset": {
+          "x": 0.0, "y": 0.0, "z": 0.0,
+          "focalx": 0.0, "focaly": 0.0, "focalz": 0.0,
+          "yaw": 0.0, "pitch": 0.0, "roll": 0.0
+        }
+      },
+      "leonin_salamander_golem": {
+        "races": [
+          "leonin",
+          "salamander",
+          "golem"
+        ],
+        "offset": {
+          "x": 0.0, "y": 0.0, "z": 0.0,
+          "focalx": 0.0, "focaly": 0.0, "focalz": 0.0,
+          "yaw": 0.0, "pitch": 0.0, "roll": 0.0
+        }
+      },
+      "myconid_dryad": {
+        "races": [
+          "myconid",
+          "dryad"
+        ],
+        "offset": {
+          "x": 0.0, "y": 0.0, "z": 0.0,
+          "focalx": 0.0, "focaly": 0.0, "focalz": 0.0,
+          "yaw": 0.0, "pitch": 0.0, "roll": 0.0
+        }
+      }
+    }
+  }
+}

@@ -26,11 +26,938 @@
 #include "../prng.hpp"
 #include "../mod_tools.hpp"
 #include "../paths.hpp"
+#include "../monster.hpp"
+
+bool isEntrenchDoorBarricade(const Entity* entity)
+{
+	return entity && entity->behavior == &actDoor
+		&& entity->skill[ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL] == ENTRENCH_DOOR_MODE_BARRICADE;
+}
+
+bool isEntrenchDoorBridge(const Entity* entity)
+{
+	return entity && entity->behavior == &actDoor
+		&& entity->skill[ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL] == ENTRENCH_DOOR_MODE_BRIDGE;
+}
+
+bool entrenchBridgeSupportsTile(int tilex, int tiley)
+{
+	if ( tilex < 0 || tilex >= map.width || tiley < 0 || tiley >= map.height )
+	{
+		return false;
+	}
+	list_t* entities = TileEntityList.getTileList(tilex, tiley);
+	if ( !entities )
+	{
+		return false;
+	}
+	for ( node_t* node = entities->first; node; node = node->next )
+	{
+		Entity* entity = static_cast<Entity*>(node->element);
+		if ( isEntrenchDoorBridge(entity)
+			&& static_cast<int>(entity->x) / 16 == tilex
+			&& static_cast<int>(entity->y) / 16 == tiley )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool isEntrenchCarriedObject(const Entity* entity)
+{
+	if ( !entity || entity->skill[ENTRENCH_CARRIED_OWNER_SKILL] <= 0 )
+	{
+		return false;
+	}
+	return entity->behavior == &actFurniture
+		|| entity->behavior == &actDoor
+		|| entity->behavior == &actColliderDecoration;
+}
+
+bool isEntrenchMovableObject(const Entity* entity)
+{
+	if ( !entity || entity->flags[INVISIBLE] || isEntrenchCarriedObject(entity) )
+	{
+		return false;
+	}
+	if ( entity->behavior == &actFurniture )
+	{
+		return true;
+	}
+	if ( entity->behavior == &actDoor )
+	{
+		// Entrenched doors can always be lifted again. Their locked flag only
+		// prevents the native open-door interaction while they are deployed.
+		return isEntrenchDoorBarricade(entity) || isEntrenchDoorBridge(entity)
+			|| entity->doorLocked == 0;
+	}
+	// Breakable containers are ordinary destructible scenery. Diggable/wall
+	// colliders remain excluded so Entrench cannot bypass map progression.
+	return entity->isColliderBreakableContainer()
+		&& entity->colliderDiggable == 0 && !entity->isColliderWall();
+}
+
+void entrenchOnEntityDestroyedByCreature(Entity* entity, Entity* attacker)
+{
+	if ( multiplayer == CLIENT || !entity || !attacker || attacker->behavior != &actMonster
+		|| isEntrenchCarriedObject(entity)
+		|| entity->skill[ENTRENCH_DEPLOYED_REWARD_SKILL] != 1 )
+	{
+		return;
+	}
+
+	const bool doorBarricade = isEntrenchDoorBarricade(entity);
+	const bool ordinaryObject = entity->behavior == &actFurniture
+		|| (entity->behavior == &actColliderDecoration
+			&& entity->isColliderBreakableContainer()
+			&& entity->colliderDiggable == 0 && !entity->isColliderWall());
+	if ( (!doorBarricade && !ordinaryObject) || isEntrenchDoorBridge(entity) )
+	{
+		return;
+	}
+
+	const int owner = entity->skill[ENTRENCH_DEPLOYED_OWNER_SKILL] - 1;
+	if ( owner < 0 || owner >= MAXPLAYERS || !players[owner]
+		|| !players[owner]->entity || !stats[owner]
+		|| !attacker->checkEnemy(players[owner]->entity) )
+	{
+		return;
+	}
+
+	// Consume the deployment's sole opportunity before either RNG or the native
+	// spell event so repeated death processing cannot award it twice.
+	entity->skill[ENTRENCH_DEPLOYED_REWARD_SKILL] = 0;
+	if ( ordinaryObject && local_rng.rand() % 2 != 0 )
+	{
+		return;
+	}
+	magicOnSpellCastEvent(players[owner]->entity, players[owner]->entity, attacker,
+		SPELL_ENTRENCH, spell_t::SPELL_LEVEL_EVENT_DEFAULT, 1);
+}
+
+static void clearEntrenchCarrySnapshot(Player::PlayerMechanics_t& state)
+{
+	state.entrenchCarriedUid = 0;
+	state.entrenchOriginX = 0.0;
+	state.entrenchOriginY = 0.0;
+	state.entrenchOriginZ = 0.0;
+	state.entrenchOriginYaw = 0.0;
+	state.entrenchOriginPitch = 0.0;
+	state.entrenchOriginRoll = 0.0;
+	state.entrenchOriginPassable = false;
+	state.entrenchOriginInvisible = false;
+	state.entrenchOriginUnclickable = false;
+	state.entrenchOriginDoorMode = ENTRENCH_DOOR_MODE_NONE;
+	state.entrenchOriginDoorLocked = 0;
+	state.entrenchOriginDoorStatus = 0;
+	state.entrenchOriginDeployedOwner = 0;
+	state.entrenchOriginDeployedReward = 0;
+}
+
+static Uint32 packEntrenchFlags(const Entity& entity)
+{
+	Uint32 result = 0;
+	for ( int i = 0; i < 24; ++i )
+	{
+		if ( entity.flags[i] ) { result |= (1u << i); }
+	}
+	return result;
+}
+
+static void unpackEntrenchFlags(Entity& entity, Uint32 flags)
+{
+	for ( int i = 0; i < 24; ++i )
+	{
+		entity.flags[i] = (flags & (1u << i)) != 0;
+	}
+}
+
+static bool captureEntrenchStash(Entity* entity, EntrenchStash& result)
+{
+	if ( !entity ) { return false; }
+	EntrenchStash stash;
+	if ( entity->behavior == &actDoor ) { stash.type = EntrenchStash::DOOR; }
+	else if ( entity->behavior == &actFurniture ) { stash.type = EntrenchStash::FURNITURE; }
+	else if ( entity->behavior == &actColliderDecoration && entity->isColliderBreakableContainer()
+		&& entity->colliderDiggable == 0 && !entity->isColliderWall() )
+	{
+		stash.type = EntrenchStash::BREAKABLE_COLLIDER;
+	}
+	else { return false; }
+
+	stash.sprite = entity->sprite;
+	stash.scaleX = entity->scalex; stash.scaleY = entity->scaley; stash.scaleZ = entity->scalez;
+	stash.focalX = entity->focalx; stash.focalY = entity->focaly; stash.focalZ = entity->focalz;
+	stash.sizeX = entity->sizex; stash.sizeY = entity->sizey;
+	stash.z = entity->z; stash.yaw = entity->yaw; stash.pitch = entity->pitch; stash.roll = entity->roll;
+	stash.flags = packEntrenchFlags(*entity);
+
+	if ( stash.type == EntrenchStash::DOOR )
+	{
+		stash.health = entity->doorHealth; stash.maxHealth = entity->doorMaxHealth;
+		stash.doorDir = entity->doorDir; stash.doorLocked = entity->doorLocked; stash.doorStatus = entity->doorStatus;
+		stash.doorDisableLockpicks = entity->doorDisableLockpicks; stash.doorDisableOpening = entity->doorDisableOpening;
+		stash.doorLockpickHealth = entity->doorLockpickHealth;
+		stash.doorPreventLockpickExploit = entity->doorPreventLockpickExploit;
+		stash.doorForceLockedUnlocked = entity->doorForceLockedUnlocked;
+		stash.doorUnlockWhenPowered = entity->doorUnlockWhenPowered;
+		stash.doorStartAngle = entity->doorStartAng;
+	}
+	else if ( stash.type == EntrenchStash::FURNITURE )
+	{
+		stash.health = entity->furnitureHealth; stash.maxHealth = entity->furnitureMaxHealth;
+		stash.furnitureType = entity->furnitureType; stash.furnitureDir = entity->furnitureDir;
+		stash.furnitureTableRandomItemChance = entity->furnitureTableRandomItemChance;
+		stash.furnitureTableSpawnChairs = entity->furnitureTableSpawnChairs;
+	}
+	else
+	{
+		stash.health = entity->colliderCurrentHP; stash.maxHealth = entity->colliderMaxHP;
+		stash.colliderModel = entity->colliderDecorationModel;
+		stash.colliderRotation = entity->colliderDecorationRotation;
+		stash.colliderHeightOffset = entity->colliderDecorationHeightOffset;
+		stash.colliderXOffset = entity->colliderDecorationXOffset; stash.colliderYOffset = entity->colliderDecorationYOffset;
+		stash.colliderCollision = entity->colliderHasCollision;
+		stash.colliderSizeX = entity->colliderSizeX; stash.colliderSizeY = entity->colliderSizeY;
+		stash.colliderDamageTypes = entity->colliderDamageTypes; stash.colliderDiggable = entity->colliderDiggable;
+		stash.colliderHideMonster = entity->colliderHideMonster;
+		stash.colliderSpellEvent = entity->colliderSpellEvent;
+		stash.colliderSpellCooldown = entity->colliderSpellEventCooldown;
+		stash.colliderSpellEventTrigger = entity->colliderSpellEventTrigger;
+		stash.colliderIsMapGenerated = entity->colliderIsMapGenerated;
+
+		if ( entity->colliderContainedEntity != 0 )
+		{
+			Entity* representative = uidToEntity(entity->colliderContainedEntity);
+			if ( !representative || !representative->flags[INVISIBLE]
+				|| !((representative->behavior == &actItem && representative->itemContainer == entity->getUID())
+					|| (representative->behavior == &actGoldBag && representative->goldInContainer == entity->getUID())) )
+			{
+				return false; // Never serialize an arbitrary scripted child or stale UID.
+			}
+		}
+		for ( node_t* node = map.entities->first; node; node = node->next )
+		{
+			Entity* child = static_cast<Entity*>(node->element);
+			if ( !child || !child->flags[INVISIBLE] ) { continue; }
+			EntrenchStash::Content content;
+			if ( child->behavior == &actItem && child->itemContainer == entity->getUID() )
+			{
+				content.kind = EntrenchStash::Content::ITEM;
+				content.type = child->skill[10]; content.status = child->skill[11];
+				content.beatitude = child->skill[12]; content.count = child->skill[13];
+				content.appearance = static_cast<Uint32>(child->skill[14]); content.identified = child->skill[15] != 0;
+				content.runeStoredPWR = child->itemRuneStoredPWRValid ? child->itemRuneStoredPWR : INT_MIN;
+				content.runeCreatorPlayer = child->itemRuneCreatorPlayerValid ? child->itemRuneCreatorPlayer : -1;
+				content.runeInstanceId = static_cast<Uint32>(child->itemRuneInstanceId);
+				content.runeCreatorIdentity = static_cast<Uint32>(child->itemRuneCreatorIdentity);
+				content.familiarInitialized = child->itemFamiliarInitialized != 0;
+				content.familiarInstanceId = static_cast<Uint32>(child->itemFamiliarInstanceId);
+				content.wraithLoreInstanceId = static_cast<Uint32>(child->itemWraithLoreInstanceId);
+				content.familiarHP = child->itemFamiliarHP; content.familiarMAXHP = child->itemFamiliarMAXHP;
+				content.familiarMP = child->itemFamiliarMP; content.familiarMAXMP = child->itemFamiliarMAXMP;
+				content.familiarLVL = child->itemFamiliarLVL; content.familiarEXP = child->itemFamiliarEXP;
+				content.familiarSTR = child->itemFamiliarSTR; content.familiarDEX = child->itemFamiliarDEX;
+				content.familiarCON = child->itemFamiliarCON; content.familiarINT = child->itemFamiliarINT;
+				content.familiarPER = child->itemFamiliarPER; content.familiarCHR = child->itemFamiliarCHR;
+			}
+			else if ( child->behavior == &actGoldBag && child->goldInContainer == entity->getUID() )
+			{
+				content.kind = EntrenchStash::Content::GOLD;
+				content.gold = child->goldAmount;
+			}
+			else { continue; }
+			stash.contents.push_back(content);
+		}
+	}
+	result = std::move(stash);
+	return true;
+}
+
+void serverSendEntrenchOwnerState(int player)
+{
+	if ( multiplayer != SERVER || player <= 0 || player >= MAXPLAYERS
+		|| !players[player] || players[player]->isLocalPlayer() || client_disconnected[player] ) { return; }
+	strcpy((char*)net_packet->data, "ENAK");
+	SDLNet_Write32(players[player]->mechanics.entrenchCarriedUid, &net_packet->data[4]);
+	SDLNet_Write32(++players[player]->mechanics.entrenchOwnerRevision, &net_packet->data[8]);
+	net_packet->len = 12;
+	net_packet->address.host = net_clients[player - 1].host;
+	net_packet->address.port = net_clients[player - 1].port;
+	sendPacketSafe(net_sock, -1, net_packet, player - 1);
+}
+
+static void serverSyncEntrenchEntityTransform(Entity* entity, int player)
+{
+	if ( multiplayer != SERVER || !entity ) { return; }
+	// An atomic, versioned Entrench snapshot avoids separately arriving flags,
+	// carry markers and interpolated transforms disagreeing on static scenery.
+	static Uint32 transitionRevision = 0;
+	entity->entrenchSyncRevision = ++transitionRevision;
+	const real_t values[] = {entity->x, entity->y, entity->z, entity->yaw,
+		entity->pitch, entity->roll, entity->focalx, entity->focaly, entity->focalz,
+		entity->sizex, entity->sizey, entity->doorStartAng};
+	for ( int c = 1; c < MAXPLAYERS; ++c )
+	{
+		if ( client_disconnected[c] || players[c]->isLocalPlayer() ) { continue; }
+		strcpy((char*)net_packet->data, "ETRN");
+		SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
+		SDLNet_Write32(entity->entrenchSyncRevision, &net_packet->data[8]);
+		for ( int i = 0; i < 12; ++i )
+		{
+			SDLNet_Write32(static_cast<Sint32>(values[i] * 65536.0), &net_packet->data[12 + i * 4]);
+		}
+		net_packet->data[60] = (entity->flags[PASSABLE] ? 1 : 0)
+			| (entity->flags[INVISIBLE] ? 2 : 0) | (entity->flags[UNCLICKABLE] ? 4 : 0)
+			| (entity->flags[BLOCKSIGHT] ? 8 : 0);
+		const int skills[] = {ENTRENCH_CARRIED_OWNER_SKILL,
+			ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL, 3, 5, 0};
+		for ( int i = 0; i < 5; ++i )
+		{
+			SDLNet_Write32(entity->skill[skills[i]], &net_packet->data[61 + i * 4]);
+		}
+		net_packet->data[81] = player;
+		SDLNet_Write32((Uint32)ticks, &net_packet->data[82]);
+		net_packet->len = 86;
+		net_packet->address.host = net_clients[c - 1].host;
+		net_packet->address.port = net_clients[c - 1].port;
+		sendPacketSafe(net_sock, -1, net_packet, c - 1);
+	}
+}
+
+void receiveEntrenchEntityTransform()
+{
+	if ( multiplayer != CLIENT || net_packet->len != 86 ) { return; }
+	Entity* entity = uidToEntity(SDLNet_Read32(&net_packet->data[4]));
+	if ( !entity ) { return; } // Entrench only moves existing world objects.
+	const Uint32 revision = SDLNet_Read32(&net_packet->data[8]);
+	if ( revision <= entity->entrenchSyncRevision ) { return; }
+	entity->entrenchSyncRevision = revision;
+	real_t values[12];
+	for ( int i = 0; i < 12; ++i )
+	{
+		values[i] = static_cast<Sint32>(SDLNet_Read32(&net_packet->data[12 + i * 4])) / 65536.0;
+	}
+	entity->x = entity->new_x = values[0];
+	entity->y = entity->new_y = values[1];
+	entity->z = entity->new_z = values[2];
+	entity->yaw = entity->new_yaw = values[3];
+	entity->pitch = entity->new_pitch = values[4];
+	entity->roll = entity->new_roll = values[5];
+	entity->focalx = values[6]; entity->focaly = values[7]; entity->focalz = values[8];
+	entity->sizex = values[9]; entity->sizey = values[10];
+	if ( entity->behavior == &actDoor ) { entity->doorStartAng = values[11]; }
+	entity->vel_x = entity->vel_y = entity->vel_z = 0.0;
+	entity->flags[PASSABLE] = (net_packet->data[60] & 1) != 0;
+	entity->flags[INVISIBLE] = (net_packet->data[60] & 2) != 0;
+	entity->flags[UNCLICKABLE] = (net_packet->data[60] & 4) != 0;
+	entity->flags[BLOCKSIGHT] = (net_packet->data[60] & 8) != 0;
+	const int skills[] = {ENTRENCH_CARRIED_OWNER_SKILL,
+		ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL, 3, 5, 0};
+	for ( int i = 0; i < 5; ++i )
+	{
+		// Door fields alias unrelated furniture/collider data; only copy them for doors.
+		if ( i < 2 || entity->behavior == &actDoor )
+		{
+			entity->skill[skills[i]] = SDLNet_Read32(&net_packet->data[61 + i * 4]);
+		}
+	}
+	const int player = net_packet->data[81];
+	if ( player >= 0 && player < MAXPLAYERS && players[player]
+		&& revision > players[player]->mechanics.entrenchVisualRevision )
+	{
+		auto& state = players[player]->mechanics;
+		state.entrenchVisualRevision = revision;
+		state.entrenchVisualCarriedUid = entity->skill[ENTRENCH_CARRIED_OWNER_SKILL] == player + 1
+			? entity->getUID() : 0;
+	}
+	TileEntityList.updateEntity(*entity);
+	// ENTU rejects ticks strictly below lastupdateserver. Exclude queued updates
+	// from this snapshot's tick too, while allowing normal updates from later ticks.
+	const Uint32 serverTick = SDLNet_Read32(&net_packet->data[82]);
+	entity->lastupdateserver = std::max(entity->lastupdateserver, serverTick + 1);
+}
+
+void detachEntrenchCarriedObject(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] ) { return; }
+	auto& state = players[player]->mechanics;
+	clearEntrenchCarrySnapshot(state);
+	state.entrenchVisualCarriedUid = 0;
+	cast_animation[player].entrenchAwaitingResult = false;
+	cast_animation[player].entrenchCancelPending = false;
+}
+
+static Entity* createEntrenchStashedContent(const EntrenchStash::Content& content, Entity& container)
+{
+	Entity* entity = nullptr;
+	if ( content.kind == EntrenchStash::Content::ITEM )
+	{
+		entity = newEntity(-1, 1, map.entities, nullptr);
+		if ( !entity ) { return nullptr; }
+		entity->behavior = &actItem;
+		entity->skill[2] = -5;
+		entity->skill[10] = content.type; entity->skill[11] = content.status;
+		entity->skill[12] = content.beatitude; entity->skill[13] = content.count;
+		entity->skill[14] = static_cast<Sint32>(content.appearance); entity->skill[15] = content.identified ? 1 : 0;
+		entity->itemRuneStoredPWR = content.runeStoredPWR;
+		entity->itemRuneStoredPWRValid = content.runeStoredPWR != INT_MIN ? 1 : 0;
+		entity->itemRuneCreatorPlayer = content.runeCreatorPlayer;
+		entity->itemRuneCreatorPlayerValid = content.runeCreatorPlayer >= 0 ? 1 : 0;
+		entity->itemRuneInstanceId = static_cast<Sint32>(content.runeInstanceId);
+		entity->itemRuneCreatorIdentity = static_cast<Sint32>(content.runeCreatorIdentity);
+		entity->itemFamiliarInitialized = content.familiarInitialized ? 1 : 0;
+		entity->itemFamiliarInstanceId = static_cast<Sint32>(content.familiarInstanceId);
+		entity->itemWraithLoreInstanceId = static_cast<Sint32>(content.wraithLoreInstanceId);
+		entity->itemFamiliarHP = content.familiarHP; entity->itemFamiliarMAXHP = content.familiarMAXHP;
+		entity->itemFamiliarMP = content.familiarMP; entity->itemFamiliarMAXMP = content.familiarMAXMP;
+		entity->itemFamiliarLVL = content.familiarLVL; entity->itemFamiliarEXP = content.familiarEXP;
+		entity->itemFamiliarSTR = content.familiarSTR; entity->itemFamiliarDEX = content.familiarDEX;
+		entity->itemFamiliarCON = content.familiarCON; entity->itemFamiliarINT = content.familiarINT;
+		entity->itemFamiliarPER = content.familiarPER; entity->itemFamiliarCHR = content.familiarCHR;
+		reserveMagicRuneInstanceId(content.runeInstanceId);
+		reserveRuneCreatorIdentity(content.runeCreatorIdentity);
+		reserveFamiliarInstanceId(content.familiarInstanceId);
+		reserveWraithLoreInstanceId(content.wraithLoreInstanceId);
+		entity->itemContainer = container.getUID();
+		entity->flags[USERFLAG1] = true;
+	}
+	else if ( content.kind == EntrenchStash::Content::GOLD )
+	{
+		entity = newEntity(content.gold < 5 ? 1379 : 130, 1, map.entities, nullptr);
+		if ( !entity ) { return nullptr; }
+		entity->behavior = &actGoldBag;
+		entity->goldAmount = content.gold;
+		entity->goldInContainer = container.getUID();
+	}
+	if ( entity )
+	{
+		entity->x = container.x; entity->y = container.y; entity->z = container.z;
+		entity->sizex = 4; entity->sizey = 4;
+		entity->vel_x = entity->vel_y = entity->vel_z = 0.0;
+		entity->flags[INVISIBLE] = true;
+		entity->flags[PASSABLE] = true;
+		entity->flags[UPDATENEEDED] = true;
+	}
+	return entity;
+}
+
+static Entity* rehydrateEntrenchStash(int player)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !players[player]
+		|| !players[player]->entity || players[player]->entity->getHP() <= 0 )
+	{
+		return nullptr;
+	}
+	auto& state = players[player]->mechanics;
+	if ( state.entrenchCarriedUid != 0 || !state.entrenchStash.valid() ) { return nullptr; }
+	Entity* caster = players[player]->entity;
+	const EntrenchStash& stash = state.entrenchStash;
+	Entity* entity = newEntity(stash.sprite, 1, map.entities, nullptr);
+	if ( !entity ) { return nullptr; }
+	entity->x = caster->x; entity->y = caster->y; entity->z = caster->z - 12.0;
+	entity->yaw = stash.yaw; entity->pitch = stash.pitch; entity->roll = stash.roll;
+	entity->scalex = stash.scaleX; entity->scaley = stash.scaleY; entity->scalez = stash.scaleZ;
+	entity->focalx = stash.focalX; entity->focaly = stash.focalY; entity->focalz = stash.focalZ;
+	entity->sizex = stash.sizeX; entity->sizey = stash.sizeY;
+	unpackEntrenchFlags(*entity, stash.flags);
+	entity->flags[PASSABLE] = true;
+	entity->flags[INVISIBLE] = false;
+	entity->flags[UNCLICKABLE] = true;
+	entity->flags[NOUPDATE] = false;
+	entity->flags[UPDATENEEDED] = true;
+	entity->skill[ENTRENCH_CARRIED_OWNER_SKILL] = player + 1;
+	entity->skill[ENTRENCH_DEPLOYED_OWNER_SKILL] = 0;
+	entity->skill[ENTRENCH_DEPLOYED_REWARD_SKILL] = 0;
+
+	if ( stash.type == EntrenchStash::DOOR )
+	{
+		entity->behavior = &actDoor; entity->doorInit = 1;
+		entity->doorHealth = stash.health; entity->doorMaxHealth = stash.maxHealth; entity->doorOldHealth = stash.health;
+		entity->doorDir = stash.doorDir; entity->doorLocked = 0; entity->doorStatus = 0;
+		entity->doorDisableLockpicks = stash.doorDisableLockpicks; entity->doorDisableOpening = stash.doorDisableOpening;
+		entity->doorLockpickHealth = stash.doorLockpickHealth;
+		entity->doorPreventLockpickExploit = stash.doorPreventLockpickExploit;
+		entity->doorForceLockedUnlocked = stash.doorForceLockedUnlocked;
+		entity->doorUnlockWhenPowered = stash.doorUnlockWhenPowered;
+		entity->doorStartAng = stash.doorStartAngle;
+		entity->skill[ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL] = ENTRENCH_DOOR_MODE_NONE;
+	}
+	else if ( stash.type == EntrenchStash::FURNITURE )
+	{
+		entity->behavior = &actFurniture; entity->furnitureInit = 1;
+		entity->skill[2] = static_cast<Sint32>(0x80000000u | 28u); // explicit client identity for recreated furniture
+		entity->furnitureHealth = stash.health; entity->furnitureMaxHealth = stash.maxHealth; entity->furnitureOldHealth = stash.health;
+		entity->furnitureType = stash.furnitureType; entity->furnitureDir = stash.furnitureDir;
+		entity->furnitureTableRandomItemChance = stash.furnitureTableRandomItemChance;
+		entity->furnitureTableSpawnChairs = stash.furnitureTableSpawnChairs;
+	}
+	else
+	{
+		entity->behavior = &actColliderDecoration; entity->colliderInit = 1;
+		entity->colliderDecorationModel = stash.colliderModel;
+		entity->colliderDecorationRotation = stash.colliderRotation;
+		entity->colliderDecorationHeightOffset = stash.colliderHeightOffset;
+		entity->colliderDecorationXOffset = stash.colliderXOffset; entity->colliderDecorationYOffset = stash.colliderYOffset;
+		entity->colliderHasCollision = stash.colliderCollision;
+		entity->colliderSizeX = stash.colliderSizeX; entity->colliderSizeY = stash.colliderSizeY;
+		entity->colliderMaxHP = stash.maxHealth; entity->colliderCurrentHP = stash.health; entity->colliderOldHP = stash.health;
+		entity->colliderDiggable = stash.colliderDiggable; entity->colliderDamageTypes = stash.colliderDamageTypes;
+		entity->colliderHideMonster = stash.colliderHideMonster;
+		entity->colliderSpellEvent = stash.colliderSpellEvent;
+		entity->colliderSpellEventCooldown = stash.colliderSpellCooldown;
+		entity->colliderSpellEventTrigger = stash.colliderSpellEventTrigger;
+		entity->colliderSpellTarget = 0;
+		entity->colliderIsMapGenerated = stash.colliderIsMapGenerated;
+		entity->colliderContainedEntity = 0;
+		entity->colliderSetServerSkillOnSpawned();
+		for ( const auto& content : stash.contents )
+		{
+			if ( Entity* child = createEntrenchStashedContent(content, *entity) )
+			{
+				if ( entity->colliderContainedEntity == 0 ) { entity->colliderContainedEntity = child->getUID(); }
+			}
+		}
+	}
+	entity->createWorldUITooltip();
+	TileEntityList.updateEntity(*entity);
+	state.entrenchCarriedUid = entity->getUID();
+	state.entrenchOriginZ = stash.z;
+	state.entrenchOriginPassable = (stash.flags & (1u << PASSABLE)) != 0;
+	state.entrenchOriginInvisible = (stash.flags & (1u << INVISIBLE)) != 0;
+	state.entrenchOriginUnclickable = (stash.flags & (1u << UNCLICKABLE)) != 0;
+	state.entrenchOriginDoorLocked = stash.doorLocked;
+	state.entrenchOriginDoorStatus = stash.doorStatus;
+	caster->skill[ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL] = static_cast<Sint32>(entity->getUID());
+
+	if ( multiplayer == SERVER )
+	{
+		serverUpdateEntitySkill(caster, ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL);
+		for ( int client = 1; client < MAXPLAYERS; ++client )
+		{
+			if ( !client_disconnected[client] && !players[client]->isLocalPlayer() )
+			{
+				sendEntityUDP(entity, client, true); // creation must precede ETRN for the new UID
+			}
+		}
+		serverSyncEntrenchEntityTransform(entity, player);
+		serverSendEntrenchOwnerState(player);
+	}
+	return entity;
+}
+
+void shatterEntrenchCarriedObjectOnPlayerDeath(int player, Entity* playerEntity)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS
+		|| !players[player] || !playerEntity )
+	{
+		return;
+	}
+	auto& state = players[player]->mechanics;
+	Entity* entity = uidToEntity(state.entrenchCarriedUid);
+	if ( entity )
+	{
+		entity->skill[ENTRENCH_CARRIED_OWNER_SKILL] = 0;
+		entity->skill[ENTRENCH_DEPLOYED_OWNER_SKILL] = 0;
+		entity->skill[ENTRENCH_DEPLOYED_REWARD_SKILL] = 0;
+		entity->x = playerEntity->x;
+		entity->y = playerEntity->y;
+		entity->z = playerEntity->z;
+		entity->flags[PASSABLE] = true;
+		entity->flags[INVISIBLE] = false;
+		entity->flags[UNCLICKABLE] = false;
+		entity->flags[UPDATENEEDED] = true;
+		if ( entity->behavior == &actDoor )
+		{
+			entity->skill[ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL] = ENTRENCH_DOOR_MODE_NONE;
+			entity->doorLocked = 0;
+			entity->doorStatus = 0;
+			entity->doorHealth = 0;
+		}
+		else if ( entity->behavior == &actFurniture )
+		{
+			entity->furnitureHealth = 0;
+		}
+		else if ( entity->behavior == &actColliderDecoration && entity->isDamageableCollider() )
+		{
+			entity->colliderCurrentHP = 0;
+			entity->colliderKillerUid = 0;
+		}
+		TileEntityList.updateEntity(*entity);
+		serverSyncEntrenchEntityTransform(entity, player);
+	}
+	state.entrenchStash = EntrenchStash();
+	clearEntrenchCarrySnapshot(state);
+	playerEntity->skill[ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL] = 0;
+	if ( multiplayer == SERVER )
+	{
+		serverUpdateEntitySkill(playerEntity, ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL);
+	}
+	serverSendEntrenchOwnerState(player);
+}
+
+void updateEntrenchCarriedObject(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !players[player]->entity )
+	{
+		return;
+	}
+	Entity* caster = players[player]->entity;
+	Uint32 carriedUid = multiplayer == CLIENT
+		? players[player]->mechanics.entrenchVisualCarriedUid
+		: players[player]->mechanics.entrenchCarriedUid;
+	if ( multiplayer != CLIENT && carriedUid == 0 && players[player]->mechanics.entrenchStash.valid() )
+	{
+		if ( Entity* rehydrated = rehydrateEntrenchStash(player) ) { carriedUid = rehydrated->getUID(); }
+	}
+	Entity* carried = uidToEntity(carriedUid);
+	if ( !carried || carried->skill[ENTRENCH_CARRIED_OWNER_SKILL] != player + 1 )
+	{
+		return;
+	}
+	carried->x = caster->x;
+	carried->y = caster->y;
+	carried->z = caster->z - 12.0 + sin(ticks * 0.08) * 1.25;
+	carried->yaw += 0.015;
+	while ( carried->yaw >= 2 * PI ) { carried->yaw -= 2 * PI; }
+	if ( multiplayer == CLIENT )
+	{
+		carried->new_x = carried->x; carried->new_y = carried->y; carried->new_z = carried->z;
+		carried->new_yaw = carried->yaw;
+	}
+	TileEntityList.updateEntity(*carried);
+}
+
+static bool entrenchDestinationOccupied(Entity* carried, int tilex, int tiley, real_t sizex, real_t sizey)
+{
+	const real_t x = tilex * 16 + 8;
+	const real_t y = tiley * 16 + 8;
+	for ( node_t* node = map.entities->first; node; node = node->next )
+	{
+		Entity* entity = static_cast<Entity*>(node->element);
+		const bool creature = entity && (entity->behavior == &actPlayer || entity->behavior == &actMonster);
+		if ( !entity || entity == carried
+			|| (!creature && (entity->flags[PASSABLE] || entity->flags[INVISIBLE])) )
+		{
+			continue;
+		}
+		if ( fabs(entity->x - x) < entity->sizex + sizex
+			&& fabs(entity->y - y) < entity->sizey + sizey )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+static real_t entrenchMaximumCastDistance(Entity* caster)
+{
+	//mod add: Match the native rangefinder distance, with its existing eight-unit
+	// touch-target allowance for entity selection and tile-centering tolerance.
+	return getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_DISTANCE,
+		SPELL_ENTRENCH, caster, nullptr, caster) + 8.0;
+}
+
+static bool entrenchTargetHasLineOfSight(Entity* caster, Entity* target)
+{
+	if ( !caster || !target )
+	{
+		return false;
+	}
+	const real_t distance = entityDist(caster, target);
+	Entity* oldHitEntity = hit.entity;
+	const real_t tangent = atan2(target->y - caster->y, target->x - caster->x);
+	lineTraceTarget(target, target->x, target->y, tangent + PI, distance,
+		LINETRACE_TELEKINESIS, false, caster);
+	const bool hasLineOfSight = hit.entity == caster;
+	hit.entity = oldHitEntity;
+	return hasLineOfSight;
+}
+
+static bool entrenchPlacementHasLineOfSight(Entity* caster, real_t x, real_t y)
+{
+	if ( !caster )
+	{
+		return false;
+	}
+	const real_t dx = x - caster->x;
+	const real_t dy = y - caster->y;
+	const real_t distance = sqrt(dx * dx + dy * dy);
+	if ( distance <= 0.001 )
+	{
+		return true;
+	}
+	Entity* oldHitEntity = hit.entity;
+	const real_t tracedDistance = lineTrace(caster, caster->x, caster->y,
+		atan2(dy, dx), distance, LINETRACE_TELEKINESIS, false);
+	hit.entity = oldHitEntity;
+	return tracedDistance + 0.001 >= distance;
+}
+
+static void castEntrench(Entity* caster, int player, CastSpellProps_t* props)
+{
+	if ( !caster || player < 0 || player >= MAXPLAYERS || !players[player] || multiplayer == CLIENT || caster->getHP() <= 0 )
+	{
+		return;
+	}
+	auto& state = players[player]->mechanics;
+	if ( state.entrenchCarriedUid == 0 )
+	{
+		Entity* target = props ? uidToEntity(props->targetUID) : nullptr;
+		if ( !target )
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(7008));
+			return;
+		}
+		if ( target->behavior == &actDoor && target->doorLocked
+			&& !isEntrenchDoorBarricade(target) && !isEntrenchDoorBridge(target) )
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(7009));
+			return;
+		}
+		if ( !isEntrenchMovableObject(target) )
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(7008));
+			return;
+		}
+		//mod add: A remote client supplies only a requested UID. Reapply the same
+		// range and obstruction checks on the authoritative world before lifting it.
+		if ( entityDist(caster, target) > entrenchMaximumCastDistance(caster)
+			|| !entrenchTargetHasLineOfSight(caster, target) )
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(7008));
+			return;
+		}
+		EntrenchStash stash;
+		if ( !captureEntrenchStash(target, stash) )
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(7008));
+			return;
+		}
+		const bool wasEntrenchedDoor = isEntrenchDoorBarricade(target) || isEntrenchDoorBridge(target);
+		const bool wasEntrenchBridge = isEntrenchDoorBridge(target);
+		state.entrenchStash = std::move(stash);
+		state.entrenchCarriedUid = target->getUID();
+		caster->skill[ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL] = static_cast<Sint32>(target->getUID());
+		target->skill[ENTRENCH_CARRIED_OWNER_SKILL] = player + 1;
+		state.entrenchOriginX = target->x;
+		state.entrenchOriginY = target->y;
+		state.entrenchOriginZ = target->z;
+		state.entrenchOriginYaw = target->yaw;
+		state.entrenchOriginPitch = target->pitch;
+		state.entrenchOriginRoll = target->roll;
+		state.entrenchOriginPassable = target->flags[PASSABLE];
+		state.entrenchOriginInvisible = target->flags[INVISIBLE];
+		state.entrenchOriginUnclickable = target->flags[UNCLICKABLE];
+		state.entrenchOriginDoorMode = target->behavior == &actDoor
+			? target->skill[ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL]
+			: ENTRENCH_DOOR_MODE_NONE;
+		state.entrenchOriginDoorLocked = target->behavior == &actDoor ? target->doorLocked : 0;
+		state.entrenchOriginDoorStatus = target->behavior == &actDoor ? target->doorStatus : 0;
+		state.entrenchOriginDeployedOwner = target->skill[ENTRENCH_DEPLOYED_OWNER_SKILL];
+		state.entrenchOriginDeployedReward = target->skill[ENTRENCH_DEPLOYED_REWARD_SKILL];
+		target->skill[ENTRENCH_DEPLOYED_OWNER_SKILL] = 0;
+		target->skill[ENTRENCH_DEPLOYED_REWARD_SKILL] = 0;
+		target->flags[PASSABLE] = true;
+		target->flags[INVISIBLE] = false;
+		target->flags[UNCLICKABLE] = true;
+		if ( wasEntrenchedDoor )
+		{
+			target->skill[ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL] = ENTRENCH_DOOR_MODE_NONE;
+			target->doorLocked = 0;
+			target->doorStatus = 0;
+			target->pitch = 0.0;
+			target->roll = 0.0;
+		}
+		target->x = caster->x;
+		target->y = caster->y;
+		target->z = caster->z - 12.0;
+		TileEntityList.updateEntity(*target);
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( selectedEntity[i] == target ) { selectedEntity[i] = nullptr; }
+			if ( client_selected[i] == target ) { client_selected[i] = nullptr; }
+		}
+		if ( wasEntrenchBridge )
+		{
+			generatePathMaps();
+		}
+		if ( multiplayer == SERVER )
+		{
+			serverUpdateEntitySkill(caster, ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL);
+			serverSyncEntrenchEntityTransform(target, player);
+		}
+		messagePlayer(player, MESSAGE_HINT, Language::get(7010));
+		return;
+	}
+
+	Entity* carried = uidToEntity(state.entrenchCarriedUid);
+	if ( !carried || carried->skill[ENTRENCH_CARRIED_OWNER_SKILL] != player + 1 )
+	{
+		clearEntrenchCarrySnapshot(state);
+		caster->skill[ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL] = 0;
+		if ( multiplayer == SERVER )
+		{
+			serverUpdateEntitySkill(caster, ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL);
+		}
+		messagePlayer(player, MESSAGE_HINT, Language::get(7011));
+		return;
+	}
+	const int tilex = props ? static_cast<int>(floor(props->target_x / 16.0)) : -1;
+	const int tiley = props ? static_cast<int>(floor(props->target_y / 16.0)) : -1;
+	if ( tilex < 0 || tilex >= map.width || tiley < 0 || tiley >= map.height )
+	{
+		messagePlayer(player, MESSAGE_HINT, Language::get(7012));
+		return;
+	}
+	const real_t placementX = tilex * 16 + 8;
+	const real_t placementY = tiley * 16 + 8;
+	const real_t placementDx = placementX - caster->x;
+	const real_t placementDy = placementY - caster->y;
+	const real_t placementDistance = sqrt(placementDx * placementDx
+		+ placementDy * placementDy);
+	//mod add: Placement coordinates are a client request, not authority. Reject
+	// out-of-range or through-wall destinations before changing the world entity.
+	if ( placementDistance > entrenchMaximumCastDistance(caster)
+		|| !entrenchPlacementHasLineOfSight(caster, placementX, placementY) )
+	{
+		messagePlayer(player, MESSAGE_HINT, Language::get(7012));
+		return;
+	}
+	const int index = tiley * MAPLAYERS + tilex * MAPLAYERS * map.height;
+	if ( !map.tiles[index] || map.tiles[OBSTACLELAYER + index] )
+	{
+		messagePlayer(player, MESSAGE_HINT, Language::get(7013));
+		return;
+	}
+
+	const real_t dx = placementX - caster->x;
+	const real_t dy = placementY - caster->y;
+	bool alongX = fabs(dx) >= fabs(dy);
+	bool bridge = false;
+	if ( carried->behavior == &actDoor && swimmingtiles[map.tiles[index]] )
+	{
+		//mod add: water placement is always valid for a carried door. Its
+		// orientation follows the caster-facing placement axis; surrounding bank
+		// tiles are intentionally irrelevant.
+		bridge = true;
+	}
+	else if ( swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]] )
+	{
+		messagePlayer(player, MESSAGE_HINT, Language::get(7014));
+		return;
+	}
+
+	// Validate the final rotated footprint, including passable/invisible creatures.
+	const bool doorDir = bridge ? alongX : !alongX;
+	const real_t destinationSizeX = carried->behavior == &actDoor ? (doorDir ? 8 : 1) : carried->sizex;
+	const real_t destinationSizeY = carried->behavior == &actDoor ? (doorDir ? 1 : 8) : carried->sizey;
+	if ( entrenchDestinationOccupied(carried, tilex, tiley, destinationSizeX, destinationSizeY) )
+	{
+		messagePlayer(player, MESSAGE_HINT, Language::get(7013));
+		return;
+	}
+
+	carried->x = placementX;
+	carried->y = placementY;
+	carried->flags[INVISIBLE] = false;
+	carried->flags[UNCLICKABLE] = false;
+	carried->flags[PASSABLE] = bridge || (carried->behavior != &actDoor && state.entrenchOriginPassable);
+	carried->skill[ENTRENCH_CARRIED_OWNER_SKILL] = 0;
+	carried->skill[ENTRENCH_DEPLOYED_OWNER_SKILL] = bridge ? 0 : player + 1;
+	carried->skill[ENTRENCH_DEPLOYED_REWARD_SKILL] = bridge ? 0 : 1;
+	carried->z = state.entrenchOriginZ;
+	if ( carried->behavior == &actDoor )
+	{
+		carried->skill[ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL] = bridge
+			? ENTRENCH_DOOR_MODE_BRIDGE : ENTRENCH_DOOR_MODE_BARRICADE;
+		carried->doorLocked = 1;
+		carried->doorStatus = 0;
+		// A bridge spans its banks; a barricade blocks across the caster's line.
+		carried->yaw = bridge ? (alongX ? PI / 2 : 0.0) : (alongX ? 0.0 : PI / 2);
+		carried->doorStartAng = carried->yaw;
+		carried->pitch = bridge ? PI / 2 : 0.0;
+		carried->roll = bridge ? 0.0 : PI / 2; // stand the barricade on its hinge edge
+		// Native open doors retain a -5 hinge focal offset. Clear it so open and
+		// closed source doors deploy at the same height and centered on the tile.
+		carried->focalx = 0.0;
+		carried->focaly = 0.0;
+		carried->focalz = 0.0;
+		// Positive Z lowers voxel models. Bridges sit roughly half a wall tile
+		// lower (minus two voxels); hinge-edge barricades need a quarter tile.
+		carried->z = bridge ? 8.0 : 4.0;
+		carried->doorDir = carried->yaw == 0.0 ? 0 : 1;
+		carried->sizex = carried->doorDir ? 8 : 1;
+		carried->sizey = carried->doorDir ? 1 : 8;
+		carried->flags[BLOCKSIGHT] = false;
+	}
+	TileEntityList.updateEntity(*carried);
+	if ( bridge )
+	{
+		// mod add: bridges are rare player actions; rebuild native grounded zones once.
+		generatePathMaps();
+	}
+	serverSyncEntrenchEntityTransform(carried, player);
+	if ( !bridge )
+	{
+		updateEnemyBar(caster, carried, Language::get(674), carried->doorHealth,
+			carried->doorMaxHealth, false, DamageGib::DMG_DEFAULT);
+	}
+	state.entrenchStash = EntrenchStash();
+	clearEntrenchCarrySnapshot(state);
+	caster->skill[ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL] = 0;
+	if ( multiplayer == SERVER )
+	{
+		serverUpdateEntitySkill(caster, ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL);
+	}
+	messagePlayer(player, MESSAGE_HINT, Language::get(bridge ? 7015 : 7016));
+}
+// mod add end
+
+bool tryToggleExistingChanneledSpell(int player, spell_t* spell)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !spell || !spell_isChanneled(spell) )
+	{
+		return false;
+	}
+
+	bool removedSpell = false;
+	for ( node_t* node = channeledSpells[player].first, *nextnode = nullptr; node; node = nextnode )
+	{
+		nextnode = node->next;
+		spell_t* spell_search = static_cast<spell_t*>(node->element);
+		if ( !spell_search || spell_search->ID != spell->ID )
+		{
+			continue;
+		}
+
+		if ( multiplayer != CLIENT )
+		{
+			// Server copies own their sustain state. Client entries are definitions
+			// and are removed locally while the authoritative UNCH is sent below.
+			spell_search->sustain = false;
+		}
+		messagePlayer(player, MESSAGE_COMBAT, Language::get(408), spell->getSpellName());
+		if ( multiplayer == CLIENT )
+		{
+			list_RemoveNode(node);
+			strcpy((char*)net_packet->data, "UNCH");
+			net_packet->data[4] = clientnum;
+			SDLNet_Write32(spell->ID, &net_packet->data[5]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 9;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		removedSpell = true;
+	}
+	return removedSpell;
+}
 
 void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool usingTome)
 {
 	Entity* caster = uidToEntity(caster_uid);
-	node_t* node = NULL;
 	if ( !caster )
 	{
 		//Need a spell and caster to cast a spell.
@@ -45,6 +972,34 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool 
 			player = i; //Set the player.
 		}
 	}
+	if ( player >= 0 && playerIsPanicking(player) )
+	{
+		return;
+	}
+	if ( player >= 0 && spell && spell->ID == SPELL_POSSESS )
+	{
+		if ( players[player]->mechanics.wraith.possessedEntityUid != 0 )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				// Refresh the complete client-owned inventory immediately before
+				// asking the host to return it to the possessed body.
+				sendWraithBodyInventorySnapshot(player, true);
+				strcpy(reinterpret_cast<char*>(net_packet->data), "WREQ");
+				net_packet->data[4] = static_cast<Uint8>(player);
+				SDLNet_Write32(0, &net_packet->data[5]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				releaseWraithPossession(player);
+			}
+			return;
+		}
+	}
 
 	if ( player >= 0 && players[player]->hud.weapon )
 	{
@@ -53,6 +1008,8 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool 
 			return; //Can't cast spells while attacking.
 		}
 	}
+
+	if ( player >= 0 && spell && spell->ID == SPELL_ENTRENCH && cast_animation[player].entrenchAwaitingResult ) { return; }
 
 	if ( cast_animation[player].active || cast_animation[player].active_spellbook )
 	{
@@ -72,6 +1029,12 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool 
 				playSoundEntityLocal(players[player]->entity, 163, 64);
 			}
 		}
+		return;
+	}
+	if ( player >= 0 && spell && spell->ID == SPELL_ENTRENCH
+		&& (players[player]->mechanics.entrenchCarriedUid != 0 || players[player]->mechanics.entrenchStash.valid())
+		&& resumeEntrenchPlacementAnimation(player) )
+	{
 		return;
 	}
 
@@ -94,45 +1057,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool 
 		}
 		if ( spell_isChanneled(spell))
 		{
-			bool removedSpell = false;
-			node_t* nextnode;
-			for (node = channeledSpells[player].first; node; node = nextnode)
-			{
-				nextnode = node->next;
-				spell_t* spell_search = (spell_t*)node->element;
-				if (spell_search->ID == spell->ID)
-				{
-					//list_RemoveNode(node);
-					//node = NULL;
-
-					if ( multiplayer != CLIENT )
-					{
-						// 02/12/20 - BP
-						// spell_search refers to actual spell definitions for client, like spell_light* 
-						// server uses copies of spell elements, so it works as intended
-						// clients don't read spell_search->sustain status to know when to stop anyway
-						spell_search->sustain = false; 
-					}
-
-					//if (spell->magic_effects)
-					//	list_RemoveNode(spell->magic_effects);
-					messagePlayer(player, MESSAGE_COMBAT, Language::get(408), spell->getSpellName());
-					if (multiplayer == CLIENT)
-					{
-						list_RemoveNode(node);
-						node = nullptr;
-						strcpy( (char*)net_packet->data, "UNCH");
-						net_packet->data[4] = clientnum;
-						SDLNet_Write32(spell->ID, &net_packet->data[5]);
-						net_packet->address.host = net_server.host;
-						net_packet->address.port = net_server.port;
-						net_packet->len = 9;
-						sendPacketSafe(net_sock, -1, net_packet, 0);
-					}
-					removedSpell = true;
-				}
-			}
-			if ( removedSpell )
+			if ( tryToggleExistingChanneledSpell(player, spell) )
 			{
 				return;
 			}
@@ -182,6 +1107,23 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool 
 	if ( stat->getEffectActive(EFF_PARALYZED) || stat->getEffectActive(EFF_ASLEEP) )
 	{
 		return;
+	}
+
+	if ( player >= 0 && spell->ID == SPELL_POLYMORPH_FAMILIAR
+		&& stat->amulet && stat->amulet->type == AMULET_FAMILIAR
+		&& stat->amulet->status != BROKEN )
+	{
+		Entity* familiar = findAmuletFamiliar(caster);
+		if ( familiar && getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_BAT )
+		{
+			CastSpellProps_t props{};
+			props.caster_x = caster->x;
+			props.caster_y = caster->y;
+			props.target_x = familiar->x;
+			props.target_y = familiar->y;
+			castSpell(caster->getUID(), spell, false, false, false, &props);
+			return;
+		}
 	}
 
 	// Calculate the cost of the Spell for Singleplayer
@@ -533,7 +1475,117 @@ int getEffectiveSpellcastingAbility(Entity* caster, Stat* stat, spell_t* spell) 
 	return std::min(std::max(0, stat->getModifiedProficiency(spell->skillID) + statGetINT(stat, caster)), 100);
 }
 
-Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook, CastSpellProps_t* castSpellProps, bool usingFoci)
+void handleSpellbookCastingDegradation(Entity* caster, spell_t* spell)
+{
+	if ( !caster || !spell )
+	{
+		return;
+	}
+	Stat* stat = caster->getStats();
+	if ( !stat )
+	{
+		return;
+	}
+
+	int player = -1;
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( players[i] && caster == players[i]->entity )
+		{
+			player = i;
+		}
+	}
+
+	int chance = 8;
+	if ( stat->type == GOBLIN )
+	{
+		chance = 16;
+
+		if ( caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->stat_appearance == 0 )
+		{
+			if ( spell->ID >= 30 && spell->ID < 60 )
+			{
+				serverUpdatePlayerGameplayStats(caster->skill[2], STATISTICS_POP_QUIZ_2, spell->ID);
+			}
+			else
+			{
+				serverUpdatePlayerGameplayStats(caster->skill[2], STATISTICS_POP_QUIZ_1, spell->ID);
+			}
+		}
+	}
+	if ( stat->shield
+		&& ( (stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat))
+			|| (stat->shield->beatitude > 0 && shouldInvertEquipmentBeatitude(stat)) )
+		)
+	{
+		chance = 1; // cursed books always degrade, or blessed books in succubus/incubus
+	}
+	else
+	{
+		if ( caster->behavior == &actPlayer )
+		{
+			if ( stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+			{
+				if ( !players[caster->skill[2]]->mechanics.itemDegradeRoll(stat->shield) )
+				{
+					chance = 0;
+				}
+			}
+		}
+	}
+	if ( chance > 0 && local_rng.rand() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
+	{
+		Status oldStatus = stat->shield->status;
+		if ( caster->behavior == &actPlayer )
+		{
+			players[caster->skill[2]]->mechanics.onItemDegrade(stat->shield);
+		}
+		if ( oldStatus == DECREPIT && stat->shield->beatitude > 0 && caster->behavior == &actPlayer )
+		{
+			--stat->shield->beatitude;
+			if ( caster->skill[2] >= 0 )
+			{
+				messagePlayer(caster->skill[2], MESSAGE_EQUIPMENT, Language::get(6308), stat->shield->getName());
+			}
+
+			if ( multiplayer == SERVER && caster->skill[2] > 0 )
+			{
+				strcpy((char*)net_packet->data, "BEAT");
+				net_packet->data[4] = caster->skill[2];
+				net_packet->data[5] = 5; // shield index
+				net_packet->data[6] = stat->shield->beatitude + 100;
+				SDLNet_Write16((Sint16)stat->shield->type, &net_packet->data[7]);
+				net_packet->address.host = net_clients[caster->skill[2] - 1].host;
+				net_packet->address.port = net_clients[caster->skill[2] - 1].port;
+				net_packet->len = 9;
+				sendPacketSafe(net_sock, -1, net_packet, caster->skill[2] - 1);
+			}
+		}
+		else
+		{
+			caster->degradeArmor(*stat, *(stat->shield), 4);
+			if ( stat->shield->status < oldStatus )
+			{
+				if ( player >= 0 )
+				{
+					Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, stat->shield->type, 1);
+				}
+			}
+
+			if ( stat->shield->status == BROKEN && player >= 0 )
+			{
+				if ( caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->stat_appearance == 0 )
+				{
+					steamStatisticUpdateClient(player, STEAM_STAT_DYSLEXIA, STEAM_STAT_INT, 1);
+				}
+				Item* toBreak = stat->shield;
+				consumeItem(toBreak, player);
+			}
+		}
+	}
+}
+
+Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap, bool usingSpellbook, CastSpellProps_t* castSpellProps, bool usingFoci, bool usingRune)
 {
 	Entity* caster = uidToEntity(caster_uid);
 
@@ -541,6 +1593,49 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	{
 		//Need a spell and caster to cast a spell.
 		return NULL;
+	}
+	if ( spell->ID == SPELL_POSSESS )
+	{
+		if ( caster->behavior != &actPlayer ) { return nullptr; }
+		const int possessPlayer = caster->skill[2];
+		if ( possessPlayer < 0 || possessPlayer >= MAXPLAYERS || !players[possessPlayer] )
+		{
+			return nullptr;
+		}
+		const Uint32 targetUid = castSpellProps ? castSpellProps->targetUID : 0;
+		if ( multiplayer == CLIENT )
+		{
+			if ( players[possessPlayer]->mechanics.wraith.possessedEntityUid != 0 )
+			{
+				sendWraithBodyInventorySnapshot(possessPlayer, true);
+			}
+			strcpy(reinterpret_cast<char*>(net_packet->data), "WREQ");
+			net_packet->data[4] = static_cast<Uint8>(possessPlayer);
+			SDLNet_Write32(targetUid, &net_packet->data[5]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 9;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
+		else if ( players[possessPlayer]->mechanics.wraith.possessedEntityUid != 0 )
+		{
+			releaseWraithPossession(possessPlayer);
+		}
+		else
+		{
+			beginWraithPossession(possessPlayer, uidToEntity(targetUid));
+		}
+		return nullptr;
+	}
+	ScopedSpellPowerOverride spellPowerScope(spell);
+	// mod add: authoritative spell rejection for a Panicking player. Monster,
+	// trap, staff, and focus casts without a player caster retain vanilla paths.
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( players[i] && caster == players[i]->entity && playerIsPanicking(i) )
+		{
+			return NULL;
+		}
 	}
 
 	Entity* result = NULL; //If the spell spawns an entity (like a magic light ball or a magic missile), it gets stored here and returned.
@@ -577,17 +1672,34 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				net_packet->data[30] = castSpellProps->wallDir;
 				net_packet->data[31] = castSpellProps->optionalData;
 				net_packet->data[32] = castSpellProps->overcharge;
-				net_packet->len = 33;
+				net_packet->data[33] = usingRune ? 1 : 0;
+				SDLNet_Write32(usingRune ? spell->runeInstanceId : 0, &net_packet->data[34]);
+				net_packet->len = 38;
 			}
 			else
 			{
 				net_packet->len = 10;
 			}
 		}
+		if ( spell->ID == SPELL_ENTRENCH ) { cast_animation[clientnum].entrenchAwaitingResult = true; }
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		return NULL;
+	}
+
+	// Placement completes an already-paid cast, independent of the book/rune surviving.
+	const int entrenchPlayer = caster->behavior == &actPlayer ? caster->skill[2] : -1;
+	if ( spell->ID == SPELL_ENTRENCH && entrenchPlayer >= 0 && entrenchPlayer < MAXPLAYERS
+		&& players[entrenchPlayer] )
+	{
+		const bool placing = castSpellProps && castSpellProps->optionalData == 1;
+		const bool carrying = players[entrenchPlayer]->mechanics.entrenchCarriedUid != 0;
+		if ( placing || carrying )
+		{
+			if ( placing && carrying && caster->getHP() > 0 ) { castEntrench(caster, entrenchPlayer, castSpellProps); }
+			return nullptr;
+		}
 	}
 
 	if (!spell->elements.first)
@@ -615,6 +1727,56 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			player = i; //Set the player.
 		}
+	}
+	if ( spell->ID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		Entity* familiar = findAmuletFamiliar(caster);
+		if ( player < 0 || !stat || !stat->amulet || stat->amulet->type != AMULET_FAMILIAR
+			|| stat->amulet->status == BROKEN || !familiar )
+		{
+			return nullptr;
+		}
+		if ( getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_BAT )
+		{
+			requestAmuletFamiliarPolymorph(caster, familiar->x, familiar->y);
+			return nullptr;
+		}
+		if ( getAmuletFamiliarForm(familiar) == FAMILIAR_FORM_BAT )
+		{
+			if ( amuletFamiliarIsTooWeakToTransform(familiar, familiar->getStats()) )
+			{
+				messagePlayer(player, MESSAGE_MISC, "Your familiar is too weak to transform.");
+				playSoundPlayer(player, 163, 64);
+				return nullptr;
+			}
+			real_t targetX = 0.0;
+			real_t targetY = 0.0;
+			if ( castSpellProps )
+			{
+				targetX = castSpellProps->target_x;
+				targetY = castSpellProps->target_y;
+			}
+			else if ( player >= 0 && player < MAXPLAYERS )
+			{
+				targetX = cast_animation[player].target_x;
+				targetY = cast_animation[player].target_y;
+			}
+			else
+			{
+				return nullptr;
+			}
+			if ( !amuletFamiliarPolymorphTargetIsValid(familiar, targetX, targetY) )
+			{
+				messagePlayer(player, MESSAGE_MISC, "Your familiar cannot transform there.");
+				playSoundPlayer(player, 163, 64);
+				return nullptr;
+			}
+		}
+	}
+	if ( usingRune && player >= 0 )
+	{
+		spell->runeCasterPlayer = static_cast<Sint8>(player);
+		spell->runeCasterEntityUid = caster->getUID();
 	}
 
 	bool newbie = false;
@@ -644,6 +1806,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 		}
 	}
+	if ( spell->ID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		allowedSkillup = false;
+	}
 	Uint32 spellEventFlags = 0;
 	if ( using_magicstaff && !trap && !usingFoci )
 	{
@@ -656,7 +1822,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		prevMP = stat->MP;
 	}
 
-	if ( !using_magicstaff && !trap && !usingFoci && stat && player >= 0 )
+	if ( !using_magicstaff && !trap && !usingFoci && !usingRune && stat && player >= 0 )
 	{
 		newbie = isSpellcasterBeginner(player, caster, spell->skillID);
 
@@ -807,6 +1973,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			players[caster->skill[2]]->mechanics.baseSpellIncrementMP(oldMP - stat->MP, spell->skillID);
 		}
+	}
+
+	//mod add: Preserve Entrench's existing no-fizzle utility rule for the paid pickup.
+	if ( spell->ID == SPELL_ENTRENCH )
+	{
+		newbie = false;
 	}
 
 	if ( newbie && stat )
@@ -982,6 +2154,35 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	//spellElement_t *element = (spellElement_t *)spell->elements->first->element;
 	spellElement_t* const element = (spellElement_t*)node->element;
 	spellElement_t* const innerElement = element->elements.first ? (spellElement_t*)(element->elements.first->element) : nullptr;
+	// mod add: Entrench is an immediate targeted utility effect. Keeping it
+	// outside the legacy element else-if chain also avoids MSVC's nesting limit.
+	if ( spell->ID == SPELL_ENTRENCH )
+	{
+		castEntrench(caster, player, castSpellProps);
+		return nullptr;
+	}
+	if ( spell->ID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		CastSpellProps_t localTarget;
+		if ( !castSpellProps && player >= 0 && player < MAXPLAYERS )
+		{
+			// Local/host casts normally arrive with props from the floor-target
+			// animation. Retain a safe fallback so copied equipment spells cannot
+			// silently consume mana without issuing the familiar command.
+			localTarget.caster_x = caster->x;
+			localTarget.caster_y = caster->y;
+			localTarget.target_x = cast_animation[player].target_x;
+			localTarget.target_y = cast_animation[player].target_y;
+			castSpellProps = &localTarget;
+		}
+		if ( castSpellProps )
+		{
+			requestAmuletFamiliarPolymorph(caster,
+				castSpellProps->target_x, castSpellProps->target_y);
+		}
+		return nullptr;
+	}
+
 	if (element)
 	{
 		if (!strcmp(element->element_internal_name, spellElement_missile.element_internal_name))
@@ -1519,7 +2720,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						//Tell the client to identify an item.
 						strcpy((char*)net_packet->data, "IDEN");
-						if ( usingSpellbook )
+						if ( usingRune )
+						{
+							net_packet->data[4] = 2;
+							net_packet->data[5] = 0;
+						}
+						else if ( usingSpellbook )
 						{
 							net_packet->data[4] = 1;
 							net_packet->data[5] = static_cast<Uint8>(spellBookBeatitude);
@@ -1529,15 +2735,21 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							net_packet->data[4] = 0;
 							net_packet->data[5] = 0;
 						}
+						SDLNet_Write32(usingRune ? spell->runeInstanceId : 0, &net_packet->data[6]);
 						net_packet->address.host = net_clients[i - 1].host;
 						net_packet->address.port = net_clients[i - 1].port;
-						net_packet->len = 6;
+						net_packet->len = 10;
 						sendPacketSafe(net_sock, -1, net_packet, i - 1);
 					}
 					else
 					{
 						//Identify an item.
-						if ( usingSpellbook )
+						if ( usingRune )
+						{
+							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX,
+								findMagicRuneByInstanceId(spell->runeInstanceId), 0, MAGIC_RUNE, SPELL_IDENTIFY);
+						}
+						else if ( usingSpellbook )
 						{
 							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX, nullptr, spellBookBeatitude, getSpellbookFromSpellID(SPELL_IDENTIFY), SPELL_IDENTIFY);
 						}
@@ -1562,7 +2774,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						//Tell the client to identify an item.
 						strcpy((char*)net_packet->data, "CRCU");
-						if ( usingSpellbook )
+						if ( usingRune )
+						{
+							net_packet->data[4] = 2;
+							net_packet->data[5] = 0;
+						}
+						else if ( usingSpellbook )
 						{
 							net_packet->data[4] = 1;
 							net_packet->data[5] = static_cast<Uint8>(spellBookBeatitude);
@@ -1572,15 +2789,21 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							net_packet->data[4] = 0;
 							net_packet->data[5] = 0;
 						}
+						SDLNet_Write32(usingRune ? spell->runeInstanceId : 0, &net_packet->data[6]);
 						net_packet->address.host = net_clients[i - 1].host;
 						net_packet->address.port = net_clients[i - 1].port;
-						net_packet->len = 6;
+						net_packet->len = 10;
 						sendPacketSafe(net_sock, -1, net_packet, i - 1);
 					}
 					else
 					{
 						//Identify an item.
-						if ( usingSpellbook )
+						if ( usingRune )
+						{
+							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX,
+								findMagicRuneByInstanceId(spell->runeInstanceId), 0, MAGIC_RUNE, SPELL_REMOVECURSE);
+						}
+						else if ( usingSpellbook )
 						{
 							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX, nullptr, spellBookBeatitude, getSpellbookFromSpellID(SPELL_REMOVECURSE), SPELL_REMOVECURSE);
 						}
@@ -1621,7 +2844,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					{
 						//Tell the client to identify an item.
 						strcpy((char*)net_packet->data, "FXSP");
-						if ( usingSpellbook )
+						if ( usingRune )
+						{
+							net_packet->data[4] = 2;
+							net_packet->data[5] = 0;
+						}
+						else if ( usingSpellbook )
 						{
 							net_packet->data[4] = 1;
 							net_packet->data[5] = static_cast<Uint8>(spellBookBeatitude);
@@ -1632,15 +2860,21 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							net_packet->data[5] = 0;
 						}
 						SDLNet_Write32(spell->ID, &net_packet->data[6]);
+						SDLNet_Write32(usingRune ? spell->runeInstanceId : 0, &net_packet->data[10]);
 						net_packet->address.host = net_clients[i - 1].host;
 						net_packet->address.port = net_clients[i - 1].port;
-						net_packet->len = 10;
+						net_packet->len = 14;
 						sendPacketSafe(net_sock, -1, net_packet, i - 1);
 					}
 					else
 					{
 						//Identify an item.
-						if ( usingSpellbook )
+						if ( usingRune )
+						{
+							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX,
+								findMagicRuneByInstanceId(spell->runeInstanceId), 0, MAGIC_RUNE, spell->ID);
+						}
+						else if ( usingSpellbook )
 						{
 							GenericGUI[i].openGUI(GUI_TYPE_ITEMFX, nullptr, spellBookBeatitude, getSpellbookFromSpellID(spell->ID), spell->ID);
 						}
@@ -8093,7 +9327,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					if ( Entity* fx = createRadiusMagic(SPELL_SANCTUARY, caster,
 						castSpellProps->target_x, castSpellProps->target_y, 32,
-						getSpellEffectDurationFromID(SPELL_SANCTUARY, caster, nullptr, caster), nullptr) )
+						getSpellEffectDurationFromID(SPELL_SANCTUARY, caster, nullptr, caster), nullptr,
+						spell->runeInstanceId) )
 					{
 						playSoundEntity(fx, 167, 128);
 						messagePlayerColor(caster->isEntityPlayer(), MESSAGE_HINT, makeColorRGB(0, 255, 0), Language::get(6953));
@@ -9184,93 +10419,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 	if ( !trap && usingSpellbook && stat ) // degrade spellbooks on use.
 	{
-		int chance = 8;
-		if ( stat->type == GOBLIN )
-		{
-			chance = 16;
-
-			if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->stat_appearance == 0 )
-			{
-				if ( spell->ID >= 30 && spell->ID < 60 )
-				{
-					serverUpdatePlayerGameplayStats(caster->skill[2], STATISTICS_POP_QUIZ_2, spell->ID);
-				}
-				else
-				{
-					serverUpdatePlayerGameplayStats(caster->skill[2], STATISTICS_POP_QUIZ_1, spell->ID);
-				}
-			}
-		}
-		if ( stat->shield 
-			&& ( (stat->shield->beatitude < 0 && !shouldInvertEquipmentBeatitude(stat))
-				|| (stat->shield->beatitude > 0 && shouldInvertEquipmentBeatitude(stat)) ) 
-			)
-		{
-			chance = 1; // cursed books always degrade, or blessed books in succubus/incubus
-		}
-		else
-		{
-			if ( caster && caster->behavior == &actPlayer )
-			{
-				if ( stat->shield && itemCategory(stat->shield) == SPELLBOOK )
-				{
-					if ( !players[caster->skill[2]]->mechanics.itemDegradeRoll(stat->shield) )
-					{
-						chance = 0;
-					}
-				}
-			}
-		}
-		if ( chance > 0 && local_rng.rand() % chance == 0 && stat->shield && itemCategory(stat->shield) == SPELLBOOK )
-		{
-			Status oldStatus = stat->shield->status;
-			if ( caster && caster->behavior == &actPlayer )
-			{
-				players[caster->skill[2]]->mechanics.onItemDegrade(stat->shield);
-			}
-			if ( oldStatus == DECREPIT && stat->shield->beatitude > 0 && caster && caster->behavior == &actPlayer )
-			{
-				--stat->shield->beatitude;
-				if ( caster->skill[2] >= 0 )
-				{
-					messagePlayer(caster->skill[2], MESSAGE_EQUIPMENT, Language::get(6308), stat->shield->getName());
-				}
-
-				if ( multiplayer == SERVER && caster->skill[2] > 0 )
-				{
-					strcpy((char*)net_packet->data, "BEAT");
-					net_packet->data[4] = caster->skill[2];
-					net_packet->data[5] = 5; // shield index
-					net_packet->data[6] = stat->shield->beatitude + 100;
-					SDLNet_Write16((Sint16)stat->shield->type, &net_packet->data[7]);
-					net_packet->address.host = net_clients[caster->skill[2] - 1].host;
-					net_packet->address.port = net_clients[caster->skill[2] - 1].port;
-					net_packet->len = 9;
-					sendPacketSafe(net_sock, -1, net_packet, caster->skill[2] - 1);
-				}
-			}
-			else
-			{
-				caster->degradeArmor(*stat, *(stat->shield), 4);
-				if ( stat->shield->status < oldStatus )
-				{
-					if ( player >= 0 )
-					{
-						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, stat->shield->type, 1);
-					}
-				}
-
-				if ( stat->shield->status == BROKEN && player >= 0 )
-				{
-					if ( caster && caster->behavior == &actPlayer && stat->playerRace == RACE_GOBLIN && stat->stat_appearance == 0 )
-					{
-						steamStatisticUpdateClient(player, STEAM_STAT_DYSLEXIA, STEAM_STAT_INT, 1);
-					}
-					Item* toBreak = stat->shield;
-					consumeItem(toBreak, player);
-				}
-			}
-		}
+		handleSpellbookCastingDegradation(caster, spell);
 	}
 
 	if (spell_isChanneled(spell) && !using_magicstaff && !trap && !usingFoci )   //TODO: What about magic traps and channeled spells?
@@ -9295,15 +10444,29 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				strcpy( (char*)net_packet->data, "CHAN" );
 				net_packet->data[4] = clientnum;
 				SDLNet_Write32(spell->ID, &net_packet->data[5]);
+				net_packet->data[9] = usingRune ? 1 : 0;
+				SDLNet_Write32(usingRune ? spell->runeInstanceId : 0, &net_packet->data[10]);
+				net_packet->data[14] = static_cast<Uint8>(usingRune
+					? spell->runeCreatorPlayer : Item::RUNE_CREATOR_INVALID);
+				SDLNet_Write32(usingRune ? spell->runeCreatorIdentity : 0,
+					&net_packet->data[15]);
 				net_packet->address.host = net_clients[target_client - 1].host;
 				net_packet->address.port = net_clients[target_client - 1].port;
-				net_packet->len = 9;
+				net_packet->len = 19;
 				sendPacketSafe(net_sock, -1, net_packet, target_client - 1);
 			}
 
 			if ( usingSpellbook )
 			{
 				channeled_spell->spellbook = true;
+			}
+			if ( usingRune )
+			{
+				channeled_spell->runeInstanceId = spell->runeInstanceId;
+				channeled_spell->runeCreatorPlayer = spell->runeCreatorPlayer;
+				channeled_spell->runeCreatorIdentity = spell->runeCreatorIdentity;
+				channeled_spell->runeCasterPlayer = spell->runeCasterPlayer;
+				channeled_spell->runeCasterEntityUid = spell->runeCasterEntityUid;
 			}
 
 			//Add this spell to the list of channeled spells.
@@ -9329,7 +10492,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				{
 					castSpellProps->elementIndex = index;
 				}
-				castSpell(caster_uid, subSpell, using_magicstaff, _trap, usingSpellbook, castSpellProps, usingFoci);
+				castSpell(caster_uid, subSpell, using_magicstaff, _trap, usingSpellbook, castSpellProps, usingFoci, usingRune);
 			}
 		}
 
@@ -9432,6 +10595,29 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity* caster, Stat& stat, int spellI
 	if ( caster && caster->behavior != &actPlayer )
 	{
 		return false;
+	}
+	if ( spellID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		return stat.amulet && stat.amulet->type == AMULET_FAMILIAR
+			&& stat.amulet->status != BROKEN;
+	}
+	if ( stat.playerRace == RACE_WRAITH && stat.stat_appearance == 0
+		&& spellID == SPELL_POSSESS )
+	{
+		return true;
+	}
+	const int wraithPlayer = caster ? caster->skill[2] : player;
+	if ( stat.playerRace == RACE_WRAITH && stat.stat_appearance == 0
+		&& wraithPlayer >= 0 && wraithPlayer < MAXPLAYERS && players[wraithPlayer]
+		&& players[wraithPlayer]->mechanics.wraith.initialized
+		&& players[wraithPlayer]->mechanics.wraith.possessedEntityUid != 0 )
+	{
+		const auto innate = getWraithPossessionInnateSpells(
+			getWraithEffectiveMonsterType(wraithPlayer));
+		if ( std::find(innate.begin(), innate.end(), spellID) != innate.end() )
+		{
+			return true;
+		}
 	}
 
 	// player races:
@@ -9543,6 +10729,18 @@ bool spellIsNaturallyLearnedByRaceOrClass(Entity* caster, Stat& stat, int spellI
 	else if ( client_classes[playernum] == CLASS_PALADIN )
 	{
 		if ( spellID == SPELL_DIVINE_ZEAL )
+		{
+			return true;
+		}
+	}
+	else if ( client_classes[playernum] == CLASS_GUNSLINGER
+		&& (spellID == SPELL_ENTRENCH || spellID == SPELL_SALVAGE) ) //mod add: Gunslinger innate utility spells.
+	{
+		return true;
+	}
+	else if ( client_classes[playernum] == CLASS_WITCH )
+	{
+		if ( spellID == SPELL_VOID_CHEST )
 		{
 			return true;
 		}

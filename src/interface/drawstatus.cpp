@@ -3170,7 +3170,9 @@ void drawStatusNew(const int player)
 								break;
 							}
 
-							if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
+							if ( option == ItemContextMenuPrompts::PROMPT_DROP
+								&& players[player]->paperDoll.isItemOnDoll(*item)
+								&& !isWraithPhysicalHandItem(player, item) )
 							{
 								// need to unequip
 								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
@@ -3294,7 +3296,8 @@ void drawStatusNew(const int player)
 				}
 			}
 			else if ( (/*keystatus[SDLK_LALT] || keystatus[SDLK_RALT]*/ input.binary("Alternate Use Modifier"))
-				&& (itemCategory(item) == POTION || itemCategory(item) == SPELLBOOK || itemCategory(item) == SPELL_CAT
+				&& (itemTypeIsOil(item->type) || itemCategory(item) == POTION
+				|| itemCategory(item) == SPELLBOOK || itemCategory(item) == SPELL_CAT
 				|| item->type == FOOD_CREAMPIE) )
 			{
 				badpotion = true;

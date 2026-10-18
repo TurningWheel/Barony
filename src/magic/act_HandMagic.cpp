@@ -24,6 +24,7 @@
 #include "../prng.hpp"
 #include "../mod_tools.hpp"
 #include "../collision.hpp"
+#include "../monster.hpp"
 
 //The spellcasting animation stages:
 #define ANIM_SPELL_CIRCLE 0 //One circle
@@ -85,6 +86,7 @@ static ConsoleVariable<int> cvar_vibe_spell_y("/vibe_spell_y", 0);
 static ConsoleVariable<int> cvar_vibe_spell_s("/vibe_spell_s", 0);
 void spellcasting_animation_manager_t::executeAttackSpell(bool swingweapon)
 {
+	if ( entrenchAwaitingResult && spell && spell->ID == SPELL_ENTRENCH ) { return; }
 	if ( player < 0 || player >= MAXPLAYERS ) { return; }
 	if ( !spellWaitingAttackInput() )
 	{
@@ -103,7 +105,8 @@ void spellcasting_animation_manager_t::executeAttackSpell(bool swingweapon)
 	{
 		if ( !swingweapon )
 		{
-			if ( rangefinder == RANGEFINDER_TOUCH_FLOOR_TILE )
+			if ( rangefinder == RANGEFINDER_TARGET
+				|| rangefinder == RANGEFINDER_TOUCH_FLOOR_TILE )
 			{
 				stage = ANIM_SPELL_TOUCH_THROW;
 				throw_count = 0;
@@ -145,7 +148,8 @@ void spellcasting_animation_manager_t::executeAttackSpell(bool swingweapon)
 	{
 		if ( !swingweapon )
 		{
-			if ( rangefinder == RANGEFINDER_TOUCH_FLOOR_TILE )
+			if ( rangefinder == RANGEFINDER_TARGET
+				|| rangefinder == RANGEFINDER_TOUCH_FLOOR_TILE )
 			{
 				stage = ANIM_SPELL_OVERCHARGE_THROW;
 				throw_count = 0;
@@ -257,6 +261,11 @@ bool rangefinderTargetEnemyType(spell_t& spell, Entity& entity)
 			return true;
 		}
 		return false;
+	}
+	// mod add: use the authoritative Entrench predicate so targeting and pickup agree.
+	else if ( spell.ID == SPELL_ENTRENCH )
+	{
+		return isEntrenchMovableObject(&entity);
 	}
 	else if ( spell.ID == SPELL_SABOTAGE
 		|| spell.ID == SPELL_HARVEST_TRAP )
@@ -376,12 +385,26 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 		return;
 	}
 
-	if ( !spell->rangefinder )
+	if ( !spell->rangefinder && spell->ID != SPELL_POLYMORPH_FAMILIAR )
 	{
 		return;
 	}
+	ScopedSpellPowerOverride spellPowerScope(hasSpellPowerOverride, spellPowerOverride);
 
 	rangefinder = spell->rangefinder;
+	// Polymorph Familiar is an equipment-granted spell and may be copied from a
+	// source definition loaded without the optional mod JSON. Its targeting is
+	// an executable contract, so always restore the floor rangefinder here.
+	if ( spell->ID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		rangefinder = RANGEFINDER_TOUCH_FLOOR_TILE;
+	}
+	// mod add: Entrench's second stage targets a cardinal floor tile.
+	if ( spell->ID == SPELL_ENTRENCH && players[player]
+		&& players[player]->mechanics.entrenchCarriedUid != 0 )
+	{
+		rangefinder = RANGEFINDER_TOUCH_FLOOR_TILE;
+	}
 
 	if ( stage == ANIM_SPELL_TOUCH_THROW || stage == ANIM_SPELL_OVERCHARGE_THROW )
 	{
@@ -446,6 +469,12 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	wallDir = 0;
 
 	real_t spellDistance = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_DISTANCE, spell->ID, caster, nullptr, caster);
+	if ( spell->ID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		// This equipment command has a fixed eight-tile reach and should not be
+		// reduced by the generic learned-spell range cap.
+		spellDistance = 128.0;
+	}
 	static ConsoleVariable<bool> cvar_rangefinder_linetrace("/rangefinder_linetrace", true);
 
 	if ( rangefinder == RANGEFINDER_TOUCH_WALL_TILE )
@@ -593,6 +622,16 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 
 	target_x = previousx;
 	target_y = previousy;
+	//mod add: placement logic consumes a tile, so make the preview and packet
+	// use that tile's exact center instead of an arbitrary point along the ray.
+	if ( (spell->ID == SPELL_ENTRENCH || spell->ID == SPELL_POLYMORPH_FAMILIAR)
+		&& rangefinder == RANGEFINDER_TOUCH_FLOOR_TILE )
+	{
+		const int tilex = std::min<int>(std::max(static_cast<int>(floor(target_x / 16.0)), 0), map.width - 1);
+		const int tiley = std::min<int>(std::max(static_cast<int>(floor(target_y / 16.0)), 0), map.height - 1);
+		target_x = tilex * 16 + 8;
+		target_y = tiley * 16 + 8;
+	}
 	caster_x = caster->x;
 	caster_y = caster->y;
 
@@ -612,8 +651,12 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 		{
 			minDist = 16.0;
 		}
+		else if ( spell->ID == SPELL_ENTRENCH )
+		{
+			minDist = 0.0;
+		}
 
-		if ( spell->ID == SPELL_BOOBY_TRAP || spell->ID == SPELL_VOID_CHEST || spell->ID == SPELL_TELEKINESIS
+		if ( spell->ID == SPELL_BOOBY_TRAP || spell->ID == SPELL_VOID_CHEST || spell->ID == SPELL_TELEKINESIS || spell->ID == SPELL_ENTRENCH
 			|| spell->ID == SPELL_KINETIC_PUSH || spell->ID == SPELL_SABOTAGE || spell->ID == SPELL_HARVEST_TRAP
 			|| spell->ID == SPELL_SPLINTER_GEAR || spell->ID == SPELL_DEFACE || spell->ID == SPELL_SUNDER_MONUMENT
 			|| spell->ID == SPELL_DEMESNE_DOOR )
@@ -675,7 +718,13 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 
 						real_t interactAngle = PI / 8;
 						bool bonusRange = false;
-						if ( spell->ID == SPELL_BOOBY_TRAP )
+						if ( spell->ID == SPELL_ENTRENCH )
+						{
+							// Environmental props are aimed at by their center point. Do not
+							// collapse the selection cone to a few degrees at long range.
+							interactAngle = PI / 8;
+						}
+						else if ( spell->ID == SPELL_BOOBY_TRAP )
 						{
 							bonusRange = true;
 						}
@@ -696,7 +745,11 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 							bonusRange = true;
 						}
 						
-						if ( bonusRange )
+						if ( spell->ID == SPELL_ENTRENCH )
+						{
+							// Keep the fixed cone set above.
+						}
+						else if ( bonusRange )
 						{
 							interactAngle = (PI / 6);
 							if ( dist > STRIKERANGE )
@@ -815,7 +868,7 @@ void spellcasting_animation_manager_t::setRangeFinderLocation()
 	}
 }
 
-void spellcastAnimationUpdate(int player, int attackPose, int castTime)
+void spellcastAnimationUpdate(int player, int attackPose, int castTime, bool runeHammerCastVisual)
 {
 	if ( multiplayer == CLIENT )
 	{
@@ -824,16 +877,17 @@ void spellcastAnimationUpdate(int player, int attackPose, int castTime)
 		net_packet->data[4] = player;
 		net_packet->data[5] = attackPose;
 		SDLNet_Write16(castTime, &net_packet->data[6]);
-		net_packet->len = 8;
+		net_packet->data[8] = runeHammerCastVisual ? 1 : 0;
+		net_packet->len = 9;
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
 
-	spellcastAnimationUpdateReceive(player, attackPose, castTime);
+	spellcastAnimationUpdateReceive(player, attackPose, castTime, runeHammerCastVisual);
 }
 
-void spellcastAnimationUpdateReceive(int player, int attackPose, int castTime)
+void spellcastAnimationUpdateReceive(int player, int attackPose, int castTime, bool runeHammerCastVisual)
 {
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
@@ -853,7 +907,8 @@ void spellcastAnimationUpdateReceive(int player, int attackPose, int castTime)
 					net_packet->data[4] = player;
 					net_packet->data[5] = attackPose;
 					SDLNet_Write16(castTime, &net_packet->data[6]);
-					net_packet->len = 8;
+					net_packet->data[8] = runeHammerCastVisual ? 1 : 0;
+					net_packet->len = 9;
 					net_packet->address.host = net_clients[i - 1].host;
 					net_packet->address.port = net_clients[i - 1].port;
 					sendPacketSafe(net_sock, -1, net_packet, i - 1);
@@ -864,6 +919,28 @@ void spellcastAnimationUpdateReceive(int player, int attackPose, int castTime)
 
 	if ( players[player]->entity )
 	{
+		Entity* playerEntity = players[player]->entity;
+		if ( runeHammerCastVisual )
+		{
+			playerEntity->runeHammerCastVisualActive = true;
+			if ( attackPose == MONSTER_POSE_MAGIC_WINDUP1 )
+			{
+				playerEntity->runeHammerCastVisualStartTick = ticks;
+				playerEntity->runeHammerCastVisualReleaseTick = 0;
+				playerEntity->runeHammerCastVisualDuration = std::max(1, castTime);
+			}
+			else
+			{
+				playerEntity->runeHammerCastVisualReleaseTick = ticks;
+			}
+		}
+		else if ( attackPose == MONSTER_POSE_MAGIC_CAST2
+			&& playerEntity->runeHammerCastVisualActive
+			&& playerEntity->runeHammerCastVisualReleaseTick == 0 )
+		{
+			// Mirror a pre-release cancellation to remote players.
+			playerEntity->runeHammerCastVisualActive = false;
+		}
 		if ( attackPose == MONSTER_POSE_MAGIC_WINDUP1 )
 		{
 			players[player]->entity->playerCastTimeAnim = castTime;
@@ -896,7 +973,8 @@ void spellcastAnimationUpdateReceive(int player, int attackPose, int castTime)
 		}
 		else if ( attackPose == MONSTER_POSE_MAGIC_CAST2 || attackPose == 1 )
 		{
-			if ( attackPose == MONSTER_POSE_MAGIC_CAST2 && !players[player]->isLocalPlayer() )
+			if ( attackPose == MONSTER_POSE_MAGIC_CAST2 && !runeHammerCastVisual
+				&& !players[player]->isLocalPlayer() )
 			{
 				if ( players[player]->entity->skill[9] == MONSTER_POSE_MAGIC_WINDUP2 )
 				{
@@ -907,6 +985,47 @@ void spellcastAnimationUpdateReceive(int player, int attackPose, int castTime)
 			players[player]->entity->skill[10] = 0;
 		}
 	}
+}
+
+RuneHammerCastVisualPhase getRuneHammerCastVisualPhase(Entity& playerEntity, real_t& progress)
+{
+	progress = 0.0;
+	if ( !playerEntity.runeHammerCastVisualActive )
+	{
+		return RuneHammerCastVisualPhase::NONE;
+	}
+
+	if ( playerEntity.runeHammerCastVisualReleaseTick == 0 )
+	{
+		// The normal first-swing windup reaches its held pose in roughly ten ticks.
+		// Faster Runes scale that approach down; slower/targeted Runes hold it until release.
+		const Uint32 elapsed = ticks >= playerEntity.runeHammerCastVisualStartTick
+			? ticks - playerEntity.runeHammerCastVisualStartTick : 0;
+		const int windupTicks = std::max(1,
+			std::min(10, playerEntity.runeHammerCastVisualDuration));
+		progress = std::min<real_t>(1.0,
+			elapsed / static_cast<real_t>(windupTicks));
+		return RuneHammerCastVisualPhase::CHARGE;
+	}
+
+	// These visual-only phases mirror the normal Hammer's first-swing and return timing.
+	static constexpr Uint32 SWING_TICKS = 11;
+	static constexpr Uint32 RECOVERY_TICKS = 16;
+	const Uint32 elapsed = ticks >= playerEntity.runeHammerCastVisualReleaseTick
+		? ticks - playerEntity.runeHammerCastVisualReleaseTick : 0;
+	if ( elapsed <= SWING_TICKS )
+	{
+		progress = elapsed / static_cast<real_t>(SWING_TICKS);
+		return RuneHammerCastVisualPhase::SWING;
+	}
+	if ( elapsed <= SWING_TICKS + RECOVERY_TICKS )
+	{
+		progress = (elapsed - SWING_TICKS) / static_cast<real_t>(RECOVERY_TICKS);
+		return RuneHammerCastVisualPhase::RECOVERY;
+	}
+
+	playerEntity.runeHammerCastVisualActive = false;
+	return RuneHammerCastVisualPhase::NONE;
 }
 
 void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell, bool usingSpellbook, bool usingTome)
@@ -924,6 +1043,16 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	}
 	int player = caster->skill[2];
 	if ( !spell )
+	{
+		return;
+	}
+	if ( playerIsPanicking(player) )
+	{
+		return;
+	}
+	if ( spell->ID == SPELL_ENTRENCH && players[player]
+		&& (players[player]->mechanics.entrenchCarriedUid != 0 || players[player]->mechanics.entrenchStash.valid())
+		&& resumeEntrenchPlacementAnimation(player) )
 	{
 		return;
 	}
@@ -948,6 +1077,8 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->player = caster->skill[2];
 	animation_manager->caster = caster->getUID();
 	animation_manager->spell = spell;
+	animation_manager->hasSpellPowerOverride = false;
+	animation_manager->spellPowerOverride = 0.0;
 
 	if ( !usingSpellbook )
 	{
@@ -1031,6 +1162,9 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->mana_left = spellCost;
 	animation_manager->mana_cost = spellCost;
 	animation_manager->consumeMana = true;
+	animation_manager->panickingRefundMP = 0;
+	animation_manager->panickingRefundHP = 0;
+	animation_manager->panickingRefundHunger = 0;
 	/*if ( spell->ID == SPELL_FORCEBOLT && caster->skillCapstoneUnlockedEntity(PRO_LEGACY_SPELLCASTING) )
 	{
 		animation_manager->consumeMana = false;
@@ -1084,8 +1218,91 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	spellcastAnimationUpdate(player, MONSTER_POSE_MAGIC_WINDUP1, animation_manager->times_to_circle + HANDMAGIC_TICKS_PER_CIRCLE);
 }
 
+bool resumeEntrenchPlacementAnimation(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !players[player]->entity
+		|| (!players[player]->mechanics.entrenchStash.valid()
+			&& players[player]->mechanics.entrenchCarriedUid == 0) )
+	{
+		return false;
+	}
+	auto& animation = cast_animation[player];
+	animation.player = player;
+	animation.caster = players[player]->entity->getUID();
+	animation.spell = getSpellFromID(SPELL_ENTRENCH);
+	if ( !animation.spell ) { return false; }
+	animation.active = true;
+	animation.active_spellbook = false;
+	animation.usingRune = false;
+	animation.runeInstanceId = 0;
+	animation.stage = ANIM_SPELL_TOUCH;
+	animation.rangefinder = RANGEFINDER_TOUCH_FLOOR_TILE;
+	animation.targetUid = 0;
+	animation.circle_count = 0;
+	animation.throw_count = 0;
+	animation.active_count = 0;
+	animation.times_to_circle = 0;
+	animation.consumeMana = false;
+	animation.mana_left = 0;
+	animation.mana_cost = 0;
+	animation.consume_interval = 0;
+	animation.consume_timer = 0;
+	animation.panickingRefundMP = 0;
+	animation.panickingRefundHP = 0;
+	animation.panickingRefundHunger = 0;
+	animation.entrenchAwaitingResult = false;
+	animation.entrenchCancelPending = false;
+	animation.resetRangefinder();
+	animation.rangefinder = RANGEFINDER_TOUCH_FLOOR_TILE;
+	animation.setRangeFinderLocation();
+	spellcastAnimationUpdate(player, MONSTER_POSE_MAGIC_WINDUP2, 0);
+	return true;
+}
+
+void receiveEntrenchOwnerState(Uint32 carriedUid, Uint32 revision)
+{
+	if ( !players[clientnum] ) { return; }
+	auto& state = players[clientnum]->mechanics;
+	if ( revision <= state.entrenchOwnerRevision ) { return; }
+	state.entrenchOwnerRevision = revision;
+	state.entrenchCarriedUid = carriedUid; // UI state comes only from an owner acknowledgement.
+	auto& animation = cast_animation[clientnum];
+	animation.entrenchAwaitingResult = false;
+	if ( animation.entrenchCancelPending )
+	{
+		animation.entrenchCancelPending = false;
+		return;
+	}
+	if ( !animation.spell || animation.spell->ID != SPELL_ENTRENCH ) { return; }
+	if ( carriedUid == 0 )
+	{
+		spellcastingAnimationManager_deactivate(&animation);
+		return;
+	}
+	resumeEntrenchPlacementAnimation(clientnum);
+}
+
 void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager)
 {
+	if ( animation_manager->spell && animation_manager->spell->ID == SPELL_ENTRENCH
+		&& animation_manager->player >= 0 && animation_manager->player < MAXPLAYERS
+		&& players[animation_manager->player] )
+	{
+		if ( animation_manager->entrenchAwaitingResult )
+		{
+			// Wait for the in-flight cast before cancelling, so cancellation cannot overtake pickup.
+			animation_manager->entrenchCancelPending = true;
+		}
+	}
+
+	if ( animation_manager->usingRune && animation_manager->player >= 0
+		&& animation_manager->player < MAXPLAYERS && players[animation_manager->player]
+		&& players[animation_manager->player]->entity
+		&& players[animation_manager->player]->entity->runeHammerCastVisualReleaseTick == 0 )
+	{
+		// Cancellation before the authoritative release abandons the visual windup.
+		players[animation_manager->player]->entity->runeHammerCastVisualActive = false;
+	}
 	if ( animation_manager->stage == ANIM_SPELL_TOUCH
 		|| animation_manager->stage == ANIM_SPELL_TOUCH_CHARGE
 		|| animation_manager->stage == ANIM_SPELL_OVERCHARGE_READY
@@ -1102,6 +1319,10 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 	animation_manager->circle_count = 0;
 	animation_manager->active_count = 0;
 	animation_manager->overcharge = 0;
+	animation_manager->usingRune = false;
+	animation_manager->runeInstanceId = 0;
+	animation_manager->hasSpellPowerOverride = false;
+	animation_manager->spellPowerOverride = 0.0;
 	//animation_manager->overcharge_init = 0;
 	animation_manager->resetRangefinder();
 
@@ -1128,8 +1349,105 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 	}
 }
 
+bool castMagicRuneInit(int player, spell_t* spell, Uint32 runeInstanceId)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !players[player]->entity
+		|| !players[player]->isLocalPlayer() || !spell
+		|| cast_animation[player].active || cast_animation[player].active_spellbook )
+	{
+		return false;
+	}
+	auto& animation = cast_animation[player];
+	Item* rune = stats[player] ? stats[player]->shield : nullptr;
+	if ( !rune || !rune->isMagicRune()
+		|| rune->runeGetInstanceId() != runeInstanceId || !rune->runeHasStoredPWR() )
+	{
+		return false;
+	}
+	if ( tryToggleExistingChanneledSpell(player, spell) )
+	{
+		return true;
+	}
+	animation.player = player;
+	animation.caster = players[player]->entity->getUID();
+	animation.spell = spell;
+	animation.active = true;
+	animation.active_spellbook = false;
+	animation.usingRune = true;
+	animation.runeInstanceId = runeInstanceId;
+	animation.hasSpellPowerOverride = true;
+	animation.spellPowerOverride = getMagicRuneEffectivePWR(*rune, players[player]->entity);
+	animation.stage = ANIM_SPELL_CIRCLE;
+	animation.circle_count = 0;
+	animation.throw_count = 0;
+	animation.active_count = 0;
+	animation.overcharge = 0;
+	animation.consumeMana = false;
+	animation.mana_left = 0;
+	animation.mana_cost = 0;
+	const real_t minimumCastTime = spell->cast_time <= 1.0 ? 0.5 : 1.0;
+	const real_t runeCastTime = std::max<real_t>(minimumCastTime, spell->cast_time * 0.5);
+	animation.times_to_circle = static_cast<int>(ceil(runeCastTime * HANDMAGIC_TICKS_PER_CIRCLE));
+	animation.consume_interval = animation.times_to_circle;
+	animation.consume_timer = animation.consume_interval;
+	animation.resetRangefinder();
+	animation.setRangeFinderLocation();
+	animation.lefthand_angle = 0;
+	animation.lefthand_movex = 0;
+	animation.lefthand_movey = 0;
+	if ( players[player]->hud.magicLeftHand ) { players[player]->hud.magicLeftHand->flags[INVISIBLE] = true; }
+	if ( players[player]->hud.magicRightHand ) { players[player]->hud.magicRightHand->flags[INVISIBLE] = true; }
+	const bool hasRuneHammer = stats[player] && stats[player]->weapon
+		&& stats[player]->weapon->type == RUNE_HAMMER;
+	spellcastAnimationUpdate(player, MONSTER_POSE_MAGIC_WINDUP1,
+		animation.times_to_circle, hasRuneHammer);
+	return true;
+}
+
+// mod add: Panicking owns only casts it interrupts. Track and restore the
+// single-player animation drain exactly so unrelated damage/regeneration is
+// not rolled back and multiplayer's authoritative whole-cost path is untouched.
+static void spellcastingAnimationManager_cancelForPanicking(int player,
+	spellcasting_animation_manager_t* animation_manager)
+{
+	if ( !animation_manager )
+	{
+		return;
+	}
+	if ( player >= 0 && player < MAXPLAYERS && players[player]
+		&& players[player]->entity && stats[player] )
+	{
+		players[player]->entity->setMP(std::min(stats[player]->MAXMP,
+			stats[player]->MP + animation_manager->panickingRefundMP));
+		players[player]->entity->setHP(std::min(stats[player]->MAXHP,
+			stats[player]->HP + animation_manager->panickingRefundHP));
+		stats[player]->HUNGER += animation_manager->panickingRefundHunger;
+	}
+	animation_manager->panickingRefundMP = 0;
+	animation_manager->panickingRefundHP = 0;
+	animation_manager->panickingRefundHunger = 0;
+	spellcastingAnimationManager_deactivate(animation_manager);
+}
+
 void spellcastingAnimationManager_completeSpell(int player, spellcasting_animation_manager_t* animation_manager, bool deactivate)
 {
+	if ( playerIsPanicking(player) )
+	{
+		spellcastingAnimationManager_cancelForPanicking(player, animation_manager);
+		return;
+	}
+	const bool entrenchFirstStage = animation_manager->spell
+		&& animation_manager->spell->ID == SPELL_ENTRENCH
+		&& animation_manager->rangefinder != RANGEFINDER_TOUCH_FLOOR_TILE;
+	const bool entrenchPlacementStage = animation_manager->spell
+		&& animation_manager->spell->ID == SPELL_ENTRENCH
+		&& animation_manager->rangefinder == RANGEFINDER_TOUCH_FLOOR_TILE;
+	if ( animation_manager->spell
+		&& animation_manager->spell->ID == SPELL_POLYMORPH_FAMILIAR )
+	{
+		animation_manager->rangefinder = RANGEFINDER_TOUCH_FLOOR_TILE;
+	}
+	if ( (entrenchFirstStage || entrenchPlacementStage) && animation_manager->entrenchAwaitingResult ) { return; }
 	if ( animation_manager->stage == ANIM_SPELL_TOUCH_THROW
 		|| animation_manager->stage == ANIM_SPELL_OVERCHARGE_THROW )
 	{
@@ -1137,6 +1455,54 @@ void spellcastingAnimationManager_completeSpell(int player, spellcasting_animati
 	}
 
 	int overcharge = (animation_manager->overcharge > 0 && animation_manager->stage == ANIM_SPELL_OVERCHARGE_THROW) ? animation_manager->overcharge : 0;
+	auto completeCast = [&](CastSpellProps_t* props)
+	{
+		// Entrench placement is the second half of an already-paid cast. Route that
+		// half through its existing carried-object bypass so Rune stress occurs only
+		// on the initial release and placement still works if that roll broke it.
+		if ( animation_manager->usingRune && !entrenchPlacementStage )
+		{
+			Item* equippedRune = stats[player] ? stats[player]->shield : nullptr;
+			if ( !equippedRune || !equippedRune->isMagicRune()
+				|| equippedRune->runeGetInstanceId() != animation_manager->runeInstanceId
+				|| !equippedRune->runeCanCast()
+				|| equippedRune->runeGetSpellID() != animation_manager->spell->ID )
+			{
+				return;
+			}
+			spell_t* runeSpell = copySpell(animation_manager->spell);
+			if ( !runeSpell ) { return; }
+			runeSpell->runeInstanceId = animation_manager->runeInstanceId;
+			if ( !applyMagicRuneEffectivePWR(*runeSpell, *equippedRune,
+				players[player]->entity) )
+			{
+				spellDeconstructor(runeSpell);
+				return;
+			}
+			const int runeResource = runeSpell->ID == SPELL_LEAD_BOLT
+				? getGoldCostOfSpell(runeSpell, player)
+				: getCostOfSpell(runeSpell, players[player]->entity);
+			CastSpellProps_t networkProps;
+			CastSpellProps_t* runeProps = (multiplayer == CLIENT && !props) ? &networkProps : props;
+			castSpell(animation_manager->caster, runeSpell, false, false, false, runeProps, false, true);
+			if ( multiplayer != CLIENT )
+			{
+				applyMagicRuneCastStress(animation_manager->runeInstanceId, runeResource, player);
+			}
+			spellDeconstructor(runeSpell);
+		}
+		else
+		{
+			castSpell(animation_manager->caster, animation_manager->spell, false, false,
+				animation_manager->active_spellbook, props);
+		}
+	};
+	if ( animation_manager->usingRune && players[player] && players[player]->entity
+		&& players[player]->entity->runeHammerCastVisualActive
+		&& players[player]->entity->runeHammerCastVisualReleaseTick == 0 )
+	{
+		spellcastAnimationUpdate(player, MONSTER_POSE_MAGIC_CAST2, 0, true);
+	}
 
 	if ( animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TARGET
 		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE
@@ -1150,6 +1516,10 @@ void spellcastingAnimationManager_completeSpell(int player, spellcasting_animati
 		castSpellProps.target_y = animation_manager->target_y;
 		castSpellProps.wallDir = animation_manager->wallDir;
 		castSpellProps.overcharge = overcharge;
+		if ( entrenchPlacementStage )
+		{
+			castSpellProps.optionalData = 1; // same cast; do not charge/fumble twice
+		}
 		if ( animation_manager->spell )
 		{
 			if ( animation_manager->spell->ID == SPELL_MUSHROOM )
@@ -1175,7 +1545,7 @@ void spellcastingAnimationManager_completeSpell(int player, spellcasting_animati
 				}
 			}
 		}
-		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
+		completeCast(&castSpellProps);
 	}
 	else if ( animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH
 		|| animation_manager->rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT )
@@ -1184,7 +1554,7 @@ void spellcastingAnimationManager_completeSpell(int player, spellcasting_animati
 		castSpellProps.targetUID = animation_manager->targetUid;
 		castSpellProps.wallDir = animation_manager->wallDir;
 		castSpellProps.overcharge = overcharge;
-		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
+		completeCast(&castSpellProps);
 	}
 	else if ( animation_manager->spell 
 		&& (animation_manager->spell->ID == SPELL_BASTION_MUSHROOM 
@@ -1215,14 +1585,29 @@ void spellcastingAnimationManager_completeSpell(int player, spellcasting_animati
 			}
 		}
 		castSpellProps.overcharge = overcharge;
-		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook, &castSpellProps); //Actually cast the spell.
+		completeCast(&castSpellProps);
 	}
 	else
 	{
-		castSpell(animation_manager->caster, animation_manager->spell, false, false, animation_manager->active_spellbook); //Actually cast the spell.
+		completeCast(nullptr);
 	}
 
-	if ( deactivate )
+	if ( entrenchFirstStage || entrenchPlacementStage )
+	{
+		// The paid continuation no longer depends on an equipped spellbook or Rune.
+		animation_manager->active = true;
+		animation_manager->active_spellbook = false;
+		animation_manager->usingRune = false;
+		animation_manager->stage = ANIM_SPELL_TOUCH;
+		animation_manager->throw_count = 0;
+		if ( multiplayer == CLIENT && animation_manager->entrenchAwaitingResult ) { return; }
+		if ( players[player]->mechanics.entrenchCarriedUid != 0 )
+		{
+			resumeEntrenchPlacementAnimation(player);
+		}
+		else { spellcastingAnimationManager_deactivate(animation_manager); }
+	}
+	else if ( deactivate )
 	{
 		spellcastingAnimationManager_deactivate(animation_manager);
 	}
@@ -1261,6 +1646,16 @@ void actLeftHandMagic(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
+	my->flags[USERFLAG2] = playerIsInWraithForm(HANDMAGIC_PLAYERNUM);
+	if ( (cast_animation[HANDMAGIC_PLAYERNUM].active
+		|| cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook)
+		&& playerIsPanicking(HANDMAGIC_PLAYERNUM) )
+	{
+		spellcastingAnimationManager_cancelForPanicking(HANDMAGIC_PLAYERNUM,
+			&cast_animation[HANDMAGIC_PLAYERNUM]);
+		my->flags[INVISIBLE] = true;
+		return;
+	}
 
 	my->mistformGLRender = players[HANDMAGIC_PLAYERNUM]->entity->mistformGLRender;
 
@@ -1281,7 +1676,13 @@ void actLeftHandMagic(Entity* my)
 	//Sprite
 	Monster playerRace = players[HANDMAGIC_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HANDMAGIC_PLAYERNUM]->playerRace);
 	int playerAppearance = stats[HANDMAGIC_PLAYERNUM]->stat_appearance;
-	if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
+	if ( stats[HANDMAGIC_PLAYERNUM]->playerRace == RACE_WRAITH
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.initialized
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0 )
+	{
+		playerRace = getWraithEffectiveMonsterType(HANDMAGIC_PLAYERNUM);
+	}
+	else if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift);
 	}
@@ -1297,6 +1698,10 @@ void actLeftHandMagic(Entity* my)
 			playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectPolymorph);
 		}
 	}
+	const bool hideWraithPossessionHand = stats[HANDMAGIC_PLAYERNUM]->playerRace == RACE_WRAITH
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.initialized
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0
+		&& !wraithPossessionHasFirstPersonModel(playerRace);
 
 	if ( playerRace == GREMLIN )
 	{
@@ -1327,7 +1732,8 @@ void actLeftHandMagic(Entity* my)
 		|| playerRace == SPIDER
 		|| playerRace == RAT
 		|| playerRace == CREATURE_IMP
-		|| playerRace == TROLL )
+		|| playerRace == TROLL
+		|| playerRace == WRAITH  )
 	{
 		noGloves = true;
 	}
@@ -1470,9 +1876,31 @@ void actLeftHandMagic(Entity* my)
 			case SALAMANDER:
 				my->sprite = 2329;
 				break;
+			case GOLEM:
+				my->sprite = stats[HANDMAGIC_PLAYERNUM]->sex == FEMALE
+					? GOLEM_MODEL_C_HAND_LEFT_FP : GOLEM_MODEL_B_HAND_LEFT_FP;
+				break;
+			case LEONIN:
+				my->sprite = LEONIN_MODEL_HAND_LEFT_FP;
+				break;
+			case WRAITH:
+				my->sprite = WRAITH_MODEL_HAND_LEFT_FP;
+				break;
 			case GNOME:
 				my->sprite = 2321;
 				break;
+			// mod add
+			case MERROW:
+				if ( stats[HANDMAGIC_PLAYERNUM]->sex == FEMALE )
+				{
+					my->sprite = 2436;
+				}
+				else
+				{
+					my->sprite = 2424;
+				}
+				break;
+			//mod add end
 			default:
 				my->sprite = 656;
 				break;
@@ -1536,6 +1964,17 @@ void actLeftHandMagic(Entity* my)
 
 	if ( (cast_animation[HANDMAGIC_PLAYERNUM].active || cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook) )
 	{
+		if ( cast_animation[HANDMAGIC_PLAYERNUM].spell
+			&& cast_animation[HANDMAGIC_PLAYERNUM].spell->ID == SPELL_ENTRENCH )
+		{
+			if ( cast_animation[HANDMAGIC_PLAYERNUM].entrenchAwaitingResult ) { return; }
+			if ( cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == RANGEFINDER_TOUCH_FLOOR_TILE
+				&& players[HANDMAGIC_PLAYERNUM]->mechanics.entrenchCarriedUid == 0 )
+			{
+				spellcastingAnimationManager_deactivate(&cast_animation[HANDMAGIC_PLAYERNUM]);
+				return;
+			}
+		}
 		cast_animation[HANDMAGIC_PLAYERNUM].setRangeFinderLocation();
 		switch ( cast_animation[HANDMAGIC_PLAYERNUM].stage)
 		{
@@ -1577,7 +2016,14 @@ void actLeftHandMagic(Entity* my)
 					{
 						int HP = stats[HANDMAGIC_PLAYERNUM]->HP;
 						int MP = stats[HANDMAGIC_PLAYERNUM]->MP;
+						int hunger = stats[HANDMAGIC_PLAYERNUM]->HUNGER;
 						players[HANDMAGIC_PLAYERNUM]->entity->drainMP(1, false); // don't notify otherwise we'll get spammed each 1 mp
+						cast_animation[HANDMAGIC_PLAYERNUM].panickingRefundMP +=
+							std::max(0, MP - stats[HANDMAGIC_PLAYERNUM]->MP);
+						cast_animation[HANDMAGIC_PLAYERNUM].panickingRefundHP +=
+							std::max(0, HP - stats[HANDMAGIC_PLAYERNUM]->HP);
+						cast_animation[HANDMAGIC_PLAYERNUM].panickingRefundHunger +=
+							std::max(0, hunger - stats[HANDMAGIC_PLAYERNUM]->HUNGER);
 
 						if ( cast_animation[HANDMAGIC_PLAYERNUM].spell )
 						{
@@ -1626,7 +2072,9 @@ void actLeftHandMagic(Entity* my)
 						|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT
 						|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT_TEST
 						|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE
-						|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_WALL_TILE )
+						|| cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TOUCH_WALL_TILE
+						|| (cast_animation[HANDMAGIC_PLAYERNUM].usingRune
+							&& cast_animation[HANDMAGIC_PLAYERNUM].rangefinder == SpellRangefinderType::RANGEFINDER_TARGET) )
 					{
 						cast_animation[HANDMAGIC_PLAYERNUM].stage = ANIM_SPELL_TOUCH;
 						if ( cast_animation[HANDMAGIC_PLAYERNUM].overcharge > 0 )
@@ -1955,6 +2403,7 @@ void actLeftHandMagic(Entity* my)
 	//my->z = (camera.z*.5-players[HANDMAGIC_PLAYERNUM]->z)+7+HUDWEAPON_MOVEZ; //TODO: NOT a PLAYERSWAP
 	my->x += cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movex;
 	my->y += cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movey;
+	if ( cast_animation[HANDMAGIC_PLAYERNUM].usingRune ) { my->flags[INVISIBLE] = true; }
 
 	if ( cast_animation[HANDMAGIC_PLAYERNUM].active || cast_animation[HANDMAGIC_PLAYERNUM].active_spellbook )
 	{
@@ -1968,7 +2417,22 @@ void actLeftHandMagic(Entity* my)
 			float z = my->z - 0.0;
 
 			Monster playerRace = players[HANDMAGIC_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HANDMAGIC_PLAYERNUM]->playerRace);
-			if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
+			if ( stats[HANDMAGIC_PLAYERNUM]->playerRace == RACE_WRAITH
+				&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.initialized
+				&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0 )
+			{
+				playerRace = getWraithEffectiveMonsterType(HANDMAGIC_PLAYERNUM);
+				if ( playerRace == RAT )
+				{
+					y = 0.0;
+				}
+				else if ( playerRace == SPIDER )
+				{
+					y = 0.0;
+					z -= 2;
+				}
+			}
+			else if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 			{
 				playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift);
 				if ( playerRace == RAT )
@@ -2044,6 +2508,11 @@ void actLeftHandMagic(Entity* my)
 	{
 		cast_animation[HANDMAGIC_PLAYERNUM].active_count = 0;
 	}
+	if ( hideWraithPossessionHand )
+	{
+		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
+	}
 }
 
 void actRightHandMagic(Entity* my)
@@ -2069,6 +2538,7 @@ void actRightHandMagic(Entity* my)
 		list_RemoveNode(my->mynode);
 		return;
 	}
+	my->flags[USERFLAG2] = playerIsInWraithForm(HANDMAGIC_PLAYERNUM);
 
 	my->mistformGLRender = players[HANDMAGIC_PLAYERNUM]->entity->mistformGLRender;
 
@@ -2088,7 +2558,13 @@ void actRightHandMagic(Entity* my)
 	//Sprite
 	Monster playerRace = players[HANDMAGIC_PLAYERNUM]->entity->getMonsterFromPlayerRace(stats[HANDMAGIC_PLAYERNUM]->playerRace);
 	int playerAppearance = stats[HANDMAGIC_PLAYERNUM]->stat_appearance;
-	if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
+	if ( stats[HANDMAGIC_PLAYERNUM]->playerRace == RACE_WRAITH
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.initialized
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0 )
+	{
+		playerRace = getWraithEffectiveMonsterType(HANDMAGIC_PLAYERNUM);
+	}
+	else if ( players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift != NOTHING )
 	{
 		playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectShapeshift);
 	}
@@ -2104,6 +2580,10 @@ void actRightHandMagic(Entity* my)
 			playerRace = static_cast<Monster>(players[HANDMAGIC_PLAYERNUM]->entity->effectPolymorph);
 		}
 	}
+	const bool hideWraithPossessionHand = stats[HANDMAGIC_PLAYERNUM]->playerRace == RACE_WRAITH
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.initialized
+		&& players[HANDMAGIC_PLAYERNUM]->mechanics.wraith.possessedEntityUid != 0
+		&& !wraithPossessionHasFirstPersonModel(playerRace);
 
 	if ( playerRace == GREMLIN )
 	{
@@ -2143,7 +2623,8 @@ void actRightHandMagic(Entity* my)
 		|| playerRace == SPIDER 
 		|| playerRace == RAT 
 		|| playerRace == CREATURE_IMP
-		|| playerRace == TROLL )
+		|| playerRace == TROLL
+		|| playerRace == WRAITH  )
 	{
 		noGloves = true;
 	}
@@ -2284,9 +2765,31 @@ void actRightHandMagic(Entity* my)
 			case SALAMANDER:
 				my->sprite = 2330;
 				break;
+			case GOLEM:
+				my->sprite = stats[HANDMAGIC_PLAYERNUM]->sex == FEMALE
+					? GOLEM_MODEL_C_HAND_RIGHT_FP : GOLEM_MODEL_B_HAND_RIGHT_FP;
+				break;
+			case LEONIN:
+				my->sprite = LEONIN_MODEL_HAND_RIGHT_FP;
+				break;
+			case WRAITH:
+				my->sprite = WRAITH_MODEL_HAND_RIGHT_FP;
+				break;
 			case GNOME:
 				my->sprite = 2322;
 				break;
+							// mod add
+			case MERROW:
+				if ( stats[HANDMAGIC_PLAYERNUM]->sex == FEMALE )
+				{
+					my->sprite = 2435; //TO DO: female model! 
+				}
+				else
+				{
+					my->sprite = 2423;
+				}
+				break;
+			//mod add end
 			default:
 				my->sprite = 634;
 				break;
@@ -2460,6 +2963,12 @@ void actRightHandMagic(Entity* my)
 
 	my->x += cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movex;
 	my->y -= cast_animation[HANDMAGIC_PLAYERNUM].lefthand_movey;
+	if ( cast_animation[HANDMAGIC_PLAYERNUM].usingRune ) { my->flags[INVISIBLE] = true; }
+	if ( hideWraithPossessionHand )
+	{
+		my->flags[INVISIBLE] = true;
+		my->flags[INVISIBLE_DITHER] = false;
+	}
 }
 
 #define HANDMAGIC_RANGEFINDER_ALPHA my->fskill[0]

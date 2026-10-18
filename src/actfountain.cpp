@@ -255,6 +255,7 @@ void actFountain(Entity* my)
 						}
 					}
 					Compendium_t::Events_t::eventUpdateWorld(i, Compendium_t::CPDM_FOUNTAIN_USED, "fountain", 1);
+
 					switch (my->skill[1])
 					{
 						case 0:

@@ -39,7 +39,7 @@ FMOD::ChannelGroup* getChannelGroupForSoundIndex(Uint32 snd)
 	{
 		return soundEnvironment_group;
 	}
-	if ( snd == 149 || snd == 133 )
+	if ( snd == 149 || snd == 133 || snd == 866 ) // cauldron_ambiance.ogg
 	{
 		return soundAmbient_group;
 	}
@@ -392,7 +392,7 @@ OPENAL_CHANNELGROUP* getChannelGroupForSoundIndex(Uint32 snd)
 	{
 		return soundEnvironment_group;
 	}
-	if ( snd == 149 || snd == 133 )
+	if ( snd == 149 || snd == 133 || snd == 866 ) // cauldron_ambiance.ogg
 	{
 		return soundAmbient_group;
 	}
@@ -3244,7 +3244,7 @@ int VoiceChat_t::RingBuffer::GetReadAvail()
 
 EnsembleSounds_t ensembleSounds;
 
-FMOD_RESULT F_CALLBACK ensembleExplorationCallback(FMOD_CHANNELCONTROL* channelcontrol,
+FMOD_RESULT F_CALLBACK ensembleExplorationCallback(FMOD_CHANNELCONTROL* channelcontrol, 
 	FMOD_CHANNELCONTROL_TYPE controltype,
 	FMOD_CHANNELCONTROL_CALLBACK_TYPE callbacktype,
 	void* commanddata1,

@@ -400,6 +400,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* weaponarm = NULL;
 	int bodypart;
 	bool wearingring = false;
+	const bool wraithPossessed = monsterIsActiveWraithBody(my);
 
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
@@ -1258,7 +1259,11 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == NULL || myStats->getEffectActive(EFF_INVISIBLE) || wearingring ) //TODO: isInvisible()?
+					const bool hidePossessedShadowCrownedHelm = wraithPossessed
+						&& myStats->helmet
+						&& myStats->helmet->type == HAT_CROWNED_HELM;
+					if ( myStats->helmet == NULL || myStats->getEffectActive(EFF_INVISIBLE)
+						|| wearingring || hidePossessedShadowCrownedHelm ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1842,7 +1847,6 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 	}
 	return;
 }
-
 
 
 

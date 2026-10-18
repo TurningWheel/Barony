@@ -21,6 +21,310 @@
 #include "player.hpp"
 #include "mod_tools.hpp"
 
+void initializeWraithPlayerForNewGame(int player)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] || !stats[player]
+		|| stats[player]->playerRace != RACE_WRAITH
+		|| stats[player]->stat_appearance != 0 )
+	{
+		return;
+	}
+	auto& wraith = players[player]->mechanics.wraith;
+	if ( wraith.initialized )
+	{
+		return;
+	}
+
+	const Sint32 oldHP = stats[player]->HP;
+	const Sint32 oldMaxHP = stats[player]->MAXHP;
+	const Sint32 oldMP = stats[player]->MP;
+	const Sint32 oldMaxMP = stats[player]->MAXMP;
+	wraith.corporealMaxHP = oldMaxHP;
+	wraith.corporealMaxMP = oldMaxMP;
+	wraith.wasHumanPolymorphed = false;
+	wraith.possessedEntityUid = 0;
+	wraith.possessionTransition = false;
+	wraith.possessedType = NOTHING;
+	wraith.possessionStartPlayerLevel = 0;
+	wraith.possessionLastPlayerLevel = 0;
+	wraith.possessedBodyOriginalInvisible = false;
+	wraith.possessedBodyOriginalPassable = false;
+	wraith.possessedBodyOriginalBlocksSight = false;
+	wraith.possessedBodyOriginalUnclickable = false;
+	wraith.suspendedWraithEffects.fill(false);
+	wraith.suspendedWraithEffectTimers.fill(0);
+	wraith.temporaryInnateSpellIds.clear();
+	wraith.possessionOriginalEquipmentUids.fill(0);
+	wraith.learnedPossessionTypes.clear();
+	wraith.seenBookLoreIds.clear();
+	wraith.seenGravestoneLoreIds.clear();
+	wraith.seenMailLoreIds.clear();
+	wraith.readBookObjectIds.clear();
+	wraith.readMailObjectIds.clear();
+	wraith.readGravestoneObjectIds.clear();
+	wraith.remoteLoreItems.clear();
+	stats[player]->HP = 5;
+	stats[player]->MAXHP = 5;
+	stats[player]->MP = oldMP + std::max(0, oldHP - 5);
+	stats[player]->MAXMP = oldMaxMP + std::max(0, oldMaxHP - 5);
+	stats[player]->MAXMP = std::max<Sint32>(stats[player]->MAXMP,
+		WRAITH_MIN_POSSESS_RESERVE);
+	stats[player]->MP = std::max<Sint32>(stats[player]->MP,
+		WRAITH_MIN_POSSESS_RESERVE);
+	stats[player]->MP = std::min(stats[player]->MP, stats[player]->MAXMP);
+
+	std::unordered_set<Item*> packed;
+	std::vector<Item*> inventoryItems;
+	for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+	{
+		if ( auto item = static_cast<Item*>(node->element) )
+		{
+			inventoryItems.push_back(item);
+		}
+	}
+	for ( Item* item : inventoryItems )
+	{
+		if ( !item || item == stats[player]->ring || item == stats[player]->amulet
+			|| item->type == SPELL_ITEM )
+		{
+			continue;
+		}
+		stats[player]->addItemToLootingBag(player, 0.0, 0.0, *item, false);
+		packed.insert(item);
+	}
+
+	Item** equipment[] = {
+		&stats[player]->helmet, &stats[player]->breastplate, &stats[player]->gloves,
+		&stats[player]->shoes, &stats[player]->shield, &stats[player]->weapon,
+		&stats[player]->cloak, &stats[player]->mask
+	};
+	for ( Item** slot : equipment )
+	{
+		Item* item = *slot;
+		*slot = nullptr;
+		if ( item && packed.find(item) == packed.end() )
+		{
+			stats[player]->addItemToLootingBag(player, 0.0, 0.0, *item, false);
+			packed.insert(item);
+		}
+	}
+	for ( Item* item : packed )
+	{
+		if ( item->node )
+		{
+			list_RemoveNode(item->node);
+		}
+		else
+		{
+			free(item);
+		}
+	}
+
+	// The spirit has no free inventory slot for an ordinary consumable.
+	// Place its starting MP potion inside the existing starting loot chest.
+	Item* startingMagicPotion = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, nullptr);
+	stats[player]->addItemToLootingBag(player, 0.0, 0.0, *startingMagicPotion, false);
+	free(startingMagicPotion);
+
+	const Uint32 bagKey = stats[player]->getLootingBagKey(player);
+	Item* chest = newItem(TOOL_PLAYER_LOOT_BAG, WORN, 0, 1, bagKey, true,
+		&stats[player]->inventory);
+	wraith.initialized = true;
+
+	if ( !setWraithHeldItem(player, chest) )
+	{
+		printlog(
+			"[WRAITH]: ERROR failed to place starting loot chest in hand");
+	}
+
+	assert(stats[player]->weapon);
+	assert(stats[player]->weapon->type == TOOL_PLAYER_LOOT_BAG);
+	assert(itemSlot(stats[player], stats[player]->weapon)
+		== &stats[player]->weapon);
+	assert(itemIsEquipped(stats[player]->weapon, player));
+
+	if ( players[player]->isLocalPlayer() )
+	{
+		assert(players[player]->paperDoll.getSlotForItem(
+			*stats[player]->weapon) == Player::PaperDoll_t::SLOT_WEAPON);
+	}
+}
+
+
+// Transmit the owning client's complete starting loot chest to the server.
+// initClass() intentionally creates normal inventory items only for the local
+// player. Without this reconciliation, the server's remote-Wraith starter
+// chest lacks that class's locally generated consumables and equipment.
+static Uint32 wraithStarterChestAckKey = 0;
+static Uint32 wraithStarterChestAckRun = 0;
+
+void acknowledgeWraithStartingChestSnapshot(int player, Uint32 key, Uint32 runKey)
+{
+    if ( multiplayer == CLIENT && player == clientnum )
+    {
+        wraithStarterChestAckKey = key;
+        wraithStarterChestAckRun = runKey;
+    }
+}
+
+void sendWraithStartingChestSnapshot(int player)
+{
+    if ( multiplayer != CLIENT || player != clientnum || !stats[player]
+        || !players[player] || stats[player]->playerRace != RACE_WRAITH
+        || !players[player]->mechanics.wraith.initialized || currentlevel != 0
+        || !players[player]->entity
+        || players[player]->entity->ticks >= 30 * TICKS_PER_SECOND
+        || (players[player]->entity->ticks != 1
+            && players[player]->entity->ticks % TICKS_PER_SECOND != 0) )
+    {
+        return;
+    }
+    const Uint32 bagKey = stats[player]->getLootingBagKey(player);
+    if ( wraithStarterChestAckKey == bagKey
+        && wraithStarterChestAckRun == uniqueGameKey ) { return; }
+    auto found = stats[player]->player_lootbags.find(bagKey);
+    if ( found == stats[player]->player_lootbags.end() || found->second.looted )
+    {
+        return;
+    }
+    const auto& contents = found->second.items;
+    if ( contents.empty() || contents.size() > 128 ) { return; }
+    const int customOffset = 62 + FAMILIAR_PERSISTENT_PACKET_BYTES;
+    const int packetLength = customOffset + WRAITH_LORE_INSTANCE_PACKET_BYTES + 4;
+    for ( size_t i = 0; i < contents.size(); ++i )
+    {
+        const Item& item = contents[i];
+        strcpy((char*)net_packet->data, "WBGI");
+        net_packet->data[4] = static_cast<Uint8>(player);
+        SDLNet_Write32(bagKey, &net_packet->data[5]);
+        net_packet->data[9] = static_cast<Uint8>(contents.size());
+        net_packet->data[10] = static_cast<Uint8>(i);
+        SDLNet_Write32(static_cast<Uint32>(item.type), &net_packet->data[11]);
+        SDLNet_Write32(static_cast<Uint32>(item.status), &net_packet->data[15]);
+        SDLNet_Write32(static_cast<Uint32>(item.beatitude), &net_packet->data[19]);
+        SDLNet_Write32(static_cast<Uint32>(item.count), &net_packet->data[23]);
+        SDLNet_Write32(item.appearance, &net_packet->data[27]);
+        net_packet->data[31] = item.identified;
+        net_packet->data[32] = static_cast<Uint8>(item.appliedOil);
+        SDLNet_Write32(static_cast<Uint32>(item.runeGetStoredPWRRaw()), &net_packet->data[33]);
+        net_packet->data[37] = static_cast<Uint8>(item.runeGetCreatorPlayer());
+        SDLNet_Write32(item.runeGetInstanceId(), &net_packet->data[38]);
+        SDLNet_Write32(item.runeGetCreatorIdentity(), &net_packet->data[42]);
+        writeIngredientCountsToPacket(item, net_packet->data, 46);
+        writeFamiliarPersistentStateToPacket(item, net_packet->data, 62);
+        writeWraithLoreInstanceIdToPacket(item, net_packet->data, customOffset);
+        SDLNet_Write32(uniqueGameKey, &net_packet->data[packetLength - 4]);
+        net_packet->address.host = net_server.host;
+        net_packet->address.port = net_server.port;
+        net_packet->len = packetLength;
+        sendPacketSafe(net_sock, -1, net_packet, 0);
+    }
+}
+
+
+
+// A remote Wraith inherits the possessed creature's LOCAL client inventory.
+// The vanilla host only mirrors some equipped items. Send a bounded, complete
+// inventory view on changes and periodically. The host uses it ONLY to fill
+// missing items when this particular possessed body is released/dies, never
+// to overwrite live authoritative inventory.
+void sendWraithBodyInventorySnapshot(int player, bool force)
+{
+    if ( multiplayer != CLIENT || player != clientnum || !players[player]
+        || !players[player]->entity || !stats[player]
+        || stats[player]->playerRace != RACE_WRAITH
+        || !players[player]->mechanics.wraith.initialized )
+    {
+        return;
+    }
+    const Uint32 bodyUid = players[player]->mechanics.wraith.possessedEntityUid;
+    if ( !bodyUid || bodyUid == UINT32_MAX ) { return; }
+    const auto* spirit = stats[player];
+    std::vector<const Item*> inventory;
+    Uint32 digest = 2166136261u;
+    const auto mix = [&digest](Uint32 value) { digest = (digest ^ value) * 16777619u; };
+    for ( node_t* node = spirit->inventory.first; node; node = node->next )
+    {
+        const Item* item = static_cast<const Item*>(node->element);
+        if ( !item || item->type == SPELL_ITEM || item->type == TOOL_PLAYER_LOOT_BAG
+            || item == spirit->ring || item == spirit->amulet ) { continue; }
+        if ( inventory.size() >= 128 ) { return; } // no truncated snapshots
+        inventory.push_back(item);
+        mix(static_cast<Uint32>(item->type));
+        mix(item->appearance);
+        mix(static_cast<Uint32>(item->status));
+        mix(static_cast<Uint32>(item->beatitude));
+        mix(static_cast<Uint32>(item->count));
+        mix(static_cast<Uint32>(item->appliedOil));
+        mix(static_cast<Uint32>(item->identified));
+        mix(item->runeGetInstanceId());
+        mix(item->runeGetCreatorIdentity());
+        mix(item->familiarInstanceId);
+        mix(item->wraithLoreInstanceId);
+        for ( int slot = 0; slot < 4; ++slot )
+        {
+            mix(item->ingredientCounts[slot]);
+        }
+    }
+    static Uint32 lastUid = 0, lastDigest = 0, lastSentTick = 0, lastRun = 0;
+    if ( !force && lastUid == bodyUid && lastRun == uniqueGameKey && lastDigest == digest
+        && static_cast<Uint32>(ticks - lastSentTick) < 2 * TICKS_PER_SECOND )
+    {
+        return;
+    }
+    lastUid = bodyUid;
+    lastRun = uniqueGameKey;
+    lastDigest = digest;
+    lastSentTick = ticks;
+    // A forced pre-release snapshot may be sent in the same game tick as a
+    // regular snapshot. IDs must still increase, or the host will reject the
+    // newer, complete snapshot as an already-processed sequence.
+    static Uint32 lastSnapshotId = 0;
+    const Uint32 snapshotId = std::max(ticks, lastSnapshotId + 1);
+    lastSnapshotId = snapshotId;
+    const int customOffset = 66 + FAMILIAR_PERSISTENT_PACKET_BYTES;
+    const int packetLength = customOffset + WRAITH_LORE_INSTANCE_PACKET_BYTES + 4;
+    // Send a well-defined empty snapshot to invalidate an old inventory view.
+    const size_t frames = std::max<size_t>(1, inventory.size());
+    for ( size_t i = 0; i < frames; ++i )
+    {
+        strcpy((char*)net_packet->data, "WBMI");
+        net_packet->data[4] = static_cast<Uint8>(player);
+        SDLNet_Write32(bodyUid, &net_packet->data[5]);
+        SDLNet_Write32(snapshotId, &net_packet->data[9]);
+        net_packet->data[13] = static_cast<Uint8>(inventory.size());
+        net_packet->data[14] = static_cast<Uint8>(i);
+        if ( !inventory.empty() )
+        {
+            const Item& item = *inventory[i];
+            SDLNet_Write32(static_cast<Uint32>(item.type), &net_packet->data[15]);
+            SDLNet_Write32(static_cast<Uint32>(item.status), &net_packet->data[19]);
+            SDLNet_Write32(static_cast<Uint32>(item.beatitude), &net_packet->data[23]);
+            SDLNet_Write32(static_cast<Uint32>(item.count), &net_packet->data[27]);
+            SDLNet_Write32(item.appearance, &net_packet->data[31]);
+            net_packet->data[35] = item.identified;
+            net_packet->data[36] = static_cast<Uint8>(item.appliedOil);
+            SDLNet_Write32(static_cast<Uint32>(item.runeGetStoredPWRRaw()), &net_packet->data[37]);
+            net_packet->data[41] = static_cast<Uint8>(item.runeGetCreatorPlayer());
+            SDLNet_Write32(item.runeGetInstanceId(), &net_packet->data[42]);
+            SDLNet_Write32(item.runeGetCreatorIdentity(), &net_packet->data[46]);
+            writeIngredientCountsToPacket(item, net_packet->data, 50);
+            writeFamiliarPersistentStateToPacket(item, net_packet->data, 66);
+            writeWraithLoreInstanceIdToPacket(item, net_packet->data, customOffset);
+        }
+        else
+        {
+            memset(&net_packet->data[15], 0, packetLength - 15);
+        }
+        SDLNet_Write32(uniqueGameKey, &net_packet->data[packetLength - 4]);
+        net_packet->address.host = net_server.host;
+        net_packet->address.port = net_server.port;
+        net_packet->len = packetLength;
+        sendPacketSafe(net_sock, -1, net_packet, 0);
+    }
+}
+
+
 /*-------------------------------------------------------------------------------
 
 	initClass
@@ -631,7 +935,94 @@ void initClassStats(const int classnum, void* myStats)
 		stat->setProficiency(PRO_SHIELD, 10);
 		stat->setProficiency(PRO_LEADERSHIP, 10);
 	}
+	// mod add: whaler 
+	else if ( classnum == CLASS_WHALER )
+	{
+		// attributes
+		stat->STR += 2;
+		stat->DEX -= 2;
+		stat->CON += 1;
+		stat->INT -= 2;
+		stat->PER += 1;
 
+		stat->MAXHP += 5;
+		stat->HP += 5;
+
+		stat->MAXMP -= 10;
+		stat->MP -= 10;
+
+		// skills
+		stat->setProficiency(PRO_STEALTH, 20);
+		stat->setProficiency(PRO_POLEARM, 40);
+		stat->setProficiency(PRO_RANGED, 50);
+		stat->setProficiency(PRO_LOCKPICKING, 20);
+	} //mod add end
+	// mod add: Gunslinger, initially copied from the Tinkerer/Mechanist profile.
+	else if ( classnum == CLASS_GUNSLINGER )
+	{
+		// attributes
+		stat->STR -= 3;
+		stat->DEX += 1;
+		stat->CON += 0;
+		stat->INT += 1;
+		stat->PER += 1;
+
+		stat->MAXHP -= 5;
+		stat->HP -= 5;
+
+		stat->MAXMP += 10;
+		stat->MP += 10;
+
+		// skills
+		stat->setProficiency(PRO_LOCKPICKING, 40);
+		stat->setProficiency(PRO_RANGED, 30);
+		stat->setProficiency(PRO_SWORD, 20);
+		stat->setProficiency(PRO_UNARMED, 20);
+		stat->setProficiency(PRO_SORCERY, 10);
+	} //mod add end
+	//mod add runesmith
+	else if ( classnum == CLASS_RUNESMITH )
+	{
+		// attributes
+		stat->CON += 0;
+		stat->STR += 1;
+		stat->DEX -= 1;
+		stat->INT += 1;
+		stat->PER -= 1;
+		stat->CHR += 0;
+
+		stat->MAXHP -= 10;
+		stat->HP -= 10;
+
+		stat->MAXMP += 15;
+		stat->MP += 15;
+
+		// skills
+		stat->setProficiency(PRO_SORCERY, 20);
+		stat->setProficiency(PRO_MYSTICISM, 20);
+		stat->setProficiency(PRO_THAUMATURGY, 20);
+		stat->setProficiency(PRO_POLEARM, 15);
+		stat->setProficiency(PRO_APPRAISAL, 30);
+	} //mod add end
+	// mod add: Witch
+	else if ( classnum == CLASS_WITCH )
+	{
+		stat->STR -= 1;
+		stat->DEX += 0;
+		stat->CON += 0;
+		stat->INT += 2;
+		stat->PER += 1;
+		stat->CHR += 1;
+
+		stat->MAXHP += 5;
+		stat->HP += 5;
+		stat->MAXMP += 10;
+		stat->MP += 10;
+
+		stat->setProficiency(PRO_ALCHEMY, 40);
+		stat->setProficiency(PRO_TRADING, 30);
+		stat->setProficiency(PRO_APPRAISAL, 25);
+	}
 	if ( gameModeManager.currentSession.challengeRun.isActive() )
 	{
 		if ( gameModeManager.currentSession.challengeRun.customBaseStats )
@@ -690,6 +1081,20 @@ void initClassStats(const int classnum, void* myStats)
 	stat->OLDHP = stat->HP;
 }
 
+static bool shouldInvertStartingEquipmentBeatitude(const Stat* playerStats)
+{
+	if ( !playerStats || playerStats->stat_appearance != 0 )
+	{
+		return false;
+	}
+	if ( playerStats->playerRace == RACE_SUCCUBUS
+		|| playerStats->playerRace == RACE_INCUBUS )
+	{
+		return true;
+	}
+	return playerStats->playerRace == RACE_GOLEM && playerStats->sex == FEMALE;
+}
+
 void initClass(const int player)
 {
 	Item* item = nullptr;
@@ -710,12 +1115,7 @@ void initClass(const int player)
 		players[player]->paperDoll.clear();
 	}
 
-	bool curseItems = false;
-	if ( (stats[player]->playerRace == RACE_SUCCUBUS || stats[player]->playerRace == RACE_INCUBUS)
-		&& stats[player]->stat_appearance == 0 )
-	{
-		curseItems = true;
-	}
+	const bool curseItems = shouldInvertStartingEquipmentBeatitude(stats[player]);
 
 	//stats[player]->STR += 1;
 
@@ -3351,8 +3751,384 @@ void initClass(const int player)
 			free(item);
 		}
 	}
+	// mod add: whaler
+	else if ( client_classes[player] == CLASS_WHALER )
+	{
+		initClassStats(client_classes[player], stats[player]);
 
+		if (!isLocalPlayer && multiplayer == CLIENT && intro == false) {
+			// don't do anything crazy with items on players we don't own
+			return;
+		}
+
+		// harpoon
+		item = newItem(HARPOON, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// bandana
+		item = newItem(HAT_BANDANA, WORN, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// leather boots
+		item = newItem(LEATHER_BOOTS, WORN, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// leather gloves
+		item = newItem(GLOVES, WORN, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		// cloak
+		item = newItem(CLOAK, WORN, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+
+		item = newItem(AMULET_WATERBREATHING, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( isLocalPlayer )
+		{
+			// lantern
+			item = newItem(TOOL_LANTERN, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[1].item = item2->uid;
+			free(item);
+
+			// fish
+			item = newItem(FOOD_FISH, SERVICABLE, 0, 3, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			//booze
+			item = newItem(POTION_BOOZE, EXCELLENT, 0, 2, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(TOOL_BEARTRAP, EXCELLENT, 0, 3, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[2].item = item2->uid;
+			free(item);
+
+		}
+	}
+	// mod add: Gunslinger
+	else if ( client_classes[player] == CLASS_GUNSLINGER )
+	{
+		initClassStats(client_classes[player], stats[player]);
+
+		if ( !isLocalPlayer && multiplayer == CLIENT && intro == false )
+		{
+			// Do not construct inventory for players this client does not own.
+			return;
+		}
+
+		item = newItem(FLINTLOCK_PISTOL, DECREPIT, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			hotbar[0].item = item2->uid;
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(HAT_BOUNTYHUNTER, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(LEATHER_BOOTS, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(LEATHER_BREASTPIECE, SERVICABLE, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		item = newItem(SPYGLASS, EXCELLENT, 0, 1, 0, true, nullptr);
+		if ( isLocalPlayer )
+		{
+			item2 = itemPickup(player, item);
+			useItem(item2, player);
+			free(item);
+		}
+		else
+		{
+			useItem(item, player);
+		}
+
+		if ( isLocalPlayer )
+		{
+			item = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, 50, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(SPELLBOOK_ENTRENCH, SERVICABLE, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[1].item = item2->uid;
+			free(item);
+
+			item = newItem(SCROLL_MAGICMAPPING, EXCELLENT, 0, 5, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[3].item = item2->uid;
+			free(item);
+
+			// SERVICABLE is the normal food freshness value displayed as "slightly aged".
+			item = newItem(FOOD_MEAT, SERVICABLE, 0, 3, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(BRONZE_SWORD, WORN, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[4].item = item2->uid;
+			free(item);
+
+			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 2, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			hotbar[5].item = item2->uid;
+			free(item);
+		}
+	}
+	else if ( client_classes[player] == CLASS_RUNESMITH )
+	{
+		initClassStats(client_classes[player], stats[player]);
+
+		if ( !isLocalPlayer && multiplayer == CLIENT && intro == false )
+		{
+			// Do not construct inventory for players this client does not own.
+			return;
+		}
+
+		auto equipRunesmithItem = [&](ItemType type, Status status, Sint16 beatitude, Uint32 appearance, int hotbarSlot)
+		{
+			item = newItem(type, status, beatitude, 1, appearance, true, nullptr);
+			if ( isLocalPlayer )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				if ( hotbarSlot >= 0 )
+				{
+					hotbar[hotbarSlot].item = item2->uid;
+				}
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
+		};
+
+		// Deliberately cursed/binding for normal races; inverted races use +1.
+		equipRunesmithItem(RUNE_HAMMER, DECREPIT, curseItems ? 1 : -1, 0, 0);
+		equipRunesmithItem(MASK_STEEL_VISOR, WORN, 0, 0, -1);
+		equipRunesmithItem(IRON_HELM, DECREPIT, 0, 0, -1);
+		equipRunesmithItem(IRON_BREASTPIECE, DECREPIT, 0, 0, -1);
+		equipRunesmithItem(IRON_BOOTS, DECREPIT, 0, 0, -1);
+		equipRunesmithItem(BRACERS, DECREPIT, 0, 0, -1);
+		equipRunesmithItem(CLOAK_PROTECTION, DECREPIT, 0, 0, -1);
+
+		if ( isLocalPlayer )
+		{
+			item = newItem(SCROLL_IDENTIFY, EXCELLENT, 0, 3, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(GEM_OPAL, EXCELLENT, 0, 1, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			// Appearance 8 is the existing convention for DECREPIT starting spellbooks.
+			item = newItem(SPELLBOOK_TURN_UNDEAD, DECREPIT, 0, 1, 8, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(SPELLBOOK_COWARDICE, DECREPIT, 0, 1, 8, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(SPELLBOOK_DISRUPT_EARTH, DECREPIT, 0, 1, 8, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			// Appearance 1 matches the established starting POTION_RESTOREMAGIC convention.
+			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+		}
+	}
+	else if ( client_classes[player] == CLASS_WITCH )
+	{
+		initClassStats(client_classes[player], stats[player]);
+
+		if ( !isLocalPlayer && multiplayer == CLIENT && intro == false )
+		{
+			// Do not construct inventory for players this client does not own.
+			return;
+		}
+
+		auto equipWitchItem = [&](ItemType type, Uint32 appearance)
+		{
+			item = newItem(type, SERVICABLE, 0, 1, appearance, true, nullptr);
+			if ( isLocalPlayer )
+			{
+				item2 = itemPickup(player, item);
+				useItem(item2, player);
+				free(item);
+			}
+			else
+			{
+				useItem(item, player);
+			}
+		};
+
+		equipWitchItem(AMULET_FAMILIAR, 0);
+		equipWitchItem(ROBE_CULTIST, 0);
+		equipWitchItem(HAT_HOOD_APPRENTICE, 1); // hood silver
+
+		if ( isLocalPlayer )
+		{
+			item = newItem(POTION_EMPTY, SERVICABLE, 0, 10, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(POTION_WATER, EXCELLENT, 0, 5, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 2, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(OIL_AETHER, SERVICABLE, 0, 2, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+
+			item = newItem(OIL_MINERAL, SERVICABLE, 0, 2, 0, true, nullptr);
+			item2 = itemPickup(player, item);
+			free(item);
+		}
+
+		if ( multiplayer != CLIENT )
+		{
+			for ( int category = INGREDIENT_CATEGORY_SLIME;
+				category <= INGREDIENT_CATEGORY_ANIMATIC; ++category )
+			{
+				const auto ingredientCategory =
+					static_cast<WitchIngredientCategory>(category);
+
+				// Every Witch contributes eight of each ingredient to vanilla's
+				// single shared multiplayer Void Chest.
+				Item* contribution = newItem(
+					ingredientBagForCategory(ingredientCategory),
+					EXCELLENT, 0, 1, 0, true, nullptr);
+				if ( contribution )
+				{
+					for ( int slot = 0; slot < 4; ++slot )
+					{
+						contribution->ingredientCounts[slot] = 8;
+					}
+					if ( !mergeIngredientBagIntoVoidChest(*contribution, 0) )
+					{
+						printlog("[WITCH] ERROR unable to initialize shared starting ingredients");
+					}
+					free(contribution);
+				}
+			}
+		}
+	}
+	//mod add end
 	stats[player]->OLDHP = stats[player]->HP;
+
+	// mod add: Merrow starting towel
+	if ( isLocalPlayer
+		&& stats[player]->stat_appearance == 0
+		&& stats[player]->playerRace == RACE_MERROW )
+	{
+		item = newItem(TOOL_TOWEL, DECREPIT, 0, 1, 0, true, nullptr);
+		item2 = itemPickup(player, item);
+		free(item);
+	}
+	// mod add end
 
 	if ( stats[player]->stat_appearance == 0 && stats[player]->playerRace == RACE_GOATMAN )
 	{
@@ -3415,8 +4191,11 @@ void initClass(const int player)
 		}
 	}
 	if ( stats[player]->stat_appearance == 0 
-		&& (client_classes[player] >= CLASS_CONJURER 
+		&& ((client_classes[player] >= CLASS_CONJURER 
 			&& client_classes[player] <= CLASS_PALADIN)
+			|| client_classes[player] == CLASS_WHALER
+			|| client_classes[player] == CLASS_GUNSLINGER
+			|| client_classes[player] == CLASS_RUNESMITH) // mod add: custom extended classes
 		&& stats[player]->playerRace != RACE_HUMAN )
 	{
 		if ( isLocalPlayer )
@@ -3433,6 +4212,27 @@ void initClass(const int player)
 			else
 			{
 				// bonus polymorph potions
+				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 0, true, nullptr);
+				item2 = itemPickup(player, item);
+				free(item);
+			}
+		}
+	}
+	if ( stats[player]->stat_appearance == 0
+		&& client_classes[player] == CLASS_WITCH
+		&& stats[player]->playerRace != RACE_HUMAN )
+	{
+		if ( isLocalPlayer )
+		{
+			if ( stats[player]->playerRace == RACE_DRYAD
+				|| stats[player]->playerRace == RACE_MYCONID
+				|| stats[player]->playerRace == RACE_GNOME
+				|| stats[player]->playerRace == RACE_SALAMANDER )
+			{
+				// These races retain the extended-class polymorph-potion exclusion.
+			}
+			else
+			{
 				item = newItem(POTION_POLYMORPH, EXCELLENT, 0, 3, 0, true, nullptr);
 				item2 = itemPickup(player, item);
 				free(item);
@@ -3528,6 +4328,10 @@ void initClass(const int player)
 		{
 			addSpell(SPELL_FORGE_JEWEL, player, true);
 		}
+		else if ( stats[player]->playerRace == RACE_WRAITH && stats[player]->stat_appearance == 0 )
+		{
+			addSpell(SPELL_POSSESS, player, true);
+		}
 
 		if ( stats[player]->getProficiency(PRO_ALCHEMY) >= 0 )
 		{
@@ -3617,6 +4421,15 @@ void initClass(const int player)
 		else if ( client_classes[player] == CLASS_PALADIN )
 		{
 			addSpell(SPELL_DIVINE_ZEAL, player, true);
+		}
+		else if ( client_classes[player] == CLASS_GUNSLINGER ) //mod add: Gunslinger innate utility spells.
+		{
+			addSpell(SPELL_ENTRENCH, player, true);
+			addSpell(SPELL_SALVAGE, player, true);
+		}
+		else if ( client_classes[player] == CLASS_WITCH )
+		{
+			addSpell(SPELL_VOID_CHEST, player, true);
 		}
 
 		//printlog("spell size: %d", list_Size(&spellList));

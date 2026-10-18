@@ -154,7 +154,9 @@ bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DUCK_SMALL
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_6
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_7
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // MONSTER_UNUSED_8
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MONSTER_UNUSED_8
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MERROW (preserve existing zero-initialized alliances)
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }  //mod add: Leonins are friendly with Leonins
 //    N  H  R  G  S  T  B  S  G  S  S  I  C  G  D  S  M  L  M  D  S  K  S  G  I  V  S  C  I  G  A  L  L  S  S  G  D  B  D  M  S  G  R  M  A  F  H  M  E  D  U  U  U
 //    O  U  A  O  L  R  A  P  H  K  C  M  R  N  E  U  I  I  I  E  H  O  C  O  N  A  H  O  N  O  U  I  I  N  P  Y  U  U  D  M  S  G  E  I  D  L  O  T  R  U  N  N  N
 //    T  M  T  B  I  O  T  I  O  E  O  P  A  O  M  C  M  C  N  V  P  B  A  L  C  M  A  C  S  A  T  F  I  T  L  R  M  G 	D  M  S  G  V  N  O  M  L  H  F  C  6  7  8
@@ -215,7 +217,12 @@ double sightranges[NUMMONSTERS] =
 	256, // DUCK_SMALL
 	256, // MONSTER_UNUSED_6
 	256, // MONSTER_UNUSED_7
-	256  // MONSTER_UNUSED_8
+	256, // MONSTER_UNUSED_8
+	0,   // MERROW (preserve existing zero-initialized value)
+	256, // mod add: LEONIN uses Human sight range
+	256, // mod add: GOLEM uses humanoid sight range
+	0,   // BAT_FAMILIAR never scans for combat targets
+	256  // WRAITH uses humanoid sight range
 };
 
 int monsterGlobalAnimationMultiplier = 10;
@@ -223,6 +230,30 @@ int monsterGlobalAttackTimeMultiplier = 1;
 
 std::string getMonsterLocalizedName(Monster creature, Stat* optionalStats)
 {
+	// mod add: Leonin name without a language-file dependency
+	if ( creature == LEONIN )
+	{
+		return "leonin";
+	}
+	if ( creature == GOLEM )
+	{
+		return "golem";
+	}
+	if ( creature == WRAITH )
+	{
+		return "wraith";
+	}
+	if ( creature == BAT_FAMILIAR )
+	{
+		return "bat familiar";
+	}
+
+	// mod add: Merrow
+	if ( creature == MERROW )
+	{
+		return "merrow";
+	}
+	// mod add end
 	if ( creature == BUGBEAR )
 	{
 		return Language::get(6256);
@@ -415,7 +446,13 @@ bool ShopkeeperPlayerHostility_t::isPlayerEnemy(const int player)
 bool ShopkeeperPlayerHostility_t::playerRaceCheckHostility(const int player, const Monster type) const
 {
 	if ( player < 0 || player >= MAXPLAYERS ) { return false; }
-	if ( type != HUMAN && type != AUTOMATON && type != DRYAD && type != MYCONID && type != SALAMANDER && type != GNOME ) 
+	if ( type == GOLEM && players[player] && players[player]->entity
+		&& players[player]->entity->isNaturalGolemPlayer() )
+	{
+		return players[player]->entity->isBlessedGolemPlayer();
+	}
+	if ( type != HUMAN && type != AUTOMATON && type != DRYAD && type != MYCONID && type != SALAMANDER && type != GNOME
+		&& type != LEONIN ) //mod add: Leonins are welcomed by shopkeepers
 	{
 		if ( stats[player] && stats[player]->mask && stats[player]->mask->type == MONOCLE )
 		{
@@ -2316,18 +2353,15 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[64],
 		Item* armor = stats[monsterclicked]->mask;
 		if ( !myStats->mask )
 		{
-			if ( myStats->mask = newItem(armor->type, armor->status,
-				armor->beatitude, armor->count, armor->appearance,
-				armor->identified, nullptr) )
+			if ( myStats->mask = newItemFromExistingItem(*armor, armor->count, nullptr) )
 			{
 				myStats->mask->ownerUid = players[monsterclicked]->entity->getUID();
 			}
 		}
 		else
 		{
-			if ( Item* stolenArmor = newItem(armor->type, armor->status,
-				armor->beatitude, armor->count, armor->appearance,
-				armor->identified, &myStats->inventory) )
+			if ( Item* stolenArmor = newItemFromExistingItem(*armor, armor->count,
+				&myStats->inventory) )
 			{
 				stolenArmor->ownerUid = players[monsterclicked]->entity->getUID();
 			}
@@ -2590,8 +2624,19 @@ void sentrybotPickSpotNoise(Entity* my, Stat* myStats)
 void mimicResetIdle(Entity* my);
 void batResetIdle(Entity* my);
 
-void monsterAnimate(Entity* my, Stat* myStats, double dist)
+void monsterAnimate(Entity* my, Stat* myStats, double dist, bool visualOnly)
 {
+	if ( isAmuletFamiliar(my, myStats) )
+	{
+		switch ( getAmuletFamiliarForm(my) )
+		{
+			case FAMILIAR_FORM_MIMIC: mimicAnimate(my, myStats, dist); break;
+			case FAMILIAR_FORM_CAULDRON: animateAmuletFamiliarCauldron(my); break;
+			case FAMILIAR_FORM_BAT:
+			default: batAnimate(my, myStats, dist); break;
+		}
+		return;
+	}
 	switch ( my->getMonsterTypeFromSprite() ) {
 	case HUMAN: humanMoveBodyparts(my, myStats, dist); break;
 	case RAT: ratAnimate(my, dist); break;
@@ -2604,10 +2649,16 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist)
 	case SCORPION: scorpionAnimate(my, dist); break;
 	case CREATURE_IMP: impMoveBodyparts(my, myStats, dist); break;
 	case GNOME: gnomeMoveBodyparts(my, myStats, dist); break;
-	case DEMON: demonMoveBodyparts(my, myStats, dist); actDemonCeilingBuster(my); break;
+	case DEMON:
+		demonMoveBodyparts(my, myStats, dist);
+		if ( !visualOnly ) { actDemonCeilingBuster(my); }
+		break;
 	case SUCCUBUS: succubusMoveBodyparts(my, myStats, dist); break;
 	case LICH: lichAnimate(my, dist); break;
-	case MINOTAUR: minotaurMoveBodyparts(my, myStats, dist); actMinotaurCeilingBuster(my); break;
+	case MINOTAUR:
+		minotaurMoveBodyparts(my, myStats, dist);
+		if ( !visualOnly ) { actMinotaurCeilingBuster(my); }
+		break;
 	case DEVIL: devilMoveBodyparts(my, myStats, dist); break;
 	case SHOPKEEPER: shopkeeperMoveBodyparts(my, myStats, dist); break;
 	case KOBOLD: koboldMoveBodyparts(my, myStats, dist); break;
@@ -2627,7 +2678,8 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist)
 	case GYROBOT: gyroBotAnimate(my, myStats, dist); break;
 	case DUMMYBOT: dummyBotAnimate(my, myStats, dist); break;
 	case MIMIC: mimicAnimate(my, myStats, dist); break;
-	case BAT_SMALL: batAnimate(my, myStats, dist); break;
+	case BAT_SMALL:
+	case BAT_FAMILIAR: batAnimate(my, myStats, dist); break;
 	case BUGBEAR: bugbearMoveBodyparts(my, myStats, dist); break;
 	case DRYAD: monsterDMoveBodyparts(my, myStats, dist); break;
 	case MYCONID: monsterMMoveBodyparts(my, myStats, dist); break;
@@ -2647,6 +2699,116 @@ void monsterAnimate(Entity* my, Stat* myStats, double dist)
 	default:
 		break;
 	}
+}
+
+static bool wraithProxySupportsAttackPresentation(Monster type)
+{
+	type = wraithCanonicalPossessionType(type);
+	switch ( type )
+	{
+		case RAT:
+		case SLIME:
+		case BAT_SMALL:
+		case SPIDER:
+		case GHOUL:
+		case SCORPION:
+		case DEMON:
+		case KOBOLD:
+		case SCARAB:
+		case CRYSTALGOLEM:
+		case SHADOW:
+		case COCKATRICE:
+		case BUGBEAR:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static bool wraithPlayerPoseStartsPhysicalAttack(int pose)
+{
+	if ( pose >= 1 && pose <= MONSTER_POSE_RANGED_WINDUP3 )
+	{
+		return true;
+	}
+	if ( pose >= MONSTER_POSE_RANGED_SHOOT1
+		&& pose <= MONSTER_POSE_RANGED_SHOOT3 )
+	{
+		return true;
+	}
+	return pose == MONSTER_POSE_FLAIL_SWING
+		|| pose == MONSTER_POSE_FLAIL_SWING_WINDUP;
+}
+
+static int getWraithProxyAttackPresentationPose(Entity* proxy, Stat* proxyStats)
+{
+	if ( !proxy || !proxyStats )
+	{
+		return 0;
+	}
+
+	const Monster type = wraithCanonicalPossessionType(proxyStats->type);
+	switch ( type )
+	{
+		case SCORPION:
+			// scorpionAnimate() drives its tail from any nonzero attack state.
+			return 1;
+		case KOBOLD:
+		case SHADOW:
+		case BUGBEAR:
+		{
+			// Borrowed equipment is installed before this helper is called.
+			const int pose = proxy->getAttackPose();
+			if ( pose >= MONSTER_POSE_MELEE_WINDUP1
+				&& pose <= MONSTER_POSE_RANGED_WINDUP3 )
+			{
+				return pose;
+			}
+			if ( pose == MONSTER_POSE_FLAIL_SWING_WINDUP )
+			{
+				return pose;
+			}
+			return MONSTER_POSE_MELEE_WINDUP1;
+		}
+		case RAT:
+		case SLIME:
+		case BAT_SMALL:
+		case SPIDER:
+		case GHOUL:
+		case DEMON:
+		case SCARAB:
+		case CRYSTALGOLEM:
+		case COCKATRICE:
+			return MONSTER_POSE_MELEE_WINDUP1;
+		default:
+			return 0;
+	}
+}
+
+// This client-side body is only a visual proxy for a Wraith controlling an
+// otherwise unplayable monster. Its root position comes from the host's ENTU
+// stream, not from the locally interpolated player entity. Animate its limbs
+// after that root position has been interpolated in game.cpp.
+bool isClientWraithMonsterVisualProxy(Entity* my)
+{
+	if ( multiplayer != CLIENT || !my || my->behavior != &actMonster
+		|| my->bodyparts.empty() )
+	{
+		return false;
+	}
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( !players[player] || !stats[player]
+			|| stats[player]->playerRace != RACE_WRAITH
+			|| players[player]->mechanics.wraith.possessedEntityUid != my->getUID() )
+		{
+			continue;
+		}
+		return wraithPossessionUsesMonsterVisualProxy(
+			players[player]->mechanics.wraith.possessedType)
+			&& !wraithPossessionHasTemporaryFormOverride(player);
+	}
+	return false;
 }
 
 void actMonster(Entity* my)
@@ -2738,6 +2900,16 @@ void actMonster(Entity* my)
 			case DUMMYBOT: initDummyBot(my, nullptr); break;
 			case MIMIC: initMimic(my, nullptr); break;
 			case BAT_SMALL: initBat(my, nullptr); break;
+			case BAT_FAMILIAR:
+				if ( getAmuletFamiliarForm(my) == FAMILIAR_FORM_CAULDRON )
+				{
+					rebuildAmuletFamiliarCauldron(my);
+				}
+				else
+				{
+					initBat(my, nullptr);
+				}
+				break;
 			case BUGBEAR: initBugbear(my, nullptr); break;
 			case DRYAD: initMonsterD(my, nullptr); break;
 			case MYCONID: initMonsterM(my, nullptr); break;
@@ -2759,13 +2931,67 @@ void actMonster(Entity* my)
 		}
 		else if (MONSTER_INIT)
 		{
-		    const auto dist = sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY);
-			monsterAnimate(my, nullptr, dist);
+			// An occupied monster is positioned by the host's normal ENTU
+			// updates. Do not snap it to the local view of the player here.
+			const auto dist = sqrt(MONSTER_VELX * MONSTER_VELX
+				+ MONSTER_VELY * MONSTER_VELY);
+			// For a Wraith-owned visual proxy, game.cpp animates limbs once,
+			// AFTER network position/rotation interpolation. Animating here
+			// would use the previous root transform and leave limbs behind.
+			if ( !isClientWraithMonsterVisualProxy(my) )
+			{
+				monsterAnimate(my, nullptr, dist);
+			}
 
 			if ( !intro )
 			{
 				my->handleEffectsClient();
 			}
+		}
+
+		// The server drives the possessed monster's coordinates from the
+		// controlled player in updateWraithPossession(). Its regular ENTU
+		// stream then moves/interpolates this client-side visual proxy.
+		// Interfering with root or new_* positions here can either pull the
+		// monster back toward its spawn point or pin it in place. Keep only
+		// the presentation and non-interaction flags for this proxy.
+		for ( int possessor = 0; possessor < MAXPLAYERS; ++possessor )
+		{
+			if ( !players[possessor] || !players[possessor]->entity
+				|| !stats[possessor]
+				|| stats[possessor]->playerRace != RACE_WRAITH
+				|| players[possessor]->mechanics.wraith.possessedEntityUid != my->getUID() )
+			{
+				continue;
+			}
+			Entity* controlled = players[possessor]->entity;
+			const auto& wraith = players[possessor]->mechanics.wraith;
+			const bool transformed = (stats[possessor]->getEffectActive(EFF_SHAPESHIFT)
+				&& controlled->effectShapeshift != NOTHING)
+				|| (stats[possessor]->getEffectActive(EFF_POLYMORPH)
+					&& controlled->effectPolymorph != NOTHING);
+			const bool visualProxy = !transformed
+				&& wraithPossessionUsesMonsterVisualProxy(wraith.possessedType);
+			my->flags[PASSABLE] = true;
+			my->flags[UNCLICKABLE] = true;
+			if ( !visualProxy )
+			{
+				my->flags[INVISIBLE] = true;
+				my->flags[INVISIBLE_DITHER] = false;
+				int bodypart = 0;
+				for ( node_t* childNode = my->children.first; childNode;
+					childNode = childNode->next, ++bodypart )
+				{
+					if ( bodypart < 2 ) { continue; }
+					Entity* limb = static_cast<Entity*>(childNode->element);
+					if ( limb )
+					{
+						limb->flags[INVISIBLE] = true;
+						limb->flags[INVISIBLE_DITHER] = false;
+					}
+				}
+			}
+			break;
 		}
 
 		// request entity update (check if I've been deleted)
@@ -2847,7 +3073,8 @@ void actMonster(Entity* my)
 				case GYROBOT: initGyroBot(my, myStats); break;
 				case DUMMYBOT: initDummyBot(my, myStats); break;
 				case MIMIC: initMimic(my, myStats); break;
-				case BAT_SMALL: initBat(my, myStats); break;
+				case BAT_SMALL:
+				case BAT_FAMILIAR: initBat(my, myStats); break;
 				case BUGBEAR: initBugbear(my, myStats); break;
 				case DRYAD: initMonsterD(my, myStats); break;
 				case MYCONID: initMonsterM(my, myStats); break;
@@ -2930,6 +3157,301 @@ void actMonster(Entity* my)
 	{
 		printlog("ERROR: monster entity at %p has no stats struct!", my);
 		return;
+	}
+	if ( monsterIsActiveWraithBody(my) )
+	{
+		// This entity is presentation only while occupied.
+		my->monsterTarget = 0;
+		my->monsterDefend = MONSTER_DEFEND_NONE;
+		my->monsterState = MONSTER_STATE_WAIT;
+		const Monster effectiveProxyType =
+			wraithCanonicalPossessionType(myStats->type);
+		bool visualProxy = wraithPossessionUsesMonsterVisualProxy(myStats->type);
+		for ( int player = 0; player < MAXPLAYERS; ++player )
+		{
+			if ( players[player]
+				&& players[player]->mechanics.wraith.possessedEntityUid == my->getUID()
+				&& wraithPossessionHasTemporaryFormOverride(player) )
+			{
+				visualProxy = false;
+				break;
+			}
+		}
+		const bool supportsAttackPresentation = visualProxy
+			&& wraithProxySupportsAttackPresentation(myStats->type);
+		if ( !supportsAttackPresentation )
+		{
+			// Suppress stale monster-AI attack presentation for unsupported bodies.
+			my->monsterAttack = 0;
+			my->monsterAttackTime = 0;
+		}
+		int possessor = -1;
+		for ( int player = 0; player < MAXPLAYERS; ++player )
+		{
+			if ( players[player] && players[player]->entity
+				&& players[player]->mechanics.wraith.possessedEntityUid == my->getUID() )
+			{
+				my->x = players[player]->entity->x;
+				my->y = players[player]->entity->y;
+				my->z = players[player]->entity->z;
+				my->yaw = players[player]->entity->yaw;
+				if ( effectiveProxyType == DEMON )
+				{
+					my->pitch = 0.0;
+					my->roll = 0.0;
+				}
+				else if ( visualProxy )
+				{
+					my->pitch = 0.0;
+					my->roll = 0.0;
+				}
+				else
+				{
+					my->pitch = players[player]->entity->pitch;
+				}
+				possessor = player;
+				break;
+			}
+		}
+		if ( possessor >= 0 && visualProxy )
+		{
+			Entity* playerEntity = players[possessor]->entity;
+			const double visualDist = playerEntity
+				? sqrt(playerEntity->vel_x * playerEntity->vel_x
+					+ playerEntity->vel_y * playerEntity->vel_y)
+				: 0.0;
+			Item* oldProxyWeapon = myStats->weapon;
+			Item* oldProxyShield = myStats->shield;
+			Item* oldProxyBreastplate = myStats->breastplate;
+			Item* oldProxyShoes = myStats->shoes;
+			Item* oldProxyCloak = myStats->cloak;
+			Item* oldProxyHelmet = myStats->helmet;
+			Item* oldProxyRing = myStats->ring;
+			bool preseedWeaponSpriteChanged = false;
+			bool preseedShieldSpriteChanged = false;
+			if ( stats[possessor] )
+			{
+				if ( wraithPossessedBodyCanEquipSlot(possessor, 1) )
+				{
+					myStats->weapon = stats[possessor]->weapon;
+				}
+				if ( wraithPossessedBodyCanEquipSlot(possessor, 2) )
+				{
+					myStats->shield = stats[possessor]->shield;
+				}
+				if ( effectiveProxyType == SHADOW )
+				{
+					if ( wraithPossessedBodyCanEquipSlot(possessor, 3) )
+					{
+						myStats->breastplate = stats[possessor]->breastplate;
+					}
+					if ( wraithPossessedBodyCanEquipSlot(possessor, 7) )
+					{
+						myStats->cloak = stats[possessor]->cloak;
+					}
+					if ( wraithPossessedBodyCanEquipSlot(possessor, 0) )
+					{
+						myStats->helmet = stats[possessor]->helmet;
+					}
+					// Native Shadow presentation reads the ring for invisibility.
+					myStats->ring = stats[possessor]->ring;
+				}
+				if ( effectiveProxyType == KOBOLD )
+				{
+					if ( wraithPossessedBodyCanEquipSlot(
+							possessor,
+							4) )
+					{
+						myStats->shoes =
+							stats[possessor]->shoes;
+					}
+
+					if ( wraithPossessedBodyCanEquipSlot(
+							possessor,
+							7) )
+					{
+						myStats->cloak =
+							stats[possessor]->cloak;
+					}
+
+					if ( wraithPossessedBodyCanEquipSlot(
+							possessor,
+							0) )
+					{
+						myStats->helmet =
+							stats[possessor]->helmet;
+					}
+				}
+
+				int bodypart = 0;
+				for ( node_t* limbNode = my->children.first; limbNode;
+					limbNode = limbNode->next, ++bodypart )
+				{
+					Entity* limb = static_cast<Entity*>(limbNode->element);
+					if ( !limb || (bodypart != LIMB_HUMANOID_WEAPON
+						&& bodypart != LIMB_HUMANOID_SHIELD) ) { continue; }
+					const int category = bodypart == LIMB_HUMANOID_WEAPON ? 1 : 2;
+					if ( !wraithPossessedBodyCanEquipSlot(possessor, category) ) { continue; }
+					Item* displayItem = category == 1
+						? stats[possessor]->weapon : stats[possessor]->shield;
+					const int sprite = displayItem ? itemModel(displayItem) : 0;
+					if ( category == 1 )
+					{
+						preseedWeaponSpriteChanged = limb->sprite != sprite;
+					}
+					else
+					{
+						preseedShieldSpriteChanged = limb->sprite != sprite;
+					}
+					limb->sprite = sprite;
+				}
+			}
+			if ( supportsAttackPresentation && playerEntity
+				&& wraithPlayerPoseStartsPhysicalAttack(playerEntity->skill[9])
+				&& playerEntity->skill[10] <= 1
+				&& my->monsterAttack == 0 )
+			{
+				const int pose = getWraithProxyAttackPresentationPose(my, myStats);
+				if ( pose != 0 )
+				{
+					my->monsterAttack = pose;
+					my->monsterAttackTime = 0;
+				}
+			}
+			monsterAnimate(my, myStats, visualDist, true);
+			myStats->weapon = oldProxyWeapon;
+			myStats->shield = oldProxyShield;
+			myStats->breastplate = oldProxyBreastplate;
+			myStats->shoes = oldProxyShoes;
+			myStats->cloak = oldProxyCloak;
+			myStats->helmet = oldProxyHelmet;
+			myStats->ring = oldProxyRing;
+			if ( effectiveProxyType == SHADOW )
+			{
+				int bodypart = 0;
+				for ( node_t* limbNode = my->children.first; limbNode;
+					limbNode = limbNode->next, ++bodypart )
+				{
+					if ( bodypart != LIMB_HUMANOID_MASK ) { continue; }
+					Entity* maskLimb = static_cast<Entity*>(limbNode->element);
+					if ( !maskLimb ) { break; }
+					const bool changed = !maskLimb->flags[INVISIBLE]
+						|| maskLimb->flags[INVISIBLE_DITHER];
+					maskLimb->flags[INVISIBLE] = true;
+					maskLimb->flags[INVISIBLE_DITHER] = false;
+					if ( changed && multiplayer == SERVER )
+					{
+						serverUpdateEntityBodypart(my, bodypart);
+					}
+					break;
+				}
+			}
+			if ( stats[possessor] )
+			{
+				int bodypart = 0;
+				for ( node_t* limbNode = my->children.first; limbNode;
+					limbNode = limbNode->next, ++bodypart )
+				{
+					Entity* limb = static_cast<Entity*>(limbNode->element);
+					if ( !limb || (bodypart != LIMB_HUMANOID_WEAPON
+						&& bodypart != LIMB_HUMANOID_SHIELD) ) { continue; }
+					const int category = bodypart == LIMB_HUMANOID_WEAPON ? 1 : 2;
+					if ( !wraithPossessedBodyCanEquipSlot(possessor, category) ) { continue; }
+					Item* displayItem = category == 1
+						? stats[possessor]->weapon : stats[possessor]->shield;
+					const int sprite = displayItem ? itemModel(displayItem) : 0;
+					const bool invisible = displayItem == nullptr;
+					const bool preseedSpriteChanged = category == 1
+						? preseedWeaponSpriteChanged : preseedShieldSpriteChanged;
+					const bool changed = preseedSpriteChanged || limb->sprite != sprite
+						|| limb->flags[INVISIBLE] != invisible;
+					limb->sprite = sprite;
+					limb->flags[INVISIBLE] = invisible;
+					limb->flags[INVISIBLE_DITHER] = false;
+					if ( changed && multiplayer == SERVER )
+					{
+						serverUpdateEntityBodypart(my, bodypart);
+					}
+				}
+			}
+		}
+		return;
+	}
+	if ( isAmuletFamiliar(my, myStats) )
+	{
+		// Cauldron form returns true from
+		// updateAmuletFamiliarSpecialState() every tick.
+		// Its interaction therefore has to be handled
+		// before that early return, just like actCampfire()
+		// forwards directly to openStewingCauldron().
+		if ( multiplayer != CLIENT
+			&& getAmuletFamiliarForm(my)
+				== FAMILIAR_FORM_CAULDRON )
+		{
+			// Only the owning Witch may brew. Other players can still use
+			// the shared *Void Chest* through any Mimic, not this Cauldron.
+			// MONSTER_CLICKED is a fallback; don't let a stale click from a
+			// different player override a legitimate selectedEntity interaction.
+			Entity* owner = uidToEntity(myStats->leader_uid);
+			const int ownerPlayer = owner ? owner->isEntityPlayer() : -1;
+			if ( ownerPlayer >= 0 && ownerPlayer < MAXPLAYERS
+				&& players[ownerPlayer] && players[ownerPlayer]->entity
+				// Range is validated by openStewingCauldron() via entityDist.
+				// The generic familiar-command inrange flag can be stale here.
+				&& (selectedEntity[ownerPlayer] == my
+					|| client_selected[ownerPlayer] == my
+					|| MONSTER_CLICKED == ownerPlayer + 1) )
+			{
+				openStewingCauldron(my, ownerPlayer);
+			}
+			if ( MONSTER_CLICKED ) { MONSTER_CLICKED = 0; }
+
+		}
+
+		if ( updateAmuletFamiliarSpecialState(
+				my,
+				myStats) )
+		{
+			return;
+		}
+	}
+
+	if ( isAmuletFamiliar(my, myStats)
+		&& getAmuletFamiliarForm(my)
+			== FAMILIAR_FORM_BAT )
+	{
+		Entity* leader = uidToEntity(myStats->leader_uid);
+		Stat* leaderStats = leader ? leader->getStats() : nullptr;
+		const int leaderPlayer = leader ? leader->isEntityPlayer() : -1;
+		if ( !leader || leader->behavior != &actPlayer || !leaderStats || leaderStats->HP <= 0
+			|| leaderPlayer < 0 || (leaderPlayer > 0 && client_disconnected[leaderPlayer])
+			|| !leaderStats->amulet || leaderStats->amulet->type != AMULET_FAMILIAR
+			|| leaderStats->amulet->status == BROKEN )
+		{
+			removeBatFamiliar(my);
+			return;
+		}
+		if ( my->monsterTarget )
+		{
+			my->monsterReleaseAttackTarget();
+		}
+		if ( my->monsterState == MONSTER_STATE_ATTACK )
+		{
+			my->monsterState = MONSTER_STATE_WAIT;
+			serverUpdateEntitySkill(my, 0);
+		}
+		if ( my->monsterAllyState != ALLY_STATE_DEFAULT )
+		{
+			my->monsterAllyState = ALLY_STATE_DEFAULT;
+			serverUpdateEntitySkill(my, 43);
+		}
+		if ( MONSTER_ATTACK != 0 )
+		{
+			MONSTER_ATTACK = 0;
+			MONSTER_ATTACKTIME = 0;
+			serverUpdateEntitySkill(my, 8);
+			serverUpdateEntitySkill(my, 9);
+		}
 	}
 	myStats->defending = false;
 	myStats->sneaking = 0;
@@ -3621,10 +4143,19 @@ void actMonster(Entity* my)
 		}
 	}
 
-	// hunger, regaining hp/mp, poison, etc.
-	if ( !intro )
+	// hunger, regaining hp/mp, poison, etc. Bat and Cauldron familiar forms are
+	// explicitly invulnerable and must never enter a generic effect/death cycle.
+	const bool invulnerableFamiliarForm = isAmuletFamiliar(my, myStats)
+		&& getAmuletFamiliarForm(my) != FAMILIAR_FORM_MIMIC;
+	if ( !intro && !invulnerableFamiliarForm )
 	{
 		my->handleEffects(myStats);
+	}
+	else if ( invulnerableFamiliarForm && myStats->HP <= 0 )
+	{
+		myStats->MAXHP = std::max<Sint32>(1, myStats->MAXHP);
+		myStats->HP = 1;
+		myStats->OLDHP = 1;
 	}
 	if ( myStats->HP <= 0
 		&& my->monsterState != MONSTER_STATE_LICH_DEATH
@@ -3632,6 +4163,12 @@ void actMonster(Entity* my)
 		&& my->monsterState != MONSTER_STATE_LICHFIRE_DIE 
 		&& my->monsterState != MONSTER_STATE_LICHICE_DIE )
 	{
+		const Sint32 wraithFormerPossessorBeforeDeath =
+			myStats->wraithFormerPossessor;
+
+		const bool wraithBodyLootChestSpawnedBeforeDeath =
+			myStats->wraithBodyLootChestSpawned;
+
 		Uint8 cursedFlesh = myStats->getEffectActive(EFF_CURSE_FLESH);
 		if ( cursedFlesh & (1 << 7) )
 		{
@@ -3645,6 +4182,14 @@ void actMonster(Entity* my)
 				// old entity was removed
 				if ( Stat* monsterStats = monster->getStats() )
 				{
+					// Preserve former-Wraith-body identity across Revenant resurrection.
+					// This death was prevented, so do not create the Wraith loot chest yet.
+					monsterStats->wraithFormerPossessor =
+						wraithFormerPossessorBeforeDeath;
+
+					monsterStats->wraithBodyLootChestSpawned =
+						wraithBodyLootChestSpawnedBeforeDeath;
+
 					monster->setEffect(EFF_STUNNED, true, 20, false);
 
 					Entity* commanderEntity = player >= 0 ? players[player]->entity : nullptr;
@@ -3689,7 +4234,31 @@ void actMonster(Entity* my)
 			}
 		}
 
+		if ( myStats->wraithFormerPossessor >= 0
+			&& !myStats->wraithBodyLootChestSpawned )
+		{
+			spawnWraithBodyDeathChest(my);
+		}
+
 		//TODO: Refactor die function.
+		// mod add: Only the authoritative death path can awaken the Library Musket.
+		// The persistent statistic inside the helper makes repeated death ticks safe.
+		if ( myStats->type == GNOME
+			&& !strcmp(myStats->name, "Imbiamba Jombes")
+			&& !strcmp(map.name, "The Mystic Library") )
+		{
+			// mod add: His hat and whip are encounter equipment, not loot. Let the
+			// generic death-drop path consume them so slot/list ownership stays intact.
+			if ( myStats->helmet )
+			{
+				myStats->helmet->isDroppable = false;
+			}
+			if ( myStats->weapon )
+			{
+				myStats->weapon->isDroppable = false;
+			}
+			unlockLibraryMusketFromGnomeDeath();
+		}
 		// drop all equipment
 		entity = dropItemMonster(myStats->helmet, my, myStats);
 		if ( entity )
@@ -4106,6 +4675,9 @@ void actMonster(Entity* my)
 			case BAT_SMALL:
 				batDie(my);
 				break;
+			case BAT_FAMILIAR:
+				removeBatFamiliar(my);
+				break;
 			case BUGBEAR:
 				bugbearDie(my);
 				break;
@@ -4357,7 +4929,7 @@ void actMonster(Entity* my)
 	// effect of a ring of conflict
 	bool ringconflict = false;
 	Entity* ringConflictHolder = nullptr;
-	if ( myStats->type != LICH_ICE && myStats->type != LICH_FIRE )
+	if ( myStats->type != LICH_ICE && myStats->type != LICH_FIRE && myStats->type != BAT_FAMILIAR )
 	{
 		for ( node = map.creatures->first; node != nullptr; node = node->next ) //Only creatures can wear rings, so don't search map.entities.
 		{
@@ -4470,11 +5042,15 @@ void actMonster(Entity* my)
 		snprintf(namesays, 63, Language::get(1302), myStats->name);
 	}
 	int monsterclicked = -1;
-	for ( int i = 0; i < MAXPLAYERS; i++)
+
+	for ( int i = 0;
+		i < MAXPLAYERS;
+		i++ )
 	{
-		if ( selectedEntity[i] == my || client_selected[i] == my )
+		if ( selectedEntity[i] == my
+			|| client_selected[i] == my )
 		{
-			if (inrange[i])
+			if ( inrange[i] )
 			{
 				monsterclicked = i;
 			}
@@ -4488,6 +5064,11 @@ void actMonster(Entity* my)
 	if ( monsterclicked >= 0 && monsterclicked < MAXPLAYERS
 		&& players[monsterclicked] && players[monsterclicked]->entity )
 	{
+		if ( isAmuletFamiliar(my, myStats) && getAmuletFamiliarForm(my) == FAMILIAR_FORM_MIMIC )
+		{
+			openAmuletFamiliarVoidChest(my, monsterclicked);
+			return;
+		}
 		if ( !my->isMobile() )
 		{
 			// message the player, "the %s doesn't respond"
@@ -4873,6 +5454,12 @@ void actMonster(Entity* my)
 	}
 
 	bool wasInsideEntity = false;
+	// mod add: resolve gunshots heard before this monster's initialization prior
+	// to isMobile(), since an initialized sleeper must be woken before that gate.
+	if ( my->monsterGunshotPending )
+	{
+		my->monsterUpdateGunshotInvestigation();
+	}
 	if ( my->isMobile() )
 	{
 		// ghouls rise out of the dirt :O
@@ -5231,6 +5818,9 @@ void actMonster(Entity* my)
 
 		int linetraceTargetEnemyFlags = LINETRACE_ATK_CHECK_FRIENDLYFIRE;
 
+		// mod add: advance server-authoritative firearm gunshot investigation.
+		my->monsterUpdateGunshotInvestigation();
+
 		//Begin state machine
 		if ( my->monsterState == MONSTER_STATE_WAIT ) //Begin wait state
 		{
@@ -5319,7 +5909,8 @@ void actMonster(Entity* my)
 					hitstats = entity->getStats();
 					if ( hitstats != nullptr )
 					{
-						if ( (my->checkEnemy(entity) || my->monsterTarget == entity->getUID() || ringconflict) )
+						if ( (my->checkEnemy(entity) || my->monsterTarget == entity->getUID() || ringconflict)
+							&& (!my->monsterInvestigatingGunshot || my->monsterGunshotAllowsTarget(*entity)) )
 						{
 							tangent = atan2( entity->y - my->y, entity->x - my->x );
 							dir = my->yaw - tangent;
@@ -5593,7 +6184,8 @@ void actMonster(Entity* my)
 			}
 
 			// follow the leader :)
-			if ( myStats->leader_uid != 0
+			if ( !my->monsterInvestigatingGunshot // mod add: fixed-coordinate investigation outranks leader follow
+				&& myStats->leader_uid != 0
 				&& my->monsterAllyState == ALLY_STATE_DEFAULT 
 				&& !myStats->getEffectActive(EFF_FEAR)
 				&& !myStats->getEffectActive(EFF_DISORIENTED)
@@ -6489,6 +7081,7 @@ timeToGoAgain:
 												my->monsterAttack = my->getAttackPose(); // random attack motion
 												my->monsterHitTime = 0;
 												my->monsterAttackTime = 0;
+												const int oldHP = hit.entity->doorHealth;
 												hit.entity->doorHealth--; // decrease door health
 												if ( myStats->STR > 20 )
 												{
@@ -6498,6 +7091,10 @@ timeToGoAgain:
 												if ( myStats->type == MINOTAUR )
 												{
 													hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
+												}
+												if ( oldHP > 0 && hit.entity->doorHealth <= 0 )
+												{
+													entrenchOnEntityDestroyedByCreature(hit.entity, my);
 												}
 												updateEnemyBar(my, hit.entity, hit.entity->behavior == &actIronDoor ? Language::get(6414) : Language::get(674), 
 													hit.entity->doorHealth, hit.entity->doorMaxHealth, false, DamageGib::DMG_DEFAULT);
@@ -6519,7 +7116,12 @@ timeToGoAgain:
 									}
 									else if ( hit.entity->behavior == &actFurniture && myStats->type == MINOTAUR )
 									{
+										const int oldHP = hit.entity->furnitureHealth;
 										hit.entity->furnitureHealth = 0;
+										if ( oldHP > 0 )
+										{
+											entrenchOnEntityDestroyedByCreature(hit.entity, my);
+										}
 										playSoundEntity(hit.entity, 28, 64);
 									}
 									else if ( hit.entity->behavior == &actChest && myStats->type == MINOTAUR )
@@ -6529,8 +7131,13 @@ timeToGoAgain:
 									}
 									else if ( hit.entity->isDamageableCollider() && myStats->type == MINOTAUR )
 									{
+										const int oldHP = hit.entity->colliderCurrentHP;
 										hit.entity->colliderCurrentHP = 0;
 										hit.entity->colliderKillerUid = 0;
+										if ( oldHP > 0 )
+										{
+											entrenchOnEntityDestroyedByCreature(hit.entity, my);
+										}
 										playSoundEntity(hit.entity, 28, 64);
 									}
 									else if ( hit.entity->behavior == &actFurniture )
@@ -6542,16 +7149,22 @@ timeToGoAgain:
 											my->monsterAttack = my->getAttackPose(); // random attack motion
 											my->monsterHitTime = HITRATE / 4;
 											my->monsterAttackTime = 0;
+											const int oldHP = hit.entity->furnitureHealth;
 											hit.entity->furnitureHealth--; // decrease door health
 											if ( myStats->STR > 20 )
 											{
 												hit.entity->furnitureHealth -= static_cast<int>(std::max((myStats->STR - 20), 0) / 3); // decrease door health
 												hit.entity->furnitureHealth = std::max(hit.entity->furnitureHealth, 0);
 											}
+											if ( oldHP > 0 && hit.entity->furnitureHealth <= 0 )
+											{
+												entrenchOnEntityDestroyedByCreature(hit.entity, my);
+											}
 											playSoundEntity(hit.entity, 28, 64);
 										}
 									}
-									else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT && myStats->type != BAT_SMALL )
+									else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT
+										&& myStats->type != BAT_SMALL && myStats->type != BAT_FAMILIAR )
 									{
 										// break it down!
 										my->monsterHitTime++;
@@ -6566,8 +7179,13 @@ timeToGoAgain:
 											int damage = 2 + local_rng.rand() % 3;
 											damage += std::max(0, myStats->STR / 8);
 
+											const int oldHP = hit.entity->colliderCurrentHP;
 											hit.entity->colliderCurrentHP -= damage;
 											hit.entity->colliderKillerUid = 0;
+											if ( oldHP > 0 && hit.entity->colliderCurrentHP <= 0 )
+											{
+												entrenchOnEntityDestroyedByCreature(hit.entity, my);
+											}
 
 											int sound = 28;
 											if ( hit.entity->getColliderSfxOnHit() > 0 )
@@ -7006,6 +7624,18 @@ timeToGoAgain:
 		} //End charge state
 		else if ( my->monsterState == MONSTER_STATE_PATH )     //Begin path state
 		{
+			if ( my->monsterInvestigatingGunshot )
+			{
+				// mod add: native HUNT collision/stall recovery enters PATH. Keep
+				// rebuilding toward the fixed report with the gunshot path rules.
+				if ( !my->monsterRebuildGunshotPath() )
+				{
+					my->monsterClearGunshotInvestigation();
+					my->monsterState = MONSTER_STATE_WAIT;
+				}
+				serverUpdateEntitySkill(my, 0);
+				return;
+			}
 			if ( myStats->type == DEVIL )
 			{
 				my->monsterState = MONSTER_STATE_ATTACK;
@@ -7156,7 +7786,8 @@ timeToGoAgain:
 					hitstats = entity->getStats();
 					if ( hitstats != nullptr )
 					{
-						if ( (my->checkEnemy(entity) || my->monsterTarget == entity->getUID() || ringconflict) )
+						if ( (my->checkEnemy(entity) || my->monsterTarget == entity->getUID() || ringconflict)
+							&& (!my->monsterInvestigatingGunshot || my->monsterGunshotAllowsTarget(*entity)) )
 						{
 							tangent = atan2( entity->y - my->y, entity->x - my->x );
 							dir = my->yaw - tangent;
@@ -7474,7 +8105,8 @@ timeToGoAgain:
 			}
 
 			// follow the leader :)
-			if ( uidToEntity(my->monsterTarget) == nullptr
+			if ( !my->monsterInvestigatingGunshot // mod add: do not replace the fixed report with a leader route
+				&& uidToEntity(my->monsterTarget) == nullptr
 				&& myStats->leader_uid != 0 
 				&& my->monsterAllyState == ALLY_STATE_DEFAULT 
 				&& !monsterIsImmobileTurret(my, myStats)
@@ -7696,6 +8328,14 @@ timeToGoAgain:
 								}
 								myDex = std::min(myDex, MONSTER_ALLY_DEXTERITY_SPEED_CAP);
 							}
+							if ( isAmuletFamiliar(my, myStats)
+								&& getAmuletFamiliarForm(my) == FAMILIAR_FORM_BAT )
+							{
+								// Movement uses (DEX + 10), so scale that complete term to
+								// produce an actual 2x familiar Bat movement speed.
+								myDex = static_cast<int>((myDex + 10)
+									* FAMILIAR_BAT_MOVEMENT_SPEED_MULTIPLIER - 10);
+							}
 							real_t maxVelX = cos(tangent) * .045 * (myDex + 10) * weightratio;
 							real_t maxVelY = sin(tangent) * .045 * (myDex + 10) * weightratio;
 							if ( myStats->getEffectActive(EFF_KNOCKBACK) )
@@ -7770,6 +8410,7 @@ timeToGoAgain:
 											my->monsterAttack = my->getAttackPose(); // random attack motion
 											my->monsterAttackTime = 0;
 											my->monsterHitTime = 0;
+											const int oldHP = hit.entity->doorHealth;
 											hit.entity->doorHealth--; // decrease door health
 											if ( myStats->STR > 20 )
 											{
@@ -7779,6 +8420,10 @@ timeToGoAgain:
 											if ( myStats->type == MINOTAUR )
 											{
 												hit.entity->doorHealth = 0;    // minotaurs smash doors instantly
+											}
+											if ( oldHP > 0 && hit.entity->doorHealth <= 0 )
+											{
+												entrenchOnEntityDestroyedByCreature(hit.entity, my);
 											}
 											updateEnemyBar(my, hit.entity, hit.entity->behavior == &actIronDoor ? Language::get(6414) : Language::get(674), 
 												hit.entity->doorHealth, hit.entity->doorMaxHealth,
@@ -7808,6 +8453,7 @@ timeToGoAgain:
 										my->monsterAttack = my->getAttackPose(); // random attack motion
 										my->monsterAttackTime = 0;
 										my->monsterHitTime = HITRATE / 4;
+										const int oldHP = hit.entity->furnitureHealth;
 										hit.entity->furnitureHealth--; // decrease door health
 										if ( myStats->STR > 20 )
 										{
@@ -7818,10 +8464,15 @@ timeToGoAgain:
 										{
 											hit.entity->furnitureHealth = 0;    // minotaurs smash furniture instantly
 										}
+										if ( oldHP > 0 && hit.entity->furnitureHealth <= 0 )
+										{
+											entrenchOnEntityDestroyedByCreature(hit.entity, my);
+										}
 										playSoundEntity(hit.entity, 28, 64);
 									}
 								}
-								else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT && myStats->type != BAT_SMALL )
+								else if ( hit.entity->isDamageableCollider() && myStats->type != GYROBOT
+									&& myStats->type != BAT_SMALL && myStats->type != BAT_FAMILIAR )
 								{
 									// break it down!
 									my->monsterHitTime++;
@@ -7836,8 +8487,13 @@ timeToGoAgain:
 										int damage = 2 + local_rng.rand() % 3;
 										damage += std::max(0, myStats->STR / 8);
 
+										const int oldHP = hit.entity->colliderCurrentHP;
 										hit.entity->colliderCurrentHP -= damage;
 										hit.entity->colliderKillerUid = 0;
+										if ( oldHP > 0 && hit.entity->colliderCurrentHP <= 0 )
+										{
+											entrenchOnEntityDestroyedByCreature(hit.entity, my);
+										}
 
 										int sound = 28;
 										if ( hit.entity->getColliderSfxOnHit() > 0 )
@@ -7941,9 +8597,11 @@ timeToGoAgain:
 									}
 									else if ( yourStats )
 									{
-										if ( !my->checkEnemy(hit.entity) )
+										const bool ignoredGunshotTraffic =
+											my->monsterGunshotShouldIgnoreMonsterCollision(*hit.entity);
+										if ( ignoredGunshotTraffic || !my->checkEnemy(hit.entity) )
 										{
-											// would you kindly move out of the way, sir?
+											// Friends and temporarily ignored investigators are movable traffic.
 											if ( !monsterMoveAside(hit.entity, my) )
 											{
 												my->monsterState = MONSTER_STATE_PATH;    // try something else and remake path
@@ -7956,7 +8614,7 @@ timeToGoAgain:
 												my->monsterMoveBackwardsAndPath();
 											}
 										}
-										else if ( my->checkEnemy(hit.entity) )
+										else
 										{
 											// charge state
 											Entity& attackTarget = *hit.entity;
@@ -12303,6 +12961,18 @@ int numMonsterTypeAliveOnMap(Monster creature, Entity*& lastMonster)
 
 void Entity::monsterMoveBackwardsAndPath(bool trySidesFirst)
 {
+	if ( monsterInvestigatingGunshot )
+	{
+		// mod add: blocked-route recovery must not substitute the generic
+		// backwards path for the fixed gunshot investigation route.
+		if ( !monsterRebuildGunshotPath() )
+		{
+			monsterClearGunshotInvestigation();
+			monsterState = MONSTER_STATE_WAIT;
+		}
+		serverUpdateEntitySkill(this, 0);
+		return;
+	}
 	while ( yaw < 0 )
 	{
 		yaw += 2 * PI;
@@ -14734,6 +15404,10 @@ bool Entity::isFollowerFreeToPathToPlayer(Stat* myStats)
 
 bool Entity::isInertMimic() const
 {
+	if ( familiarFormIsCombatTargetable(this) )
+	{
+		return false;
+	}
 	if ( behavior == &actMonster && getMonsterTypeFromSprite() == MIMIC )
 	{
 		if ( monsterSpecialState == MIMIC_INERT || monsterSpecialState == MIMIC_INERT_SECOND )
@@ -14766,6 +15440,10 @@ bool Entity::isUntargetableBat(real_t* outDist) const
 
 bool Entity::monsterIsTargetable(bool targetInertMimics) const
 {
+	if ( behavior == &actMonster && isAmuletFamiliar(this, getStats()) )
+	{
+		return familiarFormIsCombatTargetable(this);
+	}
 	if ( flags[PASSABLE] )
 	{
 		return false;
@@ -14777,7 +15455,11 @@ bool Entity::monsterIsTargetable(bool targetInertMimics) const
 	else if ( behavior == &actMonster ) 
 	{ 
 		Monster type = getMonsterTypeFromSprite();
-		if ( type == GYROBOT )
+		if ( type == BAT_FAMILIAR )
+		{
+			return false;
+		}
+		else if ( type == GYROBOT )
 		{
 			return false;
 		}
@@ -14849,6 +15531,15 @@ void batResetIdle(Entity* my)
 void mimicResetIdle(Entity* my)
 {
 	if ( !my ) { return; }
+	if ( familiarFormIsCombatTargetable(my) )
+	{
+		if ( my->monsterSpecialState != MIMIC_ACTIVE )
+		{
+			my->monsterSpecialState = MIMIC_ACTIVE;
+			serverUpdateEntitySkill(my, 33);
+		}
+		return;
+	}
 	// reset to inert after wandering with no target
 	my->monsterSpecialState = MIMIC_INERT_SECOND;
 	serverUpdateEntitySkill(my, 33);

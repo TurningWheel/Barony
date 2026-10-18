@@ -491,7 +491,13 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 	int myPathMap = pathMap[y1 + x1 * map.height];
 	if ( !loading )
 	{
-		if ( !myPathMap || myPathMap != pathMap[y2 + x2 * map.height] || !pathMap[y2 + x2 * map.height] || (x1 == x2 && y1 == y2) )
+		//mod add: breakable colliders can divide the precomputed connectivity
+		// zones. Gunshot investigation adjusts those entities below, so let its
+		// per-query A* map decide whether the destination is genuinely reachable.
+		const bool gunshotInvestigationPath = pathingType == GENERATE_PATH_GUNSHOT_INVESTIGATION;
+		if ( (!gunshotInvestigationPath
+				&& (!myPathMap || myPathMap != pathMap[y2 + x2 * map.height] || !pathMap[y2 + x2 * map.height]))
+			|| (x1 == x2 && y1 == y2) )
 		{
 			free(pathMap);
 			if ( *cvar_pathing_debug )
@@ -509,7 +515,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 			}
 			return NULL;
 		}
-		if ( my->behavior == &actMonster )
+		if ( my->behavior == &actMonster && !gunshotInvestigationPath )
 		{
 			if ( gateGraph[pathMapType].bIsInit )
 			{
@@ -642,6 +648,14 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 		{
 			continue;
 		}
+		if ( pathingType == GENERATE_PATH_GUNSHOT_INVESTIGATION
+			&& entity->behavior == &actMonster
+			&& my->monsterGunshotShouldIgnoreMonsterCollision(*entity) )
+		{
+			// mod add: a temporarily ignored dungeon monster is dynamic traffic,
+			// not a permanent wall in the investigation's private A* map.
+			continue;
+		}
 		if ( entity->behavior == &actMonster && 
 			((!my->checkEnemy(entity) && !entity->isInertMimic()) 
 				|| (my && my->getMonsterTypeFromSprite() == DUCK_SMALL) 
@@ -687,6 +701,21 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target,
 			{
 				continue;
 			}
+		}
+		// mod add: gunshot investigation paths may cross obstacles that the
+		// monster's normal HUNT collision handling will break on arrival.
+		// Keep chests and every other obstacle unchanged.
+		if ( pathingType == GENERATE_PATH_GUNSHOT_INVESTIGATION && stats
+			&& (entity->behavior == &actFurniture
+				|| (entity->isDamageableCollider()
+					&& stats->type != GYROBOT && stats->type != BAT_SMALL)) )
+		{
+			// Damageable colliders may already be zeroed in pathMapGrounded. Reopen
+			// only their occupied tile in this private path-map copy.
+			int x = std::min<unsigned int>(std::max<int>(0, entity->x / 16), map.width - 1);
+			int y = std::min<unsigned int>(std::max<int>(0, entity->y / 16), map.height - 1);
+			pathMap[y + x * map.height] = myPathMap ? myPathMap : 1;
+			continue;
 		}
 		int x = std::min<unsigned int>(std::max<int>(0, entity->x / 16), map.width - 1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
 		int y = std::min<unsigned int>(std::max<int>(0, entity->y / 16), map.height - 1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
@@ -985,7 +1014,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 
 	int index = y * MAPLAYERS + x * MAPLAYERS * map.height;
 	if ( !map.tiles[OBSTACLELAYER + index] && map.tiles[index] 
-		&& !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )
+		&& (!(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
+			|| entrenchBridgeSupportsTile(x, y)) ) // mod add: one-tile Entrench bridges join grounded zones
 	{
 		obstacle = false;
 	}
@@ -1078,7 +1108,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							{
 								int index = v * MAPLAYERS + (u + 1) * MAPLAYERS * map.height;
 								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
-									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )) )
+									|| (map.tiles[index] && (!(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
+										|| entrenchBridgeSupportsTile(u + 1, v))) ))
 								{
 									pathMap[v + (u + 1)*map.height] = zone;
 									repeat = true;
@@ -1125,7 +1156,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							{
 								int index = v * MAPLAYERS + (u - 1) * MAPLAYERS * map.height;
 								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
-									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])) ) )
+									|| (map.tiles[index] && (!(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
+										|| entrenchBridgeSupportsTile(u - 1, v))) ))
 								{
 									pathMap[v + (u - 1)*map.height] = zone;
 									repeat = true;
@@ -1172,7 +1204,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							{
 								int index = (v + 1) * MAPLAYERS + u * MAPLAYERS * map.height;
 								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
-									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])) ) )
+									|| (map.tiles[index] && (!(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
+										|| entrenchBridgeSupportsTile(u, v + 1))) ))
 								{
 									pathMap[(v + 1) + u * map.height] = zone;
 									repeat = true;
@@ -1219,7 +1252,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							{
 								int index = (v - 1) * MAPLAYERS + u * MAPLAYERS * map.height;
 								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
-									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )) )
+									|| (map.tiles[index] && (!(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])
+										|| entrenchBridgeSupportsTile(u, v - 1))) ))
 								{
 									pathMap[(v - 1) + u * map.height] = zone;
 									repeat = true;

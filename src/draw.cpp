@@ -2054,6 +2054,35 @@ void temporarilyDisableDithering() {
     ditherDisabledTime = ticks;
 }
 
+#ifndef EDITOR
+static bool shouldRenderWorldWraithFullbright(Entity* entity)
+{
+	if ( !entity || entity->flags[OVERDRAW] ) { return false; }
+	Entity* playerEntity = nullptr;
+	if ( entity->behavior == &actPlayer )
+	{
+		playerEntity = entity;
+	}
+	else if ( entity->behavior == &actPlayerLimb )
+	{
+		playerEntity = uidToEntity(entity->parent);
+		if ( !playerLimbIsIntrinsicWraithBodyPart(entity, playerEntity) )
+		{
+			return false;
+		}
+	}
+	else
+	{
+		return false;
+	}
+
+	const int player = playerEntity ? playerEntity->skill[2] : -1;
+	return player >= 0 && player < MAXPLAYERS
+		&& players[player] && players[player]->entity == playerEntity
+		&& playerIsInWraithForm(player);
+}
+#endif
+
 void drawEntities3D(view_t* camera, int mode)
 {
 #ifndef EDITOR
@@ -2085,6 +2114,22 @@ void drawEntities3D(view_t* camera, int mode)
 			break;
 		}
 	}
+	Entity* firstPersonWraithProxy = nullptr;
+#ifndef EDITOR
+	if ( !intro && currentPlayerViewport >= 0 && currentPlayerViewport < MAXPLAYERS
+		&& players[currentPlayerViewport] && players[currentPlayerViewport]->entity
+		&& stats[currentPlayerViewport]
+		&& stats[currentPlayerViewport]->playerRace == RACE_WRAITH
+		&& !players[currentPlayerViewport]->entity->skill[3] )
+	{
+		const auto& wraith = players[currentPlayerViewport]->mechanics.wraith;
+		if ( wraith.initialized && wraith.possessedEntityUid != 0
+			&& wraithPossessionUsesMonsterVisualProxy(wraith.possessedType) )
+		{
+			firstPersonWraithProxy = uidToEntity(wraith.possessedEntityUid);
+		}
+	}
+#endif
     
     const bool ditheringDisabled = ticks - ditherDisabledTime < TICKS_PER_SECOND;
 
@@ -2101,6 +2146,22 @@ void drawEntities3D(view_t* camera, int mode)
                 nextnode = map.worldUI->first;
             }
         }
+		if ( firstPersonWraithProxy )
+		{
+			bool isActiveProxyPart = entity == firstPersonWraithProxy;
+			if ( !isActiveProxyPart )
+			{
+				for ( Entity* bodypart : firstPersonWraithProxy->bodyparts )
+				{
+					if ( bodypart == entity )
+					{
+						isActiveProxyPart = true;
+						break;
+					}
+				}
+			}
+			if ( isActiveProxyPart ) { continue; }
+		}
         
         if ( entity->flags[INVISIBLE] && !entity->flags[INVISIBLE_DITHER] )
         {
@@ -2287,7 +2348,22 @@ void drawEntities3D(view_t* camera, int mode)
         
 		if ( entity->flags[SPRITE] == false )
 		{
+#ifndef EDITOR
+			const bool originalBright = entity->flags[BRIGHT];
+			const bool wraithWorldFullbright =
+				shouldRenderWorldWraithFullbright(entity);
+			if ( wraithWorldFullbright )
+			{
+				entity->flags[BRIGHT] = true;
+			}
+#endif
             GL_CHECK_ERR(glDrawVoxel(camera, entity, mode));
+#ifndef EDITOR
+			if ( wraithWorldFullbright )
+			{
+				entity->flags[BRIGHT] = originalBright;
+			}
+#endif
 		}
 		else
 		{
@@ -2621,10 +2697,19 @@ void drawEntities2D(long camx, long camy)
 				// if item sprite and the item index is not 0 (NULL), or 1 (RANDOM)
 				if ( entity->sprite == 8 && entity->skill[10] > 1 )
 				{
-					// draw the item sprite in the editor layout
-					Item* tmpItem = newItem(static_cast<ItemType>(entity->skill[10] - 2), static_cast<Status>(0), 0, 0, 0, 0, nullptr);
-					drawImageScaled(itemSprite(tmpItem), nullptr, &pos);
-					free(tmpItem);
+					// Draw the item icon when the editor loaded its ItemGeneric image data.
+					// A valid compiled-in item may still be absent from the editor's mounted
+					// items.json; retain sprite 8 rather than constructing/indexing blindly.
+					SDL_Surface* surface = nullptr;
+					const Sint32 runtimeItemID = entity->skill[10] - 2;
+					if ( runtimeItemID >= 0 && runtimeItemID < NUMITEMS )
+					{
+						Item* tmpItem = newItem(static_cast<ItemType>(runtimeItemID),
+							static_cast<Status>(0), 0, 0, 0, 0, nullptr);
+						surface = itemSprite(tmpItem);
+						free(tmpItem);
+					}
+					drawImageScaled(surface ? surface : sprites[entity->sprite], nullptr, &pos);
 				}
 				else if ( entity->sprite == 21 )
 				{
@@ -2912,7 +2997,17 @@ void drawEntities2D(long camx, long camy)
 						}
 						case 3: //Items
 							pady += 5;
-							strcpy(tmpStr, itemNameStrings[selectedEntity[0]->skill[10]]);
+							if ( selectedEntity[0]->skill[10] >= 0
+								&& selectedEntity[0]->skill[10] < NUM_ITEM_STRINGS
+								&& itemNameStrings[selectedEntity[0]->skill[10]][0] != '\0' )
+							{
+								strcpy(tmpStr, itemNameStrings[selectedEntity[0]->skill[10]]);
+							}
+							else
+							{
+								snprintf(tmpStr, sizeof(tmpStr), "invalid item ID %d",
+									static_cast<int>(selectedEntity[0]->skill[10]));
+							}
 							ttfPrintText(ttf8, padx, pady - 20, tmpStr);
 							color = makeColorRGB(255, 255, 255);
 							pady += 2;
@@ -3280,7 +3375,14 @@ void drawEntities2D(long camx, long camy)
 					}
 					else if ( spriteType == 3 )
 					{
-						ttfPrintText(ttf8, padx, pady - offsety, itemNameStrings[entity->skill[10]]);
+						const Sint32 editorItemID = entity->skill[10];
+						const char* itemName = "invalid item";
+						if ( editorItemID >= 0 && editorItemID < NUM_ITEM_STRINGS
+							&& itemNameStrings[editorItemID][0] != '\0' )
+						{
+							itemName = itemNameStrings[editorItemID];
+						}
+						ttfPrintText(ttf8, padx, pady - offsety, itemName);
 						offsety += 10;
 					}
 					else

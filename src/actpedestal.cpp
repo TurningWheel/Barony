@@ -597,4 +597,3 @@ void Entity::pedestalOrbInit()
 		}
 	}
 }
-

@@ -13,6 +13,7 @@
 #pragma once
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
+#include "magic/entrench.hpp"
 #include "messages.hpp"
 #include "engine/audio/sound.hpp"
 #include "input.hpp"
@@ -25,6 +26,74 @@
 //TODO: Move these into each and every individual player.
 extern Entity* selectedEntity[MAXPLAYERS];
 extern Entity* lastSelectedEntity[MAXPLAYERS];
+
+// mod add: shared predicates for custom player-only status presentation/action gates.
+bool playerIsPanicking(int player);
+bool playerCanInteractWhilePanicking(const Entity* target);
+bool playerDarkvisionSuppressed(int player);
+bool playerIsInWraithForm(int player);
+bool wraithHybridItemIsNativeMainhand(const Item* item);
+bool wraithHybridItemIsNativeOffhand(const Item* item);
+bool wraithHybridItemUsesGenericPose(const Item* item);
+Item* getWraithHeldItem(int player);
+bool isWraithPhysicalHandItem(int player, const Item* item);
+bool playerShouldRenderAsWraithSpirit(int player);
+bool playerLimbIsIntrinsicWraithBodyPart(const Entity* limb,
+	const Entity* parent, int* bodypartIndex = nullptr);
+bool wraithCanAcceptPhysicalPickup(int player);
+bool setWraithHeldItem(int player, Item* item);
+bool wraithNegatesIncomingDamage(Entity* target, Sint32 damage, Entity* damageSource = nullptr);
+enum WraithLoreKind : Uint8
+{
+	WRAITH_LORE_BOOK,
+	WRAITH_LORE_GRAVESTONE,
+	WRAITH_LORE_MAIL
+};
+bool wraithPossessionTypeIsLearnable(Monster type);
+Monster wraithCanonicalPossessionType(Monster type);
+std::vector<Monster> getWraithLearnablePossessionTypes();
+bool wraithKnowsPossessionType(int player, Monster type);
+std::vector<Monster> getWraithKnownPossessionTypes(int player);
+void sanitizeWraithPossessionKnowledge(int player);
+bool processWraithLoreRead(int player, WraithLoreKind kind, int textId,
+	Uint64 physicalObjectId);
+bool processWraithItemLoreRead(int player, Item* item, WraithLoreKind kind, int textId);
+bool processWraithRemoteItemLoreRead(int player, Item* requestItem);
+int getWraithCanonicalMailLoreId(Uint32 appearance);
+int getWraithAddressedMailLoreId(int player);
+Uint64 getWraithGravestoneLoreObjectId(const Entity* gravestone, int textId);
+void syncWraithPossessionKnowledge(int player);
+void replaceWraithLearnedPossessionTypes(int player, const std::vector<Monster>& types);
+bool unlockAllWraithPossessions(int player);
+void initializeWraithPlayerForNewGame(int player);
+void sendWraithStartingChestSnapshot(int player);
+void sendWraithBodyInventorySnapshot(int player, bool force = false);
+void reconcileWraithRemoteBodyInventory(int player, Stat& bodyStats, Uint32 bodyUid);
+void acknowledgeWraithStartingChestSnapshot(int player, Uint32 key, Uint32 runKey);
+constexpr Sint32 WRAITH_MIN_POSSESS_RESERVE = 26;
+Sint32 getWraithPossessManaCost(const Entity* target);
+bool wraithMonsterTypeCanEverBePossessed(const Entity* monster);
+bool wraithCanPossessTarget(int player, Entity* target,
+	std::string* failureReason = nullptr);
+bool beginWraithPossession(int player, Entity* target);
+bool releaseWraithPossession(int player);
+bool handleWraithPossessedBodyDeath(int player);
+void updateWraithPossession(int player);
+Stat* createWraithPossessedBodySnapshot(int player);
+Stat* captureWraithPossessedBodyForLevelTransition(int player);
+bool restoreWraithPossessedBodyAfterLevelTransition(int player, Stat* savedBodyStats);
+void clearWraithReturningBodyUIReferences(int player, const std::vector<Item*>& returningBodyItems);
+bool applyWraithHumanPolymorphReturnInventory(int player, Uint32 bagKey);
+bool monsterIsActiveWraithBody(const Entity* monster);
+bool spawnWraithBodyDeathChest(Entity* monster);
+Monster getWraithEffectiveMonsterType(int player);
+std::vector<int> getWraithPossessionInnateSpells(Monster type);
+bool wraithPossessedBodyCanEquipSlot(int player, int category);
+bool wraithPossessionUsesMonsterVisualProxy(Monster type);
+bool wraithPossessionHasTemporaryFormOverride(int player);
+bool wraithPossessionHasFirstPersonModel(Monster type);
+void updateWraithPossessionTemporarySpells(int player);
+void clearWraithPossessionTemporarySpells(int player);
 
 /*
  * TODO: Will need to make messages work for each hotseat player.
@@ -793,7 +862,8 @@ public:
 			MODULE_ITEMEFFECTGUI,
 			MODULE_PORTRAIT,
 			MODULE_ASSISTSHRINE,
-			MODULE_MAILBOX
+			MODULE_MAILBOX,
+			MODULE_STEWING // appended: existing module IDs remain stable
 		};
 		GUIModules activeModule = MODULE_NONE;
 		GUIModules previousModule = MODULE_NONE;
@@ -984,6 +1054,8 @@ public:
 			int beatitude;
 			int count;
 			Uint32 appearance;
+			Sint32 runeStoredPWR;
+			Sint8 runeCreatorPlayer;
 			bool identified;
 			Uint32 uid;
 			bool wasAppraisalTarget = false;
@@ -1030,6 +1102,8 @@ public:
 				beatitude = 0;
 				count = -1;
 				appearance = 0;
+				runeStoredPWR = Item::RUNE_STORED_PWR_INVALID;
+				runeCreatorPlayer = Item::RUNE_CREATOR_INVALID;
 				identified = false;
 				uid = 0;
 				wasAppraisalTarget = false;
@@ -2014,6 +2088,8 @@ public:
 			int beatitude = -99;
 			int count = 0;
 			Uint32 appearance = 0;
+			Sint32 runeStoredPWR = Item::RUNE_STORED_PWR_INVALID;
+			Sint8 runeCreatorPlayer = Item::RUNE_CREATOR_INVALID;
 			bool identifiedItem = false;
 			bool hasAppraiseCapstone = false;
 			bool isItemSameAsCurrent(Item* item);
@@ -2133,6 +2209,8 @@ public:
 		bool bTooltipActiveForPlayer(Entity& tooltip);
 		bool bTooltipInView = false;
 		Uint32 uidForActiveTooltip = 0;
+		bool familiarMimicCommandInteraction = false;
+		bool activeTooltipHasAlternateInteraction();
 		std::string interactText = "Interact";
 		void enable() { bEnabled = true; }
 		void disable() { 
@@ -2234,6 +2312,7 @@ public:
 		int swapHotbarOnShapeshift = 0;
 		bool hotbarHasFocus = false;
 		int magicBoomerangHotbarSlot = -1;
+		int harpoonHotbarSlot = -1; //mod add
 		int magicDuckHotbarSlot = -1;
 		Uint32 hotbarTooltipLastGameTick = 0;
 		SDL_Rect hotbarBox;
@@ -2394,6 +2473,38 @@ public:
 	{
 		Player& player;
 	public:
+		struct WraithPlayerState
+		{
+			bool initialized = false;
+			bool wasHumanPolymorphed = false;
+			Sint32 corporealMaxHP = 0;
+			Sint32 corporealMaxMP = 0;
+			Uint32 possessedEntityUid = 0;
+			bool possessionTransition = false;
+			Monster possessedType = NOTHING;
+			Sint32 possessionStartPlayerLevel = 0;
+			Sint32 possessionLastPlayerLevel = 0;
+			bool possessedBodyOriginalInvisible = false;
+			bool possessedBodyOriginalPassable = false;
+			bool possessedBodyOriginalBlocksSight = false;
+			bool possessedBodyOriginalUnclickable = false;
+			std::array<bool, NUMEFFECTS> suspendedWraithEffects{};
+			std::array<Sint32, NUMEFFECTS> suspendedWraithEffectTimers{};
+			std::set<int> temporaryInnateSpellIds;
+			std::array<Uint32, 10> possessionOriginalEquipmentUids{};
+			std::set<Monster> learnedPossessionTypes;
+			std::set<int> seenBookLoreIds;
+			std::set<int> seenGravestoneLoreIds;
+			std::set<int> seenMailLoreIds;
+			std::set<Uint32> readBookObjectIds;
+			std::set<Uint32> readMailObjectIds;
+			std::set<Uint64> readGravestoneObjectIds;
+			// Only the host populates this ledger from actual item pickups.
+			// Remote Wraith clients otherwise have no host-side book/mail inventory
+			// to validate their USEI reading requests against.
+			std::map<Uint32, std::pair<ItemType, Uint32>> remoteLoreItems;
+			std::unordered_map<Uint32, Uint8> guaranteedDodgesConsumedByMonsterUid;
+		} wraith;
 		std::map<int, int> itemDegradeRng;
 		std::set<int> learnedSpells;
 		std::vector<std::pair<int, int>> ducksInARow;
@@ -2409,6 +2520,73 @@ public:
 		int baseSpellMPUsedMysticism = 0;
 		int baseSpellMPUsedThaumaturgy = 0;
 		Uint32 defendTicks = 0;
+		// mod add: Timed firearm reload state. Client and server retain their
+		// own UID for the same equipped firearm and advance it independently.
+		Sint32 firearmReloadTicks = 0;
+		// Cost and duration are fixed when this reload starts.
+		Sint32 firearmReloadTotalTicks = 0;
+		Sint32 firearmReloadMaterialCost = 0;
+		Uint32 firearmReloadItemUid = 0;
+		ItemType firearmReloadItemType = WOODEN_SHIELD;
+		Uint32 firearmReloadToken = 0;
+		Uint32 firearmReloadLastToken = 0; // replay guard, retained across entity removal
+		bool firearmReloadAwaitingPayment = false;
+		bool firearmReloadMaterialsCommitted = false;
+		ItemType firearmReloadCommittedMaterialType = WOODEN_SHIELD;
+		Sint32 firearmReloadCommittedMaterialCost = 0;
+		bool firearmReloadRefundOnGround = false;
+		Uint8 firearmReloadDeathX = 0;
+		Uint8 firearmReloadDeathY = 0;
+		// mod add: Firearm jams are a transient, per-player action. Keeping the
+		// equipped UID prevents completion after swapping or crossing a lifecycle.
+		Uint32 firearmJamToken = 0;
+		Uint32 firearmJamLastToken = 0; // client replay guard, retained across entity removal
+		bool firearmJamAwaitingPayment = false;
+		bool firearmJamPaymentCommitted = false; // cached decision, including failure
+		Sint32 firearmJamRecoveryCost = 0;
+		Uint32 firearmJamAttackItemUid = 0; // client-local firearm used for predicted ATAK
+		Sint32 firearmUnjamTicks = 0;
+		Uint32 firearmUnjamItemUid = 0;
+		ItemType firearmUnjamItemType = WOODEN_SHIELD;
+		bool firearmUnjamRetainsLoadedShot = true;
+		// mod add: Suppresses proficiency when the transient feedback action came
+		// from the Musket's persistent quest jam.
+		bool firearmUnjamWasQuestJammed = false;
+		// mod add: Separate normal-water transition state; PLAYER_INWATER also
+		// represents lava and cannot distinguish a direct lava-to-water move.
+		bool firearmInNormalWater = false;
+		// Rune Hammer inscription is a presentation-driven, non-combat action.
+		// The world item is deliberately retained by UID rather than pointer.
+		Sint32 runeHammerInscriptionTicks = 0;
+		Uint32 runeHammerInscriptionTargetUid = 0;
+		Sint32 runeHammerInscriptionCharge = 0;
+		bool runeHammerInscriptionImpacted = false;
+		// mod add end
+		// mod add: Leonin racial mechanics keep effect ownership separate from
+		// vanilla effect and swimming state.
+		bool leoninRacialDarkvisionApplied = false;
+		bool leoninWaterPanickingApplied = false;
+		// mod add end
+		// mod add: Entrench carries an original world entity, never an Item.
+		EntrenchStash entrenchStash;
+		Uint32 entrenchCarriedUid = 0;
+		Uint32 entrenchOwnerRevision = 0;
+		Uint32 entrenchVisualRevision = 0;
+		Uint32 entrenchVisualCarriedUid = 0; // derived from atomic object snapshots on clients
+		real_t entrenchOriginX = 0.0;
+		real_t entrenchOriginY = 0.0;
+		real_t entrenchOriginZ = 0.0;
+		real_t entrenchOriginYaw = 0.0;
+		real_t entrenchOriginPitch = 0.0;
+		real_t entrenchOriginRoll = 0.0;
+		bool entrenchOriginPassable = false;
+		bool entrenchOriginInvisible = false;
+		bool entrenchOriginUnclickable = false;
+		Sint32 entrenchOriginDoorMode = 0;
+		Sint32 entrenchOriginDoorLocked = 0;
+		Sint32 entrenchOriginDoorStatus = 0;
+		Sint32 entrenchOriginDeployedOwner = 0;
+		Sint32 entrenchOriginDeployedReward = 0;
 		int fociHolyChargeTime = 0;
 		int fociDarkChargeTime = 0;
 		int lastFociHeldType = 0;

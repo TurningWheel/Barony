@@ -18,6 +18,7 @@
 #include "menu.hpp"
 #include "collision.hpp"
 #include "mod_tools.hpp"
+#include "monster.hpp"
 #include "draw.hpp"
 #include "colors.hpp"
 #include "ui/GameUI.hpp"
@@ -1286,6 +1287,16 @@ bool Player::GUI_t::returnToPreviousActiveModule()
 Player::GUI_t::GUIModules Player::GUI_t::handleModuleNavigation(bool checkDestinationOnly, bool checkLeftNavigation)
 {
 	auto& input = Input::inputs[player.playernum];
+	if ( GenericGUI[player.playernum].stewingGUI.bOpen )
+	{
+		// No bumper navigation into the underlying inventory while brewing.
+		if ( !checkDestinationOnly )
+		{
+			input.consumeBinaryToggle("UINavLeftBumper");
+			input.consumeBinaryToggle("UINavRightBumper");
+		}
+		return MODULE_NONE;
+	}
 	if ( player.shootmode || gamePaused || !inputs.hasController(player.playernum)
 		|| nohud || !player.isLocalPlayer() )
 	{
@@ -2133,6 +2144,13 @@ void Player::soundStatusClose()
 
 bool Player::GUI_t::handleInventoryMovement()
 {
+	// Stewing is modal; its own panel handles the controller grid and consumes
+	// navigation. Never let the inventory underneath also move its selection.
+	if ( GenericGUI[player.playernum].stewingGUI.bOpen
+		&& activeModule == MODULE_STEWING )
+	{
+		return true;
+	}
 	bool dpad_moved = false;
 
 	if ( inputs.getUIInteraction(player.playernum)->itemMenuOpen )
@@ -3240,6 +3258,45 @@ void Player::init() // for use on new/restart game, UI related
 	levelUpAnimation[playernum].lvlUps.clear();
 	skillUpAnimation[playernum].skillUps.clear();
 	mechanics.itemDegradeRng.clear();
+	mechanics.wraith = PlayerMechanics_t::WraithPlayerState();
+	// mod add: Clear any firearm action left over from the previous run.
+	cancelFirearmReload(playernum, true);
+	mechanics.firearmReloadLastToken = 0;
+	cancelFirearmJamPayment(playernum, true);
+	mechanics.firearmUnjamTicks = 0;
+	mechanics.firearmUnjamItemUid = 0;
+	mechanics.firearmUnjamItemType = WOODEN_SHIELD;
+	mechanics.firearmUnjamRetainsLoadedShot = true;
+	mechanics.firearmUnjamWasQuestJammed = false;
+	mechanics.firearmInNormalWater = false;
+	// mod add end
+	// mod add: Leonin racial mechanics begin each run without stale ownership
+	// state.
+	mechanics.leoninRacialDarkvisionApplied = false;
+	mechanics.leoninWaterPanickingApplied = false;
+	// mod add end
+	// mod add: A genuinely new run discards both portable and map-local Entrench state.
+	mechanics.entrenchStash = EntrenchStash();
+	mechanics.entrenchCarriedUid = 0;
+	mechanics.entrenchVisualCarriedUid = 0;
+	mechanics.entrenchOwnerRevision = 0;
+	mechanics.entrenchVisualRevision = 0;
+	cast_animation[playernum].entrenchAwaitingResult = false;
+	cast_animation[playernum].entrenchCancelPending = false;
+	mechanics.entrenchOriginX = 0.0;
+	mechanics.entrenchOriginY = 0.0;
+	mechanics.entrenchOriginZ = 0.0;
+	mechanics.entrenchOriginYaw = 0.0;
+	mechanics.entrenchOriginPitch = 0.0;
+	mechanics.entrenchOriginRoll = 0.0;
+	mechanics.entrenchOriginPassable = false;
+	mechanics.entrenchOriginInvisible = false;
+	mechanics.entrenchOriginUnclickable = false;
+	mechanics.entrenchOriginDoorMode = 0;
+	mechanics.entrenchOriginDoorLocked = 0;
+	mechanics.entrenchOriginDoorStatus = 0;
+	mechanics.entrenchOriginDeployedOwner = 0;
+	mechanics.entrenchOriginDeployedReward = 0;
 	mechanics.sustainedSpellIDCounter.clear();
 	hamletShopkeeperSkillLimit[playernum].clear();
 	mechanics.baseSpellLevelUpProcs.clear();
@@ -3275,6 +3332,18 @@ void Player::init() // for use on new/restart game, UI related
 
 void Player::cleanUpOnEntityRemoval()
 {
+	// mod add: map transitions retain the semantic stash and discard only old UIDs.
+	detachEntrenchCarriedObject(playernum);
+	// mod add: A removed player cannot finish a pending firearm action.
+	cancelFirearmReload(playernum);
+	cancelFirearmJamPayment(playernum);
+	mechanics.firearmUnjamTicks = 0;
+	mechanics.firearmUnjamItemUid = 0;
+	mechanics.firearmUnjamItemType = WOODEN_SHIELD;
+	mechanics.firearmUnjamRetainsLoadedShot = true;
+	mechanics.firearmUnjamWasQuestJammed = false;
+	mechanics.firearmInNormalWater = false;
+	// mod add end
 	if ( isLocalPlayer() )
 	{
 		hud.reset();
@@ -3356,6 +3425,7 @@ void Player::WorldUI_t::reset()
 	tooltipsInRange.clear();
 	bTooltipInView = false;
 	uidForActiveTooltip = 0;
+	familiarMimicCommandInteraction = false;
 }
 
 bool monsterIsFriendlyForTooltip(const int player, Entity& entity)
@@ -3503,6 +3573,10 @@ real_t Player::WorldUI_t::tooltipInRange(Entity& tooltip)
 
 	real_t dist = entityDist(&tooltip, playerEntity);
 	Entity* parent = uidToEntity(tooltip.parent);
+	if ( parent && isEntrenchCarriedObject(parent) )
+	{
+		return 0.0;
+	}
 
 	real_t maxDist = 24.0;
 	real_t minDist = 4.0;
@@ -4149,7 +4223,55 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		else if ( parent->behavior == &actMonster )
 		{
 			int monsterType = parent->getMonsterTypeFromSprite();
-			if ( parent->isInertMimic() )
+			Stat* parentStats = parent->getStats();
+			const bool ownedFamiliarCauldron =
+				(isAmuletFamiliar(parent, parentStats)
+					&& getAmuletFamiliarForm(parent) == FAMILIAR_FORM_CAULDRON)
+				// Client may receive the model before the familiar's
+				// identity/form skill packets. This sprite is dedicated
+				// to the Witch cauldron and is safe as a visual fallback.
+				|| parent->sprite == BAT_FAMILIAR_MODEL_CAULDRON;
+			const bool anyFamiliarMimic = isAmuletFamiliarMimic(parent);
+			const bool ownedFamiliarMimic =
+				anyFamiliarMimic
+				&& parentStats
+				&& player.entity
+				&& parentStats->leader_uid == player.entity->getUID();
+
+			if ( ownedFamiliarCauldron )
+			{
+				interactText = "Stew brews";
+			}
+			else if ( ownedFamiliarMimic )
+			{
+				// Keep C / follower-command hotkeys pointed at this familiar.
+				FollowerMenu[player.playernum].recentEntity = parent;
+
+				if ( familiarMimicCommandInteraction )
+				{
+					std::string name = Language::get(4011); // follower
+					if ( strcmp(parentStats->name, "") )
+					{
+						name = parentStats->name;
+					}
+					else
+					{
+						name = getMonsterLocalizedName(
+							static_cast<Monster>(monsterType));
+					}
+
+					interactText = Language::get(4012) + name; // "Command ..."
+				}
+				else
+				{
+					interactText = Language::get(4005); // "Open chest"
+				}
+			}
+			else if ( anyFamiliarMimic )
+			{
+				interactText = Language::get(4005); // Shared Void Chest: "Open chest"
+			}
+			else if ( parent->isInertMimic() )
 			{
 				interactText = Language::get(4005); // "Open chest" 
 			}
@@ -4249,7 +4371,36 @@ void Player::WorldUI_t::setTooltipActive(Entity& tooltip)
 		}
 		else if ( parent->behavior == &actCampfire )
 		{
-			interactText = Language::get(4024); // "Pull torch" 
+			bool ownedFamiliarCauldron = false;
+
+			if ( parent->skill[3] > 0 && player.entity )
+			{
+				const int tilex = static_cast<int>(floor(parent->x / 16.0));
+				const int tiley = static_cast<int>(floor(parent->y / 16.0));
+
+				list_t* entities = TileEntityList.getTileList(tilex, tiley);
+
+				for ( node_t* node = entities ? entities->first : nullptr;
+					node; node = node->next )
+				{
+					Entity* entity = static_cast<Entity*>(node->element);
+					Stat* entityStats = entity ? entity->getStats() : nullptr;
+
+					if ( entity
+						&& entityStats
+						&& isAmuletFamiliar(entity, entityStats)
+						&& getAmuletFamiliarForm(entity) == FAMILIAR_FORM_CAULDRON
+						&& entityStats->leader_uid == player.entity->getUID() )
+					{
+						ownedFamiliarCauldron = true;
+						break;
+					}
+				}
+			}
+
+			interactText = ownedFamiliarCauldron
+				? "Stew brews"
+				: Language::get(4024);
 		}
 		else if ( parent->behavior == &actCauldron )
 		{
@@ -4447,7 +4598,20 @@ void Player::WorldUI_t::setTooltipDisabled(Entity& tooltip)
 	if ( tooltip.parent == uidForActiveTooltip )
 	{
 		uidForActiveTooltip = 0;
+		familiarMimicCommandInteraction = false;
 	}
+}
+bool Player::WorldUI_t::activeTooltipHasAlternateInteraction()
+{
+    Entity* parent = uidToEntity(uidForActiveTooltip);
+    if ( !parent || !player.entity || !isAmuletFamiliarMimic(parent) )
+    {
+        return false;
+    }
+
+    Stat* parentStats = parent->getStats();
+    return parentStats
+        && parentStats->leader_uid == player.entity->getUID();
 }
 bool Player::WorldUI_t::bTooltipActiveForPlayer(Entity& tooltip)
 {
@@ -4460,6 +4624,32 @@ void Player::WorldUI_t::cycleToNextTooltip()
 	{
 		return;
 	}
+
+    if ( activeTooltipHasAlternateInteraction() )
+    {
+        if ( !familiarMimicCommandInteraction )
+        {
+            // First "Next" stays on the Mimic but switches
+            // Open Chest -> Command.
+            familiarMimicCommandInteraction = true;
+
+            for ( auto& pair : tooltipsInRange )
+            {
+                if ( bTooltipActiveForPlayer(*pair.first) )
+                {
+                    setTooltipActive(*pair.first);
+                    return;
+                }
+            }
+        }
+        else
+        {
+            // Second "Next" leaves Command and continues to the next
+            // actual world tooltip.
+            familiarMimicCommandInteraction = false;
+        }
+    }
+
 	int index = 0;
 	int newIndex = 0;
 	bool bFound = false;
@@ -4497,6 +4687,22 @@ void Player::WorldUI_t::cycleToPreviousTooltip()
 	{
 		return;
 	}
+
+	if ( activeTooltipHasAlternateInteraction()
+		&& familiarMimicCommandInteraction )
+	{
+		familiarMimicCommandInteraction = false;
+
+		for ( auto& pair : tooltipsInRange )
+		{
+			if ( bTooltipActiveForPlayer(*pair.first) )
+			{
+				setTooltipActive(*pair.first);
+				return;
+			}
+		}
+	}
+
 	int index = 0;
 	int newIndex = 0;
 	bool bFound = false;
@@ -4726,7 +4932,10 @@ void Player::WorldUI_t::handleTooltips()
 		{
 			bDoingActionHideTooltips = true;
 		}
-		else if ( (players[player]->hud.weapon && players[player]->hud.weapon->skill[0] != 0) && !selectInteract && players[player]->entity )
+		else if ( (players[player]->hud.weapon && players[player]->hud.weapon->skill[0] != 0)
+			&& !(stats[player] && stats[player]->weapon && stats[player]->weapon->type == RUNE_HAMMER
+				&& players[player]->hud.weapon->skill[3] > 0)
+			&& !selectInteract && players[player]->entity )
 		{
 			// hudweapon chop
 			bDoingActionHideTooltips = true;
@@ -4786,7 +4995,7 @@ void Player::WorldUI_t::handleTooltips()
 
 		bool cycleNext = Input::inputs[player].consumeBinaryToggle("Interact Tooltip Next");
 		bool cyclePrev = Input::inputs[player].consumeBinaryToggle("Interact Tooltip Prev");
-		if ( !bDoingActionHideTooltips && players[player]->worldUI.tooltipsInRange.size() > 1 )
+		if ( !bDoingActionHideTooltips && (players[player]->worldUI.tooltipsInRange.size() > 1 || players[player]->worldUI.activeTooltipHasAlternateInteraction()) )
 		{
 			if ( cyclePrev )
 			{
@@ -4856,8 +5065,9 @@ void Player::WorldUI_t::handleTooltips()
 				}
 				parent = uidToEntity(tooltip->parent);
 				if ( parent && parent->flags[INVISIBLE] 
-					&& !(parent->behavior == &actMonster && 
-						(parent->getMonsterTypeFromSprite() == DUMMYBOT 
+					&& !(parent->behavior == &actMonster &&
+						(isAmuletFamiliarMimic(parent)
+							|| parent->getMonsterTypeFromSprite() == DUMMYBOT
 							|| parent->getMonsterTypeFromSprite() == MIMIC 
 							|| parent->getMonsterTypeFromSprite() == REVENANT_SKULL
 							|| parent->getMonsterTypeFromSprite() == MINIMIMIC
@@ -4878,6 +5088,78 @@ void Player::WorldUI_t::handleTooltips()
 				{
 					continue;
 				}
+
+				// An owned Familiar Cauldron on an active
+				// Campfire does not need its own interaction
+				// tooltip. The Campfire is the sole interaction
+				// target there and actCampfire() already forwards
+				// the click to openStewingCauldron().
+				//
+				// Over lava there is no Campfire Entity, so this
+				// filter does nothing and the Cauldron's own
+				// "Stew brews" tooltip remains available.
+				if ( parent
+					&& parent->behavior == &actMonster
+					&& playerEntity )
+				{
+					Stat* parentStats =
+						parent->getStats();
+
+					if ( parentStats
+						&& isAmuletFamiliar(
+							parent,
+							parentStats)
+						&& getAmuletFamiliarForm(parent)
+							== FAMILIAR_FORM_CAULDRON
+						&& parentStats->leader_uid
+							== playerEntity->getUID() )
+					{
+						const int tilex =
+							static_cast<int>(
+								floor(parent->x / 16.0));
+
+						const int tiley =
+							static_cast<int>(
+								floor(parent->y / 16.0));
+
+						list_t* entities =
+							TileEntityList.getTileList(
+								tilex,
+								tiley);
+
+						bool activeCampfireOnTile =
+							false;
+
+						for ( node_t* entityNode =
+								entities
+									? entities->first
+									: nullptr;
+							entityNode;
+							entityNode =
+								entityNode->next )
+						{
+							Entity* tileEntity =
+								static_cast<Entity*>(
+									entityNode->element);
+
+							if ( tileEntity
+								&& tileEntity->behavior
+									== &actCampfire
+								&& tileEntity->skill[3] > 0 )
+							{
+								activeCampfireOnTile =
+									true;
+								break;
+							}
+						}
+
+						if ( activeCampfireOnTile )
+						{
+							continue;
+						}
+					}
+				}
+
 				real_t newDist = players[player]->worldUI.tooltipInRange(*tooltip);
 				if ( newDist > 0.01 )
 				{
@@ -5828,9 +6110,15 @@ const bool Player::Inventory_t::bItemInventoryHasFreeSlot() const
 {
 	int numSlots = freeVisibleInventorySlots();
 	int itemCount = 0;
+
 	if ( !stats[player.playernum] || !player.isLocalPlayer() )
 	{
 		return false;
+	}
+
+	if ( playerIsInWraithForm(player.playernum) )
+	{
+		return getWraithHeldItem(player.playernum) == nullptr;
 	}
 	for ( node_t* node = stats[player.playernum]->inventory.first; node; node = node->next )
 	{
@@ -7361,6 +7649,11 @@ bool Player::PlayerMechanics_t::itemDegradeRoll(Item* item, int skillID, int* ch
 	{
 		return true;
 	}
+	// mod add: Central durability opt-out for use/combat degradation.
+	if ( item->isUnbreakableFromUse() )
+	{
+		return false;
+	}
 
 	auto& counter = itemDegradeRng[item->type];
 	int interval = 0;
@@ -7612,6 +7905,21 @@ void Player::PlayerMechanics_t::sustainedSpellClearMP(int skillID)
 bool Player::PlayerMechanics_t::updateSustainedSpellEvent(int spellID, real_t value, real_t scaleValue, Entity* hitentity)
 {
 	if ( value < 0.05 ) { return false; }
+	spell_t* sourceSpell = players[player.playernum] && players[player.playernum]->entity
+		? players[player.playernum]->entity->getActiveMagicEffect(spellID) : nullptr;
+	if ( !sourceSpell )
+	{
+		for ( node_t* node = channeledSpells[player.playernum].first; node; node = node->next )
+		{
+			spell_t* channeledSpell = static_cast<spell_t*>(node->element);
+			if ( channeledSpell && channeledSpell->ID == spellID )
+			{
+				sourceSpell = channeledSpell;
+				break;
+			}
+		}
+	}
+	ScopedSpellPowerOverride spellSourceScope(sourceSpell, sourceSpell != nullptr);
 
 	if ( hitentity && multiplayer != CLIENT )
 	{

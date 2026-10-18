@@ -71,6 +71,8 @@ static const int STATISTICS_THATS_CHEATING = 29;
 static const int STATISTICS_DISCIPLINE = 30;
 static const int STATISTICS_DISABLE_UPLOAD = 31;
 static const int STATISTICS_FIRE_FIGHTER = 32;
+// mod add: Saved one-time state for the Library Musket awakening.
+static const int STATISTICS_MUSKET_QUEST_UNLOCKED = 33;
 
 enum SteamStatIndexes : int
 {
@@ -580,7 +582,25 @@ struct SaveGameInfo {
 					int _count,
 					bool _identified,
 					int _x,
-					int _y)
+					int _y,
+					Sint32 _runeStoredPWR = (-2147483647 - 1),
+					int _runeCreatorPlayer = -1,
+					Uint32 _runeInstanceId = 0,
+					Uint32 _runeCreatorIdentity = 0,
+					Uint32 _appliedOil = 0,
+					Uint32 _ingredient0 = 0,
+					Uint32 _ingredient1 = 0,
+					Uint32 _ingredient2 = 0,
+					Uint32 _ingredient3 = 0,
+					bool _familiarInitialized = false,
+					Uint32 _familiarInstanceId = 0,
+					Sint32 _familiarHP = 0, Sint32 _familiarMAXHP = 0,
+					Sint32 _familiarMP = 0, Sint32 _familiarMAXMP = 0,
+					Sint32 _familiarLVL = 0, Sint32 _familiarEXP = 0,
+					Sint32 _familiarSTR = 0, Sint32 _familiarDEX = 0,
+					Sint32 _familiarCON = 0, Sint32 _familiarINT = 0,
+					Sint32 _familiarPER = 0, Sint32 _familiarCHR = 0,
+					Uint32 _wraithLoreInstanceId = 0)
 				{
 					type = _type;
 					status = _status;
@@ -590,6 +610,24 @@ struct SaveGameInfo {
 					identified = _identified;
 					x = _x;
 					y = _y;
+					runeStoredPWR = _runeStoredPWR;
+					runeCreatorPlayer = _runeCreatorPlayer;
+					runeInstanceId = _runeInstanceId;
+					runeCreatorIdentity = _runeCreatorIdentity;
+					appliedOil = _appliedOil;
+					ingredientCounts[0] = _ingredient0;
+					ingredientCounts[1] = _ingredient1;
+					ingredientCounts[2] = _ingredient2;
+					ingredientCounts[3] = _ingredient3;
+					familiarInitialized = _familiarInitialized;
+					familiarInstanceId = _familiarInstanceId;
+					familiarHP = _familiarHP; familiarMAXHP = _familiarMAXHP;
+					familiarMP = _familiarMP; familiarMAXMP = _familiarMAXMP;
+					familiarLVL = _familiarLVL; familiarEXP = _familiarEXP;
+					familiarSTR = _familiarSTR; familiarDEX = _familiarDEX;
+					familiarCON = _familiarCON; familiarINT = _familiarINT;
+					familiarPER = _familiarPER; familiarCHR = _familiarCHR;
+					wraithLoreInstanceId = _wraithLoreInstanceId;
 				}
 
 				Uint32 type = 0;
@@ -600,7 +638,35 @@ struct SaveGameInfo {
 				bool identified = false;
 				int x = 0;
 				int y = 0;
+				Sint32 runeStoredPWR = (-2147483647 - 1);
+				int runeCreatorPlayer = -1;
+				Uint32 runeInstanceId = 0;
+				Uint32 runeCreatorIdentity = 0;
+				Uint32 appliedOil = 0;
+				Uint32 ingredientCounts[4] = { 0, 0, 0, 0 };
+				bool familiarInitialized = false;
+				Uint32 familiarInstanceId = 0;
+				Sint32 familiarHP = 0, familiarMAXHP = 0;
+				Sint32 familiarMP = 0, familiarMAXMP = 0;
+				Sint32 familiarLVL = 0, familiarEXP = 0;
+				Sint32 familiarSTR = 0, familiarDEX = 0, familiarCON = 0;
+				Sint32 familiarINT = 0, familiarPER = 0, familiarCHR = 0;
+				Uint32 wraithLoreInstanceId = 0;
 				bool serialize(FileInterface* fp) {
+					if ( fp->isReading() )
+					{
+						ingredientCounts[0] = 0;
+						ingredientCounts[1] = 0;
+						ingredientCounts[2] = 0;
+						ingredientCounts[3] = 0;
+						familiarInitialized = false;
+						familiarInstanceId = 0;
+						familiarHP = familiarMAXHP = familiarMP = familiarMAXMP = 0;
+						familiarLVL = familiarEXP = 0;
+						familiarSTR = familiarDEX = familiarCON = 0;
+						familiarINT = familiarPER = familiarCHR = 0;
+						wraithLoreInstanceId = 0;
+					}
 					fp->property("type", type);
 					fp->property("status", status);
 					fp->property("appearance", appearance);
@@ -609,6 +675,30 @@ struct SaveGameInfo {
 					fp->property("identified", identified);
 					fp->property("x", x);
 					fp->property("y", y);
+					fp->property("rune_stored_pwr", runeStoredPWR);
+					fp->property("rune_creator_player", runeCreatorPlayer);
+					fp->property("rune_instance_id", runeInstanceId);
+					fp->property("rune_creator_identity", runeCreatorIdentity);
+					fp->property("applied_oil", appliedOil);
+					fp->property("ingredient_0", ingredientCounts[0]);
+					fp->property("ingredient_1", ingredientCounts[1]);
+					fp->property("ingredient_2", ingredientCounts[2]);
+					fp->property("ingredient_3", ingredientCounts[3]);
+					fp->property("familiar_initialized", familiarInitialized);
+					fp->property("familiar_instance_id", familiarInstanceId);
+					fp->property("familiar_hp", familiarHP);
+					fp->property("familiar_maxhp", familiarMAXHP);
+					fp->property("familiar_mp", familiarMP);
+					fp->property("familiar_maxmp", familiarMAXMP);
+					fp->property("familiar_lvl", familiarLVL);
+					fp->property("familiar_exp", familiarEXP);
+					fp->property("familiar_str", familiarSTR);
+					fp->property("familiar_dex", familiarDEX);
+					fp->property("familiar_con", familiarCON);
+					fp->property("familiar_int", familiarINT);
+					fp->property("familiar_per", familiarPER);
+					fp->property("familiar_chr", familiarCHR);
+					fp->property("wraith_lore_instance_id", wraithLoreInstanceId);
 					return true;
 				}
 				void computeHash(Uint32& hash, Uint32& shift);
@@ -665,6 +755,9 @@ struct SaveGameInfo {
 			int LVL = 0;
 			int GOLD = 0;
 			int HUNGER = 0;
+			int golem_blessed_composition = -1;
+			Uint32 rune_creator_identity = 0;
+			std::vector<Uint32> tincture_stacks;
 			std::vector<int> PROFICIENCIES;
 			std::vector<int> EFFECTS;
 			std::vector<int> EFFECTS_TIMERS;
@@ -696,6 +789,9 @@ struct SaveGameInfo {
 				fp->property("LVL", LVL);
 				fp->property("GOLD", GOLD);
 				fp->property("HUNGER", HUNGER);
+				fp->property("golem_blessed_composition", golem_blessed_composition);
+				fp->property("rune_creator_identity", rune_creator_identity);
+				fp->property("tincture_stacks", tincture_stacks);
 				fp->property("PROFICIENCIES", PROFICIENCIES);
 				fp->property("EFFECTS", EFFECTS);
 				fp->property("EFFECTS_TIMERS", EFFECTS_TIMERS);
@@ -773,6 +869,8 @@ struct SaveGameInfo {
 		int isCharacterValidFromDLC();
 	};
 	std::vector<Player> players;
+	// Appended save data keeps older positional binary player layouts intact.
+	std::vector<EntrenchStash> entrenchStashes;
 	std::vector<std::pair<std::string, std::string>> map_messages; // map modifiers "sound of pickaxes striking rock" "walls are fortified" etc
 	std::vector<std::pair<std::string, std::string>> additional_data;
 	
@@ -797,6 +895,7 @@ struct SaveGameInfo {
 		fp->property("players", players);
 		fp->property("additional_data", additional_data);
 		fp->property("map_messages", map_messages);
+		fp->propertyVersion("entrench_stashes", game_version >= 502, entrenchStashes);
 		return true;
 	}
 

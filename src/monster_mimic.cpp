@@ -28,10 +28,20 @@
 void initMimic(Entity* my, Stat* myStats)
 {
 	node_t* node;
+	const bool familiar = isAmuletFamiliar(my, myStats);
+	const Sint32 trunkModel = familiar ? BAT_FAMILIAR_MODEL_MIMIC_TRUNK : 1247;
+	const Sint32 lidModel = familiar ? BAT_FAMILIAR_MODEL_MIMIC_LID : 1248;
 
 	my->z = 0;
-	my->initMonster(1247);
+	my->initMonster(trunkModel);
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
+	if ( familiar )
+	{
+		my->flags[PASSABLE] = false;
+		my->flags[BLOCKSIGHT] = true;
+		my->sizex = 4;
+		my->sizey = 4;
+	}
 	if ( multiplayer != CLIENT )
 	{
 		MONSTER_SPOTSND = 619;
@@ -40,9 +50,9 @@ void initMimic(Entity* my, Stat* myStats)
 		MONSTER_IDLEVAR = 1;
 	}
 
-	my->monsterSpecialState = MIMIC_INERT;
+	my->monsterSpecialState = familiar ? MIMIC_ACTIVE : MIMIC_INERT;
 
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( multiplayer != CLIENT && !MONSTER_INIT && !familiar )
 	{
 		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
 
@@ -86,7 +96,7 @@ void initMimic(Entity* my, Stat* myStats)
 	}
 
 	// trunk
-	Entity* entity = newEntity(1247, 1, map.entities, nullptr); //Limb entity.
+	Entity* entity = newEntity(trunkModel, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
@@ -94,7 +104,7 @@ void initMimic(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
 	entity->z = 6;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->flags[USERFLAG2] = familiar ? false : my->flags[USERFLAG2];
 	entity->focalx = limbs[MIMIC][1][0];
 	entity->focaly = limbs[MIMIC][1][1];
 	entity->focalz = limbs[MIMIC][1][2];
@@ -107,14 +117,14 @@ void initMimic(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// lid
-	entity = newEntity(1248, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(lidModel, 1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->yaw = my->yaw;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
+	entity->flags[USERFLAG2] = familiar ? false : my->flags[USERFLAG2];
 	entity->focalx = limbs[MIMIC][2][0];
 	entity->focaly = limbs[MIMIC][2][1];
 	entity->focalz = limbs[MIMIC][2][2];
@@ -244,6 +254,24 @@ void actMimicLimb(Entity* my)
 	my->actMonsterLimb(false);
 }
 
+Entity* getAmuletFamiliarMimicLid(Entity* familiar)
+{
+	if ( !familiar || !isAmuletFamiliar(familiar, familiar->getStats())
+		|| getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_MIMIC )
+	{
+		return nullptr;
+	}
+	for ( Entity* bodypart : familiar->bodyparts )
+	{
+		if ( bodypart && bodypart->behavior == &actMimicLimb
+			&& bodypart->sprite == BAT_FAMILIAR_MODEL_MIMIC_LID )
+		{
+			return bodypart;
+		}
+	}
+	return nullptr;
+}
+
 void actMiniMimicLimb(Entity* my)
 {
 	my->actMonsterLimb(false);
@@ -351,6 +379,7 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 
 	my->flags[INVISIBLE] = true; // hide the "AI" bodypart
+	const bool familiar = isAmuletFamiliar(my, myStats);
 
 	Monster monsterType = MIMIC;
 	if ( my->getMonsterTypeFromSprite() == MINIMIMIC )
@@ -380,7 +409,11 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 
 		if ( myStats->type == MIMIC )
 		{
-			if ( myStats && myStats->getEffectActive(EFF_MIMIC_VOID) )
+			if ( familiar )
+			{
+				my->sprite = BAT_FAMILIAR_MODEL_MIMIC_TRUNK;
+			}
+			else if ( myStats && myStats->getEffectActive(EFF_MIMIC_VOID) )
 			{
 				my->sprite = 1792;
 			}
@@ -392,6 +425,19 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 					serverSpawnMiscParticles(my, PARTICLE_EFFECT_ERUPT, 625);
 				}
 				my->sprite = 1247;
+			}
+		}
+	}
+	if ( familiar && multiplayer != CLIENT )
+	{
+		for ( int player = 0; player < MAXPLAYERS; ++player )
+		{
+			if ( openedChest[player] == my && players[player] && players[player]->entity )
+			{
+				Entity* opener = players[player]->entity;
+				my->monsterLookDir = atan2(opener->y - my->y, opener->x - my->x);
+				my->monsterRotate();
+				break;
 			}
 		}
 	}
@@ -773,12 +819,56 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 		}
 		else if ( bodypart == MIMIC_LID )
 		{
-			entity->sprite = my->sprite + 1;
+			entity->sprite = familiar ? BAT_FAMILIAR_MODEL_MIMIC_LID : my->sprite + 1;
 			auto& attackStageSwing = entity->skill[0];
 			auto& lidBounceStage = entity->skill[1];
 			auto& lidBounceAngle = entity->fskill[1];
+			auto& chestPitch = entity->fskill[7];
+			const Sint32 chestVisualState = familiar
+				? entity->skill[FAMILIAR_MIMIC_CHEST_VISUAL_SKILL]
+				: FAMILIAR_MIMIC_CHEST_NORMAL;
+			const bool animateFamiliarChest = familiar
+				&& (chestVisualState == FAMILIAR_MIMIC_CHEST_OPEN
+					|| chestVisualState == FAMILIAR_MIMIC_CHEST_CLOSING);
 
-			entity->pitch = head->pitch;
+			if ( animateFamiliarChest )
+			{
+				if ( chestVisualState == FAMILIAR_MIMIC_CHEST_OPEN )
+				{
+					chestPitch = std::max(chestPitch - 0.20, -PI / 2);
+				}
+				else
+				{
+					chestPitch = std::min(chestPitch + 0.25, 0.0);
+					if ( chestPitch >= 0.0 && multiplayer != CLIENT )
+					{
+						chestPitch = 0.0;
+						entity->skill[FAMILIAR_MIMIC_CHEST_VISUAL_SKILL] = FAMILIAR_MIMIC_CHEST_NORMAL;
+						if ( multiplayer == SERVER )
+						{
+							serverUpdateEntitySkill(entity, FAMILIAR_MIMIC_CHEST_VISUAL_SKILL);
+						}
+					}
+				}
+				entity->pitch = chestPitch;
+				entity->roll = head->roll;
+				if ( head->fskill[3] >= 0.0 )
+				{
+					entity->yaw += PI / 16 * (-1.0 + cos((PI / 2) * head->fskill[3]));
+				}
+				else
+				{
+					entity->yaw += -PI / 16 * (-1.0 + cos((PI / 2) * head->fskill[3]));
+				}
+				entity->z -= head->fskill[4];
+			}
+			else
+			{
+				if ( familiar )
+				{
+					chestPitch = 0.0;
+				}
+				entity->pitch = head->pitch;
 
 			if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1
 				|| my->monsterAttack == MONSTER_POSE_MIMIC_DISTURBED
@@ -977,6 +1067,7 @@ void mimicAnimate(Entity* my, Stat* myStats, double dist)
 						lidBounceAngle = 0.0;
 					}
 				}
+			}
 			}
 		}
 

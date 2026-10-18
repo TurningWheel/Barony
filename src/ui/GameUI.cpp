@@ -5709,6 +5709,9 @@ bool StatusEffectQueue_t::insertEffect(int effectID, int spellID)
 		|| effectID == kEffectBread 
 		|| effectID == kEffectBloodHunger
 		|| effectID == kEffectAutomatonHunger
+		|| effectID == kEffectGolemHunger
+		|| effectID == kEffectWraithTether
+		|| (effectID <= kEffectTinctureStart && effectID >= kEffectTinctureEnd)
 		|| effectID >= kSpellEffectOffset )
 	{
 		if ( StatusEffectDefinitions_t::effectDefinitionExists(effectID) )
@@ -6101,6 +6104,46 @@ void StatusEffectQueue_t::loadStatusEffectsJSON()
 			}
 		}
 	}
+
+	// mod add: The status JSON is replacement-style rather than merged, so keep
+	// custom effect presentation in C++ and never shadow vanilla definitions.
+	auto registerCustomEffect = [](int effectId, const char* internalName,
+		const char* displayName, const char* description, const char* imagePath)
+	{
+		if ( StatusEffectDefinitions_t::allEffects.find(effectId)
+			!= StatusEffectDefinitions_t::allEffects.end() )
+		{
+			return;
+		}
+		EffectDefinitionEntry_t entry;
+		entry.effect_id = effectId;
+		entry.internal_name = internalName;
+		entry.name = displayName;
+		entry.desc = "\x1E ";
+		entry.desc += description;
+		entry.imgPath = imagePath;
+		entry.useSpellIDForImg = -1;
+		entry.neverDisplay = false;
+		entry.sustainedSpellID = -1;
+		entry.tooltipWidth = 200;
+		StatusEffectDefinitions_t::allEffects.emplace(effectId, std::move(entry));
+	};
+	registerCustomEffect(EFF_PANICKING, "panicking", "Panicking",
+		"Unable to fight, cast spells, or interact with anything except doors.",
+		"images/ui/HUD/statusfx/panicking.png");
+	registerCustomEffect(EFF_DARKVISION, "darkvision", "Darkvision",
+		"See farther through natural darkness.",
+		"images/ui/HUD/statusfx/darkvision.png");
+	registerCustomEffect(EFF_RETRACTABLE_CLAWS, "retractable_claws", "Retractable Claws",
+		"Unarmed attacks gain +%d damage\nand have a %d%% chance to inflict Bleeding.",
+		"images/ui/HUD/statusfx/retractable_claws.png");
+	registerCustomEffect(kEffectGolemHunger, "golem_charge", "Golem Core",
+		"Recharge by consuming enchanted items.\n"
+		"\x1E Overcharging causes wild magic.\n"
+		"\x1E Blessed to Cursed core ratio determines CON and CHR and item destruction chance.", "");
+	registerCustomEffect(kEffectWraithTether, "wraith_tether", "TETHER TO THIS REALM",
+		"You have learned to possess:",
+		"images/ui/HUD/statusfx/wraith_tether.png");
 }
 
 int StatusEffectQueue_t::getBaseEffectPosX()
@@ -6132,7 +6175,8 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalWidth()
 	{
 		return 76;
 	}
-	else if ( effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+	else if ( effect == StatusEffectQueue_t::kEffectAutomatonHunger
+		|| effect == StatusEffectQueue_t::kEffectGolemHunger )
 	{
 		return 64;
 	}
@@ -6166,7 +6210,8 @@ int StatusEffectQueueEntry_t::getEffectSpriteNormalHeight()
 	{
 		return 60;
 	}
-	else if ( effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+	else if ( effect == StatusEffectQueue_t::kEffectAutomatonHunger
+		|| effect == StatusEffectQueue_t::kEffectGolemHunger )
 	{
 		return 64;
 	}
@@ -6207,7 +6252,8 @@ real_t StatusEffectQueueEntry_t::getStatusEffectLargestScaling(int player)
 {
 	if ( effect == StatusEffectQueue_t::kEffectBread 
 		|| effect == StatusEffectQueue_t::kEffectBloodHunger 
-		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger
+		|| effect == StatusEffectQueue_t::kEffectGolemHunger )
 	{
 		return 2.0;
 	}
@@ -6218,7 +6264,8 @@ real_t StatusEffectQueueEntry_t::getStatusEffectMidScaling(int player)
 {
 	if ( effect == StatusEffectQueue_t::kEffectBread 
 		|| effect == StatusEffectQueue_t::kEffectBloodHunger
-		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger )
+		|| effect == StatusEffectQueue_t::kEffectAutomatonHunger
+		|| effect == StatusEffectQueue_t::kEffectGolemHunger )
 	{
 		return 1.5;
 	}
@@ -6337,6 +6384,26 @@ void StatusEffectQueueEntry_t::animateNotification(int player)
 }
 
 static ConsoleVariable<bool> cvar_statusfx_align_text_right("/statusfx_align_text_right", false);
+static std::string witchbrewRomanNumeral(Uint32 value)
+{
+	if ( value == 0 ) { return ""; }
+	if ( value > 3999 ) { return std::to_string(value); }
+	static const std::pair<Uint32, const char*> numerals[] = {
+		{ 1000, "M" }, { 900, "CM" }, { 500, "D" }, { 400, "CD" },
+		{ 100, "C" }, { 90, "XC" }, { 50, "L" }, { 40, "XL" },
+		{ 10, "X" }, { 9, "IX" }, { 5, "V" }, { 4, "IV" }, { 1, "I" }
+	};
+	std::string result;
+	for ( const auto& numeral : numerals )
+	{
+		while ( value >= numeral.first )
+		{
+			result += numeral.second;
+			value -= numeral.first;
+		}
+	}
+	return result;
+}
 void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 	Frame* frame = (Frame*)&widget;
 	if ( auto parent = frame->getParent() )
@@ -6344,7 +6411,13 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 		int player = parent->getOwner();
 		if ( player >= 0 && player < MAXPLAYERS )
 		{
+			bool hasTincture = false;
+			for ( int stat = 0; stat < NUMSTATS; ++stat )
+			{
+				hasTincture |= stats[player]->tinctureStacks[stat] > 0;
+			}
 			if ( stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS] > 0
+				|| hasTincture
 				|| stats[player]->getEffectActive(EFF_ENSEMBLE_FLUTE)
 				|| stats[player]->getEffectActive(EFF_ENSEMBLE_LUTE) 
 				|| stats[player]->getEffectActive(EFF_ENSEMBLE_LYRE) 
@@ -6375,12 +6448,97 @@ void draw_status_effect_numbers_fn(const Widget& widget, SDL_Rect pos) {
 				|| (players[player]->mechanics.gremlinBreakableCounter > 0 && stats[player]->type == GREMLIN)
 				|| players[player]->mechanics.getWealthTier() > 0 )
 			{
+				// mod add: Merrow reflecting scales
+				auto& effectQueue = StatusEffectQueue[player].effectQueue;
+				auto queueIt = effectQueue.rbegin();
+				// mod add end
 				for ( auto img : frame->getImages() )
 				{
+					// mod add: Merrow reflecting scales
+					StatusEffectQueueEntry_t* queueEntry = nullptr;
+					if ( queueIt != effectQueue.rend() )
+					{
+						queueEntry = &(*queueIt);
+						++queueIt;
+					}
+					// mod add end
 					bool alignRight = *cvar_statusfx_align_text_right;
 					if ( !img->disabled )
 					{
-						if ( img->path.find("assistance.png") != std::string::npos )
+						if ( queueEntry
+							&& queueEntry->effect <= StatusEffectQueue_t::kEffectTinctureStart
+							&& queueEntry->effect >= StatusEffectQueue_t::kEffectTinctureEnd )
+						{
+							alignRight = true;
+							const std::string val = witchbrewRomanNumeral(queueEntry->customVariable);
+							if ( auto text = Text::get(val.c_str(), "fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{ pos.x + img->pos.x + img->pos.w - static_cast<int>(text->getWidth()),
+									pos.y + img->pos.y + img->pos.h / 2 - static_cast<int>(text->getHeight()) / 2 - 3,
+									0, 0 }, SDL_Rect{ 0, 0, Frame::virtualScreenX, Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						// mod add: Merrow reflecting scales
+						else if ( queueEntry
+							&& queueEntry->effect == EFF_GROWTH
+							&& players[player]
+							&& players[player]->entity
+							&& players[player]->entity->isMerrowPlayer() )
+						{
+							alignRight = true;
+
+							int effectStrength = std::max(1,
+								std::min(6, (int)queueEntry->customVariable));
+
+							std::string val = "I";
+							switch ( effectStrength )
+							{
+								case 6:
+									val = "VI";
+									break;
+								case 5:
+									val = "V";
+									break;
+								case 4:
+									val = "IV";
+									break;
+								case 3:
+									val = "III";
+									break;
+								case 2:
+									val = "II";
+									break;
+								default:
+									val = "I";
+									break;
+							}
+
+							if ( auto text = Text::get(val.c_str(),
+								"fonts/pixel_maz_multiline.ttf#16#2",
+								0xFFFFFFFF, 0) )
+							{
+								text->drawColor(SDL_Rect{ 0,0,0,0 },
+									SDL_Rect{
+										pos.x + img->pos.x
+											+ (alignRight
+												? (img->pos.w - (int)text->getWidth())
+												: (img->pos.w / 2
+													- (int)text->getWidth() / 2
+													+ *cvar_assist_icon_txt_x)),
+										pos.y + img->pos.y + img->pos.h / 2
+											- (int)text->getHeight() / 2
+											- 3 + *cvar_assist_icon_txt_y,
+										0, 0 },
+									SDL_Rect{ 0, 0,
+										Frame::virtualScreenX,
+										Frame::virtualScreenY },
+									makeColor(255, 255, 255, 255));
+							}
+						}
+						// mod add end
+						else if ( img->path.find("assistance.png") != std::string::npos ) //mod add else
 						{
 							if ( auto text = Text::get(std::to_string(stats[player]->MISC_FLAGS[STAT_FLAG_ASSISTANCE_PLAYER_PTS]).c_str(), 
 								"fonts/pixel_maz_multiline.ttf#16#2", 0xFFFFFFFF, 0) )
@@ -7747,10 +7905,55 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 	int fontHeight = Font::get(tooltipDesc->getFont())->height(true);
 	int tooltipInnerWidth = 200;
 
-	bool refreshTooltip = (tooltipShowingEffectID != entry.effect) || (tooltipShowingEffectVariable != entry.customVariable);
+	int currentTooltipVariable = entry.customVariable;
+	if ( entry.effect == EFF_RETRACTABLE_CLAWS
+		&& players[player] && players[player]->entity )
+	{
+		// Use the combat mechanic's shared tier formula so a level breakpoint
+		// refreshes an already-open tooltip without recreating the status icon.
+		currentTooltipVariable = players[player]->entity->getLeoninClawTier();
+	}
+	else if ( entry.effect == kEffectGolemHunger
+		&& players[player] && players[player]->entity )
+	{
+		// Include current polarity in the refresh key so an open tooltip updates
+		// immediately after a Blessed/Cursed form change.
+		currentTooltipVariable = entry.customVariable * 2
+			+ (players[player]->entity->isBlessedGolemPlayer() ? 1 : 0);
+	}
+	else if ( entry.effect == kEffectWraithTether )
+	{
+		Uint32 knowledgeHash = 17;
+		for ( Monster type : getWraithKnownPossessionTypes(player) )
+		{
+			knowledgeHash = knowledgeHash * 31u + static_cast<Uint32>(type);
+		}
+		currentTooltipVariable = static_cast<Sint32>(knowledgeHash);
+	}
+	bool refreshTooltip = (tooltipShowingEffectID != entry.effect)
+		|| (tooltipShowingEffectVariable != currentTooltipVariable);
 	if ( refreshTooltip )
 	{
-		if ( entry.effect >= StatusEffectQueue_t::kSpellEffectOffset )
+		if ( entry.effect <= kEffectTinctureStart && entry.effect >= kEffectTinctureEnd )
+		{
+			static const char* names[NUMSTATS] = {
+				"STRENGTH AFFINITY", "DEXTERITY AFFINITY", "CONSTITUTION AFFINITY",
+				"INTELLIGENCE AFFINITY", "PERCEPTION AFFINITY", "CHARISMA AFFINITY"
+			};
+			static const char* descriptions[NUMSTATS] = {
+				"Increases chances to level up [Strength].",
+				"Increases chances to level up [Dexterity].",
+				"Increases chances to level up [Constitution].",
+				"Increases chances to level up [Intelligence].",
+				"Increases chances to level up [Perception].",
+				"Increases chances to level up [Charisma]."
+			};
+			const int stat = kEffectTinctureStart - entry.effect;
+			tooltipHeader->setText(names[stat]);
+			tooltipDesc->setText(descriptions[stat]);
+			tooltipInnerWidth = 260;
+		}
+		else if ( entry.effect >= StatusEffectQueue_t::kSpellEffectOffset )
 		{
 			int effectID = entry.effect - StatusEffectQueue_t::kSpellEffectOffset;
 			if ( StatusEffectQueue_t::StatusEffectDefinitions_t::sustainedSpellDefinitionExists(effectID) )
@@ -7839,76 +8042,141 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 						}
 					}
 				}
+				else if ( effectID == EFF_RETRACTABLE_CLAWS )
+				{
+					std::string newHeader = definition.getName(-1);
+					uppercaseString(newHeader);
+					tooltipHeader->setText(newHeader.c_str());
+
+					const int clawTier = std::max(0, currentTooltipVariable);
+					char buf[256] = "";
+					snprintf(buf, sizeof(buf), definition.getDesc(-1).c_str(),
+						clawTier, clawTier * 5);
+					tooltipDesc->setText(buf);
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
+				else if ( effectID == StatusEffectQueue_t::kEffectGolemHunger )
+				{
+					const bool blessed = players[player] && players[player]->entity
+						&& players[player]->entity->isBlessedGolemPlayer();
+					tooltipHeader->setText(blessed
+						? "BLESSED GOLEM CORE" : "CURSED GOLEM CORE");
+					if ( entry.customVariable > getEntityHungerInterval(player, nullptr,
+						stats[player], HUNGER_INTERVAL_OVERSATIATED) )
+					{
+						tooltipDesc->setText("\x1E You feel magic trying to escape into wild chaos!");
+					}
+					else
+					{
+						tooltipDesc->setText(definition.getDesc(-1).c_str());
+					}
+					tooltipInnerWidth = definition.tooltipWidth;
+				}
+				else if ( effectID == StatusEffectQueue_t::kEffectWraithTether )
+				{
+					tooltipHeader->setText("TETHER TO THIS REALM");
+					std::string description = "You have learned to possess:";
+					for ( Monster type : getWraithKnownPossessionTypes(player) )
+					{
+						description += "\n- ";
+						std::string name = getMonsterLocalizedName(type);
+						if ( !name.empty() )
+						{
+							name[0] = static_cast<char>(toupper(name[0]));
+						}
+						description += name;
+					}
+					tooltipDesc->setText(description.c_str());
+					tooltipInnerWidth = 220;
+				}
 				else if ( effectID == EFF_SALAMANDER_HEART )
 				{
 					variation = std::min(3, std::max(0, (int)entry.customVariable - 1));
 				}
 				else if ( effectID == EFF_GROWTH )
 				{
-					variation = std::min(2, std::max(0, (int)entry.customVariable - 2));
-
-					int tier = variation + 1;
-
-					std::string newHeader = definition.getName(variation).c_str();
-					uppercaseString(newHeader);
-					tooltipHeader->setText(newHeader.c_str());
-
-					std::string newDesc = "";
-					if ( stats[player]->type == DRYAD )
+					// mod add: Merrow reflecting scales
+					if ( players[player]
+						&& players[player]->entity
+						&& players[player]->entity->isMerrowPlayer() )
 					{
-						newDesc = definition.getDesc(1).c_str();
+						auto& reflectDefinition =
+							StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(EFF_MAGICREFLECT);
 
-						char buf[128] = "";
-						snprintf(buf, sizeof(buf), definition.getDesc(6).c_str(), 10 * tier); // +PWR
-						newDesc += '\n';
-						newDesc += buf;
+						std::string newHeader = reflectDefinition.getName(-1).c_str();
+						uppercaseString(newHeader);
+						tooltipHeader->setText(newHeader.c_str());
 
-						snprintf(buf, sizeof(buf), definition.getDesc(7).c_str(), 10 * tier); // +MP RGN
-						newDesc += '\n';
-						newDesc += buf;
-
-						snprintf(buf, sizeof(buf), definition.getDesc(8).c_str(), -5 * tier); // +Movespeed
-						newDesc += '\n';
-						newDesc += buf;
-
-						snprintf(buf, sizeof(buf), definition.getDesc(11).c_str(), 5 * tier); // +Fire dmg
-						newDesc += '\n';
-						newDesc += buf;
+						tooltipDesc->setText(reflectDefinition.getDesc(-1).c_str());
+						tooltipInnerWidth = reflectDefinition.tooltipWidth;
 					}
-					else if ( stats[player]->type == MYCONID )
-					{
-						newDesc = definition.getDesc(0).c_str();
-						newDesc += '\n';
-						newDesc += definition.getDesc(2).c_str();
-						if ( variation == 2 )
+					else
+					{// mod add end
+						variation = std::min(2, std::max(0, (int)entry.customVariable - 2));
+
+						int tier = variation + 1;
+
+						std::string newHeader = definition.getName(variation).c_str();
+						uppercaseString(newHeader);
+						tooltipHeader->setText(newHeader.c_str());
+
+						std::string newDesc = "";
+						if ( stats[player]->type == DRYAD )
 						{
+							newDesc = definition.getDesc(1).c_str();
+
+							char buf[128] = "";
+							snprintf(buf, sizeof(buf), definition.getDesc(6).c_str(), 10 * tier); // +PWR
 							newDesc += '\n';
-							newDesc += definition.getDesc(3).c_str();
+							newDesc += buf;
+
+							snprintf(buf, sizeof(buf), definition.getDesc(7).c_str(), 10 * tier); // +MP RGN
+							newDesc += '\n';
+							newDesc += buf;
+
+							snprintf(buf, sizeof(buf), definition.getDesc(8).c_str(), -5 * tier); // +Movespeed
+							newDesc += '\n';
+							newDesc += buf;
+
+							snprintf(buf, sizeof(buf), definition.getDesc(11).c_str(), 5 * tier); // +Fire dmg
+							newDesc += '\n';
+							newDesc += buf;
 						}
-						char buf[128] = "";
-						snprintf(buf, sizeof(buf), definition.getDesc(4).c_str(), tier); // +AC
-						newDesc += '\n';
-						newDesc += buf;
+						else if ( stats[player]->type == MYCONID )
+						{
+							newDesc = definition.getDesc(0).c_str();
+							newDesc += '\n';
+							newDesc += definition.getDesc(2).c_str();
+							if ( variation == 2 )
+							{
+								newDesc += '\n';
+								newDesc += definition.getDesc(3).c_str();
+							}
+							char buf[128] = "";
+							snprintf(buf, sizeof(buf), definition.getDesc(4).c_str(), tier); // +AC
+							newDesc += '\n';
+							newDesc += buf;
 
-						snprintf(buf, sizeof(buf), definition.getDesc(5).c_str(), tier * 5); // +RES
-						newDesc += '\n';
-						newDesc += buf;
+							snprintf(buf, sizeof(buf), definition.getDesc(5).c_str(), tier * 5); // +RES
+							newDesc += '\n';
+							newDesc += buf;
 
-						snprintf(buf, sizeof(buf), definition.getDesc(9).c_str(), 20 + 15 * (tier - 1)); // +Poison dmg
-						newDesc += '\n';
-						newDesc += buf;
+							snprintf(buf, sizeof(buf), definition.getDesc(9).c_str(), 20 + 15 * (tier - 1)); // +Poison dmg
+							newDesc += '\n';
+							newDesc += buf;
 
-						snprintf(buf, sizeof(buf), definition.getDesc(10).c_str(), 100 * tier); // +Germinate dmg
-						newDesc += '\n';
-						newDesc += buf;
+							snprintf(buf, sizeof(buf), definition.getDesc(10).c_str(), 100 * tier); // +Germinate dmg
+							newDesc += '\n';
+							newDesc += buf;
 
-						snprintf(buf, sizeof(buf), definition.getDesc(8).c_str(), -10 * tier); // +Movespeed
-						newDesc += '\n';
-						newDesc += buf;
-					}
+							snprintf(buf, sizeof(buf), definition.getDesc(8).c_str(), -10 * tier); // +Movespeed
+							newDesc += '\n';
+							newDesc += buf;
+						}
 
-					tooltipDesc->setText(newDesc.c_str());
-					tooltipInnerWidth = definition.tooltipWidth;
+						tooltipDesc->setText(newDesc.c_str());
+						tooltipInnerWidth = definition.tooltipWidth;
+					} //mod add close else (look above)
 				}
 				else if ( effectID == EFF_ENSEMBLE_DRUM
 					|| effectID == EFF_ENSEMBLE_FLUTE
@@ -8218,6 +8486,8 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 				}
 
 				if ( effectID != StatusEffectQueue_t::kEffectAutomatonHunger
+					&& effectID != StatusEffectQueue_t::kEffectGolemHunger
+					&& effectID != StatusEffectQueue_t::kEffectWraithTether
 					&& effectID != StatusEffectQueue_t::kEffectWanted
 					&& effectID != StatusEffectQueue_t::kEffectWantedInShop
 					&& effectID != StatusEffectQueue_t::kEffectBountyTarget
@@ -8225,6 +8495,7 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 					&& effectID != StatusEffectQueue_t::kEffectAssistance
 					&& effectID != StatusEffectQueue_t::kEffectVandal
 					&& effectID != StatusEffectQueue_t::kEffectWealth
+					&& effectID != EFF_RETRACTABLE_CLAWS
 					&& !(effectID == EFF_ENSEMBLE_DRUM
 						|| effectID == EFF_ENSEMBLE_FLUTE
 						|| effectID == EFF_ENSEMBLE_LUTE
@@ -8293,13 +8564,17 @@ bool StatusEffectQueue_t::doStatusEffectTooltip(StatusEffectQueueEntry_t& entry,
 	tooltipFrame->setSize(tooltipPos);
 	Player::GUI_t::imageResizeToContainer9x9(tooltipFrame, SDL_Rect{0, 0, tooltipPos.w, tooltipPos.h}, Player::GUI_t::tooltipEffectBackgroundImages);
 	tooltipShowingEffectID = entry.effect;
-	tooltipShowingEffectVariable = entry.customVariable;
+	tooltipShowingEffectVariable = currentTooltipVariable;
 	return true;
 }
 
 const int StatusEffectQueue_t::kEffectBread = -2;
 const int StatusEffectQueue_t::kEffectBloodHunger = -3;
 const int StatusEffectQueue_t::kEffectAutomatonHunger = -4;
+const int StatusEffectQueue_t::kEffectGolemHunger = -32;
+const int StatusEffectQueue_t::kEffectWraithTether = -33;
+const int StatusEffectQueue_t::kEffectTinctureStart = -100;
+const int StatusEffectQueue_t::kEffectTinctureEnd = -105;
 const int StatusEffectQueue_t::kEffectWanted = -5;
 const int StatusEffectQueue_t::kEffectWantedInShop = -6;
 const int StatusEffectQueue_t::kEffectBurning = -7;
@@ -8709,19 +8984,18 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			}
 			else if ( i == EFF_GROWTH )
 			{
-				if ( !(stats[player]->type == MYCONID || stats[player]->type == DRYAD)
-					|| stats[player]->helmet )
+				// mod add: Merrow reflecting scales
+				if ( players[player]
+					&& players[player]->entity
+					&& players[player]->entity->isMerrowPlayer() )
 				{
-					effectActive = false;
-				}
-				else
-				{
-					if ( stats[player]->getEffectActive(i) <= 1 )
+					if ( stats[player]->getEffectActive(i) < 1 )
 					{
 						effectActive = false;
 					}
 					else
 					{
+						// Re-create the queue entry whenever the scale count changes.
 						for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
 						{
 							if ( (*it).effect == EFF_GROWTH )
@@ -8730,6 +9004,37 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 								{
 									deleteEffect(EFF_GROWTH);
 									break;
+								}
+							}
+						}
+					}
+				}
+				else
+				// mod add end
+				{
+					// Native Dryad/Myconid behaviour.
+					if ( !(stats[player]->type == MYCONID || stats[player]->type == DRYAD)
+						|| stats[player]->helmet )
+					{
+						effectActive = false;
+					}
+					else
+					{
+						if ( stats[player]->getEffectActive(i) <= 1 )
+						{
+							effectActive = false;
+						}
+						else
+						{
+							for ( auto it = effectQueue.rbegin(); it != effectQueue.rend(); ++it )
+							{
+								if ( (*it).effect == EFF_GROWTH )
+								{
+									if ( (*it).customVariable != stats[player]->getEffectActive(i) )
+									{
+										deleteEffect(EFF_GROWTH);
+										break;
+									}
 								}
 							}
 						}
@@ -8976,7 +9281,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			{
 				miscEffects[kEffectStrangulation] = true;
 			}
-			if ( stats[player]->amulet && stats[player]->amulet->type == AMULET_WATERBREATHING )
+			if ((stats[player]->amulet && stats[player]->amulet->type == AMULET_WATERBREATHING) || (players[player] //mod add
+					&& players[player]->entity && players[player]->entity->isMerrowPlayer())) //mod add
 			{
 				miscEffects[kEffectWaterBreathing] = true;
 			}
@@ -9100,6 +9406,50 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		}
 	}
 
+	// Tether is a permanent race presentation, intentionally keyed to playerRace
+	// rather than the current Wraith body/form.
+	const bool showWraithTether = effectsEnabled && stats[player]
+		&& stats[player]->playerRace == RACE_WRAITH;
+	if ( showWraithTether )
+	{
+		if ( effectSet.find(kEffectWraithTether) == effectSet.end() )
+		{
+			insertEffect(kEffectWraithTether, -1);
+		}
+	}
+	else if ( effectSet.find(kEffectWraithTether) != effectSet.end() )
+	{
+		deleteEffect(kEffectWraithTether);
+	}
+
+	// Tincture affinities are persistent counters, not timed effects. Mirror
+	// them into the status queue solely for presentation.
+	if ( stats[player] )
+	{
+		for ( int stat = 0; stat < NUMSTATS; ++stat )
+		{
+			const int effectID = kEffectTinctureStart - stat;
+			StatusEffectQueueEntry_t* existing = nullptr;
+			for ( auto& entry : effectQueue )
+			{
+				if ( entry.effect == effectID ) { existing = &entry; break; }
+			}
+			if ( stats[player]->tinctureStacks[stat] == 0 )
+			{
+				if ( existing ) { deleteEffect(effectID); }
+			}
+			else if ( existing )
+			{
+				existing->customVariable = stats[player]->tinctureStacks[stat];
+			}
+			else if ( insertEffect(effectID, -1) )
+			{
+				effectQueue.back().customVariable = stats[player]->tinctureStacks[stat];
+				notificationQueue.back().customVariable = stats[player]->tinctureStacks[stat];
+			}
+		}
+	}
+
 	if ( wantedLevel == ShopkeeperPlayerHostility_t::NO_WANTED_LEVEL )
 	{
 		if ( effectSet.find(kEffectWanted) != effectSet.end() )
@@ -9114,7 +9464,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 
 	bool hungerIconActive = (effectSet.find(kEffectBread) != effectSet.end() 
 		|| effectSet.find(kEffectBloodHunger) != effectSet.end()
-		|| effectSet.find(kEffectAutomatonHunger) != effectSet.end());
+		|| effectSet.find(kEffectAutomatonHunger) != effectSet.end()
+		|| effectSet.find(kEffectGolemHunger) != effectSet.end());
 	if ( !players[player]->entity )
 	{
 		if ( effectSet.find(kEffectBread) != effectSet.end() )
@@ -9128,6 +9479,10 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 		if ( effectSet.find(kEffectAutomatonHunger) != effectSet.end() )
 		{
 			effectsToSkipAnimThisFrame.push_back(kEffectAutomatonHunger);
+		}
+		if ( effectSet.find(kEffectGolemHunger) != effectSet.end() )
+		{
+			effectsToSkipAnimThisFrame.push_back(kEffectGolemHunger);
 		}
 	}
 
@@ -9335,7 +9690,21 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 						}
 						else if ( effectID == EFF_GROWTH )
 						{
-							variation = std::min(2, std::max(0, (int)notif.customVariable - 2));
+								// mod add: Merrow reflecting scales
+							if ( players[player]
+								&& players[player]->entity
+								&& players[player]->entity->isMerrowPlayer() )
+							{
+								auto& reflectDefinition =
+									StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(EFF_MAGICREFLECT);
+
+								notificationTxt->setText(reflectDefinition.getName(-1).c_str());
+							}
+							else
+							// mod add end
+							{
+								variation = std::min(2, std::max(0, (int)notif.customVariable - 2));
+							}
 						}
 						else if ( effectID == StatusEffectQueue_t::kEffectWealth )
 						{
@@ -9366,7 +9735,22 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 								variation = 0;
 							}
 						}
-						notificationTxt->setText(definition.getName(variation).c_str());
+						// mod add: Merrow reflecting scales
+						if ( effectID == EFF_GROWTH
+							&& players[player]
+							&& players[player]->entity
+							&& players[player]->entity->isMerrowPlayer() )
+						{
+							auto& reflectDefinition =
+								StatusEffectQueue_t::StatusEffectDefinitions_t::getEffect(EFF_MAGICREFLECT);
+
+							notificationTxt->setText(reflectDefinition.getName(-1).c_str());
+						}
+						else
+						// mod add end
+						{
+							notificationTxt->setText(definition.getName(variation).c_str());
+						}
 					}
 					if ( notificationImg->path != "" )
 					{
@@ -9546,7 +9930,7 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 			animatePosX = 0;
 			animatePosY = statusEffectFrame->getSize().h - q.getEffectSpriteNormalHeight();
 		}
-		else if ( q.effect == kEffectAutomatonHunger )
+		else if ( q.effect == kEffectAutomatonHunger || q.effect == kEffectGolemHunger )
 		{
 			animatePosX = 0;
 			animatePosY = 4 + statusEffectFrame->getSize().h - q.getEffectSpriteNormalHeight();
@@ -9604,7 +9988,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 				frameImg->disabled = true;
 			}
 		}
-		else if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger || q.effect == kEffectAutomatonHunger )
+		else if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger
+			|| q.effect == kEffectAutomatonHunger || q.effect == kEffectGolemHunger )
 		{
 			if ( q.effect == kEffectAutomatonHunger )
 			{
@@ -9676,7 +10061,8 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 
 		q.animate();
 
-		if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger || q.effect == kEffectAutomatonHunger )
+		if ( q.effect == kEffectBread || q.effect == kEffectBloodHunger
+			|| q.effect == kEffectAutomatonHunger || q.effect == kEffectGolemHunger )
 		{
 			assert(grid.find(0 + 0 * 10000) == grid.end());
 			grid[0 + 0 * 10000] = &q;
@@ -9756,12 +10142,81 @@ void StatusEffectQueue_t::updateAllQueuedEffects()
 	requiresAnimUpdate = false;
 }
 
+static const char* getGolemChargeIconFamily(const Sint32 blessedComposition)
+{
+	const Sint32 composition = std::max<Sint32>(0, std::min<Sint32>(10000, blessedComposition));
+	if ( composition >= 8000 )
+	{
+		return "Blessings";
+	}
+	if ( composition >= 6000 )
+	{
+		return "BlessingsWeakened";
+	}
+	if ( composition >= 4001 )
+	{
+		return "EnchantmentNeutral";
+	}
+	if ( composition >= 2001 )
+	{
+		return "CursesWeakened";
+	}
+	return "Curses";
+}
+
+static char getGolemChargeIconVariant(const int player, const Sint32 hungerState)
+{
+	if ( hungerState >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED) )
+	{
+		return 'A';
+	}
+	// The normal hunger progression's weak barrier is the "almost starving"
+	// boundary. Both it and the starving state use the Golem's D artwork.
+	if ( hungerState <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK) )
+	{
+		return 'D';
+	}
+	if ( hungerState <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) )
+	{
+		return 'C';
+	}
+	return 'B';
+}
+
+static std::string getGolemChargeIconPath(const int player, const Sint32 hungerState)
+{
+	if ( !stats[player] )
+	{
+		return "";
+	}
+	std::string path = "*#images/ui/HUD/CharSheet/HUD_CharSheet_";
+	path += getGolemChargeIconFamily(stats[player]->golemBlessedComposition);
+	path += "_00";
+	path += getGolemChargeIconVariant(player, hungerState);
+	path += ".png";
+	return path;
+}
+
 void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Frame::image_t* img)
 {
 	if ( img )
 	{
 		img->path = "";
-		if ( entry.effect == kEffectBread || entry.effect == kEffectBloodHunger )
+		if ( entry.effect == kEffectGolemHunger )
+		{
+			img->path = getGolemChargeIconPath(player, entry.customVariable);
+		}
+		else if ( entry.effect <= kEffectTinctureStart && entry.effect >= kEffectTinctureEnd )
+		{
+			static const char* statIcons[NUMSTATS] = {
+				"STR", "DEX", "CON", "INT", "PER", "CHA"
+			};
+			const int stat = kEffectTinctureStart - entry.effect;
+			img->path = "images/ui/CharSheet/HUD_CharSheet_";
+			img->path += statIcons[stat];
+			img->path += "_00.png";
+		}
+		else if ( entry.effect == kEffectBread || entry.effect == kEffectBloodHunger )
 		{
 			if ( StatusEffectDefinitions_t::effectDefinitionExists(entry.effect) )
 			{
@@ -9810,6 +10265,16 @@ void StatusEffectQueue_t::updateEntryImage(StatusEffectQueueEntry_t& entry, Fram
 			int variation = std::max(0, std::min(3, (int)entry.customVariable - 1));
 			img->path = StatusEffectDefinitions_t::getEffectImgPath(StatusEffectDefinitions_t::getEffect(entry.effect), variation);
 		}
+		// mod add: Merrow reflecting scales
+		else if ( entry.effect == EFF_GROWTH
+			&& players[player]
+			&& players[player]->entity
+			&& players[player]->entity->isMerrowPlayer() )
+		{
+			img->path = StatusEffectDefinitions_t::getEffectImgPath(
+				StatusEffectDefinitions_t::getEffect(EFF_MAGICREFLECT), -1);
+		}
+		// mod add end
 		else
 		{
 			if ( entry.effect >= kSpellEffectOffset )
@@ -9917,13 +10382,20 @@ void updateStatusEffectQueue(const int player)
 	auto innerFrame = statusEffectFrame->findFrame("effects");
 	innerFrame->setSize(SDL_Rect{ 0, 0, statusEffectFrame->getSize().w, statusEffectFrame->getSize().h });
 
-	const int hungerEffectID = ((stats[player] && stats[player]->type == AUTOMATON) ? StatusEffectQueue_t::kEffectAutomatonHunger
-		: (playerRequiresBloodToSustain(player) ? StatusEffectQueue_t::kEffectBloodHunger : StatusEffectQueue_t::kEffectBread));
+	const bool naturalGolem = players[player]->entity
+		&& players[player]->entity->isNaturalGolemPlayer();
+	const int hungerEffectID = naturalGolem ? StatusEffectQueue_t::kEffectGolemHunger
+		: ((stats[player] && stats[player]->type == AUTOMATON) ? StatusEffectQueue_t::kEffectAutomatonHunger
+			: (playerRequiresBloodToSustain(player) ? StatusEffectQueue_t::kEffectBloodHunger : StatusEffectQueue_t::kEffectBread));
 
 	// hunger icon
 	if ( stats[player] && stats[player]->type != AUTOMATON )
 	{
 		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectAutomatonHunger);
+	}
+	if ( !naturalGolem )
+	{
+		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectGolemHunger);
 	}
 
 	bool effectsEnabled = true;
@@ -9937,11 +10409,16 @@ void updateStatusEffectQueue(const int player)
 	}
 
 	if ( effectsEnabled && stats[player] && stats[player]->type != AUTOMATON
-		&& (svFlags & SV_FLAG_HUNGER) 
-		&& (stats[player]->HUNGER <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY) 
-			|| stats[player]->HUNGER >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED)) )
+		&& (naturalGolem || ((svFlags & SV_FLAG_HUNGER)
+			&& (stats[player]->HUNGER <= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY)
+				|| stats[player]->HUNGER >= getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_OVERSATIATED)))) )
 	{
 		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectAutomatonHunger);
+		if ( hungerEffectID == StatusEffectQueue_t::kEffectGolemHunger )
+		{
+			statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBread);
+			statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBloodHunger);
+		}
 		if ( hungerEffectID == StatusEffectQueue_t::kEffectBloodHunger )
 		{
 			statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBread); // delete opposite if present
@@ -9956,20 +10433,20 @@ void updateStatusEffectQueue(const int player)
 		const int HUNGER_HUNGRY = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_HUNGRY);
 		const int HUNGER_WEAK = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_WEAK);
 		const int HUNGER_STARVING = getEntityHungerInterval(player, nullptr, stats[player], HUNGER_INTERVAL_STARVING);
-		int hungerStateToSet = HUNGER_NONE;
-		if ( stats[player]->HUNGER >= HUNGER_OVERSATIATED )
+		int hungerStateToSet = naturalGolem ? stats[player]->HUNGER : HUNGER_NONE;
+		if ( !naturalGolem && stats[player]->HUNGER >= HUNGER_OVERSATIATED )
 		{
 			hungerStateToSet = HUNGER_OVERSATIATED;
 		}
-		else if ( stats[player]->HUNGER <= HUNGER_STARVING )
+		else if ( !naturalGolem && stats[player]->HUNGER <= HUNGER_STARVING )
 		{
 			hungerStateToSet = HUNGER_STARVING;
 		}
-		else if ( stats[player]->HUNGER <= HUNGER_WEAK )
+		else if ( !naturalGolem && stats[player]->HUNGER <= HUNGER_WEAK )
 		{
 			hungerStateToSet = HUNGER_WEAK;
 		}
-		else if ( stats[player]->HUNGER <= HUNGER_HUNGRY )
+		else if ( !naturalGolem && stats[player]->HUNGER <= HUNGER_HUNGRY )
 		{
 			hungerStateToSet = HUNGER_HUNGRY;
 		}
@@ -9995,7 +10472,18 @@ void updateStatusEffectQueue(const int player)
 		}
 		if ( entry && entry->customVariable != hungerStateToSet )
 		{
-			if ( notif && notif->customVariable != hungerStateToSet )
+			const bool golemIconUnchanged = hungerEffectID == StatusEffectQueue_t::kEffectGolemHunger
+				&& getGolemChargeIconVariant(player, entry->customVariable)
+					== getGolemChargeIconVariant(player, hungerStateToSet);
+			if ( golemIconUnchanged )
+			{
+				entry->customVariable = hungerStateToSet;
+				if ( notif )
+				{
+					notif->customVariable = hungerStateToSet;
+				}
+			}
+			else if ( notif && notif->customVariable != hungerStateToSet )
 			{
 				// reset the notification
 				bool erased = false;
@@ -10051,6 +10539,7 @@ void updateStatusEffectQueue(const int player)
 	{
 		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBloodHunger);
 		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectBread);
+		statusEffectQueue.deleteEffect(StatusEffectQueue_t::kEffectGolemHunger);
 
 		if ( hungerEffectID == StatusEffectQueue_t::kEffectAutomatonHunger )
 		{
@@ -11534,7 +12023,7 @@ void Player::HUD_t::updateWorldTooltipPrompts()
 
 	if ( player.worldUI.isEnabled() )
 	{
-		if ( !text->isDisabled() && !glyph->disabled && player.worldUI.tooltipsInRange.size() > 1 )
+		if ( !text->isDisabled() && !glyph->disabled && (player.worldUI.tooltipsInRange.size() > 1 || player.worldUI.activeTooltipHasAlternateInteraction()) )
 		{
 			if ( Input::inputs[player.playernum].input("Interact Tooltip Next").type != Input::binding_t::bindtype_t::INVALID )
 			{
@@ -16505,7 +16994,8 @@ void Player::GUIDropdown_t::process()
 				if ( item && dropDownOptionSelected < contextOptions.size() )
 				{
 					if ( contextOptions[dropDownOptionSelected] == ItemContextMenuPrompts::PROMPT_DROP 
-						&& player.paperDoll.isItemOnDoll(*item) )
+						&& player.paperDoll.isItemOnDoll(*item)
+						&& !isWraithPhysicalHandItem(player.playernum, item) )
 					{
 						// need to unequip
 						player.inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
@@ -22705,6 +23195,14 @@ void createPlayerInventorySlotFrameElements(Frame* slotFrame)
 		"", "icon label img");
 	iconLabelImg->disabled = true;
 
+	auto ingredientBagBadge1 = itemSpriteFrame->addImage(SDL_Rect{ 0, 0, 16, 16 }, 0xFFFFFFFF,
+		"", "ingredient bag badge 1");
+	ingredientBagBadge1->disabled = true;
+
+	auto ingredientBagBadge2 = itemSpriteFrame->addImage(SDL_Rect{ 0, 0, 16, 16 }, 0xFFFFFFFF,
+		"", "ingredient bag badge 2");
+	ingredientBagBadge2->disabled = true;
+
 	auto unusableFrame = slotFrame->addFrame("unusable item frame");
 	unusableFrame->setSize(slotSize);
 	unusableFrame->setHollow(true);
@@ -22907,6 +23405,47 @@ bool getSlotFrameXYFromMousePos(const int player, int& outx, int& outy, bool spe
 	return false;
 }
 
+struct IngredientBagBadgePaths
+{
+	std::string first;
+	std::string second;
+};
+
+static std::string getIngredientBagBadgeOilPath(AppliedOil oil)
+{
+	const char* path = getOilIconPath(oil);
+	if ( !path || path[0] == '\0' )
+	{
+		return "";
+	}
+	return std::string("*#") + path;
+}
+
+static IngredientBagBadgePaths getIngredientBagBadgePaths(ItemType type)
+{
+	if ( !itemTypeIsIngredientBag(type) )
+	{
+		return {};
+	}
+
+	switch ( ingredientCategoryFromBag(type) )
+	{
+		case INGREDIENT_CATEGORY_SLIME:
+			return { "", getIngredientBagBadgeOilPath(APPLIED_OIL_BASES) };
+		case INGREDIENT_CATEGORY_HUMORIN:
+			return { getIngredientBagBadgeOilPath(APPLIED_OIL_SILVER),
+				getIngredientBagBadgeOilPath(APPLIED_OIL_TOXINS) };
+		case INGREDIENT_CATEGORY_WILDBLOOD:
+			return { getIngredientBagBadgeOilPath(APPLIED_OIL_MINERAL),
+				getIngredientBagBadgeOilPath(APPLIED_OIL_LEAD) };
+		case INGREDIENT_CATEGORY_ANIMATIC:
+			return { getIngredientBagBadgeOilPath(APPLIED_OIL_BRINE),
+				getIngredientBagBadgeOilPath(APPLIED_OIL_AETHER) };
+		default:
+			return {};
+	}
+}
+
 enum SlotFrameIndices : size_t {
 	SLOTFRAME_BEATITUDE_FRAME = 0,
 	SLOTFRAME_BEATITUDE_IMG = 0,
@@ -22916,6 +23455,8 @@ enum SlotFrameIndices : size_t {
 	SLOTFRAME_ITEMSPRITE_IMG = 0,
 	SLOTFRAME_ITEMSPRITE_LABELBG_IMG = 1,
 	SLOTFRAME_ITEMSPRITE_LABEL_IMG = 2,
+	SLOTFRAME_ITEMSPRITE_INGREDIENT_BADGE1_IMG = 3,
+	SLOTFRAME_ITEMSPRITE_INGREDIENT_BADGE2_IMG = 4,
 	SLOTFRAME_UNUSABLE_ITEM_FRAME = 3,
 	SLOTFRAME_UNUSABLE_IMG = 0,
 	SLOTFRAME_APPRAISAL_FRAME = 4,
@@ -22953,6 +23494,19 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 
 	auto spriteImageFrame = frames[SLOTFRAME_ITEMSPRITE_FRAME]; // slotFrame->findFrame("item sprite frame");
 	auto spriteImage = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_IMG]; // [spriteImageFrame->findImage("item sprite img");
+	auto ingredientBagBadge1 = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_INGREDIENT_BADGE1_IMG];
+	auto ingredientBagBadge2 = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_INGREDIENT_BADGE2_IMG];
+	ingredientBagBadge1->disabled = true;
+	ingredientBagBadge2->disabled = true;
+	ingredientBagBadge1->path = "";
+	ingredientBagBadge2->path = "";
+	constexpr int badgeSize = 16;
+	constexpr int badgeEdgePadding = 1;
+	constexpr int badgeGap = 0;
+	const int rightX = spriteImageFrame->getSize().w - badgeSize - badgeEdgePadding;
+	ingredientBagBadge2->pos = SDL_Rect{ rightX, badgeEdgePadding, badgeSize, badgeSize };
+	ingredientBagBadge1->pos = SDL_Rect{
+		rightX - badgeSize - badgeGap, badgeEdgePadding, badgeSize, badgeSize };
 
 	if ( hiddenItemInGUI )
 	{
@@ -23025,6 +23579,10 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 		if ( auto iconLabelImg = spriteImageFrame->getImages()[SLOTFRAME_ITEMSPRITE_LABEL_IMG]/*spriteImageFrame->findImage("icon label img")*/ )
 		{
 			iconLabelImg->path = ItemTooltips.getIconLabel(*item);
+			if ( item->firearmIsLoaded() )
+			{
+				iconLabelImg->path = "images/ui/Inventory/loaded.png"; //mod add: Reuse the inventory icon-label badge for loaded firearms.
+			}
 			iconLabelImg->disabled = true;
 			const int size = 16;
 			const int padx = spriteImageFrame->getSize().w / 2 - size / 2;
@@ -23032,7 +23590,9 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 				1 /*spriteImageFrame->getSize().h - size*/, size, size };
 			if ( iconLabelImg->path != "" )
 			{
-				iconLabelImg->disabled = (!item->identified || hiddenItemInGUI);
+				const bool witchbrewBottleBadge = itemTypeIsTincture(item->type) || itemTypeIsOil(item->type);
+				iconLabelImg->disabled = ((!item->identified && item->appliedOil == APPLIED_OIL_NONE
+					&& !witchbrewBottleBadge) || hiddenItemInGUI);
 				if ( item->type == SPELL_ITEM && !(slotType && *slotType == GAMEUI_FRAMEDATA_SPELL_LEARNABLE) )
 				{
 					iconLabelImg->disabled = true;
@@ -23068,6 +23628,23 @@ void updateSlotFrameFromItem(Frame* slotFrame, void* itemPtr, bool forceUnusable
 			}
 		}
 	}
+
+	if ( itemTypeIsIngredientBag(item->type) && !hiddenItemInGUI )
+	{
+		const auto badges = getIngredientBagBadgePaths(item->type);
+		if ( !badges.first.empty() )
+		{
+			ingredientBagBadge1->path = badges.first;
+			ingredientBagBadge1->disabled = false;
+		}
+		if ( !badges.second.empty() )
+		{
+			ingredientBagBadge2->path = badges.second;
+			ingredientBagBadge2->disabled = false;
+		}
+	}
+	ingredientBagBadge1->color = spriteImage->color;
+	ingredientBagBadge2->color = spriteImage->color;
 
 	if ( auto qtyFrame = frames[SLOTFRAME_QTY_FRAME]/*slotFrame->findFrame("quantity frame")*/ )
 	{
@@ -25371,6 +25948,26 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 
 	//TempTexture* minimapTexture = new TempTexture();
 	auto playerEntity = Player::getPlayerInteractEntity(player);
+	bool wraithMonsterProxyPreview = false;
+	if ( playerEntity && playerEntity->behavior == &actPlayer
+		&& stats[player] && stats[player]->playerRace == RACE_WRAITH
+		&& players[player] && players[player]->mechanics.wraith.initialized )
+	{
+		const auto& wraith = players[player]->mechanics.wraith;
+		if ( wraith.possessedEntityUid != 0
+			&& !wraithPossessionHasTemporaryFormOverride(player)
+			&& wraithPossessionUsesMonsterVisualProxy(wraith.possessedType) )
+		{
+			if ( Entity* proxy = uidToEntity(wraith.possessedEntityUid) )
+			{
+				if ( proxy->behavior == &actMonster )
+				{
+					playerEntity = proxy;
+					wraithMonsterProxyPreview = true;
+				}
+			}
+		}
+	}
 	if ( playerEntity && playerEntity->behavior == &actDeathGhost )
 	{
 		if ( playerEntity->skill[10] != 0 ) // cosmetic ghost
@@ -25405,7 +26002,7 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 				}
 			}
 		}
-		else if ( playerEntity->behavior == &actPlayer )
+		else if ( playerEntity->behavior == &actPlayer || wraithMonsterProxyPreview )
 		{
 			real_t nominalHeight = 0.0;
 			view.z = std::min(nominalHeight, view.z);
@@ -25441,7 +26038,33 @@ void drawCharacterPreview(const int player, SDL_Rect pos, int fov, real_t offset
 			playerEntity->dithering[&view].value = oldDither;
 		}
 		int c = 0;
-		if ( multiplayer != CLIENT )
+		if ( playerEntity->behavior == &actMonster )
+		{
+			for ( Entity* entity : playerEntity->bodyparts )
+			{
+				if ( !entity ) { continue; }
+				if ( !entity->flags[INVISIBLE]
+					|| (entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER]) )
+				{
+					const bool bright = entity->flags[BRIGHT];
+					if ( !dark ) { entity->flags[BRIGHT] = true; }
+
+					const int oldDither = entity->dithering[&view].value;
+					if ( entity->ditheringOverride >= 0 )
+					{
+						entity->dithering[&view].value = entity->ditheringOverride;
+					}
+					else if ( entity->flags[INVISIBLE] && entity->flags[INVISIBLE_DITHER] )
+					{
+						entity->dithering[&view].value = ditherVal;
+					}
+					glDrawVoxel(&view, entity, REALCOLORS);
+					entity->flags[BRIGHT] = bright;
+					entity->dithering[&view].value = oldDither;
+				}
+			}
+		}
+		else if ( multiplayer != CLIENT )
 		{
 			for ( node_t* node = playerEntity->children.first; node != nullptr; node = node->next )
 			{
@@ -28631,6 +29254,13 @@ void createPlayerInventory(const int player)
 		GenericGUI[player].alchemyGUI.alchFrame->setInheritParentFrameOpacity(false);
 		GenericGUI[player].alchemyGUI.alchFrame->setDisabled(true);
 
+		GenericGUI[player].stewingGUI.stewFrame = frame->addFrame("stewing");
+		GenericGUI[player].stewingGUI.stewFrame->setHollow(true);
+		GenericGUI[player].stewingGUI.stewFrame->setBorder(0);
+		GenericGUI[player].stewingGUI.stewFrame->setOwner(player);
+		GenericGUI[player].stewingGUI.stewFrame->setInheritParentFrameOpacity(false);
+		GenericGUI[player].stewingGUI.stewFrame->setDisabled(true);
+
 		GenericGUI[player].featherGUI.featherFrame = frame->addFrame("feather");
 		GenericGUI[player].featherGUI.featherFrame->setHollow(true);
 		GenericGUI[player].featherGUI.featherFrame->setBorder(0);
@@ -29155,7 +29785,8 @@ void Player::Inventory_t::updateItemContextMenu()
 		if ( itemMenuSelected >= 0 && itemMenuSelected < options.size() )
 		{
 			if ( options[itemMenuSelected] == ItemContextMenuPrompts::PROMPT_DROP
-				&& player.paperDoll.isItemOnDoll(*item) )
+				&& player.paperDoll.isItemOnDoll(*item)
+				&& !isWraithPhysicalHandItem(player.playernum, item) )
 			{
 				// need to unequip
 				player.inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
@@ -29647,23 +30278,49 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 	}
 	else if ( prompt == PROMPT_CONSUME || prompt == PROMPT_CONSUME_ALTERNATE )
 	{
+		if ( prompt == PROMPT_CONSUME_ALTERNATE && itemTypeIsOil(item->type) )
+		{
+			if ( !disableItemUsage )
+			{
+				useItem(item, player, nullptr, false, false, true);
+			}
+			return;
+		}
 		// consume item
+		const bool golemConsume = players[player] && players[player]->entity
+			&& players[player]->entity->isNaturalGolemPlayer();
 		if ( multiplayer == CLIENT )
 		{
-			strcpy((char*)net_packet->data, "FODA");
+			strcpy((char*)net_packet->data, golemConsume ? "GOLC" : "FODA");
 			SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 			SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 			SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
-			SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+			SDLNet_Write32((Uint32)(golemConsume ? 1 : item->count), &net_packet->data[16]);
 			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 			net_packet->data[24] = item->identified;
 			net_packet->data[25] = player;
+			if ( golemConsume )
+			{
+				SDLNet_Write32(static_cast<Uint32>(item->runeGetStoredPWRRaw()),
+					&net_packet->data[26]);
+				net_packet->data[30] = static_cast<Uint8>(item->runeGetCreatorPlayer());
+				SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[31]);
+				SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[35]);
+				net_packet->data[39] = static_cast<Uint8>(item->appliedOil);
+			}
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
-			net_packet->len = 26;
+			net_packet->len = golemConsume ? 40 : 26;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
-		item_FoodAutomaton(item, player);
+		if ( golemConsume )
+		{
+			item_GolemConsume(item, player);
+		}
+		else
+		{
+			item_FoodAutomaton(item, player);
+		}
 		return;
 	}
 	else if ( prompt == PROMPT_INTERACT 
@@ -29788,7 +30445,25 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 			}
 			else if ( !disableItemUsage && prompt == PROMPT_INTERACT )
 			{
-				useItem(item, player);
+				if ( itemTypeIsOil(item->type) )
+				{
+					const bool coatedWeaponEquipped = stats[player]
+						&& itemCanReceiveOil(stats[player]->weapon);
+					const bool quiverEquipped = stats[player] && stats[player]->shield
+						&& itemTypeIsQuiver(stats[player]->shield->type);
+					if ( coatedWeaponEquipped || quiverEquipped )
+					{
+						GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
+					}
+					else
+					{
+						playerTryEquipItemAndUpdateServer(player, item, true);
+					}
+				}
+				else
+				{
+					useItem(item, player);
+				}
 			}
 			else
 			{
@@ -29821,7 +30496,8 @@ void Player::Inventory_t::activateItemContextMenuOption(Item* item, ItemContextM
 				|| prompt == PROMPT_UNEQUIP
 				|| prompt == PROMPT_UNEQUIP_FOR_DROP )
 			{
-				if ( items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON
+				if ( itemTypeIsOil(item->type)
+					|| items[item->type].item_slot == ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON
 					|| itemCategory(item) == SPELLBOOK )
 				{
 					if ( prompt == PROMPT_UNEQUIP_FOR_DROP )
@@ -30090,6 +30766,8 @@ void Player::Inventory_t::ItemTooltipDisplay_t::updateItem(const int player, Ite
 		beatitude = newItem->beatitude;
 		count = newItem->count;
 		appearance = newItem->appearance;
+		runeStoredPWR = newItem->runeGetStoredPWRRaw();
+		runeCreatorPlayer = static_cast<Sint8>(newItem->runeGetCreatorPlayer());
 		identified = newItem->identified;
 
 		if ( players[player]->inventoryUI.appraisal.current_item == uid )
@@ -30148,6 +30826,8 @@ bool Player::Inventory_t::ItemTooltipDisplay_t::isItemSameAsCurrent(const int pl
 			&& newItem->beatitude == beatitude
 			&& newItem->count == count
 			&& newItem->appearance == appearance
+			&& newItem->runeGetStoredPWRRaw() == runeStoredPWR
+			&& newItem->runeGetCreatorPlayer() == runeCreatorPlayer
 			&& newItem->identified == identified
 			&& (wasAppraisalTarget == appraisingThisItem)
 			&& playernum == player
@@ -30176,6 +30856,8 @@ Player::Inventory_t::ItemTooltipDisplay_t::ItemTooltipDisplay_t()
 	beatitude = 0;
 	count = 0;
 	appearance = 0;
+	runeStoredPWR = Item::RUNE_STORED_PWR_INVALID;
+	runeCreatorPlayer = Item::RUNE_CREATOR_INVALID;
 	identified = false;
 	wasAppraisalTarget = false;
 	playernum = -1;
@@ -30902,6 +31584,11 @@ void Player::Inventory_t::processInventory()
 		players[player.playernum]->camera_virtualHeight()});
 
 	bool tooltipWasDisabled = tooltipFrame->isDisabled();
+	if ( Frame* ingredientOverlay = tooltipContainerFrame->findFrame("ingredient bag hover overlay") )
+	{
+		// updateFrameTooltip() re-enables this only when this frame actually hovers a bag.
+		ingredientOverlay->setDisabled(true);
+	}
 
 	updateInventory();
 
@@ -41161,6 +41848,8 @@ bool Player::WorldUI_t::WorldTooltipItem_t::isItemSameAsCurrent(Item* item)
 		&& item->beatitude == beatitude
 		&& item->count == count
 		&& item->appearance == appearance
+		&& item->runeGetStoredPWRRaw() == runeStoredPWR
+		&& item->runeGetCreatorPlayer() == runeCreatorPlayer
 		&& item->identified == identifiedItem
 		&& hasAppraiseCapstone == stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) >= SKILL_LEVEL_LEGENDARY )
 	{
@@ -41187,6 +41876,8 @@ SDL_Surface* Player::WorldUI_t::WorldTooltipItem_t::blitItemWorldTooltip(Item* i
 	beatitude = item->beatitude;
 	count = item->count;
 	appearance = item->appearance;
+	runeStoredPWR = item->runeGetStoredPWRRaw();
+	runeCreatorPlayer = static_cast<Sint8>(item->runeGetCreatorPlayer());
 	identifiedItem = item->identified;
 	hasAppraiseCapstone = stats[player.playernum]->getModifiedProficiency(PRO_APPRAISAL) >= SKILL_LEVEL_LEGENDARY;
 

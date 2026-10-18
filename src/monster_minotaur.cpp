@@ -24,6 +24,20 @@
 #include "prng.hpp"
 #include "mod_tools.hpp"
 
+namespace
+{
+	// Percentage chance; fractional values such as 0.1 are supported.
+	static constexpr double RUNE_HAMMER_MINOTAUR_CHANCE_PERCENT = 0.1;
+	static constexpr int RUNE_HAMMER_MINOTAUR_VARIANT_SKILL = 58;
+	static constexpr int MINOTAUR_RIGHT_ARM_MODEL = 241;
+	static constexpr int RUNE_HAMMER_MINOTAUR_RIGHT_ARM_MODEL = 2481;
+
+	bool isRuneHammerMinotaur(const Entity* minotaur)
+	{
+		return minotaur && minotaur->skill[RUNE_HAMMER_MINOTAUR_VARIANT_SKILL] != 0;
+	}
+}
+
 void initMinotaur(Entity* my, Stat* myStats)
 {
 	node_t* node;
@@ -42,6 +56,12 @@ void initMinotaur(Entity* my, Stat* myStats)
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
 		auto& rng = my->entity_rng ? *my->entity_rng : local_rng;
+
+		// skill[58] has no actMonster or Minotaur use (its other entity-type uses are
+		// limited to players and doors), so it safely persists this per-Minotaur roll.
+		my->skill[RUNE_HAMMER_MINOTAUR_VARIANT_SKILL] =
+			rng.getF64() * 100.0 < RUNE_HAMMER_MINOTAUR_CHANCE_PERCENT;
+		serverUpdateEntitySkill(my, RUNE_HAMMER_MINOTAUR_VARIANT_SKILL);
 
 		if ( myStats != NULL )
 		{
@@ -206,7 +226,9 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->bodyparts.push_back(entity);
 
 	// right arm
-	entity = newEntity(241, 1, map.entities, nullptr); //Limb entity.
+	entity = newEntity(isRuneHammerMinotaur(my)
+		? RUNE_HAMMER_MINOTAUR_RIGHT_ARM_MODEL : MINOTAUR_RIGHT_ARM_MODEL,
+		1, map.entities, nullptr); //Limb entity.
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -251,6 +273,14 @@ void actMinotaurLimb(Entity* my)
 
 void minotaurDie(Entity* my)
 {
+	if ( multiplayer != CLIENT && isRuneHammerMinotaur(my) )
+	{
+		// This is an additional guaranteed drop, independent of ordinary inventory
+		// drops. The hammer is visual-only until the Minotaur dies.
+		Item* runeHammer = newItem(RUNE_HAMMER, DECREPIT, -5, 1, 0, true, nullptr);
+		dropItemMonster(runeHammer, my, nullptr, 1);
+	}
+
 	int c;
 	for ( c = 0; c < 20; c++ )
 	{
@@ -595,6 +625,24 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// right arm
 			case 6:
+				// The special voxel already contains the Rune Hammer. Keep this limb on
+				// the variant model throughout every normal Minotaur animation.
+				if ( multiplayer != CLIENT )
+				{
+					entity->sprite = isRuneHammerMinotaur(my)
+						? RUNE_HAMMER_MINOTAUR_RIGHT_ARM_MODEL : MINOTAUR_RIGHT_ARM_MODEL;
+				}
+				else if ( isRuneHammerMinotaur(my) )
+				{
+					entity->sprite = RUNE_HAMMER_MINOTAUR_RIGHT_ARM_MODEL;
+				}
+				// Resend both pieces once bodypart IDs are synchronized. This also
+				// covers a client that received the spawn-time flag before the entity.
+				if ( multiplayer == SERVER && my->ticks == 120 + MONSTER_NUMBER )
+				{
+					serverUpdateEntitySkill(my, RUNE_HAMMER_MINOTAUR_VARIANT_SKILL);
+					serverUpdateEntityBodypart(my, bodypart);
+				}
 				entity->z -= 6;
 				entity->yaw += MONSTER_WEAPONYAW;
 				break;
@@ -975,7 +1023,12 @@ void actMinotaurCeilingBuster(Entity* my)
 							{
 								if ( multiplayer != CLIENT )
 								{
+									const int oldHP = entity->doorHealth;
 									entity->doorHealth = 0; // destroy the door
+									if ( oldHP > 0 )
+									{
+										entrenchOnEntityDestroyedByCreature(entity, my);
+									}
 								}
 							}
 							else if ( entity->behavior == &actCeilingTile && entity->ceilingTileBreakable != 0 )
@@ -1013,8 +1066,13 @@ void actMinotaurCeilingBuster(Entity* my)
 							{
 								if ( multiplayer != CLIENT )
 								{
+									const int oldHP = entity->colliderCurrentHP;
 									entity->colliderCurrentHP = 0;
 									entity->colliderKillerUid = 0;
+									if ( oldHP > 0 )
+									{
+										entrenchOnEntityDestroyedByCreature(entity, my);
+									}
 								}
 							}
 							else if ( entity->behavior == &actBell )

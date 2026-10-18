@@ -13,6 +13,7 @@
 #include <new>
 #include "entity.hpp"
 #include "messages.hpp"
+#include "magic/magic.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -253,6 +254,9 @@ Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist, list_t* creatureli
 #else
 	entity = new Entity(sprite, pos, entlist, creaturelist);
 #endif
+	inheritActiveSpellPowerOverride(*entity);
+	inheritActiveRuneCastSource(*entity);
+	inheritGolemWildMagicProjectileCast(*entity);
 
 	return entity;
 }

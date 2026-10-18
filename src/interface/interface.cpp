@@ -2577,7 +2577,7 @@ void FollowerRadialMenu::drawFollowerMenu()
 								}
 							}
 						}
-						else
+						else if ( !playerIsPanicking(gui_player) )
 						{
 							Uint32 olduid = followerToCommand->monsterAllyInteractTarget;
 							followerToCommand->monsterAllySendCommand(optionSelected, moveToX, moveToY, followerToCommand->monsterAllyInteractTarget);
@@ -5635,7 +5635,7 @@ bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 			}
 			return true;
 		}
-		else if ( cat == MAGICSTAFF )
+		else if ( cat == MAGICSTAFF || item->type == MAGIC_RUNE )
 		{
 			if ( item->status == EXCELLENT )
 			{
@@ -5644,6 +5644,10 @@ bool GenericGUIMenu::isItemRepairable(const Item* item, int repairScroll)
 			return true;
 		}
 
+		return false;
+	}
+	if ( item->type == MAGIC_RUNE )
+	{
 		return false;
 	}
 	else if ( repairScroll == SCROLL_REPAIR )
@@ -5889,6 +5893,22 @@ void GenericGUIMenu::updateGUI()
 					closeGUI();
 					return;
 				}
+			}
+		}
+		else if ( guiType == GUI_TYPE_STEWING )
+		{
+			Entity* familiar = uidToEntity(stewingGUI.cauldronUid);
+			// In multiplayer the host owns the authoritative form and sends
+			// STWC when the Cauldron disappears. Local client visual state can
+			// arrive after STWO, so do not close a host-approved GUI prematurely.
+			if ( !familiar || familiar->behavior != &actMonster
+				|| (multiplayer != CLIENT
+					&& (!isAmuletFamiliar(familiar, familiar->getStats())
+						|| getAmuletFamiliarForm(familiar) != FAMILIAR_FORM_CAULDRON))
+				|| !player->entity || entityDist(player->entity, familiar) > TOUCHRANGE )
+			{
+				closeGUI();
+				return;
 			}
 		}
 		else if ( guiType == GUI_TYPE_MAILBOX )
@@ -6388,11 +6408,23 @@ bool GenericGUIMenu::shouldDisplayItemInGUI(Item* item)
 		{
 			return isItemScepterChargeable(item);
 		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_INK_SPELLBOOK )
+		{
+			return itemCategory(item) == SPELLBOOK;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_OIL_ITEM )
+		{
+			return itemCanReceiveOil(item);
+		}
 		return false;
 	}
 	else if ( guiType == GUI_TYPE_ALCHEMY )
 	{
 		return isItemMixable(item);
+	}
+	else if ( guiType == GUI_TYPE_STEWING )
+	{
+		return stewingGUI.inventoryItemAllowedInGUI(item);
 	}
 	else if ( guiType == GUI_TYPE_MAILBOX )
 	{
@@ -6566,8 +6598,11 @@ bool GenericGUIMenu::ItemEffectGUI_t::consumeResourcesForTransmute()
 {
 	if ( modeHasCostEffect != COST_EFFECT_NONE && players[parentGUI.gui_player] && players[parentGUI.gui_player]->entity )
 	{
+		Item* rune = parentGUI.itemEffectScrollItem && parentGUI.itemEffectScrollItem->isMagicRune()
+			? parentGUI.itemEffectScrollItem : nullptr;
 		bool hasGold = costEffectGoldAmount <= 0 || stats[parentGUI.gui_player]->GOLD >= costEffectGoldAmount;
-		bool hasMana = costEffectMPAmount == 0 || (stats[parentGUI.gui_player]->MP >= costEffectMPAmount || stats[parentGUI.gui_player]->type == VAMPIRE);
+		bool hasMana = rune || costEffectMPAmount == 0
+			|| stats[parentGUI.gui_player]->MP >= costEffectMPAmount || stats[parentGUI.gui_player]->type == VAMPIRE;
 		if ( hasGold && hasMana )
 		{
 			if ( costEffectGoldAmount != 0 )
@@ -6595,21 +6630,29 @@ bool GenericGUIMenu::ItemEffectGUI_t::consumeResourcesForTransmute()
 				{
 					if ( players[parentGUI.gui_player]->isLocalPlayer() )
 					{
-						if ( costEffectMPAmount > stats[parentGUI.gui_player]->MP )
+						if ( rune )
 						{
-							cameravars[parentGUI.gui_player].shakex += 0.1;
-							cameravars[parentGUI.gui_player].shakey += 10;
-							playSoundPlayer(parentGUI.gui_player, 28, 92);
+							applyMagicRuneCastStress(rune->runeGetInstanceId(),
+								costEffectMPAmount, parentGUI.gui_player);
 						}
-						Sint32 prevMP = stats[parentGUI.gui_player]->MP;
-						players[parentGUI.gui_player]->entity->drainMP(costEffectMPAmount);
-
-						if ( parentGUI.itemEffectScrollItem && parentGUI.itemEffectScrollItem->type == SPELL_ITEM )
+						else
 						{
-							if ( auto spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem, false) )
+							if ( costEffectMPAmount > stats[parentGUI.gui_player]->MP )
 							{
-								players[parentGUI.gui_player]->mechanics.baseSpellIncrementMP(
-									prevMP - stats[parentGUI.gui_player]->MP, spell->skillID);
+								cameravars[parentGUI.gui_player].shakex += 0.1;
+								cameravars[parentGUI.gui_player].shakey += 10;
+								playSoundPlayer(parentGUI.gui_player, 28, 92);
+							}
+							Sint32 prevMP = stats[parentGUI.gui_player]->MP;
+							players[parentGUI.gui_player]->entity->drainMP(costEffectMPAmount);
+
+							if ( parentGUI.itemEffectScrollItem && parentGUI.itemEffectScrollItem->type == SPELL_ITEM )
+							{
+								if ( auto spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem, false) )
+								{
+									players[parentGUI.gui_player]->mechanics.baseSpellIncrementMP(
+										prevMP - stats[parentGUI.gui_player]->MP, spell->skillID);
+								}
 							}
 						}
 					}
@@ -6623,7 +6666,8 @@ bool GenericGUIMenu::ItemEffectGUI_t::consumeResourcesForTransmute()
 				SDLNet_Write32((Uint32)costEffectMPAmount, &net_packet->data[9]);
 
 				Uint16 spellID = 0;
-				if ( parentGUI.itemEffectScrollItem && parentGUI.itemEffectScrollItem->type == SPELL_ITEM )
+				if ( parentGUI.itemEffectScrollItem
+					&& (parentGUI.itemEffectScrollItem->type == SPELL_ITEM || rune) )
 				{
 					if ( auto spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem, false) )
 					{
@@ -6631,9 +6675,11 @@ bool GenericGUIMenu::ItemEffectGUI_t::consumeResourcesForTransmute()
 					}
 				}
 				SDLNet_Write16(spellID, &net_packet->data[13]);
+				SDLNet_Write32(rune ? rune->runeGetInstanceId() : 0,
+					&net_packet->data[15]);
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
-				net_packet->len = 15;
+				net_packet->len = 19;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
 			return true;
@@ -6957,7 +7003,7 @@ void GenericGUIMenu::alterItem(Item* item)
 		else
 		{
 			Item* itemToPickup = newItem(newType, SERVICABLE, item->beatitude, 1, item->appearance, true, nullptr);
-			Item* pickedUp = itemPickup(gui_player, itemToPickup);
+			Item* pickedUp = itemPickupCraftingResult(gui_player, itemToPickup);
 			int oldCount = item->count;
 			item->count = 1;
 			std::string desc = itemToPickup->description();
@@ -7010,7 +7056,7 @@ void GenericGUIMenu::alterItem(Item* item)
 			}
 
 			Item* itemToPickup = newItem(GEM_JEWEL, result, 0, 1, 0, true, nullptr);
-			Item* pickedUp = itemPickup(gui_player, itemToPickup);
+			Item* pickedUp = itemPickupCraftingResult(gui_player, itemToPickup);
 			int oldCount = item->count;
 			item->count = 1;
 			std::string desc = itemToPickup->description();
@@ -7236,7 +7282,7 @@ void GenericGUIMenu::repairItem(Item* item)
 
 	if ( itemEffectItemType == SCROLL_CHARGING )
 	{
-		if ( itemCategory(item) == MAGICSTAFF )
+		if ( itemCategory(item) == MAGICSTAFF || item->type == MAGIC_RUNE )
 		{
 			Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_MAGICSTAFF_RECHARGED, item->type, 1);
 			if ( item->type == MAGICSTAFF_SCEPTER )
@@ -7404,6 +7450,10 @@ void GenericGUIMenu::closeGUI()
 	{
 		alchemyGUI.closeAlchemyMenu();
 	}
+	if ( stewingGUI.bOpen )
+	{
+		stewingGUI.closeStewingMenu();
+	}
 	if ( mailboxGUI.bOpen )
 	{
 		mailboxGUI.closeMailMenu();
@@ -7541,7 +7591,8 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 {
 	this->closeGUI();
 
-	if ( !effectItem && usingSpellID != SPELL_NONE && effectItemType == SPELL_ITEM )
+	if ( !effectItem && usingSpellID != SPELL_NONE
+		&& (effectItemType == SPELL_ITEM || effectItemType == MAGIC_RUNE) )
 	{
 		for ( node_t* node = stats[gui_player]->inventory.first; node; node = node->next )
 		{
@@ -7551,7 +7602,7 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 				continue;
 			}
 			//Search player's inventory for the special spell item.
-			if ( itemCategory(item) != SPELL_CAT )
+			if ( itemCategory(item) != SPELL_CAT && !item->isMagicRune() )
 			{
 				continue;
 			}
@@ -7597,7 +7648,7 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 		{
 			itemEffectUsingSpellbook = true;
 		}
-		else if ( itemEffectItemType == SPELL_ITEM )
+		else if ( itemEffectItemType == SPELL_ITEM || itemEffectItemType == MAGIC_RUNE )
 		{
 			itemEffectUsingSpell = true;
 		}
@@ -7705,6 +7756,14 @@ void GenericGUIMenu::openGUI(int type, Item* effectItem, int effectBeatitude, in
 		else if ( itemEffectItemType == SCROLL_REPAIR )
 		{
 			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REPAIR;
+		}
+		else if ( itemTypeIsInk(static_cast<ItemType>(itemEffectItemType)) )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_INK_SPELLBOOK;
+		}
+		else if ( itemTypeIsOil(static_cast<ItemType>(itemEffectItemType)) )
+		{
+			itemfxGUI.currentMode = ItemEffectGUI_t::ITEMFX_MODE_OIL_ITEM;
 		}
 		if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_NONE )
 		{
@@ -7910,6 +7969,10 @@ void GenericGUIMenu::openGUI(int type, Entity* shrine)
 		this->closeGUI();
 		mailboxEntityUid = oldUID;
 	}
+	else if ( guiType == GUI_TYPE_STEWING )
+	{
+		this->closeGUI();
+	}
 
 	if ( players[gui_player] && players[gui_player]->entity )
 	{
@@ -7948,6 +8011,13 @@ void GenericGUIMenu::openGUI(int type, Entity* shrine)
 			alembicEntityUid = shrine->getUID();
 			Compendium_t::Events_t::eventUpdateWorld(gui_player, Compendium_t::CPDM_CAULDRON_INTERACTS, "cauldron", 1);
 			stationOpenSound(gui_player, GUI_TYPE_ALCHEMY);
+		}
+	}
+	else if ( guiType == GUI_TYPE_STEWING )
+	{
+		if ( shrine )
+		{
+			stewingGUI.openStewingMenu(shrine->getUID(), getStewingResourceSnapshot(gui_player));
 		}
 	}
 	else if ( guiType == GUI_TYPE_MAILBOX )
@@ -8001,6 +8071,12 @@ void GenericGUIMenu::sendItemToVoid(Item* item)
 	}
 
 	Item* newitem = newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, nullptr);
+	newitem->runeSetStoredPWRRaw(item->runeGetStoredPWRRaw());
+	newitem->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
+	newitem->runeSetInstanceId(item->runeGetInstanceId());
+	newitem->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+	newitem->appliedOil = item->appliedOil;
+	copyItemPersistentCustomState(*newitem, *item);
 	if ( Item* insertedItem = Entity::addItemToVoidChest(gui_player, newitem, false, nullptr) )
 	{
 		if ( insertedItem != newitem )
@@ -8170,9 +8246,12 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 	{
 		return false;
 	}
-
 	if ( guiType == GUI_TYPE_ITEMFX )
 	{
+		// Item-targeting Rune spells outlive castSpell() while the player chooses a
+		// target. Snapshot the authoritative Rune source for the eventual event.
+		ScopedSpellPowerOverride runeSourceScope(itemEffectScrollItem,
+			players[gui_player]->entity, true);
 		if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_REPAIR
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_CHARGING )
 		{
@@ -8260,6 +8339,26 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			rechargeScepterUsingItem(item);
 			return true;
 		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_INK_SPELLBOOK )
+		{
+			Item*& ink = itemEffectScrollItem;
+			const bool applied = useInkOnSpellbook(ink, item, gui_player);
+			if ( applied )
+			{
+				closeGUI();
+			}
+			return applied;
+		}
+		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_OIL_ITEM )
+		{
+			Item*& oil = itemEffectScrollItem;
+			const bool applied = useOilOnItem(oil, item, gui_player);
+			if ( applied )
+			{
+				closeGUI();
+			}
+			return applied;
+		}
 		else if ( itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_WEAPON
 			|| itemfxGUI.currentMode == ItemEffectGUI_t::ITEMFX_MODE_SCROLL_ENCHANT_ARMOR )
 		{
@@ -8320,6 +8419,11 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 			}
 		}
 		return true;
+	}
+	else if ( guiType == GUI_TYPE_STEWING )
+	{
+		return stewingGUI.inventoryItemAllowedInGUI(item)
+			&& stewingGUI.addResource(item->type);
 	}
 	else if ( guiType == GUI_TYPE_TINKERING )
 	{
@@ -8385,6 +8489,41 @@ bool GenericGUIMenu::executeOnItemClick(Item* item)
 	return false;
 }
 
+static bool itemTypeIsAlchemyRandomizer(ItemType type)
+{
+	return type == POTION_POLYMORPH || itemTypeIsInk(type);
+}
+
+static bool itemTypeIsVanillaAlchemyPotion(ItemType type)
+{
+	switch ( type )
+	{
+		case POTION_WATER:
+		case POTION_BOOZE:
+		case POTION_JUICE:
+		case POTION_SICKNESS:
+		case POTION_CONFUSION:
+		case POTION_EXTRAHEALING:
+		case POTION_HEALING:
+		case POTION_CUREAILMENT:
+		case POTION_BLINDNESS:
+		case POTION_RESTOREMAGIC:
+		case POTION_INVISIBILITY:
+		case POTION_LEVITATION:
+		case POTION_SPEED:
+		case POTION_ACID:
+		case POTION_PARALYSIS:
+		case POTION_POLYMORPH:
+		case POTION_FIRESTORM:
+		case POTION_ICESTORM:
+		case POTION_THUNDERSTORM:
+		case POTION_STRENGTH:
+			return true;
+		default:
+			return false;
+	}
+}
+
 bool GenericGUIMenu::isItemMixable(const Item* item)
 {
 	if ( !item )
@@ -8435,6 +8574,10 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 		// not used anymore??
 		if ( !basePotion )
 		{
+			if ( itemTypeIsInk(item->type) )
+			{
+				return true;
+			}
 			// we're selecting the first potion.
 			switch ( item->type )
 			{
@@ -8465,6 +8608,10 @@ bool GenericGUIMenu::isItemMixable(const Item* item)
 			if ( item == basePotion )
 			{
 				return false;
+			}
+			if ( itemTypeIsInk(item->type) )
+			{
+				return true;
 			}
 
 			// we're selecting the second potion.
@@ -8723,7 +8870,13 @@ ItemType alchemyMixResult(ItemType potion1, ItemType potion2,
 	outTryDuplicatePotion = false;
 	ItemType result = POTION_SICKNESS;
 	outRandomResult = false;
+	outSamePotion = false;
 	outExplodeSelf = false;
+	if ( itemTypeIsInk(potion1) || itemTypeIsInk(potion2) )
+	{
+		outRandomResult = true;
+		return result;
+	}
 
 	switch ( potion1 )
 	{
@@ -9016,9 +9169,15 @@ ItemType alchemyMixResult(ItemType potion1, ItemType potion2,
 
 bool alchemyAddRecipe(int player, int basePotion, int secondaryPotion, int result, bool ignorePotionTypes = false)
 {
+	if ( itemTypeIsInk(static_cast<ItemType>(basePotion))
+		|| itemTypeIsInk(static_cast<ItemType>(secondaryPotion)) )
+	{
+		return false;
+	}
 	if ( basePotion == POTION_WATER || secondaryPotion == POTION_WATER
-		|| basePotion == secondaryPotion || basePotion == POTION_POLYMORPH
-		|| secondaryPotion == POTION_POLYMORPH )
+		|| basePotion == secondaryPotion
+		|| itemTypeIsAlchemyRandomizer(static_cast<ItemType>(basePotion))
+		|| itemTypeIsAlchemyRandomizer(static_cast<ItemType>(secondaryPotion)) )
 	{
 		if ( !ignorePotionTypes )
 		{
@@ -9376,7 +9535,7 @@ void GenericGUIMenu::alchemyCookCombination()
 	if ( Item* newPotion = newItem(result, status, blessing, createCount, appearance, true, nullptr) )
 	{
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(6771), newPotion->description());
-		Item* pickedUp = itemPickup(gui_player, newPotion);
+		Item* pickedUp = itemPickupCraftingResult(gui_player, newPotion);
 		if ( pickedUp )
 		{
 			alchemyGUI.potionResultUid = pickedUp->uid;
@@ -9393,7 +9552,7 @@ void GenericGUIMenu::alchemyCookCombination()
 	if ( emptyBottle )
 	{
 		Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
-		itemPickup(gui_player, emptyBottle);
+		itemPickupCraftingResult(gui_player, emptyBottle);
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(3351), items[POTION_EMPTY].getIdentifiedName());
 		Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_BOTTLE_FROM_BREWING, POTION_EMPTY, 1);
 		free(emptyBottle);
@@ -9858,7 +10017,8 @@ void GenericGUIMenu::alchemyCombinePotions()
 		};
 		auto generatedPotion = potionStandardAppearanceMap.at(
             local_rng.discrete(potionChances.data(), potionChances.size()));
-		result = static_cast<ItemType>(generatedPotion.first);
+		const ItemType generatedType = static_cast<ItemType>(generatedPotion.first);
+		result = itemTypeIsVanillaAlchemyPotion(generatedType) ? generatedType : POTION_SICKNESS;
 	}
 
 	if ( basePotion->identified && secondaryPotion->identified )
@@ -9881,7 +10041,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 		messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorWhite, Language::get(3335));
 	}
 
-	if ( !explodeSelf && result != POTION_SICKNESS && !tryDuplicatePotion && !samePotion )
+	if ( !explodeSelf && result != POTION_SICKNESS && !tryDuplicatePotion && !samePotion && !randomResult )
 	{
 		if ( !(alchemyLearnRecipe(basePotion->type, true)) )
 		{
@@ -10250,7 +10410,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 			if ( newPotion )
 			{
-				Item* pickedUp = itemPickup(gui_player, newPotion);
+				Item* pickedUp = itemPickupCraftingResult(gui_player, newPotion);
 				if ( samePotion )
 				{
 					if ( pickedUp != basePotion && pickedUp != secondaryPotion
@@ -10279,22 +10439,22 @@ void GenericGUIMenu::alchemyCombinePotions()
 					{
 						alchemyGUI.animPotionResultCount = 1;
 					}
-					if ( !tryDuplicatePotion && !randomResult )
+				}
+				if ( !tryDuplicatePotion && !randomResult )
+				{
+					alchemyAddRecipe(gui_player, basePotionType, secondaryPotionType, newPotion->type);
+				}
+				if ( tryDuplicatePotion )
+				{
+					if ( result == POTION_WATER && !duplicateSucceed )
 					{
-						alchemyAddRecipe(gui_player, basePotionType, secondaryPotionType, pickedUp->type);
-					}
-					if ( tryDuplicatePotion )
-					{
-						if ( result == POTION_WATER && !duplicateSucceed )
+						if ( basePotionType == POTION_WATER )
 						{
-							if ( basePotionType == POTION_WATER )
-							{
-								consumeItem(basePotion, gui_player);
-							}
-							else if ( secondaryPotionType == POTION_WATER )
-							{
-								consumeItem(secondaryPotion, gui_player);
-							}
+							consumeItem(basePotion, gui_player);
+						}
+						else if ( secondaryPotionType == POTION_WATER )
+						{
+							consumeItem(secondaryPotion, gui_player);
 						}
 					}
 				}
@@ -10312,7 +10472,7 @@ void GenericGUIMenu::alchemyCombinePotions()
 			if ( emptyBottle )
 			{
 				Item* emptyBottle = newItem(POTION_EMPTY, SERVICABLE, 0, 1, 0, true, nullptr);
-				itemPickup(gui_player, emptyBottle);
+				itemPickupCraftingResult(gui_player, emptyBottle);
 				messagePlayer(gui_player, MESSAGE_MISC, Language::get(3351), items[POTION_EMPTY].getIdentifiedName());
 				Compendium_t::Events_t::eventUpdate(gui_player, Compendium_t::CPDM_BOTTLE_FROM_BREWING, POTION_EMPTY, 1);
 				free(emptyBottle);
@@ -10356,6 +10516,10 @@ void GenericGUIMenu::alchemyCombinePotions()
 
 bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notify)
 {
+	if ( itemTypeIsInk(static_cast<ItemType>(type)) )
+	{
+		return false;
+	}
 	int index = 0;
 	for ( auto it = potionStandardAppearanceMap.begin(); it != potionStandardAppearanceMap.end(); ++it )
 	{
@@ -10474,10 +10638,13 @@ bool GenericGUIMenu::alchemyLearnRecipe(int type, bool increaseskill, bool notif
 
 bool GenericGUIMenu::isItemBaseIngredient(int type)
 {
+	if ( itemTypeIsAlchemyRandomizer(static_cast<ItemType>(type)) )
+	{
+		return true;
+	}
 	switch ( type )
 	{
 		case POTION_WATER:
-		case POTION_POLYMORPH:
 		case POTION_BOOZE:
 		case POTION_JUICE:
 		case POTION_ACID:
@@ -10492,6 +10659,10 @@ bool GenericGUIMenu::isItemBaseIngredient(int type)
 
 bool GenericGUIMenu::isItemSecondaryIngredient(int type)
 {
+	if ( itemTypeIsAlchemyRandomizer(static_cast<ItemType>(type)) )
+	{
+		return true;
+	}
 	switch ( type )
 	{
 		case POTION_WATER:
@@ -10501,7 +10672,6 @@ bool GenericGUIMenu::isItemSecondaryIngredient(int type)
 		case POTION_BLINDNESS:
 		case POTION_RESTOREMAGIC:
 		case POTION_SPEED:
-		case POTION_POLYMORPH:
 			return true;
 		default:
 			return false;
@@ -10714,7 +10884,7 @@ bool GenericGUIMenu::tinkeringCraftItem(Item* item)
 	Item* crafted = tinkeringCraftItemAndConsumeMaterials(item);
 	if ( crafted )
 	{
-		Item* pickedUp = itemPickup(gui_player, crafted);
+		Item* pickedUp = itemPickupCraftingResult(gui_player, crafted);
 		messagePlayer(gui_player, MESSAGE_MISC, Language::get(3668), crafted->description());
 		if ( workstationEntityUid != 0 && uidToEntity(workstationEntityUid) )
 		{
@@ -10832,13 +11002,13 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		Item* crafted = newItem(TOOL_METAL_SCRAP, DECREPIT, 0, metal, 0, true, nullptr);
 		if ( crafted )
 		{
-			Item* pickedUp = itemPickup(player, crafted);
+			itemPickupCraftingResult(player, crafted);
 			if ( !tinkeringBulkSalvage )
 			{
 				if ( bonusMetalScrap > 0 )
 				{
 					Uint32 color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(player, MESSAGE_INVENTORY, color, Language::get(3665), metal + tinkeringBulkSalvageMetalScrap, items[pickedUp->type].getIdentifiedName());
+					messagePlayerColor(player, MESSAGE_INVENTORY, color, Language::get(3665), metal + tinkeringBulkSalvageMetalScrap, items[crafted->type].getIdentifiedName());
 					if ( players[player]->isLocalPlayer() )
 					{
 						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_METAL_SCRAPPED, TOOL_TINKERING_KIT, metal + tinkeringBulkSalvageMetalScrap);
@@ -10850,7 +11020,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_MISC, Language::get(3665), metal + tinkeringBulkSalvageMetalScrap, items[pickedUp->type].getIdentifiedName());
+					messagePlayer(player, MESSAGE_MISC, Language::get(3665), metal + tinkeringBulkSalvageMetalScrap, items[crafted->type].getIdentifiedName());
 					if ( players[player]->isLocalPlayer() )
 					{
 						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_METAL_SCRAPPED, TOOL_TINKERING_KIT, metal + tinkeringBulkSalvageMetalScrap);
@@ -10874,13 +11044,13 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 		Item* crafted = newItem(TOOL_MAGIC_SCRAP, DECREPIT, 0, magic, 0, true, nullptr);
 		if ( crafted )
 		{
-			Item* pickedUp = itemPickup(player, crafted);
+			itemPickupCraftingResult(player, crafted);
 			if ( !tinkeringBulkSalvage )
 			{
 				if ( bonusMagicScrap > 0 )
 				{
 					Uint32 color = makeColorRGB(0, 255, 0);
-					messagePlayerColor(player, MESSAGE_INVENTORY, color, Language::get(3665), magic + tinkeringBulkSalvageMagicScrap, items[pickedUp->type].getIdentifiedName());
+					messagePlayerColor(player, MESSAGE_INVENTORY, color, Language::get(3665), magic + tinkeringBulkSalvageMagicScrap, items[crafted->type].getIdentifiedName());
 					if ( players[player]->isLocalPlayer() )
 					{
 						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_MAGIC_SCRAPPED, TOOL_TINKERING_KIT, magic + tinkeringBulkSalvageMagicScrap);
@@ -10892,7 +11062,7 @@ bool GenericGUIMenu::tinkeringSalvageItem(Item* item, bool outsideInventory, int
 				}
 				else
 				{
-					messagePlayer(player, MESSAGE_MISC, Language::get(3665), magic + tinkeringBulkSalvageMagicScrap, items[pickedUp->type].getIdentifiedName());
+					messagePlayer(player, MESSAGE_MISC, Language::get(3665), magic + tinkeringBulkSalvageMagicScrap, items[crafted->type].getIdentifiedName());
 					if ( players[player]->isLocalPlayer() )
 					{
 						Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TINKERKIT_MAGIC_SCRAPPED, TOOL_TINKERING_KIT, magic + tinkeringBulkSalvageMagicScrap);
@@ -11519,6 +11689,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case MASK_EYEPATCH:
 		case TOOL_BEARTRAP:
 		case TOOL_GLASSES:
+		case SPYGLASS: // mod add: offhand utility, mirrors glasses salvage
 		case TOOL_LANTERN:
 		case BONE_AXE:
 		case BONE_MACE:
@@ -11678,6 +11849,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case SPELLBOOK_RAT_FORM:
 		case SPELLBOOK_POISON:
 		case SPELLBOOK_SALVAGE:
+		case SPELLBOOK_ENTRENCH: // mod add: ordinary spellbook salvage
 		case SPELLBOOK_DASH:
 		case SPELLBOOK_HEAL_OTHER:
 		case SPELLBOOK_BLOOD_WARD:
@@ -11839,6 +12011,8 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 		case IRON_SWORD:
 		case IRON_MACE:
 		case IRON_AXE:
+		case HARPOON: // mod add: Harpoon
+		case FLINTLOCK_PISTOL: // mod add: salvageable despite use-indestructibility
 		case IRON_SHIELD:
 		case SHORTBOW:
 		case BRACERS:
@@ -12035,6 +12209,7 @@ bool GenericGUIMenu::tinkeringGetItemValue(const Item* item, int* metal, int* ma
 			break;
 
 		case ARTIFACT_BOW:
+		case MUSKET: //mod add: matches Khryselakatos' magic-weapon salvage tier
 		case BOOMERANG:
 			*metal = 4;
 			*magic = 16;
@@ -12503,7 +12678,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 						if ( upgradedItem )
 						{
 							achievementObserver.playerAchievements[gui_player].fixerUpper += 1;
-							Item* pickedUp = itemPickup(gui_player, upgradedItem);
+							Item* pickedUp = itemPickupCraftingResult(gui_player, upgradedItem);
 							if ( pickedUp && item->count == 1 )
 							{
 								// item* will be consumed, so pickedUp can take the inventory slot of it.
@@ -12616,7 +12791,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 						if ( repairedItem )
 						{
 							achievementObserver.playerAchievements[gui_player].fixerUpper += 1;
-							Item* pickedUp = itemPickup(gui_player, repairedItem);
+							Item* pickedUp = itemPickupCraftingResult(gui_player, repairedItem);
 							if ( pickedUp && item->count == 1 )
 							{
 								// item* will be consumed, so pickedUp can take the inventory slot of it.
@@ -12734,7 +12909,7 @@ bool GenericGUIMenu::tinkeringRepairItem(Item* item)
 					Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
 					if ( repairedItem )
 					{
-						Item* pickedUp = itemPickup(gui_player, repairedItem);
+						Item* pickedUp = itemPickupCraftingResult(gui_player, repairedItem);
 						if ( pickedUp && item->count == 1 )
 						{
 							// item* will be consumed, so pickedUp can take the inventory slot of it.
@@ -13263,12 +13438,13 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 				// mail uses the appearance to generate the text, so randomise it here.
 				crafted->appearance = local_rng.rand();
 			}
-			Item* pickedUp = itemPickup(gui_player, crafted);
+			Item* pickedUp = itemPickupCraftingResult(gui_player, crafted);
 			//messagePlayerColor(gui_player, uint32ColorGreen, Language::get(3724));
-			int oldcount = pickedUp->count;
-			pickedUp->count = 1;
-			messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorGreen, Language::get(3724), pickedUp->description());
-			pickedUp->count = oldcount;
+			Item* descriptionItem = pickedUp ? pickedUp : crafted;
+			int oldcount = descriptionItem->count;
+			descriptionItem->count = 1;
+			messagePlayerColor(gui_player, MESSAGE_INVENTORY, uint32ColorGreen, Language::get(3724), descriptionItem->description());
+			descriptionItem->count = oldcount;
 			consumeItem(scribingBlankScrollTarget, gui_player);
 			featherGUI.inscribeSuccessName = label;
 			featherGUI.inscribeSuccessTicks = ticks;
@@ -13357,7 +13533,7 @@ bool GenericGUIMenu::scribingWriteItem(Item* item)
 			Item* repairedItem = newItem(item->type, item->status, item->beatitude, 1, item->appearance, true, nullptr);
 			if ( repairedItem )
 			{
-				Item* pickedUp = itemPickup(gui_player, repairedItem);
+				Item* pickedUp = itemPickupCraftingResult(gui_player, repairedItem);
 				if ( pickedUp && item->count == 1 )
 				{
 					// item* will be consumed, so pickedUp can take the inventory slot of it.
@@ -16749,6 +16925,1755 @@ void GenericGUIMenu::TinkerGUI_t::clearItemDisplayed()
 	itemRequirement = -1;
 }
 
+bool validateStewingCauldronAccess(Entity* cauldron, const int player)
+{
+	if ( !cauldron || player < 0 || player >= MAXPLAYERS || client_disconnected[player]
+		|| !players[player] || !players[player]->entity || !stats[player]
+		|| stats[player]->HP <= 0 || !isAmuletFamiliar(cauldron, cauldron->getStats())
+		|| getAmuletFamiliarForm(cauldron) != FAMILIAR_FORM_CAULDRON
+		|| !cauldron->getStats() || cauldron->getStats()->HP <= 0
+		|| cauldron->getStats()->leader_uid != players[player]->entity->getUID()
+		|| entityDist(players[player]->entity, cauldron) > TOUCHRANGE
+		|| !stats[player]->amulet || stats[player]->amulet->type != AMULET_FAMILIAR
+		|| stats[player]->amulet->status == BROKEN
+		|| stats[player]->amulet->familiarInstanceId != cauldron->familiarInstanceId )
+	{
+		return false;
+	}
+	return true;
+}
+
+bool openStewingCauldron(Entity* familiar, int player)
+{
+	if ( multiplayer == CLIENT || !validateStewingCauldronAccess(familiar, player) )
+	{
+		return false;
+	}
+
+	if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
+	{
+		if ( !beginServerStewingSessionOpen(player, familiar->getUID()) )
+		{
+			// An opening request or an active menu already exists. A second
+			// interaction should never cancel an in-flight craft.
+			return true;
+		}
+		strcpy(reinterpret_cast<char*>(net_packet->data), "STWQ");
+		SDLNet_Write32(familiar->getUID(), &net_packet->data[4]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 8;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+	else
+	{
+		// Preserve the current selection/resources if the click callback is
+		// observed on more than one tick. Only a real new interaction opens UI.
+		if ( !GenericGUI[player].stewingGUI.bOpen
+			|| GenericGUI[player].stewingGUI.cauldronUid != familiar->getUID() )
+		{
+			GenericGUI[player].openGUI(GUI_TYPE_STEWING, familiar);
+		}
+	}
+	return true;
+}
+
+void closeStewingForCauldron(Entity* familiar)
+{
+	if ( !familiar ) { return; }
+	Stat* familiarStats = familiar->getStats();
+	Entity* owner = familiarStats ? uidToEntity(familiarStats->leader_uid) : nullptr;
+	const int player = owner ? owner->isEntityPlayer() : -1;
+	if ( player < 0 || player >= MAXPLAYERS || !players[player] ) { return; }
+
+	if ( multiplayer == SERVER && !players[player]->isLocalPlayer() )
+	{
+		strcpy(reinterpret_cast<char*>(net_packet->data), "STWC");
+		SDLNet_Write32(familiar->getUID(), &net_packet->data[4]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 8;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		resetServerStewingSession(player);
+	}
+	else if ( players[player]->isLocalPlayer()
+		&& GenericGUI[player].stewingGUI.bOpen
+		&& GenericGUI[player].stewingGUI.cauldronUid == familiar->getUID() )
+	{
+		GenericGUI[player].closeGUI();
+	}
+}
+
+namespace
+{
+	const int kRecipeListHeight = 250;
+	const int kRecipeListGridY = 0;
+	const int kRecipeHeaderHeight = 46;
+	const int kRecipeFooterHeight = 32;
+	const int kRecipeGridImgHeight = 240;
+
+	static constexpr int STEWING_MAIN_WIDTH = 206;
+	static constexpr int STEWING_MAIN_HEIGHT = 350;
+	static constexpr int STEWING_RECIPE_WIDTH = 196;
+	static constexpr int STEWING_BAG_WIDTH = 114;
+	static constexpr int STEWING_BAG_HEIGHT = 102;
+	static constexpr int STEWING_BAG_GAP = 4;
+	static constexpr int STEWING_BAG_STRIDE_X = STEWING_BAG_WIDTH + STEWING_BAG_GAP;
+	static constexpr int STEWING_BAG_ROW_WIDTH = STEWING_BAG_WIDTH * 4 + STEWING_BAG_GAP * 3;
+	static constexpr int STEWING_BAG_ROW_X = (STEWING_MAIN_WIDTH - STEWING_BAG_ROW_WIDTH) / 2;
+	static constexpr int STEWING_TOTAL_HEIGHT = STEWING_MAIN_HEIGHT + STEWING_BAG_HEIGHT;
+
+	std::string getStewingItemIconPath(int player, ItemType type)
+	{
+		if ( type < 0 || type >= NUMITEMS ) { return "items/images/null.png"; }
+		Item item{};
+		item.type = type;
+		item.status = SERVICABLE;
+		item.count = 1;
+		item.appearance = 0;
+		item.identified = true;
+		return getItemSpritePath(player, item);
+	}
+
+	void clearStewingSlot(Frame* slot)
+	{
+		if ( !slot ) { return; }
+		slot->setUserData(nullptr);
+		static const char* framesToDisable[] = {
+			"beatitude status frame", "broken status frame", "item sprite frame",
+			"unusable item frame", "appraisal frame", "quantity frame",
+			"equipped icon frame", "broken icon frame"
+		};
+		for ( const char* name : framesToDisable )
+		{
+			if ( Frame* frame = slot->findFrame(name) ) { frame->setDisabled(true); }
+		}
+		if ( Frame* quantityFrame = slot->findFrame("quantity frame") )
+		{
+			quantityFrame->setDisabled(true);
+			if ( Field* quantity = quantityFrame->findField("quantity text") )
+			{
+				quantity->setText("");
+				quantity->setColor(0xFFFFFFFF);
+			}
+		}
+	}
+
+	void updateStewingSlot(Frame* slot, ItemType type, Uint32 quantity,
+		bool greyed = false, bool alwaysShowQuantity = false,
+		bool recipePreview = false, Uint32 quantityColor = 0xFFFFFFFF,
+		bool identified = true, Sint32 appearance = 0)
+	{
+		if ( !slot || type < 0 || type >= NUMITEMS || quantity == 0 )
+		{
+			clearStewingSlot(slot);
+			return;
+		}
+		Item item{};
+		item.type = type;
+		item.status = SERVICABLE;
+		item.count = static_cast<Sint16>(std::min<Uint32>(quantity,
+			std::numeric_limits<Sint16>::max()));
+		item.appearance = appearance;
+		item.identified = identified;
+		slot->setUserData(recipePreview
+			? &GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_SLOT
+			: (alwaysShowQuantity ? &GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY : nullptr));
+		updateSlotFrameFromItem(slot, &item, greyed);
+		if ( alwaysShowQuantity || recipePreview )
+		{
+			if ( Frame* quantityFrame = slot->findFrame("quantity frame") )
+			{
+				quantityFrame->setDisabled(false);
+				if ( Field* quantityText = quantityFrame->findField("quantity text") )
+				{
+					char text[32];
+					snprintf(text, sizeof(text), "%u", quantity);
+					quantityText->setText(text);
+					quantityText->setColor(quantityColor);
+				}
+			}
+		}
+	}
+
+	Uint32 getStewingRecipeMultiplier(const GenericGUIMenu::StewingGUI_t& stewing,
+		int recipeIndex)
+	{
+		if ( recipeIndex < 0 || recipeIndex >= STEWING_RECIPE_COUNT ) { return 0; }
+		const StewingRecipe& recipe = getStewingRecipes()[recipeIndex];
+		const int player = stewing.parentGUI.getPlayer();
+		if ( !recipe.alwaysUnlocked && !playerKnowsStewingRecipe(player, recipe.result) )
+		{
+			return 0;
+		}
+		Uint32 multiplier = std::numeric_limits<Uint32>::max();
+		for ( Uint32 i = 0; i < recipe.eductCount; ++i )
+		{
+			const int index = getStewingResourceIndex(recipe.educts[i].type);
+			if ( index < 0 || recipe.educts[i].quantity == 0 ) { return 0; }
+			multiplier = std::min(multiplier,
+				stewing.resources[index] / recipe.educts[i].quantity);
+		}
+		return multiplier == std::numeric_limits<Uint32>::max() ? 0 : multiplier;
+	}
+
+	bool stewingSelectionResourcesAvailable(const GenericGUIMenu::StewingGUI_t& stewing)
+	{
+		for ( const StewingEduct& educt : stewing.selection )
+		{
+			if ( educt.quantity == 0 ) { continue; }
+			const int index = getStewingResourceIndex(educt.type);
+			if ( index < 0 || educt.quantity > stewing.resources[index] ) { return false; }
+		}
+		return true;
+	}
+
+	void configureStewingButton(Button* button, const SDL_Rect& size,
+		const char* background, const char* highlighted, const char* pressed)
+	{
+		if ( !button ) { return; }
+		button->setSize(size);
+		button->setColor(0xFFFFFFFF);
+		button->setHighlightColor(0xFFFFFFFF);
+		button->setFont("fonts/pixel_maz_multiline.ttf#16#2");
+		button->setHideGlyphs(true);
+		button->setHideKeyboardGlyphs(true);
+		button->setHideSelectors(true);
+		button->setMenuConfirmControlType(0);
+		button->setBackground(background);
+		button->setBackgroundHighlighted(highlighted);
+		button->setBackgroundActivated(pressed);
+		button->setTextHighlightColor(makeColor(201, 162, 100, 255));
+	}
+
+	bool stewingMixtureCanUseResultSlot(const GenericGUIMenu::StewingGUI_t& stewing)
+	{
+		const StewingMatch match = evaluateStewingMixture(stewing.selection);
+		if ( match.type != STEWING_MATCH_VALID_RECIPE
+			&& match.type != STEWING_MATCH_INVALID_POISON )
+		{
+			return false;
+		}
+		Uint64 bottleCount = 0;
+		if ( match.type == STEWING_MATCH_VALID_RECIPE )
+		{
+			const StewingRecipe& recipe = getStewingRecipes()[match.recipeIndex];
+			for ( Uint32 i = 0; i < recipe.eductCount; ++i )
+			{
+				bottleCount += static_cast<Uint64>(recipe.educts[i].quantity)
+					* getBottleContribution(recipe.educts[i].type);
+			}
+		}
+		else
+		{
+			for ( const StewingEduct& educt : stewing.selection )
+			{
+				bottleCount += static_cast<Uint64>(educt.quantity)
+					* getBottleContribution(educt.type);
+			}
+		}
+		return bottleCount > 0
+			|| stewing.resources[getStewingResourceIndex(POTION_EMPTY)] > 0;
+	}
+}
+
+void GenericGUIMenu::StewingGUI_t::openStewingMenu(Uint32 familiarUid,
+	const std::array<Uint32, STEWING_RESOURCE_COUNT>& available)
+{
+	const int player = parentGUI.getPlayer();
+	cauldronUid = familiarUid;
+	resources = available;
+	selection = StewingSelection{};
+	recipes.activeRecipeIndex = -1;
+	transactionPending = false;
+	pendingTransactionSequence = 0;
+	pendingTransactionLastCheck = 0;
+	controllerFocus = 0;
+	handoffResult = ITEM_ENUM_MAX;
+	handoffBaseline = 0;
+	handoffAwaitingResult = false;
+	handoffWaitStartedAt = 0;
+	animx = 0.0;
+	isInteractable = false;
+	bFirstTimeSnapCursor = false;
+	bOpen = true;
+	if ( players[player] && inputs.hasController(player)
+		&& !inputs.getVirtualMouse(player)->draw_cursor )
+	{
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_STEWING);
+	}
+	recipes.closeRecipePanel();
+	if ( stewFrame )
+	{
+		stewFrame->setDisabled(false);
+	}
+	if ( players[player] )
+	{
+		players[player]->hud.compactLayoutMode = Player::HUD_t::COMPACT_LAYOUT_INVENTORY;
+		players[player]->inventory_mode = INVENTORY_MODE_ITEM;
+	}
+}
+
+void GenericGUIMenu::StewingGUI_t::closeStewingMenu()
+{
+	const int player = parentGUI.getPlayer();
+	if ( stewFrame ) { stewFrame->deselect(); }
+	if ( players[player] && players[player]->GUI.activeModule == Player::GUI_t::MODULE_STEWING )
+	{
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+		if ( inputs.hasController(player) )
+		{
+			players[player]->GUI.warpControllerToModule(false);
+		}
+	}
+	const Uint32 oldCauldronUid = cauldronUid;
+	selection = StewingSelection{};
+	recipes.activeRecipeIndex = -1;
+	resources.fill(0);
+	transactionPending = false;
+	pendingTransactionSequence = 0;
+	pendingTransactionLastCheck = 0;
+	controllerFocus = 0;
+	handoffResult = ITEM_ENUM_MAX;
+	handoffBaseline = 0;
+	handoffAwaitingResult = false;
+	handoffWaitStartedAt = 0;
+	animx = 0.0;
+	isInteractable = false;
+	bFirstTimeSnapCursor = false;
+	bOpen = false;
+	cauldronUid = 0;
+	recipes.closeRecipePanel();
+	recipes.slotFrames.clear();
+	recipes.stones.clear();
+	recipesFrame = nullptr;
+	if ( stewFrame )
+	{
+		stewFrame->setDisabled(true);
+		for ( Frame* frame : stewFrame->getFrames() )
+		{
+			frame->removeSelf();
+		}
+	}
+	if ( multiplayer == CLIENT && oldCauldronUid != 0 )
+	{
+		strcpy(reinterpret_cast<char*>(net_packet->data), "STWX");
+		net_packet->data[4] = static_cast<Uint8>(clientnum);
+		SDLNet_Write32(oldCauldronUid, &net_packet->data[5]);
+		net_packet->address = net_server;
+		net_packet->len = 9;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+	}
+}
+
+bool GenericGUIMenu::StewingGUI_t::inventoryItemAllowedInGUI(Item* item) const
+{
+	return item && item->status != BROKEN && itemTypeIsStewingSelectable(item->type);
+}
+
+void GenericGUIMenu::StewingGUI_t::clearSelection()
+{
+	if ( transactionPending ) { return; }
+	selection = StewingSelection{};
+	recipes.activeRecipeIndex = -1;
+}
+
+Uint32 GenericGUIMenu::StewingGUI_t::getRemainingResource(ItemType type) const
+{
+	const int index = getStewingResourceIndex(type);
+	if ( index < 0 ) { return 0; }
+	const Uint32 selected = countSelectedStewingResource(selection, type);
+	return selected >= resources[index] ? 0 : resources[index] - selected;
+}
+
+bool GenericGUIMenu::StewingGUI_t::addResource(ItemType type)
+{
+	if ( transactionPending || !itemTypeIsStewingSelectable(type) || getRemainingResource(type) == 0 )
+	{
+		return false;
+	}
+	for ( StewingEduct& educt : selection )
+	{
+		if ( educt.quantity > 0 && educt.type == type )
+		{
+			if ( educt.quantity == std::numeric_limits<Uint32>::max() ) { return false; }
+			++educt.quantity;
+			recipes.activeRecipeIndex = -1;
+			return true;
+		}
+	}
+	for ( StewingEduct& educt : selection )
+	{
+		if ( educt.quantity == 0 )
+		{
+			educt.type = type;
+			educt.quantity = 1;
+			recipes.activeRecipeIndex = -1;
+			return true;
+		}
+	}
+	return false;
+}
+
+void GenericGUIMenu::StewingGUI_t::removeResourceSlot(int slot)
+{
+	if ( transactionPending || slot < 0 || slot >= STEWING_MAX_EDUCTS
+		|| selection[slot].quantity == 0 )
+	{
+		return;
+	}
+	if ( --selection[slot].quantity == 0 )
+	{
+		selection[slot].type = ITEM_ENUM_MAX;
+		for ( int i = slot; i + 1 < STEWING_MAX_EDUCTS; ++i )
+		{
+			if ( selection[i + 1].quantity == 0 ) { break; }
+			selection[i] = selection[i + 1];
+			selection[i + 1] = StewingEduct{};
+		}
+	}
+	recipes.activeRecipeIndex = -1;
+}
+
+void GenericGUIMenu::StewingGUI_t::autofillRecipe(int recipeIndex)
+{
+	if ( transactionPending || recipeIndex < 0 || recipeIndex >= STEWING_RECIPE_COUNT ) { return; }
+	const StewingRecipe& recipe = getStewingRecipes()[recipeIndex];
+	const int player = parentGUI.getPlayer();
+	if ( !recipe.alwaysUnlocked && !playerKnowsStewingRecipe(player, recipe.result) )
+	{
+		return;
+	}
+	const Uint32 multiplier = getStewingRecipeMultiplier(*this, recipeIndex);
+	if ( multiplier == 0 ) { return; }
+	selection = StewingSelection{};
+	for ( Uint32 i = 0; i < recipe.eductCount && i < STEWING_MAX_EDUCTS; ++i )
+	{
+		selection[i].type = recipe.educts[i].type;
+		selection[i].quantity = recipe.educts[i].quantity * multiplier;
+	}
+	recipes.activeRecipeIndex = recipeIndex;
+}
+
+void GenericGUIMenu::StewingGUI_t::requestTransaction(StewingOperation operation)
+{
+	if ( transactionPending || handoffAwaitingResult || !bOpen || !isInteractable ) { return; }
+	const StewingMatch match = evaluateStewingMixture(selection);
+	if ( match.type != STEWING_MATCH_VALID_RECIPE
+		&& match.type != STEWING_MATCH_INVALID_POISON )
+	{
+		return;
+	}
+	if ( operation == STEWING_OPERATION_BREW_INTO && !stewingMixtureCanUseResultSlot(*this) )
+	{
+		return;
+	}
+	const int player = parentGUI.getPlayer();
+	// An oil/ink target is chosen AFTER the authoritative brew succeeds.
+	// Reuse ITEMFX's already implemented oil/ink inventory selection and packets.
+	const bool needsTarget = operation == STEWING_OPERATION_APPLY
+		&& match.type == STEWING_MATCH_VALID_RECIPE
+		&& (itemTypeIsOil(match.result) || itemTypeIsInk(match.result));
+	if ( needsTarget )
+	{
+		handoffResult = match.result;
+		handoffBaseline = 0;
+		for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+		{
+			Item* held = static_cast<Item*>(node->element);
+			if ( held && held->type == handoffResult )
+			{
+				handoffBaseline += held->count;
+			}
+		}
+		operation = STEWING_OPERATION_BREW_FOR_USE;
+	}
+	else
+	{
+		handoffResult = ITEM_ENUM_MAX;
+		handoffBaseline = 0;
+	}
+	Entity* familiar = uidToEntity(cauldronUid);
+	if ( multiplayer == CLIENT )
+	{
+		strcpy(reinterpret_cast<char*>(net_packet->data), "STWR");
+		net_packet->data[4] = static_cast<Uint8>(clientnum);
+		net_packet->data[5] = static_cast<Uint8>(operation);
+		SDLNet_Write32(cauldronUid, &net_packet->data[6]);
+		for ( int i = 0; i < STEWING_MAX_EDUCTS; ++i )
+		{
+			SDLNet_Write32(static_cast<Uint32>(selection[i].type), &net_packet->data[10 + i * 8]);
+			SDLNet_Write32(selection[i].quantity, &net_packet->data[14 + i * 8]);
+		}
+		// Server processes any sequence at most once per Cauldron session.
+		// The UI may retry its acknowledgement without replaying the craft.
+		++transactionSequence;
+		if ( transactionSequence == 0 ) { ++transactionSequence; }
+		pendingTransactionSequence = transactionSequence;
+		registerClientStewingTransaction(player, pendingTransactionSequence);
+		pendingTransactionOperation = operation;
+		pendingTransactionSelection = selection;
+		pendingTransactionLastCheck = ticks;
+		SDLNet_Write32(pendingTransactionSequence,
+			&net_packet->data[10 + STEWING_MAX_EDUCTS * 8]);
+		net_packet->address = net_server;
+		net_packet->len = 14 + STEWING_MAX_EDUCTS * 8;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+		transactionPending = true;
+	}
+	else
+	{
+		StewingTransactionResult result;
+		performStewingTransaction(player, familiar, operation, selection, result);
+		receiveTransaction(result.success, result.remainingSelection, result.resources);
+	}
+}
+
+void GenericGUIMenu::StewingGUI_t::receiveTransaction(bool success,
+	const StewingSelection& remaining,
+	const std::array<Uint32, STEWING_RESOURCE_COUNT>& available)
+{
+	transactionPending = false;
+	pendingTransactionSequence = 0;
+	resources = available;
+	if ( success )
+	{
+		// The brewed oil/ink may arrive in the client's inventory later than STWU.
+		// Do not open the target picker with a fabricated or stale item pointer.
+		handoffAwaitingResult = handoffResult != ITEM_ENUM_MAX;
+		handoffWaitStartedAt = ticks;
+		// Host/local Witch-Wraith: crafting into an occupied spectral hand
+		// drops the result instead of putting it in inventory.
+		const int player = parentGUI.getPlayer();
+		if ( playerIsInWraithForm(player) && getWraithHeldItem(player) )
+		{
+			handoffAwaitingResult = false;
+			handoffResult = ITEM_ENUM_MAX;
+		}
+		selection = remaining;
+		recipes.activeRecipeIndex = -1;
+		Player::soundActivate();
+	}
+	else
+	{
+		handoffResult = ITEM_ENUM_MAX;
+		handoffAwaitingResult = false;
+		Player::soundCancel();
+	}
+}
+
+void GenericGUIMenu::StewingGUI_t::StewingRecipes_t::openRecipePanel()
+{
+	if ( stewing.recipesFrame )
+	{
+		stewing.recipesFrame->setDisabled(false);
+		animx = 0.0;
+		isInteractable = false;
+		bOpen = true;
+		hoveredRecipeIndex = -1;
+		currentScrollRow = 0;
+		scrollPercent = 0.0;
+		scrollInertia = 0.0;
+		scrollSetpoint = 0;
+		scrollAnimateX = 0.0;
+		bFirstTimeSnapCursor = false;
+	}
+}
+
+void GenericGUIMenu::StewingGUI_t::StewingRecipes_t::closeRecipePanel()
+{
+	if ( stewing.recipesFrame )
+	{
+		stewing.recipesFrame->setDisabled(true);
+	}
+	animx = 0.0;
+	isInteractable = false;
+	bOpen = false;
+	bFirstTimeSnapCursor = false;
+	currentScrollRow = 0;
+	scrollPercent = 0.0;
+	scrollInertia = 0.0;
+	scrollSetpoint = 0;
+	scrollAnimateX = 0.0;
+	panelJustifyInverted = false;
+	hoveredRecipeIndex = -1;
+}
+
+Frame* GenericGUIMenu::StewingGUI_t::StewingRecipes_t::getSlotFrame(int x, int y) const
+{
+	const int key = x + y * 100;
+	auto found = slotFrames.find(key);
+	return found == slotFrames.end() ? nullptr : found->second;
+}
+
+void GenericGUIMenu::StewingGUI_t::StewingRecipes_t::updateRecipePanel()
+{
+	Frame* recipeFrame = stewing.recipesFrame;
+	if ( !recipeFrame ) { return; }
+	const int player = stewing.parentGUI.getPlayer();
+	const int slotSize = players[player]->inventoryUI.getSlotSize();
+	if ( !recipeFrame->isDisabled() && bOpen )
+	{
+		const real_t fpsScale = getFPSScale(50.0);
+		animx += fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
+		animx = std::min(1.0, animx);
+		if ( animx >= .9999 )
+		{
+			bFirstTimeSnapCursor = true;
+			isInteractable = true;
+		}
+	}
+	else
+	{
+		animx = 0.0;
+		isInteractable = false;
+		scrollInertia = 0.0;
+	}
+
+	Frame* mainFrame = stewing.stewFrame->findFrame("stewing main");
+	Frame* baseFrame = recipeFrame->findFrame("stewing recipe base");
+	Frame* imageFrame = recipeFrame->findFrame("stewing recipe image frame");
+	Frame* slots = recipeFrame->findFrame("stewing recipe slots");
+	Frame::image_t* background = imageFrame
+		? imageFrame->findImage("stewing recipe base image") : nullptr;
+	if ( !mainFrame || !baseFrame || !slots || !background ) { return; }
+
+	background->path = "*#images/ui/WitchCauldron/Witchbrew_Recipes_00.png";
+	bool reversed = false;
+	SDL_Rect recipePos = recipeFrame->getSize();
+	const int frameOffsetX = 8;
+	const int frameOffsetY = 14;
+	if ( players[player]->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+	{
+		if ( players[player]->bUseCompactGUIWidth() )
+		{
+			recipePos.x = mainFrame->getSize().x - animx * recipePos.w + frameOffsetX;
+			background->path = "*#images/ui/WitchCauldron/Witchbrew_RecipesReverse_00.png";
+			reversed = true;
+		}
+		else
+		{
+			recipePos.x = mainFrame->getSize().x + mainFrame->getSize().w
+				+ animx * recipePos.w - recipePos.w - frameOffsetX;
+		}
+	}
+	else
+	{
+		if ( players[player]->bUseCompactGUIWidth() )
+		{
+			recipePos.x = mainFrame->getSize().x + mainFrame->getSize().w
+				+ animx * recipePos.w - recipePos.w - frameOffsetX;
+		}
+		else
+		{
+			recipePos.x = mainFrame->getSize().x - animx * recipePos.w + frameOffsetX;
+			background->path = "*#images/ui/WitchCauldron/Witchbrew_RecipesReverse_00.png";
+			reversed = true;
+		}
+	}
+	panelJustifyInverted = reversed;
+	recipePos.y = frameOffsetY;
+	recipePos.h = kRecipeListHeight + kRecipeHeaderHeight + kRecipeFooterHeight;
+	recipeFrame->setSize(recipePos);
+
+	SDL_Rect imagePos = imageFrame->getSize();
+	imagePos.y = 0;
+	imageFrame->setSize(imagePos);
+	SDL_Rect basePos = baseFrame->getSize();
+	basePos.h = recipePos.h;
+	baseFrame->setSize(basePos);
+	const int numGrids = (6 / getNumRecipesToDisplayVertical()) + 1;
+	SDL_Rect slotsPos = slots->getSize();
+	slotsPos.x = 8 + (reversed ? 18 : 0);
+	slotsPos.y = 4 + kRecipeHeaderHeight;
+	slotsPos.h = kRecipeGridImgHeight + 2;
+	slots->setSize(slotsPos);
+	slots->setActualSize(SDL_Rect{ 0, static_cast<int>(scrollAnimateX), slotsPos.w,
+		slotsPos.h * numGrids });
+	slots->setScrollBarsEnabled(false);
+	if ( Frame::image_t* grid = slots->findImage("stewing recipe grid") )
+	{
+		grid->pos.y = kRecipeListGridY;
+		grid->pos.h = slotsPos.h * numGrids;
+	}
+
+	if ( Field* title = baseFrame->findField("stewing recipe title") )
+	{
+		char text[64];
+		snprintf(text, sizeof(text), Language::get(4181), STEWING_RECIPE_COUNT);
+		title->setText(text);
+		title->setTextColor(hudColors.characterSheetLightNeutral);
+		title->setOutlineColor(makeColor(29, 16, 11, 255));
+		if ( auto titleText = title->getTextObject() )
+		{
+			SDL_Rect pos = title->getSize();
+			pos.w = titleText->getWidth();
+			pos.x = background->pos.w / 2 - pos.w / 2;
+			if ( pos.x % 2 == 1 ) { ++pos.x; }
+			pos.y = 18;
+			title->setSize(pos);
+			title->setDisabled(false);
+		}
+	}
+
+	for ( int x = 0; x < 4; ++x )
+	{
+		for ( int y = 0; y < 6; ++y )
+		{
+			Frame::image_t*& stone = stones[x + y * 100];
+			if ( !stone )
+			{
+				char name[32];
+				snprintf(name, sizeof(name), "stewing stone %d %d", x, y);
+				stone = slots->addImage(SDL_Rect{ 0, 0, 38, 40 }, 0xFFFFFFFF,
+					"*#images/ui/WitchCauldron/Witchbrew_Icon_RecipeTileBG_00.png", name);
+			}
+			stone->ontop = true;
+			stone->disabled = false;
+			stone->pos.x = x * slotSize + 2;
+			stone->pos.y = y * slotSize;
+			if ( Frame* slot = getSlotFrame(x, y) ) { clearStewingSlot(slot); }
+		}
+	}
+
+	Frame* cursor = slots->findFrame("stewing active recipe");
+	if ( cursor ) { cursor->setDisabled(true); }
+	for ( int recipeIndex = 0; recipeIndex < STEWING_RECIPE_COUNT; ++recipeIndex )
+	{
+		const int x = recipeIndex % 4;
+		const int y = recipeIndex / 4;
+		Frame* slot = getSlotFrame(x, y);
+		if ( !slot ) { continue; }
+		const StewingRecipe& recipe = getStewingRecipes()[recipeIndex];
+		const bool known = recipe.alwaysUnlocked
+			|| playerKnowsStewingRecipe(player, recipe.result);
+		const Uint32 multiplier = getStewingRecipeMultiplier(stewing, recipeIndex);
+		char buttonName[32];
+		snprintf(buttonName, sizeof(buttonName), "stewing recipe %d", recipeIndex);
+		Button* button = slot->findButton(buttonName);
+		if ( !known )
+		{
+			clearStewingSlot(slot);
+			if ( Frame::image_t* stone = stones[x + y * 100] ) { stone->disabled = false; }
+			if ( button )
+			{
+				button->setTooltip("");
+				button->setDisabled(true);
+			}
+			if ( activeRecipeIndex == recipeIndex ) { activeRecipeIndex = -1; }
+			continue;
+		}
+		Item result{};
+		result.type = recipe.result;
+		result.status = multiplier > 0 ? SERVICABLE : BROKEN;
+		result.count = 1;
+		result.identified = true;
+		slot->setUserData(nullptr);
+		updateSlotFrameFromItem(slot, &result, multiplier == 0);
+		if ( Frame::image_t* stone = stones[x + y * 100] ) { stone->disabled = true; }
+		if ( button )
+		{
+			button->setTooltip(result.getName());
+			button->setDisabled(stewing.transactionPending || !isInteractable);
+		}
+		if ( cursor && recipeIndex == activeRecipeIndex )
+		{
+			cursor->setDisabled(false);
+			SDL_Rect cursorPos = slot->getSize();
+			cursorPos.x += 1;
+			cursorPos.y += 1;
+			const int cursorOffset = players[player]->inventoryUI.cursor.cursorToSlotOffset;
+			cursorPos.x -= cursorOffset;
+			cursorPos.y -= cursorOffset;
+			cursorPos.w += cursorOffset * 2;
+			cursorPos.h += cursorOffset * 2;
+			cursor->setSize(cursorPos);
+			const int offset = 8;
+			if ( Frame::image_t* tl = cursor->findImage("cursor topleft") )
+			{
+				tl->pos = SDL_Rect{ offset, offset, tl->pos.w, tl->pos.h };
+			}
+			if ( Frame::image_t* tr = cursor->findImage("cursor topright") )
+			{
+				tr->pos = SDL_Rect{ -offset + cursorPos.w - tr->pos.w, offset, tr->pos.w, tr->pos.h };
+			}
+			if ( Frame::image_t* bl = cursor->findImage("cursor bottomleft") )
+			{
+				bl->pos = SDL_Rect{ offset, -offset + cursorPos.h - bl->pos.h, bl->pos.w, bl->pos.h };
+			}
+			if ( Frame::image_t* br = cursor->findImage("cursor bottomright") )
+			{
+				br->pos = SDL_Rect{ -offset + cursorPos.w - br->pos.w,
+					-offset + cursorPos.h - br->pos.h, br->pos.w, br->pos.h };
+			}
+		}
+	}
+
+	if ( Button* clear = baseFrame->findButton("stewing clear recipe") )
+	{
+		clear->setPos(recipePos.w / 2 - clear->getSize().w / 2,
+			slotsPos.y + slotsPos.h + 2);
+		clear->setInvisible(activeRecipeIndex < 0);
+		clear->setDisabled(activeRecipeIndex < 0 || !isInteractable);
+	}
+	if ( Slider* slider = baseFrame->findSlider("stewing recipe slider") )
+	{
+		SDL_Rect rail{ recipePos.w - 26, 8 + kRecipeHeaderHeight, 20,
+			kRecipeListHeight - 16 };
+		slider->setRailSize(rail);
+		slider->setDisabled(true);
+	}
+}
+
+void GenericGUIMenu::StewingGUI_t::createStewingMenu()
+{
+	const int player = parentGUI.getPlayer();
+	if ( !gui || !stewFrame || !players[player] || !players[player]->inventoryUI.frame
+		|| !stewFrame->getFrames().empty() )
+	{
+		return;
+	}
+	const char* itemFont = "fonts/pixel_maz_multiline.ttf#16#2";
+	const char* quantityFont = "fonts/pixel_maz.ttf#32#2";
+	const int inventorySlotSize = players[player]->inventoryUI.getSlotSize();
+
+	Frame* recipePanel = stewFrame->addFrame("stewing recipes");
+	recipesFrame = recipePanel;
+	recipePanel->setSize(SDL_Rect{ 0, 16, STEWING_RECIPE_WIDTH, kRecipeListHeight });
+	recipePanel->setHollow(false);
+	recipePanel->setBorder(0);
+	recipePanel->setOwner(player);
+	recipePanel->setInheritParentFrameOpacity(false);
+	recipePanel->setDisabled(true);
+	const int numGrids = (6 / recipes.kNumRecipesToDisplayVertical) + 1;
+	Frame* recipeSlots = recipePanel->addFrame("stewing recipe slots");
+	recipeSlots->setOwner(player);
+	recipeSlots->setSize(SDL_Rect{ 6, 0, STEWING_RECIPE_WIDTH, kRecipeListHeight });
+	recipeSlots->setActualSize(SDL_Rect{ 0, 0, STEWING_RECIPE_WIDTH,
+		(kRecipeGridImgHeight + 2) * numGrids });
+	recipeSlots->setHollow(true);
+	recipeSlots->setAllowScrollBinds(false);
+	recipeSlots->setScrollBarsEnabled(false);
+	Frame::image_t* recipeGrid = recipeSlots->addImage(SDL_Rect{ 0, kRecipeListGridY, 162,
+		(kRecipeGridImgHeight + 2) * numGrids }, 0xFFFFFFFF,
+		"*#images/ui/WitchCauldron/Witchbrew_ScrollGrid.png", "stewing recipe grid");
+	recipeGrid->tiled = true;
+	Frame* cursor = recipeSlots->addFrame("stewing active recipe");
+	cursor->setOwner(player);
+	cursor->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+	cursor->setDisabled(true);
+	const Uint32 cursorColor = makeColor(177, 72, 3, 255);
+	cursor->addImage(SDL_Rect{ 0, 0, 14, 14 }, cursorColor,
+		"*#images/ui/Inventory/SelectorGrey_TL.png", "cursor topleft");
+	cursor->addImage(SDL_Rect{ 0, 0, 14, 14 }, cursorColor,
+		"*#images/ui/Inventory/SelectorGrey_TR.png", "cursor topright");
+	cursor->addImage(SDL_Rect{ 0, 0, 14, 14 }, cursorColor,
+		"*#images/ui/Inventory/SelectorGrey_BL.png", "cursor bottomleft");
+	cursor->addImage(SDL_Rect{ 0, 0, 14, 14 }, cursorColor,
+		"*#images/ui/Inventory/SelectorGrey_BR.png", "cursor bottomright");
+	for ( int x = 0; x < 4; ++x )
+	{
+		for ( int y = 0; y < 6; ++y )
+		{
+			char slotName[32];
+			snprintf(slotName, sizeof(slotName), "stewing recipe slot %d %d", x, y);
+			Frame* slot = recipeSlots->addFrame(slotName);
+			slot->setSize(SDL_Rect{ x * inventorySlotSize, y * inventorySlotSize,
+				inventorySlotSize, inventorySlotSize });
+			slot->setOwner(player);
+			slot->setInheritParentFrameOpacity(false);
+			createPlayerInventorySlotFrameElements(slot);
+			clearStewingSlot(slot);
+			recipes.slotFrames[x + y * 100] = slot;
+			const int recipeIndex = x + y * 4;
+			if ( recipeIndex < STEWING_RECIPE_COUNT )
+			{
+				char buttonName[32];
+				snprintf(buttonName, sizeof(buttonName), "stewing recipe %d", recipeIndex);
+				Button* button = slot->addButton(buttonName);
+				button->setOwner(player);
+				button->setMenuConfirmControlType(0);
+				button->setSize(SDL_Rect{ 0, 0, inventorySlotSize, inventorySlotSize });
+				button->setInvisible(false);
+				button->setColor(makeColor(255, 255, 255, 0));
+				button->setHighlightColor(makeColor(255, 255, 255, 0));
+				button->setHideSelectors(false);
+				button->setTooltip("");
+				button->setCallback([](Button& button) {
+					const int recipe = static_cast<int>(strtol(
+						button.getName() + strlen("stewing recipe "), nullptr, 10));
+					auto& stewing = GenericGUI[button.getOwner()].stewingGUI;
+					if ( !button.isDisabled() && getStewingRecipeMultiplier(stewing, recipe) > 0 )
+					{
+						stewing.autofillRecipe(recipe);
+						Player::soundActivate();
+					}
+				});
+			}
+	}
+	}
+	Frame* recipeImageFrame = recipePanel->addFrame("stewing recipe image frame");
+	recipeImageFrame->setOwner(player);
+	recipeImageFrame->setSize(SDL_Rect{ 0, 0, STEWING_RECIPE_WIDTH, 328 });
+	recipeImageFrame->setHollow(true);
+	recipeImageFrame->addImage(SDL_Rect{ 0, 0, STEWING_RECIPE_WIDTH, 328 },
+		0xFFFFFFFF, "*#images/ui/WitchCauldron/Witchbrew_Recipes_00.png", "stewing recipe base image");
+	Frame* recipeBase = recipePanel->addFrame("stewing recipe base");
+	recipeBase->setOwner(player);
+	recipeBase->setSize(SDL_Rect{ 0, 0, STEWING_RECIPE_WIDTH, kRecipeListHeight });
+	recipeBase->setHollow(true);
+	Field* recipeTitle = recipeBase->addField("stewing recipe title", 64);
+	recipeTitle->setFont(itemFont);
+	recipeTitle->setText("");
+	recipeTitle->setHJustify(Field::justify_t::LEFT);
+	recipeTitle->setVJustify(Field::justify_t::TOP);
+	recipeTitle->setSize(SDL_Rect{ 0, 0, 0, 24 });
+	recipeTitle->setDisabled(true);
+	Button* clearRecipe = recipeBase->addButton("stewing clear recipe");
+	clearRecipe->setOwner(player);
+	configureStewingButton(clearRecipe, SDL_Rect{ 0, 0, 172, 26 },
+		"*#images/ui/WitchCauldron/Witchbrew_RecipeClear_Button_00.png",
+		"*#images/ui/WitchCauldron/Witchbrew_RecipeClear_ButtonHigh_00.png",
+		"*#images/ui/WitchCauldron/Witchbrew_RecipeClear_ButtonPress_00.png");
+	clearRecipe->setText(Language::get(4169));
+	clearRecipe->setCallback([](Button& button) {
+		auto& stewing = GenericGUI[button.getOwner()].stewingGUI;
+		if ( button.isDisabled() ) { return; }
+		stewing.clearSelection();
+		stewing.recipes.activeRecipeIndex = -1;
+		Player::soundCancel();
+	});
+	clearRecipe->setDisabled(true);
+	Slider* recipeSlider = recipeBase->addSlider("stewing recipe slider");
+	recipeSlider->setBorder(16);
+	recipeSlider->setMinValue(0);
+	recipeSlider->setMaxValue(100);
+	recipeSlider->setValue(0);
+	recipeSlider->setRailSize(SDL_Rect{ STEWING_RECIPE_WIDTH - 26, 8, 20,
+		kRecipeListHeight - 16 });
+	recipeSlider->setHandleSize(SDL_Rect{ 0, 0, 20, 28 });
+	recipeSlider->setOrientation(Slider::SLIDER_VERTICAL);
+	recipeSlider->setColor(0xFFFFFFFF);
+	recipeSlider->setHighlightColor(0xFFFFFFFF);
+	recipeSlider->setHandleImage("*#images/ui/Sliders/HUD_Magic_Slider_Emerald_01.png");
+	recipeSlider->setRailImage("*#images/ui/Sliders/HUD_Slider_Blank.png");
+	recipeSlider->setHideGlyphs(true);
+	recipeSlider->setDisabled(true);
+	recipeSlider->setHideKeyboardGlyphs(true);
+	recipeSlider->setHideSelectors(true);
+	recipeSlider->setMenuConfirmControlType(0);
+
+	Frame* mainFrame = stewFrame->addFrame("stewing main");
+	mainFrame->setOwner(player);
+	mainFrame->setSize(SDL_Rect{ 0, 0, STEWING_MAIN_WIDTH, STEWING_MAIN_HEIGHT });
+	mainFrame->setHollow(true);
+	mainFrame->addImage(SDL_Rect{ 0, 0, STEWING_MAIN_WIDTH, STEWING_MAIN_HEIGHT }, 0xFFFFFFFF,
+		"*#images/ui/WitchCauldron/Witchbrew_Base_01.png", "stewing base image");
+	mainFrame->addImage(SDL_Rect{ 11, 23, 36, 36 }, 0xFFFFFFFF,
+		"*#images/ui/HUD/allies/icons/summons/icon_bat_familiar_00.png", "stewing familiar icon");
+	mainFrame->addImage(SDL_Rect{ 8, 6, 190, 60 }, 0xFFFFFFFF,
+		"*#images/ui/WitchCauldron/Witchbrew_Badge.png", "stewing badge");
+	Field* title = mainFrame->addField("stewing title", 128);
+	title->setFont(itemFont);
+	title->setText("Stewing");
+	title->setHJustify(Field::justify_t::CENTER);
+	title->setVJustify(Field::justify_t::TOP);
+	title->setSize(SDL_Rect{ 0, 21, STEWING_MAIN_WIDTH, 24 });
+	title->setTextColor(hudColors.characterSheetLightNeutral);
+	title->setOutlineColor(makeColor(29, 16, 11, 255));
+
+	Button* close = mainFrame->addButton("close stewing");
+	close->setOwner(player);
+	configureStewingButton(close, SDL_Rect{ 180, 0, 26, 26 },
+		"*#images/ui/WitchCauldron/Button_X_00.png",
+		"*#images/ui/WitchCauldron/Button_XHigh_00.png",
+		"*#images/ui/WitchCauldron/Button_XPress_00.png");
+	close->setText("X");
+	close->setCallback([](Button& button) {
+		GenericGUI[button.getOwner()].closeGUI();
+		Player::soundCancel();
+	});
+
+	Button* recipeButton = mainFrame->addButton("stewing recipe toggle");
+	recipeButton->setOwner(player);
+	configureStewingButton(recipeButton, SDL_Rect{ 12, 70, 182, 40 },
+		"*#images/ui/WitchCauldron/Witchbrew_Recipe_Button_00.png",
+		"*#images/ui/WitchCauldron/Witchbrew_Recipe_ButtonHigh_00.png",
+		"*#images/ui/WitchCauldron/Witchbrew_Recipe_ButtonPress_00.png");
+	recipeButton->setText("RECIPES");
+	recipeButton->setCallback([](Button& button) {
+		auto& recipes = GenericGUI[button.getOwner()].stewingGUI.recipes;
+		if ( recipes.bOpen )
+		{
+			recipes.closeRecipePanel();
+			Player::soundCancel();
+		}
+		else
+		{
+			recipes.openRecipePanel();
+			Player::soundActivate();
+		}
+	});
+
+	static const SDL_Point eductPositions[STEWING_MAX_EDUCTS] = {
+		{ 64, 126 }, { 104, 126 }, { 24, 166 }, { 64, 166 },
+		{ 104, 166 }, { 144, 166 }, { 64, 206 }, { 104, 206 }
+	};
+	for ( int i = 0; i < STEWING_MAX_EDUCTS; ++i )
+	{
+		char frameName[32], buttonName[32];
+		snprintf(frameName, sizeof(frameName), "stewing educt %d", i);
+		snprintf(buttonName, sizeof(buttonName), "stewing educt button %d", i);
+		Frame* slot = mainFrame->addFrame(frameName);
+		slot->setSize(SDL_Rect{ eductPositions[i].x, eductPositions[i].y, 38, 40 });
+		slot->setHollow(true);
+		slot->setOwner(player);
+		slot->setInheritParentFrameOpacity(false);
+		createPlayerInventorySlotFrameElements(slot);
+		clearStewingSlot(slot);
+		Button* button = slot->addButton(buttonName);
+		button->setOwner(player);
+		button->setMenuConfirmControlType(0);
+		button->setSize(SDL_Rect{ 0, 0, 38, 40 });
+		// Transparent overlay: lets controller focus and mouse activate an
+		// occupied mixture slot to remove an ingredient.
+		button->setInvisible(false);
+		button->setColor(makeColor(255, 255, 255, 0));
+		button->setHighlightColor(makeColor(255, 255, 255, 0));
+		button->setCallback([](Button& button) {
+			const int slot = static_cast<int>(strtol(button.getName() + strlen("stewing educt button "), nullptr, 10));
+			GenericGUI[button.getOwner()].stewingGUI.removeResourceSlot(slot);
+		});
+	}
+
+	Frame* bottles = mainFrame->addFrame("stewing empty bottles");
+	bottles->setSize(SDL_Rect{ 23, 291, inventorySlotSize, inventorySlotSize });
+	bottles->setHollow(true);
+	bottles->setOwner(player);
+	bottles->setUserData(&GAMEUI_FRAMEDATA_ALCHEMY_RECIPE_ENTRY);
+	createPlayerInventorySlotFrameElements(bottles);
+
+	Frame::image_t* unknownProductSurround = mainFrame->addImage(
+    SDL_Rect{ 69, 284, 54, 54 },
+    0xFFFFFFFF,
+    "*#images/ui/WitchCauldron/Witchbrew_ItemBGSurround_00.png",
+    "stewing unknown product surround");
+
+unknownProductSurround->disabled = true;
+	Frame* product = mainFrame->addFrame("stewing product");
+	product->setSize(SDL_Rect{ 77, 291, 38, 40 });
+	product->setHollow(true);
+	product->setOwner(player);
+	product->setInheritParentFrameOpacity(false);
+	createPlayerInventorySlotFrameElements(product);
+	clearStewingSlot(product);
+	Button* productButton = product->addButton("stewing product button");
+	productButton->setOwner(player);
+	productButton->setMenuConfirmControlType(0);
+	productButton->setSize(SDL_Rect{ 0, 0, 38, 40 });
+	productButton->setInvisible(false);
+	productButton->setColor(makeColor(255, 255, 255, 0));
+	productButton->setHighlightColor(makeColor(255, 255, 255, 0));
+	productButton->setHideSelectors(false);
+	productButton->setOntop(true);
+	productButton->setTooltip("Stew into bottle");
+	productButton->setCallback([](Button& button) {
+		if ( !button.isDisabled() )
+		{
+			GenericGUI[button.getOwner()].stewingGUI.requestTransaction(STEWING_OPERATION_BREW_INTO);
+		}
+	});
+
+	Button* apply = mainFrame->addButton("stewing apply button");
+	apply->setOwner(player);
+	configureStewingButton(apply, SDL_Rect{ 135, 247, 64, 46 },
+		"*#images/ui/WitchCauldron/Witchbrew_ButtonBrew_Base_00.png",
+		"*#images/ui/WitchCauldron/Witchbrew_ButtonBrew_High_00.png",
+		"*#images/ui/WitchCauldron/Witchbrew_ButtonBrew_Press_00.png");
+	apply->setText("Use");
+	apply->setCallback([](Button& button) {
+		if ( !button.isDisabled() )
+		{
+			GenericGUI[button.getOwner()].stewingGUI.requestTransaction(STEWING_OPERATION_APPLY);
+		}
+	});
+	Button* clear = mainFrame->addButton("stewing clear button");
+	clear->setOwner(player);
+	configureStewingButton(clear, SDL_Rect{ 135, 295, 64, 46 },
+		"*#images/ui/WitchCauldron/Witchbrew_ButtonBrew_Base_00.png",
+		"*#images/ui/WitchCauldron/Witchbrew_ButtonBrew_High_00.png",
+		"*#images/ui/WitchCauldron/Witchbrew_ButtonBrew_Press_00.png");
+	clear->setText("Clear");
+	clear->setCallback([](Button& button) {
+		if ( button.isDisabled() ) { return; }
+		GenericGUI[button.getOwner()].stewingGUI.clearSelection();
+		Player::soundCancel();
+	});
+
+	Frame* bags = stewFrame->addFrame("stewing ingredient bags");
+	bags->setOwner(player);
+	bags->setSize(SDL_Rect{ STEWING_BAG_ROW_X, STEWING_MAIN_HEIGHT,
+		STEWING_BAG_ROW_WIDTH, STEWING_BAG_HEIGHT });
+	bags->setHollow(true);
+	for ( int category = 0; category < 4; ++category )
+	{
+		char panelName[32];
+		snprintf(panelName, sizeof(panelName), "stewing ingredient bag %d", category);
+		Frame* panel = bags->addFrame(panelName);
+		panel->setOwner(player);
+		panel->setSize(SDL_Rect{ category * STEWING_BAG_STRIDE_X, 0,
+			STEWING_BAG_WIDTH, STEWING_BAG_HEIGHT });
+		panel->setHollow(true);
+		panel->addImage(SDL_Rect{ 0, 0, STEWING_BAG_WIDTH, STEWING_BAG_HEIGHT }, 0xFFFFFFFF,
+			"images/ui/Inventory/HUD_Inventory_Ingredient_Bag_00a.png", "ingredient bag background");
+		for ( int slot = 0; slot < 4; ++slot )
+		{
+			const ItemType ingredient = ingredientForCategorySlot(
+				static_cast<WitchIngredientCategory>(INGREDIENT_CATEGORY_SLIME + category), slot);
+			char slotName[32], iconName[32], countName[32], buttonName[32];
+			snprintf(slotName, sizeof(slotName), "ingredient slot %d", slot);
+			snprintf(iconName, sizeof(iconName), "ingredient icon %d", slot);
+			snprintf(countName, sizeof(countName), "ingredient count %d", slot);
+			snprintf(buttonName, sizeof(buttonName), "stewing resource %d", static_cast<int>(ingredient));
+			const int column = slot % 2;
+			const int row = slot / 2;
+			const SDL_Rect slotRect{ 13 + column * 44, 11 + row * 41, 42, 39 };
+			Frame* ingredientFrame = panel->addFrame(slotName);
+			ingredientFrame->setOwner(player);
+			ingredientFrame->setSize(slotRect);
+			ingredientFrame->setHollow(true);
+			ingredientFrame->addImage(SDL_Rect{
+				(slotRect.w - 36) / 2 + (column == 0 ? 3 : 0),
+				(slotRect.h - 36) / 2 + (row == 0 ? 1 : 0), 36, 36 }, 0xFFFFFFFF,
+				getStewingItemIconPath(player, ingredient).c_str(), iconName);
+			Field* count = ingredientFrame->addField(countName, 16);
+			count->setFont(quantityFont);
+			count->setSize(SDL_Rect{ 0, 0, slotRect.w - 3, slotRect.h - 3 });
+			count->setHJustify(Field::justify_t::BOTTOM);
+			count->setVJustify(Field::justify_t::RIGHT);
+			Button* button = ingredientFrame->addButton(buttonName);
+			button->setOwner(player);
+			button->setMenuConfirmControlType(0);
+			button->setSize(SDL_Rect{ 0, 0, slotRect.w, slotRect.h });
+			button->setInvisible(false);
+			button->setColor(makeColor(255, 255, 255, 0));
+			button->setHighlightColor(makeColor(255, 255, 255, 0));
+			button->setHideSelectors(false);
+			Item ingredientItem{};
+			ingredientItem.type = ingredient;
+			ingredientItem.status = SERVICABLE;
+			ingredientItem.count = 1;
+			ingredientItem.identified = true;
+			button->setTooltip(ingredientItem.getName());
+			button->setCallback([](Button& button) {
+				const ItemType type = static_cast<ItemType>(strtol(
+					button.getName() + strlen("stewing resource "), nullptr, 10));
+				GenericGUI[button.getOwner()].stewingGUI.addResource(type);
+			});
+		}
+	}
+}
+
+void GenericGUIMenu::StewingGUI_t::updateStewingMenu()
+{
+	const int player = parentGUI.getPlayer();
+	auto playerEntity = players[player];
+	if ( !playerEntity || !playerEntity->isLocalPlayer() )
+	{
+		closeStewingMenu();
+		return;
+	}
+	if ( !stewFrame ) { return; }
+	stewFrame->setSize(SDL_Rect{ playerEntity->camera_virtualx1(), playerEntity->camera_virtualy1(),
+		STEWING_MAIN_WIDTH, playerEntity->camera_virtualHeight() });
+	if ( !bOpen || stewFrame->isDisabled() ) { return; }
+	// When a network acknowledgement is lost, request the cached result,
+	// not a second craft. Every response carries the same unique sequence.
+	if ( multiplayer == CLIENT && transactionPending
+		&& pendingTransactionSequence != 0
+		&& ticks - pendingTransactionLastCheck >= 3 * TICKS_PER_SECOND )
+	{
+		// Resend the *identical* operation and sequence. The server will
+		// replay its cached STWU, or continue its pending STWS handshake.
+		// It never commits the same sequence twice.
+		strcpy(reinterpret_cast<char*>(net_packet->data), "STWR");
+		net_packet->data[4] = static_cast<Uint8>(clientnum);
+		net_packet->data[5] = static_cast<Uint8>(pendingTransactionOperation);
+		SDLNet_Write32(cauldronUid, &net_packet->data[6]);
+		for ( int i = 0; i < STEWING_MAX_EDUCTS; ++i )
+		{
+			SDLNet_Write32(static_cast<Uint32>(pendingTransactionSelection[i].type),
+				&net_packet->data[10 + i * 8]);
+			SDLNet_Write32(pendingTransactionSelection[i].quantity,
+				&net_packet->data[14 + i * 8]);
+		}
+		SDLNet_Write32(pendingTransactionSequence,
+			&net_packet->data[10 + STEWING_MAX_EDUCTS * 8]);
+		net_packet->address = net_server;
+		net_packet->len = 14 + STEWING_MAX_EDUCTS * 8;
+		sendPacketSafe(net_sock, -1, net_packet, 0);
+		pendingTransactionLastCheck = ticks;
+	}
+	if ( handoffAwaitingResult && !transactionPending && handoffResult != ITEM_ENUM_MAX )
+	{
+		Uint32 total = 0;
+		Item* targetSource = nullptr;
+		for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+		{
+			Item* entry = static_cast<Item*>(node->element);
+			if ( entry && entry->type == handoffResult && entry->count > 0 )
+			{
+				total += entry->count;
+				targetSource = entry;
+			}
+		}
+		if ( total > handoffBaseline && targetSource )
+		{
+			const ItemType produced = handoffResult;
+			handoffAwaitingResult = false;
+			handoffResult = ITEM_ENUM_MAX;
+			parentGUI.openGUI(GUI_TYPE_ITEMFX, targetSource, 0, produced, 0);
+			return;
+		}
+		// A remote Oil/Ink result can arrive as ground loot rather than
+		// client inventory (restricted Wraith hand, item delivery race).
+		// Never block the entire cauldron menu indefinitely waiting for it;
+		// the product, if received later, is still usable from inventory.
+		if ( ticks - handoffWaitStartedAt >= 3 * TICKS_PER_SECOND )
+		{
+			handoffAwaitingResult = false;
+			handoffResult = ITEM_ENUM_MAX;
+		}
+	}
+	if ( stewFrame->getFrames().empty() ) { createStewingMenu(); }
+	if ( multiplayer != CLIENT ) { resources = getStewingResourceSnapshot(player); }
+
+	Frame* mainFrame = stewFrame->findFrame("stewing main");
+	Frame* bags = stewFrame->findFrame("stewing ingredient bags");
+	if ( !mainFrame || !bags || !recipesFrame ) { return; }
+
+	const real_t fpsScale = getFPSScale(50.0);
+	animx += fpsScale * std::max(.01, (1.0 - animx)) / 2.0;
+	animx = std::min(1.0, animx);
+	if ( animx >= .9999 )
+	{
+		bFirstTimeSnapCursor = true;
+		isInteractable = true;
+	}
+
+	SDL_Rect stewFramePos = stewFrame->getSize();
+	if ( playerEntity->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+	{
+		if ( !playerEntity->inventoryUI.bCompactView )
+		{
+			const int fullWidth = stewFramePos.w + 210;
+			stewFramePos.x = -stewFramePos.w + animx * fullWidth;
+			if ( playerEntity->bUseCompactGUIWidth() )
+			{
+				if ( playerEntity->inventoryUI.slideOutPercent >= .0001 ) { isInteractable = false; }
+				stewFramePos.x -= playerEntity->inventoryUI.slideOutWidth
+					* playerEntity->inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			if ( playerEntity->bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = stewFramePos.w + 210;
+				stewFramePos.x = -stewFramePos.w + animx * fullWidth;
+			}
+			else
+			{
+				stewFramePos.x = playerEntity->camera_virtualWidth() - animx * stewFramePos.w;
+			}
+			if ( playerEntity->bUseCompactGUIWidth() )
+			{
+				if ( playerEntity->inventoryUI.slideOutPercent >= .0001 ) { isInteractable = false; }
+				stewFramePos.x -= -playerEntity->inventoryUI.slideOutWidth
+					* playerEntity->inventoryUI.slideOutPercent;
+			}
+		}
+	}
+	else
+	{
+		if ( !playerEntity->inventoryUI.bCompactView )
+		{
+			const int fullWidth = stewFramePos.w + 210;
+			stewFramePos.x = playerEntity->camera_virtualWidth() - animx * fullWidth;
+			if ( playerEntity->bUseCompactGUIWidth() )
+			{
+				if ( playerEntity->inventoryUI.slideOutPercent >= .0001 ) { isInteractable = false; }
+				stewFramePos.x -= -playerEntity->inventoryUI.slideOutWidth
+					* playerEntity->inventoryUI.slideOutPercent;
+			}
+		}
+		else
+		{
+			if ( playerEntity->bAlignGUINextToInventoryCompact() )
+			{
+				const int fullWidth = stewFramePos.w + 210;
+				stewFramePos.x = playerEntity->camera_virtualWidth() - animx * fullWidth;
+			}
+			else
+			{
+				stewFramePos.x = -stewFramePos.w + animx * stewFramePos.w;
+			}
+			if ( playerEntity->bUseCompactGUIWidth() )
+			{
+				if ( playerEntity->inventoryUI.slideOutPercent >= .0001 ) { isInteractable = false; }
+				stewFramePos.x -= playerEntity->inventoryUI.slideOutWidth
+					* playerEntity->inventoryUI.slideOutPercent;
+				stewFramePos.w = playerEntity->camera_virtualWidth();
+			}
+		}
+	}
+	stewFramePos.y = (!playerEntity->bUseCompactGUIHeight()
+		&& !playerEntity->bUseCompactGUIWidth())
+		? GenericGUIMenu::AlchemyGUI_t::heightOffsetWhenNotCompact : 0;
+	stewFrame->setSize(stewFramePos);
+
+	SDL_Rect mainPos = mainFrame->getSize();
+	mainPos.x = 0;
+	mainPos.y = 0;
+	mainPos.w = STEWING_MAIN_WIDTH;
+	mainPos.h = STEWING_MAIN_HEIGHT;
+	mainFrame->setSize(mainPos);
+	bags->setSize(SDL_Rect{ STEWING_BAG_ROW_X, STEWING_MAIN_HEIGHT,
+		STEWING_BAG_ROW_WIDTH, STEWING_BAG_HEIGHT });
+	stewFramePos.h = STEWING_TOTAL_HEIGHT;
+	if ( animx >= .9999 )
+	{
+		mainPos.x += stewFramePos.x;
+		stewFramePos.w += stewFramePos.x;
+		stewFramePos.w = std::min(playerEntity->camera_virtualWidth(), stewFramePos.w);
+		stewFramePos.x = 0;
+		mainFrame->setSize(mainPos);
+		SDL_Rect bagPos = bags->getSize();
+		bagPos.x = mainPos.x + STEWING_BAG_ROW_X;
+		bags->setSize(bagPos);
+	}
+	stewFrame->setSize(stewFramePos);
+
+	recipes.updateRecipePanel();
+	if ( animx >= .999 && recipes.bOpen && !recipesFrame->isDisabled() )
+	{
+		const SDL_Rect recipePos = recipesFrame->getSize();
+		if ( !playerEntity->inventoryUI.bCompactView )
+		{
+			if ( playerEntity->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT )
+			{
+				stewFramePos.w += recipePos.w;
+				stewFrame->setSize(stewFramePos);
+			}
+		}
+		else if ( playerEntity->inventoryUI.inventoryPanelJustify == Player::PANEL_JUSTIFY_LEFT
+			&& playerEntity->bAlignGUINextToInventoryCompact() )
+		{
+			stewFramePos.w += recipePos.w;
+			stewFrame->setSize(stewFramePos);
+		}
+	}
+	if ( animx >= .9999 )
+	{
+		const SDL_Rect bagPos = bags->getSize();
+		stewFramePos = stewFrame->getSize();
+		stewFramePos.w = std::max(stewFramePos.w, bagPos.x + bagPos.w);
+		stewFrame->setSize(stewFramePos);
+	}
+
+	const StewingMatch match = evaluateStewingMixture(selection);
+	ItemType resultType = ITEM_ENUM_MAX;
+	Uint32 resultCount = 0;
+	if ( match.type == STEWING_MATCH_VALID_RECIPE )
+	{
+		resultType = match.result;
+		resultCount = match.multiplier;
+	}
+	else if ( match.type == STEWING_MATCH_INVALID_POISON )
+	{
+		resultType = POTION_SICKNESS;
+		resultCount = 1;
+	}
+
+	recipes.hoveredRecipeIndex = -1;
+	if ( recipes.bOpen && recipes.isInteractable && recipesFrame )
+	{
+		Frame* recipeSlots = recipesFrame->findFrame("stewing recipe slots");
+		for ( int recipeIndex = 0; recipeIndex < STEWING_RECIPE_COUNT; ++recipeIndex )
+		{
+			const StewingRecipe& recipe = getStewingRecipes()[recipeIndex];
+			if ( !recipe.alwaysUnlocked
+				&& !playerKnowsStewingRecipe(player, recipe.result) )
+			{
+				continue;
+			}
+			char buttonName[32];
+			snprintf(buttonName, sizeof(buttonName), "stewing recipe %d", recipeIndex);
+			Frame* slot = recipes.getSlotFrame(recipeIndex % 4, recipeIndex / 4);
+			Button* button = slot ? slot->findButton(buttonName) : nullptr;
+			if ( button && (button->isHighlighted()
+				|| (!inputs.getVirtualMouse(player)->draw_cursor && button->isSelected())) )
+			{
+				recipes.hoveredRecipeIndex = recipeIndex;
+				break;
+			}
+		}
+	}
+
+	StewingSelection recipePreview{};
+	const StewingSelection* displayedSelection = &selection;
+	if ( recipes.hoveredRecipeIndex >= 0 )
+	{
+		const StewingRecipe& recipe = getStewingRecipes()[recipes.hoveredRecipeIndex];
+		for ( Uint32 i = 0; i < recipe.eductCount && i < STEWING_MAX_EDUCTS; ++i )
+		{
+			recipePreview[i] = recipe.educts[i];
+		}
+		displayedSelection = &recipePreview;
+	}
+
+	for ( int i = 0; i < STEWING_MAX_EDUCTS; ++i )
+	{
+		char frameName[32], buttonName[32];
+		snprintf(frameName, sizeof(frameName), "stewing educt %d", i);
+		snprintf(buttonName, sizeof(buttonName), "stewing educt button %d", i);
+		Frame* slot = mainFrame->findFrame(frameName);
+		const StewingEduct& displayed = (*displayedSelection)[i];
+		const bool preview = recipes.hoveredRecipeIndex >= 0;
+		const int displayedResourceIndex = getStewingResourceIndex(displayed.type);
+		const Uint32 quantityColor = preview && displayed.quantity > 0
+			&& displayedResourceIndex >= 0
+			&& resources[displayedResourceIndex] < displayed.quantity
+			? hudColors.characterSheetRed : 0xFFFFFFFF;
+		updateStewingSlot(slot, displayed.type, displayed.quantity, false,
+			true, preview, quantityColor);
+		if ( Button* button = slot ? slot->findButton(buttonName) : nullptr )
+		{
+			button->setDisabled(recipes.hoveredRecipeIndex >= 0 || displayed.quantity == 0);
+			if ( displayed.quantity > 0 )
+			{
+				Item displayedItem{};
+				displayedItem.type = displayed.type;
+				displayedItem.status = SERVICABLE;
+				displayedItem.identified = true;
+				button->setTooltip(displayedItem.getName());
+			}
+		}
+	}
+	if ( Frame* bottles = mainFrame->findFrame("stewing empty bottles") )
+	{
+		emptyBottleCount.count = static_cast<Sint16>(std::min<Uint32>(
+			resources[getStewingResourceIndex(POTION_EMPTY)], std::numeric_limits<Sint16>::max()));
+		updateSlotFrameFromItem(bottles, &emptyBottleCount);
+	}
+	if ( Frame* product = mainFrame->findFrame("stewing product") )
+	{
+		if ( Frame::image_t* surround =
+			mainFrame->findImage("stewing unknown product surround") )
+		{
+			surround->disabled =
+				match.type != STEWING_MATCH_INVALID_POISON;
+		}
+
+		if ( match.type == STEWING_MATCH_INVALID_POISON )
+		{
+			const Sint32 appearance = items[POTION_BOOZE].variations > 0
+				? (ticks / TICKS_PER_SECOND) % items[POTION_BOOZE].variations : 0;
+			updateStewingSlot(product, POTION_BOOZE, 1, false, false, false,
+				0xFFFFFFFF, false, appearance);
+		}
+		else
+		{
+			updateStewingSlot(product, resultType, resultCount);
+		}
+		if ( Button* button = product->findButton("stewing product button") )
+		{
+			button->setDisabled(transactionPending || !stewingMixtureCanUseResultSlot(*this));
+		}
+	}
+	if ( Button* recipeButton = mainFrame->findButton("stewing recipe toggle") )
+	{
+		recipeButton->setDisabled(!isInteractable);
+	}
+	if ( Button* apply = mainFrame->findButton("stewing apply button") )
+	{
+		const bool enabled = !transactionPending && stewingSelectionResourcesAvailable(*this)
+			&& (match.type == STEWING_MATCH_VALID_RECIPE
+				|| match.type == STEWING_MATCH_INVALID_POISON)
+			&& (stewingResultCanApplyImmediately(match.result)
+				|| itemTypeIsOil(match.result) || itemTypeIsInk(match.result))
+			&& !handoffAwaitingResult;
+		apply->setDisabled(!enabled);
+		apply->setTextColor(enabled ? 0xFFFFFFFF : hudColors.characterSheetFaintText);
+	}
+	if ( Button* clear = mainFrame->findButton("stewing clear button") )
+	{
+		const bool enabled = !transactionPending && match.type != STEWING_MATCH_EMPTY;
+		clear->setDisabled(!enabled);
+		clear->setTextColor(enabled ? 0xFFFFFFFF : hudColors.characterSheetFaintText);
+	}
+
+	Frame* bagArea = stewFrame->findFrame("stewing ingredient bags");
+	for ( int category = 0; category < 4; ++category )
+	{
+		char panelName[32];
+		snprintf(panelName, sizeof(panelName), "stewing ingredient bag %d", category);
+		Frame* panel = bagArea ? bagArea->findFrame(panelName) : nullptr;
+		if ( !panel ) { continue; }
+		for ( int slot = 0; slot < 4; ++slot )
+		{
+			const ItemType ingredient = ingredientForCategorySlot(
+				static_cast<WitchIngredientCategory>(INGREDIENT_CATEGORY_SLIME + category), slot);
+			char slotName[32], countName[32];
+			snprintf(slotName, sizeof(slotName), "ingredient slot %d", slot);
+			snprintf(countName, sizeof(countName), "ingredient count %d", slot);
+			if ( Frame* ingredientFrame = panel->findFrame(slotName) )
+			{
+				const Uint32 remaining = getRemainingResource(ingredient);
+				if ( Field* count = ingredientFrame->findField(countName) )
+				{
+					char text[16];
+					snprintf(text, sizeof(text), "%u", remaining);
+					count->setText(text);
+				}
+				char buttonName[32];
+				snprintf(buttonName, sizeof(buttonName), "stewing resource %d", static_cast<int>(ingredient));
+				if ( Button* button = ingredientFrame->findButton(buttonName) )
+				{
+					button->setDisabled(transactionPending || remaining == 0);
+				}
+			}
+		}
+	}
+
+	const bool usingGamepad = inputs.hasController(player)
+		&& !inputs.getVirtualMouse(player)->draw_cursor;
+	if ( usingGamepad && players[player]->GUI.activeModule != Player::GUI_t::MODULE_STEWING )
+	{
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_STEWING);
+	}
+	else if ( !usingGamepad && players[player]->GUI.activeModule == Player::GUI_t::MODULE_STEWING )
+	{
+		stewFrame->deselect();
+		players[player]->GUI.activateModule(Player::GUI_t::MODULE_INVENTORY);
+	}
+	if ( usingGamepad && isInteractable )
+	{
+		// The Witch GUI is a modal controller surface. Build focus targets each
+		// frame instead of keeping pointers to widgets that can be rebuilt.
+		// 0 = Recipes, 1 = Close, 2 = Bottle, 3 = Use, 4 = Clear,
+		// 5..12 = mixture slots, 13..28 = ingredients, 29..52 = recipes,
+		// 53 = clear recipe.
+		auto focusButton = [&](int focus) -> Button* {
+			switch ( focus )
+			{
+				case 0: return mainFrame->findButton("stewing recipe toggle");
+				case 1: return mainFrame->findButton("close stewing");
+				case 2:
+				{
+					Frame* frame = mainFrame->findFrame("stewing product");
+					return frame ? frame->findButton("stewing product button") : nullptr;
+				}
+				case 3: return mainFrame->findButton("stewing apply button");
+				case 4: return mainFrame->findButton("stewing clear button");
+				default: break;
+			}
+			char name[64];
+			if ( focus >= 5 && focus < 13 )
+			{
+				const int slot = focus - 5;
+				snprintf(name, sizeof(name), "stewing educt %d", slot);
+				Frame* frame = mainFrame->findFrame(name);
+				snprintf(name, sizeof(name), "stewing educt button %d", slot);
+				return frame ? frame->findButton(name) : nullptr;
+			}
+			if ( focus >= 13 && focus < 29 )
+			{
+				const int category = (focus - 13) / 4;
+				const int slot = (focus - 13) % 4;
+				snprintf(name, sizeof(name), "stewing ingredient bag %d", category);
+				Frame* panel = bags->findFrame(name);
+				snprintf(name, sizeof(name), "ingredient slot %d", slot);
+				Frame* frame = panel ? panel->findFrame(name) : nullptr;
+				const ItemType ingredient = ingredientForCategorySlot(
+					static_cast<WitchIngredientCategory>(INGREDIENT_CATEGORY_SLIME + category), slot);
+				snprintf(name, sizeof(name), "stewing resource %d", static_cast<int>(ingredient));
+				return frame ? frame->findButton(name) : nullptr;
+			}
+			if ( focus >= 29 && focus < 29 + STEWING_RECIPE_COUNT )
+			{
+				if ( !recipes.bOpen || !recipes.isInteractable ) { return nullptr; }
+				const int recipe = focus - 29;
+				Frame* frame = recipes.getSlotFrame(recipe % 4, recipe / 4);
+				snprintf(name, sizeof(name), "stewing recipe %d", recipe);
+				return frame ? frame->findButton(name) : nullptr;
+			}
+			if ( focus == 53 && recipes.bOpen && recipes.isInteractable )
+			{
+				Frame* base = recipesFrame->findFrame("stewing recipe base");
+				return base ? base->findButton("stewing clear recipe") : nullptr;
+			}
+			return nullptr;
+		};
+		auto available = [&](int focus) -> bool {
+			Button* button = focusButton(focus);
+			return button && !button->isDisabled() && !button->isInvisible();
+		};
+		if ( !available(controllerFocus) )
+		{
+			controllerFocus = 0;
+			if ( !available(controllerFocus) )
+			{
+				for ( int candidate = 0; candidate < 54; ++candidate )
+				{
+					if ( available(candidate) ) { controllerFocus = candidate; break; }
+				}
+			}
+		}
+		auto& input = Input::inputs[player];
+		const char* directions[] = {
+			"InventoryMoveLeft", "InventoryMoveRight", "InventoryMoveUp", "InventoryMoveDown" };
+		const char* analogDirections[] = {
+			"InventoryMoveLeftAnalog", "InventoryMoveRightAnalog", "InventoryMoveUpAnalog", "InventoryMoveDownAnalog" };
+		int dir = -1;
+		for ( int i = 0; i < 4; ++i )
+		{
+			if ( input.binaryToggle(directions[i]) || input.binaryToggle(analogDirections[i]) )
+			{
+				dir = i;
+				input.consumeBinaryToggle(directions[i]);
+				input.consumeBinaryToggle(analogDirections[i]);
+				break;
+			}
+		}
+		if ( dir >= 0 && available(controllerFocus) )
+		{
+			const SDL_Rect from = focusButton(controllerFocus)->getAbsoluteSize();
+			const int fx = from.x + from.w / 2;
+			const int fy = from.y + from.h / 2;
+			int destination = controllerFocus;
+			long long best = std::numeric_limits<long long>::max();
+			for ( int candidate = 0; candidate < 54; ++candidate )
+			{
+				if ( candidate == controllerFocus || !available(candidate) ) { continue; }
+				const SDL_Rect target = focusButton(candidate)->getAbsoluteSize();
+				const int dx = target.x + target.w / 2 - fx;
+				const int dy = target.y + target.h / 2 - fy;
+				const int primary = (dir == 0 ? -dx : dir == 1 ? dx : dir == 2 ? -dy : dy);
+				if ( primary <= 0 ) { continue; }
+				const int secondary = (dir < 2 ? abs(dy) : abs(dx));
+				const long long score = static_cast<long long>(primary) * primary
+					+ static_cast<long long>(secondary) * secondary * 4;
+				if ( score < best ) { best = score; destination = candidate; }
+			}
+			if ( destination != controllerFocus )
+			{
+				controllerFocus = destination;
+				Player::soundActivate();
+			}
+		}
+		if ( available(controllerFocus) )
+		{
+			focusButton(controllerFocus)->select();
+		}
+		if ( input.binaryToggle("MenuCancel") )
+		{
+			input.consumeBinaryToggle("MenuCancel");
+			if ( recipes.bOpen ) { recipes.closeRecipePanel(); controllerFocus = 0; }
+			else { parentGUI.closeGUI(); }
+			Player::soundCancel();
+			return;
+		}
+		if ( input.binaryToggle("MenuConfirm") )
+		{
+			input.consumeBinaryToggle("MenuConfirm");
+			if ( available(controllerFocus) )
+			{
+				focusButton(controllerFocus)->activate();
+				return; // callback may rebuild or close the menu
+			}
+			playSound(90, 64);
+		}
+	}
+	const bool pointerOverStewing = !usingGamepad
+		&& (mainFrame->capturesMouseInRealtimeCoords()
+			|| bags->capturesMouseInRealtimeCoords()
+			|| (recipes.bOpen && recipesFrame->capturesMouseInRealtimeCoords()));
+	if ( pointerOverStewing && Input::inputs[player].binaryToggle("MenuRightClick") )
+	{
+		bool handled = false;
+		if ( Frame* product = mainFrame->findFrame("stewing product") )
+		{
+			if ( Button* button = product->findButton("stewing product button") )
+			{
+				if ( button->isHighlighted() && !button->isDisabled() )
+				{
+					requestTransaction(STEWING_OPERATION_BREW_INTO);
+					handled = true;
+				}
+			}
+		}
+		if ( !handled && recipes.hoveredRecipeIndex >= 0 )
+		{
+			if ( getStewingRecipeMultiplier(*this, recipes.hoveredRecipeIndex) > 0 )
+			{
+				autofillRecipe(recipes.hoveredRecipeIndex);
+				Player::soundActivate();
+			}
+			else
+			{
+				playSound(90, 64);
+			}
+			handled = true;
+		}
+		if ( !handled )
+		{
+			for ( int category = 0; category < 4 && !handled; ++category )
+			{
+				char panelName[32];
+				snprintf(panelName, sizeof(panelName), "stewing ingredient bag %d", category);
+				Frame* panel = bags->findFrame(panelName);
+				for ( int bagSlot = 0; panel && bagSlot < 4; ++bagSlot )
+				{
+					const ItemType ingredient = ingredientForCategorySlot(
+						static_cast<WitchIngredientCategory>(INGREDIENT_CATEGORY_SLIME + category), bagSlot);
+					char slotName[32], buttonName[32];
+					snprintf(slotName, sizeof(slotName), "ingredient slot %d", bagSlot);
+					snprintf(buttonName, sizeof(buttonName), "stewing resource %d", static_cast<int>(ingredient));
+					Frame* ingredientFrame = panel->findFrame(slotName);
+					if ( Button* button = ingredientFrame ? ingredientFrame->findButton(buttonName) : nullptr )
+					{
+						if ( button->isHighlighted() )
+						{
+							if ( addResource(ingredient) ) { Player::soundActivate(); }
+							else { playSound(90, 64); }
+							handled = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+		for ( int i = 0; !handled && i < STEWING_MAX_EDUCTS; ++i )
+		{
+			char frameName[32], buttonName[32];
+			snprintf(frameName, sizeof(frameName), "stewing educt %d", i);
+			snprintf(buttonName, sizeof(buttonName), "stewing educt button %d", i);
+			Frame* slot = mainFrame->findFrame(frameName);
+			Button* button = slot ? slot->findButton(buttonName) : nullptr;
+			if ( button && button->isHighlighted() && selection[i].quantity > 0 )
+			{
+				removeResourceSlot(i);
+				Player::soundCancel();
+				handled = true;
+				break;
+			}
+		}
+		if ( handled ) { Input::inputs[player].consumeBinaryToggle("MenuRightClick"); }
+	}
+
+}
+
 const int GenericGUIMenu::AlchemyGUI_t::MAX_ALCH_X = 4;
 const int GenericGUIMenu::AlchemyGUI_t::MAX_ALCH_Y = 6;
 
@@ -19123,12 +21048,6 @@ void GenericGUIMenu::AlchemyGUI_t::updateAlchemyMenu()
 	}
 }
 
-const int kRecipeListHeight = 250;
-const int kRecipeListGridY = 0;
-const int kRecipeHeaderHeight = 46;
-const int kRecipeFooterHeight = 32;
-const int kRecipeGridImgHeight = 240;
-
 void GenericGUIMenu::AlchemyGUI_t::createAlchemyMenu()
 {
 	const int player = parentGUI.getPlayer();
@@ -19722,6 +21641,14 @@ bool GenericGUIMenu::AlchemyGUI_t::inventoryItemAllowedInGUI(Item* item)
 	}
 	if ( currentView == ALCHEMY_VIEW_BREW || currentView == ALCHEMY_VIEW_RECIPES )
 	{
+		if ( itemTypeIsTincture(item->type) || itemTypeIsOil(item->type) )
+		{
+			return false;
+		}
+		if ( itemTypeIsInk(item->type) )
+		{
+			return true;
+		}
 		if ( itemCategory(item) == POTION && item->type != POTION_EMPTY )
 		{
 			return true;
@@ -24208,6 +26135,12 @@ void GenericGUIMenu::ItemEffectGUI_t::getItemEffectCost(Item* itemUsedWith, int&
 		return;
 	}
 
+	Item* sourceRune = parentGUI.itemEffectScrollItem;
+	ScopedSpellPowerOverride runePowerScope(
+		sourceRune && sourceRune->isMagicRune() && sourceRune->runeHasStoredPWR(),
+		sourceRune ? getMagicRuneEffectivePWR(*sourceRune,
+			players[parentGUI.gui_player]->entity) : 0.0);
+
 	if ( currentMode == ITEMFX_MODE_RESTORE )
 	{
 		if ( parentGUI.isItemRepairable(itemUsedWith, SCROLL_REPAIR) )
@@ -24559,6 +26492,8 @@ bool GenericGUIMenu::ItemEffectGUI_t::modeHasTransmuteMenu()
 GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectGUI_t::setItemDisplayNameAndPrice(Item* item, bool checkResultOnly)
 {
 	auto result = ITEMFX_ACTION_NONE;
+	const bool usingRune = parentGUI.itemEffectScrollItem
+		&& parentGUI.itemEffectScrollItem->isMagicRune();
 	if ( !checkResultOnly )
 	{
 		costEffectMPAmount = 0;
@@ -24644,7 +26579,7 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 					}
 				}
 			}
-			else if ( itemCategory(item) == MAGICSTAFF )
+			else if ( itemCategory(item) == MAGICSTAFF || item->type == MAGIC_RUNE  )
 			{
 				if ( item->status == EXCELLENT )
 				{
@@ -24786,7 +26721,7 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 					{
 						result = ITEMFX_ACTION_CANT_AFFORD_GOLD;
 					}
-					else if ( manaCost > 0 && manaCost > stats[parentGUI.gui_player]->MP && stats[parentGUI.gui_player]->type != VAMPIRE )
+					else if ( !usingRune && manaCost > 0 && manaCost > stats[parentGUI.gui_player]->MP && stats[parentGUI.gui_player]->type != VAMPIRE )
 					{
 						result = ITEMFX_ACTION_CANT_AFFORD_MANA;
 					}
@@ -24854,7 +26789,7 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 						costEffectMPAmount = manaCost;
 					}
 
-					if ( manaCost > 0 && manaCost > stats[parentGUI.gui_player]->MP && stats[parentGUI.gui_player]->type != VAMPIRE )
+					if ( !usingRune && manaCost > 0 && manaCost > stats[parentGUI.gui_player]->MP && stats[parentGUI.gui_player]->type != VAMPIRE )
 					{
 						result = ITEMFX_ACTION_CANT_AFFORD_MANA;
 					}
@@ -24989,6 +26924,14 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 				result = ITEMFX_ACTION_INVALID_ITEM;
 			}
 		}
+		else if ( currentMode == ITEMFX_MODE_INK_SPELLBOOK )
+		{
+			result = itemCategory(item) == SPELLBOOK ? ITEMFX_ACTION_OK : ITEMFX_ACTION_INVALID_ITEM;
+		}
+		else if ( currentMode == ITEMFX_MODE_OIL_ITEM )
+		{
+			result = itemCanReceiveOil(item) ? ITEMFX_ACTION_OK : ITEMFX_ACTION_INVALID_ITEM;
+		}
 		else if ( currentMode == ITEMFX_MODE_SCROLL_REPAIR
 			|| currentMode == ITEMFX_MODE_RESTORE )
 		{
@@ -25028,7 +26971,7 @@ GenericGUIMenu::ItemEffectGUI_t::ItemEffectActions_t GenericGUIMenu::ItemEffectG
 						{
 							result = ITEMFX_ACTION_CANT_AFFORD_GOLD;
 						}
-						if ( manaCost > 0 && manaCost > stats[parentGUI.gui_player]->MP && stats[parentGUI.gui_player]->type != VAMPIRE )
+						if ( !usingRune && manaCost > 0 && manaCost > stats[parentGUI.gui_player]->MP && stats[parentGUI.gui_player]->type != VAMPIRE )
 						{
 							if ( result == ITEMFX_ACTION_CANT_AFFORD_GOLD )
 							{
@@ -25620,7 +27563,7 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			spell_t* spell = nullptr;
 			int spellID = SPELL_NONE;
 			char buf[128];
-			if ( item && item->type == SPELL_ITEM )
+			if ( item && (item->type == SPELL_ITEM || item->isMagicRune()) )
 			{
 				isSpell = true;
 				spell = getSpellFromItem(parentGUI.getPlayer(), item, false);
@@ -25658,7 +27601,15 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 			}
 			else if ( item )
 			{
-				if ( item->type == MAGICSTAFF_SCEPTER )
+				if ( currentMode == ITEMFX_MODE_INK_SPELLBOOK )
+				{
+					snprintf(buf, sizeof(buf), "Apply Ink");
+				}
+				else if ( currentMode == ITEMFX_MODE_OIL_ITEM )
+				{
+					snprintf(buf, sizeof(buf), "Apply Oil");
+				}
+				else if ( item->type == MAGICSTAFF_SCEPTER )
 				{
 					snprintf(buf, sizeof(buf), "%s", Language::get(6833));
 				}
@@ -25683,7 +27634,11 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 					itemFxTitle->setText(buf);
 				}
 
-				if ( item->identified )
+				if ( currentMode == ITEMFX_MODE_INK_SPELLBOOK || currentMode == ITEMFX_MODE_OIL_ITEM )
+				{
+					itemFxStatus->setText(item->getName());
+				}
+				else if ( item->identified )
 				{
 					std::string scrollShortName = items[item->type].getIdentifiedName();
 					if ( scrollShortName.find(ItemTooltips.adjectives["scroll_prefixes"]["scroll_of"]) != std::string::npos )
@@ -25750,7 +27705,9 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 		{
 			if ( parentGUI.itemEffectUsingSpell )
 			{
-				if ( parentGUI.itemEffectScrollItem && parentGUI.itemEffectScrollItem->type == SPELL_ITEM )
+				if ( parentGUI.itemEffectScrollItem
+					&& (parentGUI.itemEffectScrollItem->type == SPELL_ITEM
+						|| parentGUI.itemEffectScrollItem->isMagicRune()) )
 				{
 					if ( spell_t* spell = getSpellFromItem(parentGUI.gui_player, parentGUI.itemEffectScrollItem, false) )
 					{
@@ -25812,7 +27769,8 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				}
 			}
 		}
-		else if ( currentMode == ITEMFX_MODE_SCEPTER_CHARGE )
+		else if ( currentMode == ITEMFX_MODE_SCEPTER_CHARGE
+			|| currentMode == ITEMFX_MODE_INK_SPELLBOOK || currentMode == ITEMFX_MODE_OIL_ITEM )
 		{
 			if ( parentGUI.itemEffectScrollItem )
 			{
@@ -26421,6 +28379,12 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 							actionPromptTxt->setText(buf);
 						}
 						break;
+					case ITEMFX_MODE_INK_SPELLBOOK:
+						actionPromptTxt->setText("Apply ink");
+						break;
+					case ITEMFX_MODE_OIL_ITEM:
+						actionPromptTxt->setText("Apply oil");
+						break;
 					default:
 						actionPromptTxt->setText("");
 						break;
@@ -26720,6 +28684,12 @@ void GenericGUIMenu::ItemEffectGUI_t::updateItemEffectMenu()
 				break;
 			case ITEMFX_MODE_SCEPTER_CHARGE:
 				actionPromptUnselectedTxt->setText(Language::get(6832));
+				break;
+			case ITEMFX_MODE_INK_SPELLBOOK:
+				actionPromptUnselectedTxt->setText("Select a spellbook");
+				break;
+			case ITEMFX_MODE_OIL_ITEM:
+				actionPromptUnselectedTxt->setText("Select a weapon or quiver");
 				break;
 			default:
 				actionPromptUnselectedTxt->setText("");
@@ -27904,7 +29874,8 @@ std::string CalloutRadialMenu::setCalloutText(Field* field, const char* iconName
 				bool hungerBlood = false;
 				for ( auto& eff : fx.effectQueue )
 				{
-					if ( eff.effect == StatusEffectQueue_t::kEffectBread || eff.effect == StatusEffectQueue_t::kEffectBloodHunger )
+					if ( eff.effect == StatusEffectQueue_t::kEffectBread
+						|| eff.effect == StatusEffectQueue_t::kEffectBloodHunger )
 					{
 						if ( eff.effect == StatusEffectQueue_t::kEffectBloodHunger )
 						{
@@ -31976,6 +33947,8 @@ void GenericGUIMenu::AssistShrineGUI_t::changeCurrentView(GenericGUIMenu::Assist
 	}
 
 	raceSlots.push_back(RACE_HUMAN);
+	raceSlots.push_back(RACE_GOLEM);
+	raceSlots.push_back(RACE_WRAITH);
 	if ( enabledDLCPack1 )
 	{
 		raceSlots.push_back(RACE_SKELETON);
@@ -37551,7 +39524,7 @@ void GenericGUIMenu::AssistShrineGUI_t::updateAssistShrine()
 								// hp/mp
 								{
 									auto hpmp_values = classTooltip->findField("hpmp_values");
-									const int i = std::min((Sint32)itemType, (Sint32)(MainMenu::ClassDescriptions::data.size() - 1));
+									const int i = std::min((Sint32)itemType, (Sint32)(NUMCLASSES - 1));
 									char buf[32];
 									snprintf(buf, sizeof(buf), "%d\n%d",
 										MainMenu::ClassDescriptions::data[i].hp,
@@ -37562,7 +39535,7 @@ void GenericGUIMenu::AssistShrineGUI_t::updateAssistShrine()
 								// difficulty stars
 								auto difficulty_stars = classTooltip->findField("difficulty_stars");
 								{
-									const int i = std::min((Sint32)itemType, (Sint32)(MainMenu::ClassDescriptions::data.size() - 1));
+									const int i = std::min((Sint32)itemType, (Sint32)(NUMCLASSES - 1));
 									for ( int c = 0; c < 2; ++c ) {
 										difficulty_stars->addColorToLine(c, std::get<2>(MainMenu::ClassDescriptions::data[i].survivalComplexity[c]));
 									}

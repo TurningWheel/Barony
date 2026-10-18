@@ -126,7 +126,11 @@ const std::vector<ClassBaseGrowths::ClassHPMPValues> ClassBaseGrowths::classBase
 	{3,		2,		3,		2}, //CLASS_SAPPER,
 	{2,		4,		3,		4}, //CLASS_SCION,
 	{3,		4,		3,		3}, //CLASS_HERMIT,
-	{3,		3,		3,		3}  //CLASS_PALADIN
+	{3,		3,		3,		3},  //CLASS_PALADIN,
+	{3,		1,		4,		1}, //CLASS_WHALER ------ mod add
+	{3,		4,		2,		4}, //CLASS_GUNSLINGER mod add
+	{3,		3,		3,		3}, //CLASS_RUNESMITH mod add
+	{3,		3,		3,		3}  //CLASS_WITCH mod add
 };
 
 Entity::~Entity()
@@ -694,6 +698,7 @@ void sustainedSpellProcess(Entity& entity, Stat& myStats, int effectID, std::map
 {
 	if ( sustainedSpell_hijacked.find(effectID) != sustainedSpell_hijacked.end() )
 	{
+		ScopedSpellPowerOverride spellPowerScope(sustainedSpell_hijacked[effectID], true);
 		bool sustained = false;
 		Entity* caster = uidToEntity(sustainedSpell_hijacked[effectID]->caster);
 		if ( caster == &entity )
@@ -730,7 +735,7 @@ void sustainedSpellProcess(Entity& entity, Stat& myStats, int effectID, std::map
 					sustainCost *= sustainedSpell_hijacked[effectID]->channel_effectStrength - currentStrength;
 				}
 			}
-			bool deducted = caster->safeConsumeMP(sustainCost); //Consume X mana ever duration / mana seconds
+			bool deducted = consumeSustainedSpellResource(caster, sustainedSpell_hijacked[effectID], sustainCost);
 			if ( deducted )
 			{
 				sustained = true;
@@ -1588,7 +1593,19 @@ void Entity::effectTimes()
 			}
 			else if ( c == EFF_GROWTH && behavior == &actPlayer )
 			{
-				if ( !(myStats->type == MYCONID || myStats->type == DRYAD) || myStats->helmet )
+				// mod add: Merrow reflecting scales
+				const bool baseMerrow =
+					myStats->playerRace == RACE_MERROW
+					&& myStats->stat_appearance == 0;
+
+				if ( baseMerrow )
+				{
+					// Merrow scales are stored in EFF_GROWTH.
+					// Their grime decay is handled by updateMerrowReflectingScales().
+					// Do not run the normal Myconid/Dryad Growth handling here.
+				}
+				// mod add end
+				else if ( !(myStats->type == MYCONID || myStats->type == DRYAD) || myStats->helmet ) //mod add else
 				{
 					setEffect(EFF_GROWTH, false, 0, false);
 				}
@@ -1679,7 +1696,8 @@ void Entity::effectTimes()
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								int oldMP = caster->getMP();
-								bool deducted = caster->safeConsumeMP(getSustainCostOfSpell(invisibility_hijacked, this)); //Consume 1 mana ever duration / mana seconds
+								const int sustainCost = getSustainCostOfSpell(invisibility_hijacked, this);
+								bool deducted = consumeSustainedSpellResource(caster, invisibility_hijacked, sustainCost);
 								if ( deducted )
 								{
 									sustained = true;
@@ -1764,7 +1782,8 @@ void Entity::effectTimes()
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								int oldMP = caster->getMP();
-								bool deducted = caster->safeConsumeMP(getSustainCostOfSpell(levitation_hijacked, this)); //Consume 1 mana ever duration / mana seconds
+								const int sustainCost = getSustainCostOfSpell(levitation_hijacked, this);
+								bool deducted = consumeSustainedSpellResource(caster, levitation_hijacked, sustainCost);
 								if ( deducted )
 								{
 									sustained = true;
@@ -1848,28 +1867,33 @@ void Entity::effectTimes()
 						}
 						break;
 					case EFF_VOMITING:
-						messagePlayer(player, MESSAGE_STATUS, Language::get(609));
-						if ( myStats->HUNGER > getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_OVERSATIATED) )
+						// Strength 2 marks the hidden Golem overcharge discharge. It
+						// retains the effect lifecycle but has no vomiting end presentation.
+						if ( effectStrength != 2 )
 						{
-							messagePlayer(player, MESSAGE_STATUS, Language::get(610));
-						}
-						else if ( myStats->HUNGER > getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_WEAK)
-							&& myStats->HUNGER <= getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_HUNGRY) )
-						{
-							messagePlayer(player, MESSAGE_STATUS, Language::get(611));
-							playSoundPlayer(player, 32, 128);
-						}
-						else if ( myStats->HUNGER > getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_STARVING) 
-							&& myStats->HUNGER <= getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_WEAK) )
-						{
-							messagePlayer(player, MESSAGE_STATUS, Language::get(612));
-							playSoundPlayer(player, 32, 128);
-						}
-						else if ( myStats->HUNGER <= getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_STARVING) )
-						{
-							myStats->HUNGER = 50;
-							messagePlayer(player, MESSAGE_STATUS, Language::get(613));
-							playSoundPlayer(player, 32, 128);
+							messagePlayer(player, MESSAGE_STATUS, Language::get(609));
+							if ( myStats->HUNGER > getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_OVERSATIATED) )
+							{
+								messagePlayer(player, MESSAGE_STATUS, Language::get(610));
+							}
+							else if ( myStats->HUNGER > getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_WEAK)
+								&& myStats->HUNGER <= getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_HUNGRY) )
+							{
+								messagePlayer(player, MESSAGE_STATUS, Language::get(611));
+								playSoundPlayer(player, 32, 128);
+							}
+							else if ( myStats->HUNGER > getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_STARVING)
+								&& myStats->HUNGER <= getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_WEAK) )
+							{
+								messagePlayer(player, MESSAGE_STATUS, Language::get(612));
+								playSoundPlayer(player, 32, 128);
+							}
+							else if ( myStats->HUNGER <= getEntityHungerInterval(player, this, myStats, HUNGER_INTERVAL_STARVING) )
+							{
+								myStats->HUNGER = 50;
+								messagePlayer(player, MESSAGE_STATUS, Language::get(613));
+								playSoundPlayer(player, 32, 128);
+							}
 						}
 						serverUpdateHunger(player);
 						break;
@@ -1907,7 +1931,8 @@ void Entity::effectTimes()
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								int oldMP = caster->getMP();
-								bool deducted = caster->safeConsumeMP(getSustainCostOfSpell(reflectMagic_hijacked, this)); //Consume 1 mana ever duration / mana seconds
+								const int sustainCost = getSustainCostOfSpell(reflectMagic_hijacked, this);
+								bool deducted = consumeSustainedSpellResource(caster, reflectMagic_hijacked, sustainCost);
 								if ( deducted )
 								{
 									sustained = true;
@@ -1955,7 +1980,8 @@ void Entity::effectTimes()
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								int oldMP = caster->getMP();
-								bool deducted = caster->safeConsumeMP(getSustainCostOfSpell(amplifyMagic_hijacked, this)); //Consume 1 mana ever duration / mana seconds
+								const int sustainCost = getSustainCostOfSpell(amplifyMagic_hijacked, this);
+								bool deducted = consumeSustainedSpellResource(caster, amplifyMagic_hijacked, sustainCost);
 								if ( deducted )
 								{
 									sustained = true;
@@ -2203,7 +2229,8 @@ void Entity::effectTimes()
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								int oldMP = caster->getMP();
-								bool deducted = caster->safeConsumeMP(getSustainCostOfSpell(vampiricAura_hijacked, this)); //Consume 3 mana ever duration / mana seconds
+								const int sustainCost = getSustainCostOfSpell(vampiricAura_hijacked, this);
+								bool deducted = consumeSustainedSpellResource(caster, vampiricAura_hijacked, sustainCost);
 								if ( deducted )
 								{
 									sustained = true;
@@ -2863,6 +2890,13 @@ void Entity::checkBetterEquipment(Stat* myStats)
 				{
 					continue;
 				}
+				// mod add: Legacy nearby-equipment scan follows the same non-player
+				// Musket pickup prohibition as monsterWantsItem().
+				if ( item->type == MUSKET )
+				{
+					free(item);
+					continue;
+				}
 				if ( !canWieldItem(*item) )
 				{
 					free(item);
@@ -3169,10 +3203,23 @@ sets the HP of the given entity
 
 -------------------------------------------------------------------------------*/
 
-void Entity::setHP(int amount)
+void Entity::setHP(int amount, bool bypassWraithGainSuppression, Entity* damageSource)
 {
 	Stat* entitystats = this->getStats();
 	if ( !entitystats )
+	{
+		return;
+	}
+	if ( isAmuletFamiliar(this, entitystats)
+		&& getAmuletFamiliarForm(this) == FAMILIAR_FORM_MIMIC
+		&& amount <= 0 && amount < entitystats->HP )
+	{
+		setHP(1);
+		entitystats->OLDHP = 1;
+		transformAmuletFamiliar(this, FAMILIAR_FORM_BAT, true);
+		return;
+	}
+	if ( entitystats->type == BAT_FAMILIAR && amount < entitystats->HP )
 	{
 		return;
 	}
@@ -3182,6 +3229,22 @@ void Entity::setHP(int amount)
 	if ( this->behavior == &actPlayer && godmode )
 	{
 		amount = entitystats->MAXHP;
+	}
+	if ( this->behavior == &actPlayer )
+	{
+		const int player = skill[2];
+		if ( playerIsInWraithForm(player) )
+		{
+			if ( amount > entitystats->HP && !bypassWraithGainSuppression )
+			{
+				return;
+			}
+			if ( amount < entitystats->HP
+				&& wraithNegatesIncomingDamage(this, entitystats->HP - amount, damageSource) )
+			{
+				return;
+			}
+		}
 	}
 	if ( !entitystats || amount == entitystats->HP )
 	{
@@ -3249,9 +3312,13 @@ modifies the HP of the given entity
 
 -------------------------------------------------------------------------------*/
 
-void Entity::modHP(int amount)
+void Entity::modHP(int amount, Entity* damageSource)
 {
 	Stat* entitystats = this->getStats();
+	if ( entitystats && entitystats->type == BAT_FAMILIAR && amount < 0 )
+	{
+		return;
+	}
 
 	if ( this->behavior == &actPlayer )
 	{
@@ -3325,7 +3392,7 @@ void Entity::modHP(int amount)
 	}
 
 	Sint32 oldHP = entitystats->HP;
-	this->setHP(entitystats->HP + amount);
+	this->setHP(entitystats->HP + amount, false, damageSource);
 	if ( oldHP > entitystats->HP )
 	{
 		if ( behavior == &actPlayer )
@@ -3344,13 +3411,24 @@ sets the MP of the given entity
 
 -------------------------------------------------------------------------------*/
 
-void Entity::setMP(int amount, bool updateClients)
+void Entity::setMP(int amount, bool updateClients, bool bypassWraithGainSuppression)
 {
 	Stat* entitystats = this->getStats();
 
 	if ( this->behavior == &actPlayer && godmode )
 	{
 		amount = entitystats->MAXMP;
+	}
+	if ( this->behavior == &actPlayer && amount > entitystats->MP
+		&& playerIsInWraithForm(skill[2]) && !bypassWraithGainSuppression )
+	{
+		const Sint32 reserve = std::min<Sint32>(
+			WRAITH_MIN_POSSESS_RESERVE, entitystats->MAXMP);
+		if ( entitystats->MP >= reserve )
+		{
+			return;
+		}
+		amount = std::min<Sint32>(amount, reserve);
 	}
 	if ( !entitystats || amount == entitystats->MP )
 	{
@@ -3805,6 +3883,497 @@ void Entity::monsterRollLevelUpStats(int increasestat[3])
 	increasestat[2] = r;
 }
 
+void Entity::monsterApplyNormalLevelUpGrowth(Stat* myStats)
+{
+	if ( !myStats )
+	{
+		return;
+	}
+
+	int increasestat[3] = { 0, 0, 0 };
+	Entity::monsterRollLevelUpStats(increasestat);
+	for ( int i = 0; i < 3; ++i )
+	{
+		switch ( increasestat[i] )
+		{
+			case STAT_STR:
+				myStats->STR++;
+				break;
+			case STAT_DEX:
+				myStats->DEX++;
+				break;
+			case STAT_CON:
+				myStats->CON++;
+				break;
+			case STAT_INT:
+				myStats->INT++;
+				break;
+			case STAT_PER:
+				myStats->PER++;
+				break;
+			case STAT_CHR:
+				myStats->CHR++;
+				break;
+			default:
+				break;
+		}
+	}
+
+	const int hpMod = HP_MOD;
+	const int mpMod = MP_MOD;
+	myStats->MAXHP += hpMod;
+	const int hpRestore = Entity::getHPRestoreOnLevelUp(this, myStats, hpMod);
+
+	modHP(hpRestore);
+	myStats->HP = std::min(myStats->HP, myStats->MAXHP);
+	if ( monsterAllySummonRank == 0 )
+	{
+		const int mpRestore = Entity::getMPRestoreOnLevelUp(this, myStats, mpMod);
+		myStats->MP += mpRestore;
+		if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+		{
+			myStats->MAXMP -= myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+		}
+		myStats->MAXMP += mpMod;
+		if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+		{
+			myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+		}
+		myStats->MP = std::min(myStats->MP, myStats->MAXMP);
+	}
+}
+
+enum class GolemWildMagicSchool
+{
+	MYST,
+	THAUM,
+	SORC
+};
+
+static std::vector<Entity*> getGolemWildMagicTargets(Entity& source, const real_t radius)
+{
+	std::vector<Entity*> targets;
+	targets.push_back(&source);
+	for ( node_t* node = map.creatures->first; node; node = node->next )
+	{
+		Entity* target = static_cast<Entity*>(node->element);
+		if ( !target || target == &source
+			|| (target->behavior != &actPlayer && target->behavior != &actMonster)
+			|| !target->getStats() || target->getHP() <= 0 )
+		{
+			continue;
+		}
+		if ( entityDist(target, &source) <= radius )
+		{
+			targets.push_back(target);
+		}
+	}
+	return targets;
+}
+
+static GolemWildMagicSchool selectGolemWildMagicSchool(const Sint32 blessedComposition)
+{
+	const Sint32 composition = std::max<Sint32>(0, std::min<Sint32>(10000, blessedComposition));
+	if ( composition >= 4001 && composition <= 5999 && local_rng.rand() % 2 == 0 )
+	{
+		return GolemWildMagicSchool::SORC;
+	}
+	return (local_rng.rand() % 10000 < composition)
+		? GolemWildMagicSchool::THAUM
+		: GolemWildMagicSchool::MYST;
+}
+
+static int applyGolemWildMagicSizeEffect(Entity& source)
+{
+	auto targets = getGolemWildMagicTargets(source, 3.0 * 16.0);
+	if ( targets.empty() )
+	{
+		return -1;
+	}
+	Entity* target = targets[local_rng.rand() % targets.size()];
+	Stat* targetStats = target->getStats();
+	if ( !targetStats )
+	{
+		return -1;
+	}
+
+	const bool maximise = local_rng.rand() % 2 == 0;
+	const int effect = maximise ? EFF_MAXIMISE : EFF_MINIMISE;
+	const int oppositeEffect = maximise ? EFF_MINIMISE : EFF_MAXIMISE;
+	const int player = source.isEntityPlayer();
+	Uint8 strength = 1;
+	strength |= ((1 + ((player >= 0) ? player : MAXPLAYERS)) & 0xF) << 4;
+	if ( target->setEffect(effect, strength, 5 * TICKS_PER_SECOND, true, true, true, true) )
+	{
+		if ( targetStats->getEffectActive(oppositeEffect) )
+		{
+			target->setEffect(oppositeEffect, false, 0, true);
+		}
+		playSoundEntity(target, 167, 128);
+		spawnMagicEffectParticles(target->x, target->y, target->z, maximise ? 2335 : 2341);
+		return effect;
+	}
+	return -1;
+}
+
+static bool spawnHostileGolemWildMagicSpiritWeapon(Entity& source)
+{
+	// The spell helper may search one tile around its requested point. Keeping
+	// that point in the adjacent 3x3 guarantees the final summon is within the
+	// requested three-tile surge radius.
+	const int targetTileX = static_cast<int>(source.x / 16.0) + (local_rng.rand() % 3) - 1;
+	const int targetTileY = static_cast<int>(source.y / 16.0) + (local_rng.rand() % 3) - 1;
+	Entity* spirit = spellEffectAdorcise(source, spellElementMap[SPELL_SPIRIT_WEAPON],
+		targetTileX * 16.0 + 8.0, targetTileY * 16.0 + 8.0, nullptr);
+	if ( !spirit )
+	{
+		return false;
+	}
+	if ( Stat* spiritStats = spirit->getStats() )
+	{
+		spiritStats->leader_uid = 0;
+		spiritStats->monsterForceAllegiance = Stat::MONSTER_FORCE_PLAYER_ENEMY;
+		spiritStats->setAttribute("golem_wild_magic_hostile", "1");
+	}
+	spirit->parent = 0;
+	spirit->monsterAllyIndex = -1;
+	spirit->monsterTarget = 0;
+	spirit->flags[USERFLAG2] = false;
+	if ( entityDist(spirit, &source) > 3.0 * 16.0 )
+	{
+		spirit->x = source.x;
+		spirit->y = source.y;
+		TileEntityList.updateEntity(*spirit);
+	}
+	if ( multiplayer == SERVER )
+	{
+		serverUpdateEntitySkill(spirit, 42);
+		serverUpdateEntityFlag(spirit, USERFLAG2);
+	}
+	return true;
+}
+
+static bool golemWildMagicShamanFormUnlocked(const int player, const int spellID)
+{
+	if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
+	{
+		return false;
+	}
+	int requiredLevel = INT_MAX;
+	switch ( spellID )
+	{
+		case SPELL_RAT_FORM: requiredLevel = 0; break;
+		case SPELL_SPIDER_FORM: requiredLevel = 3; break;
+		case SPELL_TROLL_FORM: requiredLevel = 6; break;
+		case SPELL_IMP_FORM: requiredLevel = 12; break;
+		default: break;
+	}
+	return stats[player]->LVL >= requiredLevel;
+}
+
+static bool castGolemWildMagicShamanForm(Entity& source)
+{
+	const int player = source.isEntityPlayer();
+	const int formSpells[] = {
+		SPELL_RAT_FORM, SPELL_SPIDER_FORM, SPELL_TROLL_FORM, SPELL_IMP_FORM
+	};
+	std::vector<int> validForms;
+	for ( const int spellID : formSpells )
+	{
+		if ( golemWildMagicShamanFormUnlocked(player, spellID) )
+		{
+			validForms.push_back(spellID);
+		}
+	}
+	// Rat form is level-zero capability, so a valid player always has at least
+	// one candidate. Keep it as a defensive fallback instead of wasting a surge.
+	const int selectedSpell = validForms.empty() ? SPELL_RAT_FORM
+		: validForms[local_rng.rand() % validForms.size()];
+	spell_t* formSpell = getSpellFromID(selectedSpell);
+	if ( !formSpell )
+	{
+		return false;
+	}
+	castSpell(source.getUID(), formSpell, true, false);
+	return true;
+}
+
+static void applyGolemWildMagicHealingPulse(Entity& source)
+{
+	const int amount = std::max(1, getSpellDamageFromID(SPELL_HEALING,
+		&source, source.getStats(), &source, 0.0, false));
+	for ( Entity* target : getGolemWildMagicTargets(source, HEAL_RADIUS) )
+	{
+		const int oldHP = target->getHP();
+		spell_changeHealth(target, amount, false, false);
+		const int healed = std::max(0, target->getHP() - oldHP);
+		if ( healed > 0 )
+		{
+			spawnDamageGib(target, -healed, DamageGib::DMG_HEAL,
+				DamageGibDisplayType::DMG_GIB_NUMBER, true);
+		}
+		playSoundEntity(target, 168, 128);
+		spawnMagicEffectParticles(target->x, target->y, target->z, 169);
+	}
+}
+
+static bool cureGolemWildMagicTarget(Entity& target)
+{
+	Stat* targetStats = target.getStats();
+	if ( !targetStats )
+	{
+		return false;
+	}
+	bool changed = false;
+	for ( int effect = 0; effect < NUMEFFECTS; ++effect )
+	{
+		if ( !targetStats->getEffectActive(effect)
+			|| !targetStats->statusEffectRemovedByCureAilment(effect, &target) )
+		{
+			continue;
+		}
+		if ( effect == EFF_BLIND
+			&& (target.behavior == &actMonster || target.effectShapeshift == NOTHING)
+			&& targetStats->mask
+			&& (targetStats->mask->type == TOOL_BLINDFOLD
+				|| targetStats->mask->type == TOOL_BLINDFOLD_TELEPATHY
+				|| targetStats->mask->type == TOOL_BLINDFOLD_FOCUS) )
+		{
+			continue;
+		}
+		targetStats->clearEffect(effect);
+		if ( targetStats->EFFECTS_TIMERS[effect] > 0 )
+		{
+			targetStats->EFFECTS_TIMERS[effect] = 1;
+		}
+		changed = true;
+	}
+	if ( targetStats->getEffectActive(EFF_WITHDRAWAL) )
+	{
+		target.setEffect(EFF_WITHDRAWAL, false, EFFECT_WITHDRAWAL_BASE_TIME, true);
+		changed = true;
+	}
+	if ( target.flags[BURNING] )
+	{
+		target.flags[BURNING] = false;
+		serverUpdateEntityFlag(&target, BURNING);
+		changed = true;
+	}
+	if ( changed && target.behavior == &actPlayer )
+	{
+		serverUpdateEffects(target.skill[2]);
+	}
+	playSoundEntity(&target, 168, 128);
+	spawnMagicEffectParticles(target.x, target.y, target.z, 169);
+	return changed;
+}
+
+static void applyGolemWildMagicCurePulse(Entity& source)
+{
+	for ( Entity* target : getGolemWildMagicTargets(source, HEAL_RADIUS) )
+	{
+		cureGolemWildMagicTarget(*target);
+	}
+}
+
+static bool useGolemWildMagicScroll(Entity& source, const ItemType scrollType)
+{
+	const int player = source.isEntityPlayer();
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return false;
+	}
+	Item* scroll = newItem(scrollType, SERVICABLE, 0, 1, local_rng.rand(), true, nullptr);
+	if ( !scroll )
+	{
+		return false;
+	}
+	bool applied = false;
+	if ( scrollType == SCROLL_LIGHT )
+	{
+		const bool wasBlind = source.isBlind();
+		item_ScrollLight(scroll, player, true);
+		applied = !wasBlind;
+	}
+	else if ( scrollType == SCROLL_FIRE )
+	{
+		applied = item_ScrollFire(scroll, player, true);
+	}
+	free(scroll);
+	return applied;
+}
+
+static bool castGolemWildMagicProjectile(Entity& source, spell_t* spell)
+{
+	if ( !spell )
+	{
+		return false;
+	}
+	const real_t oldYaw = source.yaw;
+	source.yaw = (local_rng.rand() % 360) * PI / 180.0;
+	{
+		ScopedGolemWildMagicProjectileCast wildMagicCastScope;
+		castSpell(source.getUID(), spell, true, false);
+	}
+	source.yaw = oldYaw;
+	bool spawnedProjectile = false;
+	for ( node_t* node = map.entities->first; node; node = node->next )
+	{
+		Entity* projectile = static_cast<Entity*>(node->element);
+		if ( projectile && projectile->behavior == &actMagicMissile
+			&& projectile->golemWildMagicCastEntity )
+		{
+			spawnedProjectile = true;
+			projectile->actmagicAllowFriendlyFireHit = 1;
+			projectile->golemWildMagicCastEntity = false;
+		}
+	}
+	return spawnedProjectile;
+}
+
+static bool applyGolemWildMagicLightningSelfHit(Entity& source)
+{
+	Stat* sourceStats = source.getStats();
+	if ( !sourceStats || sourceStats->HP <= 0 )
+	{
+		return false;
+	}
+	const int damage = std::max(1, getSpellDamageFromID(SPELL_LIGHTNING,
+		&source, sourceStats, &source, 0.0, false));
+	playSoundEntity(&source, 173, 128);
+	spawnMagicEffectParticles(source.x, source.y, source.z, 173);
+
+	// This is a direct overload, not a projectile collision. Applying the magic
+	// damage route directly deliberately bypasses getReflection()/projectile
+	// reflection while retaining ordinary magic resistance and hit handling.
+	if ( applyGenericMagicDamage(&source, &source, source, SPELL_LIGHTNING, damage, false) )
+	{
+		Uint8 staticStrength = sourceStats->getEffectActive(EFF_STATIC);
+		const int maxStrength = getSpellEffectDurationSecondaryFromID(SPELL_LIGHTNING,
+			&source, sourceStats, &source);
+		if ( staticStrength < maxStrength )
+		{
+			++staticStrength;
+		}
+		source.setEffect(EFF_STATIC, staticStrength,
+			getSpellEffectDurationFromID(SPELL_LIGHTNING, &source, sourceStats, &source),
+			true, true, false, false);
+	}
+	return true;
+}
+
+static void messageGolemWildMagic(Entity& source, const char* message)
+{
+	const int player = source.isEntityPlayer();
+	if ( player >= 0 && player < MAXPLAYERS )
+	{
+		messagePlayer(player, MESSAGE_STATUS, "%s", message);
+	}
+}
+
+static void triggerGolemWildMagicSurge(Entity& source, Stat& sourceStats)
+{
+	if ( multiplayer == CLIENT || !source.isNaturalGolemPlayer() )
+	{
+		return;
+	}
+	playSoundEntity(&source, 170, 96);
+	spawnMagicEffectParticles(source.x, source.y, source.z, 174);
+
+	switch ( selectGolemWildMagicSchool(sourceStats.golemBlessedComposition) )
+	{
+		case GolemWildMagicSchool::MYST:
+			switch ( local_rng.rand() % 4 )
+			{
+				case 0:
+					if ( source.setEffect(EFF_CONFUSED,
+						static_cast<Uint8>(source.isEntityPlayer() + 1),
+						getSpellEffectDurationFromID(SPELL_CONFUSE, &source, &sourceStats, &source),
+						true, true, true) )
+					{
+						messageGolemWildMagic(source, "Wild magic clouds your mind.");
+					}
+					break;
+				case 1:
+					if ( spawnHostileGolemWildMagicSpiritWeapon(source) )
+					{
+						messageGolemWildMagic(source, "Wild magic spawns a hostile spirit weapon.");
+					}
+					break;
+				case 2:
+					if ( const int sizeEffect = applyGolemWildMagicSizeEffect(source);
+						sizeEffect == EFF_MAXIMISE )
+					{
+						messageGolemWildMagic(source, "Wild magic enlarges a nearby creature.");
+					}
+					else if ( sizeEffect == EFF_MINIMISE )
+					{
+						messageGolemWildMagic(source, "Wild magic shrinks a nearby creature.");
+					}
+					break;
+				case 3:
+					if ( castGolemWildMagicShamanForm(source) )
+					{
+						messageGolemWildMagic(source, "Wild magic transforms your body.");
+					}
+					break;
+			}
+			break;
+		case GolemWildMagicSchool::THAUM:
+			switch ( local_rng.rand() % 4 )
+			{
+				case 0:
+					if ( useGolemWildMagicScroll(source, SCROLL_LIGHT) )
+					{
+						messageGolemWildMagic(source, "Wild magic floods the area with light.");
+					}
+					break;
+				case 1:
+					applyGolemWildMagicHealingPulse(source);
+					messageGolemWildMagic(source, "Wild magic releases a wave of healing.");
+					break;
+				case 2:
+					castSpell(source.getUID(), &spell_dash, true, false);
+					messageGolemWildMagic(source, "Wild magic propels you forward.");
+					break;
+				case 3:
+					applyGolemWildMagicCurePulse(source);
+					messageGolemWildMagic(source, "Wild magic releases a cleansing wave.");
+					break;
+			}
+			break;
+		case GolemWildMagicSchool::SORC:
+			switch ( local_rng.rand() % 4 )
+			{
+				case 0:
+					if ( useGolemWildMagicScroll(source, SCROLL_FIRE) )
+					{
+						messageGolemWildMagic(source, "Wild magic erupts in flame.");
+					}
+					break;
+				case 1:
+					if ( castGolemWildMagicProjectile(source, &spell_forcebolt) )
+					{
+						messageGolemWildMagic(source, "Wild magic fires a force bolt.");
+					}
+					break;
+				case 2:
+					if ( castGolemWildMagicProjectile(source, &spell_acidSpray) )
+					{
+						messageGolemWildMagic(source, "Wild magic sprays acid.");
+					}
+					break;
+				case 3:
+					if ( applyGolemWildMagicLightningSelfHit(source) )
+					{
+						messageGolemWildMagic(source, "Wild magic strikes you with lightning.");
+					}
+					break;
+			}
+			break;
+	}
+}
+
 static ConsoleVariable<bool> cvar_noxp("/noxp", false);
 
 void Entity::handleEffects(Stat* myStats)
@@ -3882,8 +4451,8 @@ void Entity::handleEffects(Stat* myStats)
 		// god mode and buddha mode
 		if ( godmode )
 		{
-			myStats->HP = myStats->MAXHP;
-			myStats->MP = myStats->MAXMP;
+			setHP(myStats->MAXHP);
+			setMP(myStats->MAXMP);
 		}
 		else if ( buddhamode )
 		{
@@ -3914,16 +4483,24 @@ void Entity::handleEffects(Stat* myStats)
 			players[player]->mechanics.defendTicks = 0;
 		}
 
-		if ( myStats->type == MYCONID || myStats->type == DRYAD )
+		// mod add: Merrow reflecting scales
+		if ( isMerrowPlayer() )
+		{
+			updateMerrowReflectingScales();
+		}
+		else if ( myStats->type == MYCONID || myStats->type == DRYAD )
 		{
 			if ( !myStats->helmet )
 			{
-				if ( !stats[player]->getEffectActive(EFF_GROWTH) || stats[player]->EFFECTS_TIMERS[EFF_GROWTH] == -1 )
+				if ( !stats[player]->getEffectActive(EFF_GROWTH)
+					|| stats[player]->EFFECTS_TIMERS[EFF_GROWTH] == -1 )
 				{
-					setEffect(EFF_GROWTH, (Uint8)1, 15 * TICKS_PER_SECOND, false);
+					setEffect(EFF_GROWTH, (Uint8)1,
+						15 * TICKS_PER_SECOND, false);
 				}
 			}
 		}
+		// mod add end
 
 		if ( myStats->type == GREMLIN || (myStats->playerRace == RACE_GREMLIN && myStats->stat_appearance == 0) )
 		{
@@ -3962,6 +4539,11 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			maxHPMod += 10;
 		}
+		if ( playerIsInWraithForm(player) )
+		{
+			maxHPMod = 0;
+			myStats->MAXHP = 5;
+		}
 
 		if ( maxHPMod != myStats->MISC_FLAGS[STAT_FLAG_HP_BONUS] )
 		{
@@ -3976,7 +4558,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			else
 			{
-				myStats->HP = myStats->OLDHP;
+				setHP(myStats->OLDHP);
 				updateHPMPForClients = true;
 			}
 		}
@@ -4106,6 +4688,7 @@ void Entity::handleEffects(Stat* myStats)
 
 		static ConsoleVariable<int> cvar_lvlup_ally_sfx("/lvlup_ally_sfx", 520);
 		bool alreadyProcessedMaxHPIncrease = false;
+		bool normalMonsterGrowthApplied = false;
 		// now pick three attributes to increase
 
 		if ( player >= 0 )
@@ -4250,35 +4833,8 @@ void Entity::handleEffects(Stat* myStats)
 		}
 		else
 		{
-			// monsters use this.
-			Entity::monsterRollLevelUpStats(increasestat);
-
-			for ( int i = 0; i < 3; i++ )
-			{
-				switch ( increasestat[i] )
-				{
-					case STAT_STR:
-						myStats->STR++;
-						break;
-					case STAT_DEX:
-						myStats->DEX++;
-						break;
-					case STAT_CON:
-						myStats->CON++;
-						break;
-					case STAT_INT:
-						myStats->INT++;
-						break;
-					case STAT_PER:
-						myStats->PER++;
-						break;
-					case STAT_CHR:
-						myStats->CHR++;
-						break;
-					default:
-						break;
-				}
-			}
+			monsterApplyNormalLevelUpGrowth(myStats);
+			normalMonsterGrowthApplied = true;
 		}
 
 		int hpMod = HP_MOD;
@@ -4479,6 +5035,21 @@ void Entity::handleEffects(Stat* myStats)
 				}
 			}
 
+			// Consume one stored affinity only for each stat that really increased.
+			bool tinctureStacksChanged = false;
+			for ( int stat = 0; stat < NUMSTATS; ++stat )
+			{
+				if ( statIncrease[stat] > 0 && myStats->tinctureStacks[stat] > 0 )
+				{
+					--myStats->tinctureStacks[stat];
+					tinctureStacksChanged = true;
+				}
+			}
+			if ( tinctureStacksChanged )
+			{
+				serverSyncTinctureStacks(player);
+			}
+
 			for ( int i = 0; i < MAXPLAYERS; ++i )
 			{
 				// broadcast a player levelled up to other players.
@@ -4507,45 +5078,77 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 
-		// increase MAXHP/MAXMP
-		if ( !alreadyProcessedMaxHPIncrease )
+		const bool wraithFormLevel = behavior == &actPlayer && playerIsInWraithForm(player);
+		const bool wraithPossessionLevel = behavior == &actPlayer
+			&& player >= 0 && player < MAXPLAYERS
+			&& players[player]
+			&& myStats->playerRace == RACE_WRAITH
+			&& myStats->stat_appearance == 0
+			&& players[player]->mechanics.wraith.initialized
+			&& players[player]->mechanics.wraith.possessedEntityUid != 0;
+		if ( normalMonsterGrowthApplied )
 		{
-			myStats->MAXHP += hpMod;
+			// Ordinary monster stat and resource growth was applied together above.
 		}
-		int hpRestore = Entity::getHPRestoreOnLevelUp(this, myStats, hpMod);
-		int mpRestore = Entity::getMPRestoreOnLevelUp(this, myStats, mpMod);
-
-		modHP(hpRestore);
-
-		myStats->HP = std::min(myStats->HP, myStats->MAXHP);
-		if ( !(behavior == &actMonster && monsterAllySummonRank != 0) )
+		else if ( wraithFormLevel )
 		{
-			Sint32 oldMP = myStats->MP;
-			myStats->MP += mpRestore;
-			Sint32 prevMaxMP = myStats->MAXMP;
-			if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
-			{
-				myStats->MAXMP -= myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
-			}
-			myStats->MAXMP += mpMod;
-
-			if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
-			{
-				myStats->MAXMP = std::min(100, myStats->MAXMP);
-				if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
-				{
-					myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
-				}
-				this->playerInsectoidIncrementHungerToMP(myStats->MP - oldMP);
-			}
-			else
-			{
-				if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
-				{
-					myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
-				}
-			}
+			auto& wraith = players[player]->mechanics.wraith;
+			wraith.corporealMaxHP += hpMod;
+			wraith.corporealMaxMP += mpMod;
+			myStats->MAXHP = 5;
+			myStats->MAXMP += hpMod + mpMod;
+			myStats->HP = std::min(myStats->HP, myStats->MAXHP);
 			myStats->MP = std::min(myStats->MP, myStats->MAXMP);
+		}
+		else
+		{
+			// increase MAXHP/MAXMP
+			if ( !alreadyProcessedMaxHPIncrease )
+			{
+				myStats->MAXHP += hpMod;
+			}
+			int hpRestore = Entity::getHPRestoreOnLevelUp(this, myStats, hpMod);
+			int mpRestore = Entity::getMPRestoreOnLevelUp(this, myStats, mpMod);
+
+			modHP(hpRestore);
+
+			myStats->HP = std::min(myStats->HP, myStats->MAXHP);
+			if ( !(behavior == &actMonster && monsterAllySummonRank != 0) )
+			{
+				Sint32 oldMP = myStats->MP;
+				myStats->MP += mpRestore;
+				Sint32 prevMaxMP = myStats->MAXMP;
+				if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+				{
+					myStats->MAXMP -= myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+				}
+				myStats->MAXMP += mpMod;
+
+				if ( behavior == &actPlayer && myStats->playerRace == RACE_INSECTOID && myStats->stat_appearance == 0 )
+				{
+					myStats->MAXMP = std::min(100, myStats->MAXMP);
+					if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+					{
+						myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+					}
+					this->playerInsectoidIncrementHungerToMP(myStats->MP - oldMP);
+				}
+				else
+				{
+					if ( myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS] != 0 )
+					{
+						myStats->MAXMP += myStats->MISC_FLAGS[STAT_FLAG_MP_BONUS];
+					}
+				}
+				myStats->MP = std::min(myStats->MP, myStats->MAXMP);
+			}
+
+			if ( wraithPossessionLevel )
+			{
+				auto& wraith = players[player]->mechanics.wraith;
+				wraith.corporealMaxHP += hpMod;
+				wraith.corporealMaxMP += mpMod;
+			}
 		}
 
 		if ( behavior == &actMonster )
@@ -4617,18 +5220,28 @@ void Entity::handleEffects(Stat* myStats)
 
 		if ( behavior == &actPlayer )
 		{
-			Uint8 effectStrength = myStats->getEffectActive(EFF_GROWTH);
-			if ( effectStrength >= 1 )
+			// mod add: Merrow reflecting scales
+			const bool baseMerrow =
+				myStats->playerRace == RACE_MERROW
+				&& myStats->stat_appearance == 0;
+
+			if ( !baseMerrow )
+			// mod add end
 			{
-				int stages = 1;
-				setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + stages)), 15 * TICKS_PER_SECOND, false);
-				if ( myStats->getEffectActive(EFF_GROWTH) - effectStrength == 2 )
+				Uint8 effectStrength = myStats->getEffectActive(EFF_GROWTH);
+
+				if ( effectStrength >= 1 )
 				{
-					messagePlayerColor(skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6924));
-				}
-				else if ( myStats->getEffectActive(EFF_GROWTH) > effectStrength )
-				{
-					messagePlayerColor(skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6925));
+					int stages = 1;
+					setEffect(EFF_GROWTH, (Uint8)(std::min(4, effectStrength + stages)), 15 * TICKS_PER_SECOND, false);
+					if ( myStats->getEffectActive(EFF_GROWTH) - effectStrength == 2 )
+					{
+						messagePlayerColor(skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6924));
+					}
+					else if ( myStats->getEffectActive(EFF_GROWTH) > effectStrength )
+					{
+						messagePlayerColor(skill[2], MESSAGE_STATUS, makeColorRGB(0, 255, 0), Language::get(6925));
+					}
 				}
 			}
 		}
@@ -4654,9 +5267,13 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 	bool processHunger = (svFlags & SV_FLAG_HUNGER) && !MFLAG_DISABLEHUNGER; // check server flags if hunger is enabled.
+	const bool wraithFormNoHunger = player >= 0
+		&& behavior == &actPlayer
+		&& playerIsInWraithForm(player);
 	if ( player >= 0 )
 	{
-		if ( myStats->type == SKELETON || myStats->type == AUTOMATON )
+		if ( myStats->type == SKELETON || myStats->type == AUTOMATON
+			|| wraithFormNoHunger )
 		{
 			processHunger = false;
 		}
@@ -4703,7 +5320,11 @@ void Entity::handleEffects(Stat* myStats)
 	
 	if ( !processHunger && !playerAutomaton )
 	{
-		if ( behavior == &actMonster )
+		if ( wraithFormNoHunger )
+		{
+			// Preserve the player's stored hunger exactly while incorporeal.
+		}
+		else if ( behavior == &actMonster )
 		{
 			myStats->HUNGER = 500;
 		}
@@ -5030,14 +5651,20 @@ void Entity::handleEffects(Stat* myStats)
 			}
 			else
 			{
-				messagePlayer(player, MESSAGE_STATUS, Language::get(634));
+				if ( !this->isNaturalGolemPlayer() )
+				{
+					messagePlayer(player, MESSAGE_STATUS, Language::get(634));
+				}
 				this->char_gonnavomit = 140 + local_rng.rand() % 60;
 			}
 		}
 		else if ( ticks % 60 == 0 && local_rng.rand() % 200 == 0 && myStats->getEffectActive(EFF_DRUNK) && myStats->type != GOATMAN )
 		{
 			// drunkenness
-			messagePlayer(player, MESSAGE_STATUS, Language::get(634));
+			if ( !this->isNaturalGolemPlayer() )
+			{
+				messagePlayer(player, MESSAGE_STATUS, Language::get(634));
+			}
 			this->char_gonnavomit = 140 + local_rng.rand() % 60;
 		}
 	}
@@ -5046,48 +5673,60 @@ void Entity::handleEffects(Stat* myStats)
 		this->char_gonnavomit--;
 		if ( this->char_gonnavomit == 0 && this->entityCanVomit() )
 		{
-			messagePlayer(player, MESSAGE_STATUS, Language::get(635));
-			myStats->setEffectActive(EFF_VOMITING, 1);
-			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + local_rng.rand() % 20;
-
-			std::vector<int> effectsToClear;
-			for ( int i = EFF_RATION_SPICY; i <= EFF_RATION_SWEET; ++i )
+			if ( this->isNaturalGolemPlayer() )
 			{
-				effectsToClear.push_back(i);
+				triggerGolemWildMagicSurge(*this, *myStats);
+				// Strength 2 distinguishes the hidden Golem discharge from
+				// ordinary visible vomiting, even if the surge changes form.
+				myStats->setEffectActive(EFF_VOMITING, 2);
+				myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + local_rng.rand() % 20;
+				serverUpdateEffects(player);
 			}
-			effectsToClear.push_back(EFF_HP_MP_REGEN);
-			effectsToClear.push_back(EFF_BLESS_FOOD);
-			for ( auto effectID : effectsToClear )
+			else
 			{
-				if ( myStats->getEffectActive(effectID) )
+				messagePlayer(player, MESSAGE_STATUS, Language::get(635));
+				myStats->setEffectActive(EFF_VOMITING, 1);
+				myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + local_rng.rand() % 20;
+
+				std::vector<int> effectsToClear;
+				for ( int i = EFF_RATION_SPICY; i <= EFF_RATION_SWEET; ++i )
 				{
-					myStats->clearEffect(effectID);
-					myStats->EFFECTS_TIMERS[effectID] = 0;
-					myStats->EFFECTS_ACCRETION_TIME[effectID] = 0;
+					effectsToClear.push_back(i);
 				}
-			}
+				effectsToClear.push_back(EFF_HP_MP_REGEN);
+				effectsToClear.push_back(EFF_BLESS_FOOD);
+				for ( auto effectID : effectsToClear )
+				{
+					if ( myStats->getEffectActive(effectID) )
+					{
+						myStats->clearEffect(effectID);
+						myStats->EFFECTS_TIMERS[effectID] = 0;
+						myStats->EFFECTS_ACCRETION_TIME[effectID] = 0;
+					}
+				}
 
-			serverUpdateEffects(player);
-			if ( player >= 0 && players[player]->isLocalPlayer() )
-			{
-				camera_shakey += 9;
-			}
-			else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
-			{
-				strcpy((char*)net_packet->data, "SHAK");
-				net_packet->data[4] = 0; // turns into 0
-				net_packet->data[5] = 9;
-				net_packet->address.host = net_clients[player - 1].host;
-				net_packet->address.port = net_clients[player - 1].port;
-				net_packet->len = 6;
-				sendPacketSafe(net_sock, -1, net_packet, player - 1);
-			}
-			playSoundEntity(this, 78, 96);
-			serverUpdatePlayerGameplayStats(player, STATISTICS_TEMPT_FATE, 5);
+				serverUpdateEffects(player);
+				if ( player >= 0 && players[player]->isLocalPlayer() )
+				{
+					camera_shakey += 9;
+				}
+				else if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
+				{
+					strcpy((char*)net_packet->data, "SHAK");
+					net_packet->data[4] = 0; // turns into 0
+					net_packet->data[5] = 9;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
+					net_packet->len = 6;
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
+				}
+				playSoundEntity(this, 78, 96);
+				serverUpdatePlayerGameplayStats(player, STATISTICS_TEMPT_FATE, 5);
 
-			if ( myStats->type == INSECTOID )
-			{
-				castSpell(uid, &spell_acidSpray, true, false);
+				if ( myStats->type == INSECTOID )
+				{
+					castSpell(uid, &spell_acidSpray, true, false);
+				}
 			}
 		}
 	}
@@ -5095,25 +5734,37 @@ void Entity::handleEffects(Stat* myStats)
 	// vomiting
 	if ( myStats->getEffectActive(EFF_VOMITING) && ticks % 2 == 0 )
 	{
-		Entity* entity = spawnGib(this);
-		if ( entity )
+		const bool hiddenGolemDischarge = myStats->getEffectActive(EFF_VOMITING) == 2;
+		Entity* entity = nullptr;
+		if ( !hiddenGolemDischarge )
 		{
-			entity->sprite = 29;
-            entity->ditheringDisabled = true;
-			entity->flags[SPRITE] = true;
-			entity->flags[GENIUS] = true;
-			entity->flags[INVISIBLE] = false;
-			entity->yaw = this->yaw - 0.1 + (local_rng.rand() % 20) * 0.01;
-			entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
-			entity->roll = (local_rng.rand() % 360) * PI / 180.0;
-			double vel = (local_rng.rand() % 15) / 10.f;
-			entity->vel_x = vel * cos(entity->yaw);
-			entity->vel_y = vel * sin(entity->yaw);
-			entity->vel_z = -.5;
+			entity = spawnGib(this);
+			if ( entity )
+			{
+				entity->sprite = 29;
+                entity->ditheringDisabled = true;
+				entity->flags[SPRITE] = true;
+				entity->flags[GENIUS] = true;
+				entity->flags[INVISIBLE] = false;
+				entity->yaw = this->yaw - 0.1 + (local_rng.rand() % 20) * 0.01;
+				entity->pitch = (local_rng.rand() % 360) * PI / 180.0;
+				entity->roll = (local_rng.rand() % 360) * PI / 180.0;
+				double vel = (local_rng.rand() % 15) / 10.f;
+				entity->vel_x = vel * cos(entity->yaw);
+				entity->vel_y = vel * sin(entity->yaw);
+				entity->vel_z = -.5;
+			}
+		}
+
+		// Hidden Golem discharge reuses the normal vomiting charge loss without
+		// requiring or synchronizing a visible vomit gib.
+		if ( hiddenGolemDischarge || entity )
+		{
 			if ( (svFlags & SV_FLAG_HUNGER) )
 			{
-				if ( myStats->type != INSECTOID && myStats->type != AUTOMATON
-					&& myStats->type != SKELETON && effectShapeshift == NOTHING )
+				if ( hiddenGolemDischarge
+					|| (myStats->type != INSECTOID && myStats->type != AUTOMATON
+						&& myStats->type != SKELETON && effectShapeshift == NOTHING) )
 				{
 					myStats->HUNGER -= 40;
 					if ( myStats->HUNGER <= 50 )
@@ -5123,7 +5774,10 @@ void Entity::handleEffects(Stat* myStats)
 					}
 				}
 			}
-			serverSpawnGibForClient(entity);
+			if ( entity )
+			{
+				serverSpawnGibForClient(entity);
+			}
 		}
 	}
 
@@ -6525,7 +7179,7 @@ void Entity::handleEffects(Stat* myStats)
 				if ( behavior == &actPlayer )
 				{
 					players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_BLOOD_WARD, 128.0, 1.0, nullptr);
-					this->safeConsumeMP(1);
+					consumeSustainedSpellResource(this, getActiveMagicEffect(SPELL_BLOOD_WARD), 1);
 				}
 			}
 		}
@@ -6545,13 +7199,13 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				poisonhurt -= local_rng.rand() % (std::max(1, poisonhurt / 4));
 			}
-			this->modHP(-poisonhurt);
+			Entity* killer = uidToEntity(myStats->poisonKiller);
+			this->modHP(-poisonhurt, killer);
 			for ( int tmp = 0; tmp < 3; ++tmp )
 			{
 				Entity* gib = spawnGib(this, 211);
 				serverSpawnGibForClient(gib);
 			}
-			Entity* killer = uidToEntity(myStats->poisonKiller);
 			if ( myStats->HP <= 0 )
 			{
 				if ( killer )
@@ -6650,7 +7304,7 @@ void Entity::handleEffects(Stat* myStats)
 				if ( behavior == &actPlayer )
 				{
 					players[skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_BLOOD_WARD, 128.0, 1.0, nullptr);
-					this->safeConsumeMP(1);
+					consumeSustainedSpellResource(this, getActiveMagicEffect(SPELL_BLOOD_WARD), 1);
 				}
 			}
 			else if ( myStats->HP > 5 + (std::max(0, getCON())) ) // CON increases when bleeding stops.
@@ -6672,7 +7326,8 @@ void Entity::handleEffects(Stat* myStats)
 					bleedhurt = std::min(bleedhurt, 15); // prevent doing 50+ dmg
 				}
 				bleedhurt = std::max(1, bleedhurt);
-				this->modHP(-bleedhurt);
+				Entity* killer = uidToEntity(static_cast<Uint32>(myStats->bleedInflictedBy));
+				this->modHP(-bleedhurt, killer);
 				this->setObituary(Language::get(1532));
 				myStats->killer = KilledBy::BLEEDING;
 				Entity* gib = spawnGib(this);
@@ -6722,7 +7377,6 @@ void Entity::handleEffects(Stat* myStats)
 					}
 				}
 
-				Entity* killer = uidToEntity(static_cast<Uint32>(myStats->bleedInflictedBy));
 				if ( killer /*&& killer->behavior == &actPlayer*/ )
 				{
 					bool lowPriority = true;
@@ -7466,7 +8120,7 @@ void Entity::handleEffects(Stat* myStats)
 					}
 					damage *= fireMultiplier;
 
-					this->modHP(damage); // Deal between -2 to -5 damage
+					this->modHP(damage, killer); // Deal between -2 to -5 damage
 
 					// If the Entity died, handle experience
 					if ( myStats->HP <= 0 && oldHP > myStats->HP )
@@ -7857,7 +8511,7 @@ void Entity::handleEffects(Stat* myStats)
 
 					steamAchievementClient(player, "BARONY_ACH_BORN_AGAIN");
 					myStats->HUNGER = 800;
-					if ( myStats->MAXHP < 10 )
+					if ( myStats->MAXHP < 10 && !playerIsInWraithForm(player) )
 					{
 						myStats->MAXHP = 10;
 						if ( player > 0 && multiplayer == SERVER && !players[player]->isLocalPlayer() )
@@ -7884,7 +8538,7 @@ void Entity::handleEffects(Stat* myStats)
 					}
 
 					real_t hpRestore = 100 * (0.5 + std::min(2, abs(myStats->amulet->beatitude)) * 0.5);
-					this->setHP(std::max((int)hpRestore, 5));
+					this->setHP(playerIsInWraithForm(player) ? 5 : std::max((int)hpRestore, 5), true);
 					for ( int c = 0; c < NUMEFFECTS; c++ )
 					{
 						if ( !(c == EFF_VAMPIRICAURA && myStats->EFFECTS_TIMERS[c] == -2) 
@@ -8225,6 +8879,16 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeMod
 	{
 		return 0;
 	}
+	if ( my && isAmuletFamiliar(my, myStats)
+		&& getAmuletFamiliarForm(my) == FAMILIAR_FORM_MIMIC )
+	{
+		const Sint32 familiarAttack = 1 + std::max<Sint32>(0, myStats->LVL - 1) / 2;
+		if ( returnWeaponAttackValue )
+		{
+			*returnWeaponAttackValue = familiarAttack;
+		}
+		return familiarAttack;
+	}
 
 	attack = BASE_MELEE_DAMAGE; // base attack strength
 	bool shapeshifted = (my && my->behavior == &actPlayer && my->effectShapeshift != NOTHING);
@@ -8235,6 +8899,14 @@ Sint32 Entity::getAttack(Entity* my, Stat* myStats, bool isPlayer, int chargeMod
 		{
 			attack = BASE_PLAYER_UNARMED_DAMAGE;
 			attack += (myStats->getModifiedProficiency(PRO_UNARMED) / 20); // 0, 1, 2, 3, 4, 5 damage from total
+			// mod add: Leonin racial: natural claws scale every 10 levels.
+			// Requires empty weapon and glove slots; intentionally grants no
+			// knuckle knockback.
+			if ( my )
+			{
+				attack += my->getLeoninNaturalClawTier();
+			}
+			// mod add end
 			if ( shapeshifted )
 			{
 				if ( my->effectShapeshift == RAT )
@@ -8750,6 +9422,18 @@ Sint32 statGetSTR(Stat* entitystats, Entity* my)
 			STR += 15;
 		}
 	}
+	if ( my && my->behavior == &actPlayer && entitystats->type == BUGBEAR )
+	{
+		const int player = my->skill[2];
+		if ( player >= 0 && player < MAXPLAYERS && players[player]
+			&& entitystats->playerRace == RACE_WRAITH
+			&& players[player]->mechanics.wraith.initialized
+			&& players[player]->mechanics.wraith.possessedEntityUid != 0
+			&& STR >= 0 )
+		{
+			STR = static_cast<Sint32>(STR * 1.2);
+		}
+	}
 
 	return STR;
 }
@@ -9093,6 +9777,22 @@ Sint32 Entity::getCON()
 	return statGetCON(entitystats, this);
 }
 
+static bool getNaturalGolemBaseCONCHR(Entity* entity, Stat* entitystats,
+	Sint32& baseCON, Sint32& baseCHR)
+{
+	if ( !entity || !entitystats || !entity->isNaturalGolemPlayer() )
+	{
+		return false;
+	}
+	const Sint32 pool = entitystats->CON + entitystats->CHR;
+	const Sint32 blessedRatio = std::min(8000, std::max(2000,
+		entitystats->golemBlessedComposition));
+	baseCON = static_cast<Sint32>(std::round(
+		static_cast<double>(pool) * blessedRatio / 10000.0));
+	baseCHR = pool - baseCON;
+	return true;
+}
+
 Sint32 statGetCON(Stat* entitystats, Entity* my)
 {
 	Sint32 CON;
@@ -9103,6 +9803,8 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 	}
 
 	CON = entitystats->CON;
+	Sint32 golemCHR = entitystats->CHR;
+	getNaturalGolemBaseCONCHR(my, entitystats, CON, golemCHR);
 
 	bool cursedItemIsBuff = false;
 	bool shapeshifted = false;
@@ -9253,6 +9955,18 @@ Sint32 statGetCON(Stat* entitystats, Entity* my)
 		if ( entitystats->getEffectActive(EFF_MIMIC_VOID) )
 		{
 			CON += 10;
+		}
+	}
+	if ( my && my->behavior == &actPlayer && entitystats->type == BUGBEAR )
+	{
+		const int player = my->skill[2];
+		if ( player >= 0 && player < MAXPLAYERS && players[player]
+			&& entitystats->playerRace == RACE_WRAITH
+			&& players[player]->mechanics.wraith.initialized
+			&& players[player]->mechanics.wraith.possessedEntityUid != 0
+			&& CON >= 0 )
+		{
+			CON = static_cast<Sint32>(CON * 1.5);
 		}
 	}
 
@@ -9584,6 +10298,8 @@ Sint32 statGetCHR(Stat* entitystats, Entity* my)
 	}
 
 	CHR = entitystats->CHR;
+	Sint32 golemCON = entitystats->CON;
+	getNaturalGolemBaseCONCHR(my, entitystats, golemCON, CHR);
 
 	bool cursedItemIsBuff = false;
 	bool shapeshifted = false;
@@ -10094,6 +10810,60 @@ Causes an entity to attack using whatever weapon it's holding
 
 -------------------------------------------------------------------------------*/
 
+static node_t* findMonsterMusketAlternative(const Entity& monster, const Stat& monsterStats)
+{
+	// Prefer a conventional ranged weapon, then melee, then another native
+	// hand-usable combat item. Musket is deliberately excluded at every pass.
+	for ( int priority = 0; priority < 3; ++priority )
+	{
+		for ( node_t* node = monsterStats.inventory.first; node; node = node->next )
+		{
+			Item* item = static_cast<Item*>(node->element);
+			if ( !item || item->type == MUSKET || item->status == BROKEN
+				|| !monster.canWieldItem(*item) )
+			{
+				continue;
+			}
+			const bool ranged = isRangedWeapon(*item);
+			const bool melee = isMeleeWeapon(*item);
+			const bool otherCombatItem = itemCategory(item) == MAGICSTAFF
+				|| itemCategory(item) == THROWN;
+			if ( (priority == 0 && ranged)
+				|| (priority == 1 && melee)
+				|| (priority == 2 && otherCombatItem) )
+			{
+				return node;
+			}
+		}
+	}
+	return nullptr;
+}
+
+static void rejectMonsterMusketAttack(Entity& monster, Stat& monsterStats)
+{
+	playFirearmJamSound(&monster);
+	if ( node_t* alternative = findMonsterMusketAlternative(monster, monsterStats) )
+	{
+		if ( swapMonsterWeaponWithInventoryItem(&monster, &monsterStats, alternative, false, true) )
+		{
+			return;
+		}
+	}
+
+	Item* musket = monsterStats.weapon;
+	if ( musket && monsterUnequipSlot(&monsterStats, &monsterStats.weapon, musket) )
+	{
+		return;
+	}
+	if ( monsterStats.weapon )
+	{
+		if ( Entity* dropped = dropItemMonster(monsterStats.weapon, &monster, &monsterStats) )
+		{
+			dropped->itemDelayMonsterPickingUp = TICKS_PER_SECOND * 2;
+		}
+	}
+}
+
 void Entity::attack(int pose, int charge, Entity* target)
 {
 	Stat* hitstats = nullptr;
@@ -10109,6 +10879,21 @@ void Entity::attack(int pose, int charge, Entity* target)
 	{
 		return;
 	}
+	if ( myStats->type == BAT_FAMILIAR )
+	{
+		return;
+	}
+	if ( behavior == &actMonster && monsterIsActiveWraithBody(this) )
+	{
+		// Native monster animation may transition through attack(), but gameplay
+		// belongs exclusively to the possessing actPlayer Entity.
+		monsterAttack = pose;
+		if ( pose != MONSTER_POSE_FLAIL_SWING )
+		{
+			monsterAttackTime = 0;
+		}
+		return;
+	}
 
 	// get the player number, if applicable
 	if ( behavior == &actPlayer )
@@ -10119,6 +10904,127 @@ void Entity::attack(int pose, int charge, Entity* target)
 	{
 		player = -1; // not a player
 	}
+
+	// mod add: Panicking players remain mobile but cannot execute any attack
+	// request. This runs on clients and the authoritative server before firearm,
+	// ammo, durability, projectile, or animation state can be changed.
+	if ( player >= 0 && playerIsPanicking(player) )
+	{
+		return;
+	}
+	if ( player >= 0 && playerIsInWraithForm(player)
+		&& !myStats->weapon && getWraithHeldItem(player)
+		&& pose != MONSTER_POSE_MAGIC_WINDUP1
+		&& pose != MONSTER_POSE_MAGIC_WINDUP2
+		&& pose != MONSTER_POSE_MAGIC_WINDUP3
+		&& pose != MONSTER_POSE_MAGIC_CAST1
+		&& pose != MONSTER_POSE_MAGIC_CAST2
+		&& pose != MONSTER_POSE_MAGIC_CAST3
+		&& pose != MONSTER_POSE_SPECIAL_WINDUP1
+		&& pose != MONSTER_POSE_SPECIAL_WINDUP2 )
+	{
+		// Native offhand equipment occupies the true Wraith's single hybrid
+		// hand. Reject the otherwise-empty-mainhand unarmed attack on both the
+		// predicting client and the authoritative server.
+		return;
+	}
+
+	// mod add: Musket firing is player-exclusive. Reject non-player use before
+	// animation, projectile creation, loaded-state consumption, XP, and alerts.
+	if ( player < 0 && myStats->weapon && myStats->weapon->type == MUSKET )
+	{
+		if ( multiplayer != CLIENT )
+		{
+			rejectMonsterMusketAttack(*this, *myStats);
+		}
+		return;
+	}
+
+	// mod add: maintained Spyglass use occupies the mainhand action. Musket is
+	// the sole exception and retains its existing loaded-fire/empty-reload path.
+	if ( player >= 0 && playerIsUsingSpyglass(this)
+		&& (!myStats->weapon || myStats->weapon->type != MUSKET) )
+	{
+		return;
+	}
+
+	// mod add: An empty firearm uses this attack action to reload
+	// from scrap instead of firing. Remote reloads use FRST for their action
+	// token; firing and quest-jam feedback retain the normal ATAK path.
+	if ( myStats->weapon && myStats->weapon->isFirearm() )
+	{
+		// mod add: Clearing a jam exclusively owns firearm input. This guard runs
+		// on both peers so held input cannot fire, reload, or restart the action.
+		if ( firearmUnjamIsActive(player) )
+		{
+			return;
+		}
+		// mod add: The Library Musket's persistent quest jam takes priority over
+		// loaded firing, empty reload, random jams, animation, and projectile work.
+		if ( myStats->weapon->musketQuestJammed() )
+		{
+			if ( multiplayer == CLIENT )
+			{
+				strcpy((char*)net_packet->data, "ATAK");
+				net_packet->data[4] = player;
+				net_packet->data[5] = pose;
+				net_packet->data[6] = charge;
+				SDLNet_Write32(static_cast<Sint32>(myStats->weapon->type), &net_packet->data[7]);
+				SDLNet_Write32(myStats->weapon->appearance, &net_packet->data[11]);
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 15;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			else
+			{
+				tryQuestJamMusket(*myStats->weapon, player);
+			}
+			return;
+		}
+		if ( multiplayer == CLIENT )
+		{
+			// mod add: Firearms do not create a client-predicted projectile. Send the
+			// normal attack request directly so a server-side jam can never leave a
+			// phantom shot; successful projectiles arrive through normal entity sync.
+			if ( !myStats->weapon->firearmIsLoaded() )
+			{
+				tryReloadFirearm(*myStats->weapon, player);
+				return; // FRST carries the reload action token.
+			}
+			else
+			{
+				players[player]->mechanics.firearmJamAttackItemUid = myStats->weapon->uid;
+				myStats->weapon->setFirearmLoaded(false);
+			}
+			strcpy((char*)net_packet->data, "ATAK");
+			net_packet->data[4] = player;
+			net_packet->data[5] = pose;
+			net_packet->data[6] = charge;
+			SDLNet_Write32(static_cast<Sint32>(myStats->weapon->type), &net_packet->data[7]);
+			SDLNet_Write32(myStats->weapon->appearance, &net_packet->data[11]);
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			net_packet->len = 15;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+			return;
+		}
+		if ( !myStats->weapon->firearmIsLoaded() )
+		{
+			if ( multiplayer != SERVER || players[player]->isLocalPlayer() )
+			{
+				tryReloadFirearm(*myStats->weapon, player);
+			}
+			return;
+		}
+		else if ( tryJamFirearm(*myStats->weapon, player) )
+		{
+			// The loaded state is intentionally retained. This is before attack
+			// animation, shot accounting, projectile creation, and gunshot alerting.
+			return;
+		}
+	}
+	// mod add end
 
 	if ( multiplayer != CLIENT )
 	{
@@ -10861,6 +11767,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 
 				if ( bowDegradeChance < 100 && local_rng.rand() % bowDegradeChance == 0 && myStats->weapon->type != ARTIFACT_BOW
+					&& !myStats->weapon->isUnbreakableFromUse()
 					&& !spellEffectPreserveItem(myStats->weapon) )
 				{
 					if ( myStats->weapon != NULL )
@@ -10909,7 +11816,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				else if ( myStats->weapon->type == CROSSBOW 
 					|| myStats->weapon->type == HEAVY_CROSSBOW
-					|| myStats->weapon->type == BLACKIRON_CROSSBOW )
+					|| myStats->weapon->type == BLACKIRON_CROSSBOW
+					|| myStats->weapon->isFirearm() ) // mod add: firearms use bolt projectile setup
 				{
 					entity = newEntity(167, 1, map.entities, nullptr); // bolt
 					if ( myStats->weapon->type == HEAVY_CROSSBOW )
@@ -10920,7 +11828,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							this->setEffect(EFF_KNOCKBACK, true, 30, false);
 						}
 					}
-					else
+					else if ( !myStats->weapon->isFirearm() )
 					{
 						playSoundEntity(this, 239 + local_rng.rand() % 3, 96);
 					}
@@ -10934,6 +11842,27 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					return;
 				}
+				// mod add: A successful authoritative firearm shot consumes its
+				// per-item loaded state, never inventory scrap or quiver ammo.
+				if ( multiplayer != CLIENT && myStats->weapon->isFirearm() )
+				{
+					myStats->weapon->setFirearmLoaded(false);
+					const real_t muzzleDistance = 4.0;
+					const real_t muzzleX = x + cos(yaw) * muzzleDistance;
+					const real_t muzzleY = y + sin(yaw) * muzzleDistance;
+					const real_t muzzleZ = z - 1.0;
+					//mod add: The authoritative positional sound path plays locally for
+					// host/singleplayer and sends one attenuated world sound to each client.
+					playSoundPos(muzzleX, muzzleY,
+						myStats->weapon->type == MUSKET ? 863 : 862, 128);
+					spawnFirearmMuzzleFlash(
+						static_cast<Sint16>(muzzleX),
+						static_cast<Sint16>(muzzleY),
+						static_cast<Sint16>(muzzleZ), 0.35,
+						myStats->weapon->type == MUSKET);
+					alertMonstersToFirearmGunshot(*this);
+				}
+				// mod add end
 				entity->parent = uid;
 				entity->x = x;
 				entity->y = y;
@@ -10961,6 +11890,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 				else
 				{
 					entity->setRangedProjectileAttack(*this, *myStats);
+				}
+				if ( myStats->shield && itemTypeIsQuiver(myStats->shield->type) )
+				{
+					entity->projectileAppliedOil = static_cast<Sint32>(myStats->shield->appliedOil);
+					entity->projectileOilSourceItemUID = static_cast<Sint32>(myStats->shield->uid);
+					entity->projectileOilSourceItemType = static_cast<Sint32>(myStats->shield->type);
 				}
 
 				if ( entity->arrowQuiverType != 0 && myStats->shield && itemTypeIsQuiver(myStats->shield->type) )
@@ -11008,7 +11943,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				|| itemCategory(myStats->weapon) == THROWN
 				|| myStats->weapon->type == FOOD_CREAMPIE
 				|| itemIsThrowableTinkerTool(myStats->weapon)
-				|| myStats->weapon->type == TOOL_DUCK )
+				|| myStats->weapon->type == TOOL_DUCK 
+				|| (myStats->weapon->type == HARPOON && charge == 100) ) //mod addition (throwing)
 			{
 				bool drankPotion = false;
 				if ( behavior == &actMonster && myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION )
@@ -11087,6 +12023,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 					entity->skill[14] = myStats->weapon->appearance;
 					entity->skill[15] = myStats->weapon->identified;
 				}
+				entity->projectileAppliedOil = static_cast<Sint32>(myStats->weapon->appliedOil);
+				entity->projectileOilSourceItemUID = static_cast<Sint32>(myStats->weapon->uid);
+				entity->projectileOilSourceItemType = static_cast<Sint32>(myStats->weapon->type);
 
 				if ( itemCategory(myStats->weapon) == THROWN )
 				{
@@ -11156,6 +12095,27 @@ void Entity::attack(int pose, int charge, Entity* target)
 							entity->vel_z = -.1;
 						}
 					}
+					//mod addition: Harpoon throwing animation
+					else if ( myStats->weapon->type == HARPOON )
+					{
+    					real_t speed = 6.0;
+
+    					if ( this->behavior == &actPlayer )
+    					{
+        				entity->vel_x = speed * cos(players[player]->entity->yaw);
+        				entity->vel_y = speed * sin(players[player]->entity->yaw);
+        				entity->vel_z = 0.0;
+    					}
+    					else
+    					{
+        					entity->vel_x = speed * cos(this->yaw);
+        					entity->vel_y = speed * sin(this->yaw);
+        					entity->vel_z = 0.0;
+    					}
+
+    					entity->thrownProjectilePower = 0; //damage?
+					}
+					// mod add end
 					else
 					{
 						if ( this->behavior == &actPlayer )
@@ -11288,13 +12248,30 @@ void Entity::attack(int pose, int charge, Entity* target)
 		bool miss = false;
 		bool guard = false;
 		int strikeRange = STRIKERANGE;
+		auto traceMeleeTarget = [&](int range)
+		{
+			int traceFlags = LINETRACE_ATK_CHECK_FRIENDLYFIRE;
+			if ( behavior == &actPlayer )
+			{
+				// mod add: Creatures/ordinary scenery take priority over an Entrench
+				// barricade. Only retry with the barricade enabled when the first pass
+				// found no valid entity within the native melee trace.
+				traceFlags |= LINETRACE_ATK_IGNORE_ENTRENCH_BARRICADE;
+			}
+			real_t traceDistance = lineTrace(this, x, y, yaw, range, traceFlags, false);
+			if ( behavior == &actPlayer && !hit.entity )
+			{
+				traceDistance = lineTrace(this, x, y, yaw, range, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
+			}
+			return traceDistance;
+		};
 		// normal attacks
 		if ( target == nullptr )
 		{
 			if ( flail )
 			{
 				strikeRange = STRIKERANGE * 1.5;
-				dist = lineTrace(this, x, y, yaw, strikeRange, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
+				dist = traceMeleeTarget(strikeRange);
 				if ( behavior == &actMonster || charge >= Stat::getMaxAttackCharge(myStats) / 2 )
 				{
 					playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
@@ -11307,12 +12284,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 			else if ( whip )
 			{
 				strikeRange = STRIKERANGE * 1.5;
-				dist = lineTrace(this, x, y, yaw, strikeRange, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
+				dist = traceMeleeTarget(strikeRange);
 				playSoundEntity(this, 23 + local_rng.rand() % 5, 128); // whoosh noise
 			}
 			else
 			{
-				dist = lineTrace(this, x, y, yaw, strikeRange, LINETRACE_ATK_CHECK_FRIENDLYFIRE, false);
+				dist = traceMeleeTarget(strikeRange);
 				if ( sweepAttackTimer )
 				{
 					// already played the sound
@@ -12057,6 +13034,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 					damage = 0;
 				}
 
+				// Double the final normal melee result, including charge and collider resistance.
+				if ( !shapeshifted && myStats->weapon && myStats->weapon->type == RUNE_HAMMER
+					&& !mimic && (hit.entity->behavior == &actDoor
+						|| hit.entity->behavior == &::actFurniture || hit.entity->behavior == &::actChest
+						|| (hit.entity->isDamageableCollider() && hit.entity->isColliderDamageableByMelee())) )
+				{
+					damage *= 2;
+				}
+
 				int& entityHP = hit.entity->behavior == &actColliderDecoration ? hit.entity->colliderCurrentHP :
 					(hit.entity->behavior == &::actChest ? hit.entity->chestHealth :
 					((hit.entity->behavior == &actDoor || hit.entity->behavior == &::actIronDoor) ? hit.entity->doorHealth :
@@ -12144,6 +13130,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( oldHP > 0 )
 					{
+						entrenchOnEntityDestroyedByCreature(hit.entity, this);
 						if ( behavior == &actPlayer )
 						{
 							if ( weaponskill >= 0 && (weaponskill != PRO_RANGED || whip) )
@@ -12636,6 +13623,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						{
 							if ( myStats->getEffectActive(EFF_DIVINE_ZEAL) )
 							{
+								spell_t* activeSpell = getActiveMagicEffect(SPELL_DIVINE_ZEAL);
+								ScopedSpellPowerOverride spellPowerScope(activeSpell, true);
 								zealSmite = true;
 								particle = true;
 								effect = true;
@@ -13071,6 +14060,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					bool thornsAllowZeroDmg = false;
 					if ( hitstats->getEffectActive(EFF_THORNS) )
 					{
+						spell_t* activeSpell = hit.entity->getActiveMagicEffect(SPELL_THORNS);
+						ScopedSpellPowerOverride spellPowerScope(activeSpell, true);
 						int thorn = getSpellDamageFromID(SPELL_THORNS, hit.entity, nullptr, hit.entity);
 						int extraThorn = std::min(damage, getSpellDamageSecondaryFromID(SPELL_THORNS, hit.entity, nullptr, hit.entity));
 						thorn += extraThorn;
@@ -13078,13 +14069,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 						thornsAllowZeroDmg = true;
 						if ( playerhit >= 0 )
 						{
-							hit.entity->safeConsumeMP(1);
+							consumeSustainedSpellResource(hit.entity, activeSpell, 1);
 							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_THORNS, 50.0 + thorn * 5.0, 1.0, this);
 						}
 						thornsEffect += thorn;
 					}
 					if ( hitstats->getEffectActive(EFF_BLADEVINES) )
 					{
+						spell_t* activeSpell = hit.entity->getActiveMagicEffect(SPELL_BLADEVINES);
+						ScopedSpellPowerOverride spellPowerScope(activeSpell, true);
 						int thorn = getSpellDamageFromID(SPELL_BLADEVINES, hit.entity, nullptr, hit.entity);
 						int extraThorn = std::min(damage, getSpellDamageSecondaryFromID(SPELL_BLADEVINES, hit.entity, nullptr, hit.entity));
 						thorn += extraThorn;
@@ -13092,7 +14085,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						thornsAllowZeroDmg = true;
 						if ( playerhit >= 0 )
 						{
-							hit.entity->safeConsumeMP(1);
+							consumeSustainedSpellResource(hit.entity, activeSpell, 1);
 							players[playerhit]->mechanics.updateSustainedSpellEvent(SPELL_BLADEVINES, 50.0 + thorn * 5.0, 1.0, this);
 						}
 						thornsEffect += thorn;
@@ -13132,9 +14125,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 						damage = 0;
 						spawnBang(hit.entity->x, hit.entity->y, hit.entity->z);
 					}
+					Item* oilWeapon = (!shapeshifted && itemCanReceiveOil(myStats->weapon))
+						? myStats->weapon : nullptr;
+					if ( oilWeapon && oilWeapon->appliedOil != APPLIED_OIL_NONE )
+					{
+						if ( damage > 0 && oilMatchesTarget(oilWeapon->appliedOil, hit.entity) )
+						{
+							damage += damage / 4;
+						}
+						rollOilWearOff(oilWeapon, player, false);
+					}
 
 					Sint32 oldHP = hitstats->HP;
-					hit.entity->modHP(-damage); // do the damage
+					hit.entity->modHP(-damage, this); // do the damage
 
 					if ( hitstats )
 					{
@@ -13459,7 +14462,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeWeapon = false;
 							}
 
-							if ( degradeWeapon && !spellEffectPreserveItem(*weaponToBreak) )
+							if ( degradeWeapon && !(*weaponToBreak)->isUnbreakableFromUse()
+								&& !spellEffectPreserveItem(*weaponToBreak) )
 							{
 								if ( player >= 0 )
 								{
@@ -13642,6 +14646,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 						&& !itemTypeIsFoci(hitstats->shield->type)
 						&& !itemTypeIsInstrument(hitstats->shield->type)
 						&& hitstats->shield->type != TOOL_DUCK
+						&& hitstats->shield->type != SPYGLASS // mod add: utility optics are not shields for degradation
+						&& hitstats->shield->type != MAGIC_RUNE // Rune durability is governed only by Rune casting stress.
 						&& parriedDamage == 0
 						&& hitstats->shield->type != TOOL_TINKERING_KIT
 						&& hitstats->shield->type != TOOL_FRYING_PAN )
@@ -13883,7 +14889,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Compendium_t::Events_t::eventUpdate(skill[2], Compendium_t::CPDM_DMG_MAX, SHILLELAGH_MACE, damage + shillelaghDamage);
 
 									Sint32 prevHP = hitstats->HP;
-									hit.entity->modHP(-shillelaghDamage);
+									hit.entity->modHP(-shillelaghDamage, this);
 									Sint32 newHP = hitstats->HP;
 									if ( newHP < prevHP )
 									{
@@ -13986,6 +14992,45 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					// player weapon skills
+					// Rune Hammer: the normal full-charge threshold drives both effects.
+					if ( damage > 0 && behavior == &actPlayer && myStats->weapon
+						&& myStats->weapon->type == RUNE_HAMMER
+						&& charge >= Stat::getMaxAttackCharge(myStats) - 3 && hitstats->HP > 0 )
+					{
+						static constexpr int RUNE_HAMMER_SLOW_DURATION = TICKS_PER_SECOND / 2;
+						static constexpr real_t RUNE_HAMMER_KNOCKBACK = 1.0;
+						static constexpr real_t RUNE_HAMMER_MONSTER_KNOCKBACK_ACCELERATION = 0.10;
+						if ( !hitstats->getEffectActive(EFF_KNOCKBACK)
+							&& hit.entity->setEffect(EFF_KNOCKBACK, true, 20, false) )
+						{
+							real_t tangent = atan2(hit.entity->y - this->y, hit.entity->x - this->x);
+							if ( hit.entity->behavior == &actMonster )
+							{
+								hit.entity->vel_x = cos(tangent) * RUNE_HAMMER_KNOCKBACK;
+								hit.entity->vel_y = sin(tangent) * RUNE_HAMMER_KNOCKBACK;
+								hit.entity->monsterKnockbackVelocity = RUNE_HAMMER_MONSTER_KNOCKBACK_ACCELERATION;
+								hit.entity->monsterKnockbackUID = getUID();
+								hit.entity->monsterKnockbackTangentDir = tangent;
+								hit.entity->lookAtEntity(*this);
+							}
+							else if ( hit.entity->behavior == &actPlayer )
+							{
+								hit.entity->monsterKnockbackVelocity = RUNE_HAMMER_KNOCKBACK;
+								hit.entity->monsterKnockbackTangentDir = tangent;
+								if ( !players[hit.entity->skill[2]]->isLocalPlayer() )
+								{
+									serverUpdateEntityFSkill(hit.entity, 11);
+									serverUpdateEntityFSkill(hit.entity, 9);
+								}
+							}
+							knockbackInflicted = true;
+						}
+						if ( hit.entity->setEffect(EFF_SLOW, true, RUNE_HAMMER_SLOW_DURATION, true) )
+						{
+							slowStatusInflicted = true;
+						}
+					}
+
 					if ( damage > 0 && weaponskill == PRO_UNARMED && behavior == &actPlayer && (charge >= Stat::getMaxAttackCharge(myStats) - 3) )
 					{
 						int chance = 0;
@@ -14022,7 +15067,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "unarmed skill", 1);
 								}
 							}
-							hit.entity->modHP(-5); // do extra damage.
+							hit.entity->modHP(-5, this); // do extra damage.
 						}
 						if ( !knockbackInflicted && hasMeleeGloves
 							&& hit.entity->setEffect(EFF_KNOCKBACK, true, 30, false) )
@@ -14122,7 +15167,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 								break;
 						}
 
-						if ( weaponskill == PRO_POLEARM )
+						const bool runeHammerCapstone = weaponskill == PRO_POLEARM && !shapeshifted
+							&& myStats->weapon && myStats->weapon->type == RUNE_HAMMER;
+						if ( weaponskill == PRO_POLEARM && !runeHammerCapstone )
 						{
 							// knockback.
 							if ( chance > 0 )
@@ -14154,10 +15201,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 										Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "polearm skill", 1);
 									}
 								}
-								hit.entity->modHP(-capstoneDamage); // do the damage
+								hit.entity->modHP(-capstoneDamage, this); // do the damage
 							}
 						}
-						else if ( weaponskill == PRO_MACE && hitstats->HP > 0 && !(flail && pose == MONSTER_POSE_FLAIL_SWING) )
+						else if ( (weaponskill == PRO_MACE || runeHammerCapstone) && hitstats->HP > 0 && !(flail && pose == MONSTER_POSE_FLAIL_SWING) )
 						{
 							// paralyze.
 							if ( chance > 0 ) // chance based paralyze
@@ -14172,11 +15219,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 										spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, 170);
 										if ( behavior == &actPlayer )
 										{
-											Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "mace skill", 1);
+											Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, runeHammerCapstone ? "polearm skill" : "mace skill", 1);
 										}
 									}
 								}
-								hit.entity->modHP(-capstoneDamage); // do the damage
+								hit.entity->modHP(-capstoneDamage, this); // do the damage
 							}
 						}
 						else if ( weaponskill == PRO_AXE && hitstats->HP > 0 )
@@ -14199,7 +15246,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "axe skill", 1);
 									}
 								}
-								hit.entity->modHP(-capstoneDamage); // do the damage
+								hit.entity->modHP(-capstoneDamage, this); // do the damage
 								// don't re-notify if already inflicted slow from Parashu.
 							}
 						}
@@ -14218,7 +15265,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										Entity* gib = spawnGib(hit.entity);
 										serverSpawnGibForClient(gib);
 									}
-									hit.entity->modHP(-capstoneDamage); // do the damage
+									hit.entity->modHP(-capstoneDamage, this); // do the damage
 									if ( behavior == &actPlayer )
 									{
 										Compendium_t::Events_t::eventUpdateCodex(skill[2], Compendium_t::CPDM_SKILL_LEGENDARY_PROCS, "sword skill", 1);
@@ -14228,7 +15275,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									swordExtraDamageInflicted = true;
 									int extraDamage = 5;
-									hit.entity->modHP(-(extraDamage + capstoneDamage)); // do the damage
+									hit.entity->modHP(-(extraDamage + capstoneDamage), this); // do the damage
 								}
 							}
 						}
@@ -14239,13 +15286,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( damage > 0 && myStats->getEffectActive(EFF_ENVENOM_WEAPON) )
 					{
+						spell_t* activeSpell = getActiveMagicEffect(SPELL_ENVENOM_WEAPON);
+						ScopedSpellPowerOverride spellPowerScope(activeSpell, true);
 						if ( local_rng.rand() % 2 == 0 )
 						{
 							int envenomDamage = std::min(
 								getSpellDamageSecondaryFromID(SPELL_ENVENOM_WEAPON, this, myStats, this),
 								getSpellDamageFromID(SPELL_ENVENOM_WEAPON, this, myStats, this));
 
-							hit.entity->modHP(-envenomDamage); // do the damage
+							hit.entity->modHP(-envenomDamage, this); // do the damage
 							for ( int tmp = 0; tmp < 3; ++tmp )
 							{
 								Entity* gib = spawnGib(hit.entity, 211);
@@ -14347,9 +15396,16 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( myStats->type == MIMIC && local_rng.rand() % 4 == 0 )
 					{
+						const bool familiarMimic = isAmuletFamiliar(this, myStats)
+							&& getAmuletFamiliarForm(this) == FAMILIAR_FORM_MIMIC;
+						const bool mayStealFromTarget = !familiarMimic || !checkFriend(hit.entity);
 						Item* armor = nullptr;
 						int armornum = 0;
-						if ( behavior == &actPlayer 
+						if ( !mayStealFromTarget )
+						{
+							armor = nullptr;
+						}
+						else if ( behavior == &actPlayer
 							|| (hit.entity->behavior == &actMonster
 								&& ((hit.entity->monsterAllySummonRank != 0 && hitstats->type == SKELETON)
 									|| hit.entity->monsterIsTinkeringCreation()
@@ -14376,16 +15432,52 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						if ( armor != nullptr )
 						{
-							bool mimicSentToVoid = false;
-							if ( myStats->getEffectActive(EFF_MIMIC_VOID) )
+							if ( armor->type == AMULET_FAMILIAR )
 							{
-								int qty = 1;
-								if ( itemTypeIsQuiver(armor->type) )
+								if ( Entity* activeFamiliar = findAmuletFamiliar(hit.entity) )
 								{
-									qty = armor->count;
+									syncAmuletFamiliarPersistentState(activeFamiliar, armor, true);
 								}
-
-								Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, qty, armor->appearance, armor->identified, nullptr);
+							}
+							bool mimicSentToVoid = false;
+							int qty = 1;
+							if ( itemTypeIsQuiver(armor->type) )
+							{
+								qty = armor->count;
+							}
+							if ( familiarMimic )
+							{
+								Item* stolenArmor = newItemFromExistingItem(*armor, qty, nullptr);
+								stolenArmor->ownerUid = hit.entity->getUID();
+								stolenArmor->isDroppable = armor->isDroppable;
+								int ownerPlayer = monsterAllyIndex;
+								if ( ownerPlayer < 0 || ownerPlayer >= MAXPLAYERS || !players[ownerPlayer]
+									|| !players[ownerPlayer]->entity
+									|| players[ownerPlayer]->entity->getUID() != myStats->leader_uid )
+								{
+									ownerPlayer = -1;
+								}
+								if ( Item* chestItem = Entity::tryAddItemToVoidChestServer(
+									ownerPlayer, stolenArmor, true, nullptr) )
+								{
+									Entity::serverSendItemToOpenVoidChest(ownerPlayer, chestItem, true);
+									if ( chestItem != stolenArmor )
+									{
+										free(stolenArmor);
+									}
+									mimicSentToVoid = true;
+								}
+								else
+								{
+									// Familiar inventory is intentionally non-droppable. Passing no
+									// monster stats makes this explicit successful-steal fallback
+									// produce the world item beside the Mimic before freeing the copy.
+									dropItemMonster(stolenArmor, this, nullptr, stolenArmor->count);
+								}
+							}
+							else if ( myStats->getEffectActive(EFF_MIMIC_VOID) )
+							{
+								Item* stolenArmor = newItemFromExistingItem(*armor, qty, nullptr);
 								if ( Item* chestItem = Entity::addItemToVoidChestServer(-1, stolenArmor, true, nullptr) )
 								{
 									if ( chestItem != stolenArmor )
@@ -14402,7 +15494,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 							if ( armor )
 							{
-								int qty = 1;
 								int startCount = armor->count;
 								if ( itemTypeIsQuiver(armor->type) )
 								{
@@ -14417,10 +15508,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 								{
 									steamStatisticUpdateClient(playerhit, STEAM_STAT_I_NEEDED_THAT, STEAM_STAT_INT, 1);
 								}
-								if ( !mimicSentToVoid )
+								if ( !mimicSentToVoid && !familiarMimic )
 								{
 									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6085), armor->getName());
-									Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, qty, armor->appearance, armor->identified, &myStats->inventory);
+									Item* stolenArmor = newItemFromExistingItem(*armor, qty, &myStats->inventory);
 									stolenArmor->ownerUid = hit.entity->getUID();
 									stolenArmor->isDroppable = armor->isDroppable;
 									if ( myStats->getEffectActive(EFF_MIMIC_VOID) )
@@ -14428,9 +15519,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 										dropItemMonster(stolenArmor, this, myStats, stolenArmor->count);
 									}
 								}
-								else
+								else if ( mimicSentToVoid )
 								{
 									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6567), armor->getName());
+								}
+								else
+								{
+									messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(6085), armor->getName());
 								}
 								if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
 								{
@@ -14585,7 +15680,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 									armor->count--;
 								}
 								messagePlayer(playerhit, MESSAGE_COMBAT, Language::get(688), armor->getName());
-								Item* stolenArmor = newItem(armor->type, armor->status, armor->beatitude, qty, armor->appearance, armor->identified, &myStats->inventory);
+								Item* stolenArmor = newItemFromExistingItem(*armor, qty, &myStats->inventory);
 								stolenArmor->ownerUid = hit.entity->getUID();
 								if ( playerhit > 0 && multiplayer == SERVER && !players[playerhit]->isLocalPlayer() )
 								{
@@ -16051,6 +17146,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( bleedStatusInflicted || (hitstats->HP > 5 && damage > 0) )
 						{
+							// mod add: Leonin natural claws use the normal bleed path.
+							const int leoninClawTier = getLeoninNaturalClawTier();
+							const bool leoninClawBleed = leoninClawTier > 0
+								&& oldHP > hitstats->HP
+								&& local_rng.rand() % 100 < leoninClawTier * 5;
+							// mod add end
 							if ( bleedStatusInflicted || (local_rng.rand() % 20 == 0 && (weaponskill > PRO_SWORD && weaponskill <= PRO_POLEARM) )
 								|| (local_rng.rand() % 10 == 0 && weaponskill == PRO_SWORD)
 								|| (whip && ( (flanking && local_rng.rand() % 5 == 0) || (backstab && local_rng.rand() % 2 == 0) || disarmed) )
@@ -16059,6 +17160,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								|| (thornsEffect < 0 && behavior == &actPlayer)
 								|| (local_rng.rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
 								|| (local_rng.rand() % 8 == 0 && myStats->getEffectActive(EFF_VAMPIRICAURA) && (myStats->weapon == nullptr || myStats->type == LICH_FIRE))
+								|| leoninClawBleed
 							)
 							{
 								bool heavyBleedEffect = false; // heavy bleed will have a greater starting duration, and add to existing duration.
@@ -16934,6 +18036,15 @@ int AC(Stat* stat)
 		}
 	}
 	int armor = statGetCON(stat, playerEntity);
+	const bool wraithPossessed = player >= 0
+		&& stats[player]->playerRace == RACE_WRAITH
+		&& players[player]
+		&& players[player]->mechanics.wraith.initialized
+		&& players[player]->mechanics.wraith.possessedEntityUid != 0;
+	auto bodyAllowsSlot = [player, wraithPossessed](int category)
+	{
+		return !wraithPossessed || wraithPossessedBodyCanEquipSlot(player, category);
+	};
 	if ( stat->getEffectActive(EFF_FOCI_LIGHT_SANCTUARY) )
 	{
 		armor += getSpellDamageFromID(SPELL_FOCI_LIGHT_SANCTUARY, nullptr, nullptr, nullptr);
@@ -16953,43 +18064,43 @@ int AC(Stat* stat)
 		armor -= std::min((Uint8)3, stat->getEffectActive(EFF_DISRUPTED)) * 5;
 	}
 
-	if ( stat->helmet )
+	if ( stat->helmet && bodyAllowsSlot(0) )
 	{
 		armor += stat->helmet->armorGetAC(stat);
 	}
-	if ( stat->breastplate )
+	if ( stat->breastplate && bodyAllowsSlot(3) )
 	{
 		armor += stat->breastplate->armorGetAC(stat);
 	}
-	if ( stat->gloves )
+	if ( stat->gloves && bodyAllowsSlot(9) )
 	{
 		armor += stat->gloves->armorGetAC(stat);
 	}
-	if ( stat->shoes )
+	if ( stat->shoes && bodyAllowsSlot(4) )
 	{
 		armor += stat->shoes->armorGetAC(stat);
 	}
-	if ( !(stat->parrying && stat->weapon) )
+	if ( !(stat->parrying && stat->weapon) && stat->shield && bodyAllowsSlot(2) )
 	{
-		if ( stat->shield )
-		{
-			armor += stat->shield->armorGetAC(stat);
-		}
+		armor += stat->shield->armorGetAC(stat);
 	}
-	if ( stat->cloak )
+	if ( stat->cloak && bodyAllowsSlot(7) )
 	{
 		armor += stat->cloak->armorGetAC(stat);
+	}
+	if ( stat->mask && bodyAllowsSlot(8) )
+	{
+		armor += stat->mask->armorGetAC(stat);
 	}
 	if ( stat->ring )
 	{
 		armor += stat->ring->armorGetAC(stat);
 	}
-	if ( stat->mask )
-	{
-		armor += stat->mask->armorGetAC(stat);
-	}
 
-	if ( stat->type == TROLL || stat->type == RAT || stat->type == SPIDER || stat->type == CREATURE_IMP )
+	if ( stat->type == TROLL
+		|| stat->type == RAT
+		|| stat->type == SPIDER
+		|| stat->type == CREATURE_IMP )
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{
@@ -17009,11 +18120,11 @@ int AC(Stat* stat)
 		}
 	}
 
-	if ( stat->parrying && stat->weapon )
+	if ( stat->parrying && stat->weapon && bodyAllowsSlot(1) )
 	{
 		armor += Stat::getParryingACBonus(stat, stat->weapon, true, false, getWeaponSkill(stat->weapon));
 	}
-	else if ( stat->shield )
+	else if ( stat->shield && bodyAllowsSlot(2) )
 	{
 		int shieldskill = stat->getPassiveShieldBonus(true, false);
 		armor += shieldskill;
@@ -18185,6 +19296,10 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 			}
 		}
 		destStats->EXP += gain;
+		if ( multiplayer != CLIENT && behavior == &actPlayer && gain > 0 )
+		{
+			spawnAmuletFamiliarIngredientBag(this, src);
+		}
 	}
 
 	if ( (srcStats->type == LICH || srcStats->type == LICH_FIRE || srcStats->type == LICH_ICE) && root
@@ -18787,6 +19902,90 @@ Returns true if my and your are enemies, otherwise returns false
 
 -------------------------------------------------------------------------------*/
 
+static bool isActiveWraithPossessedPlayerForAlliance(const Entity* entity, const Stat* entityStats)
+{
+	if ( !entity || !entityStats || entity->behavior != &actPlayer )
+	{
+		return false;
+	}
+	const int player = entity->skill[2];
+	return player >= 0 && player < MAXPLAYERS
+		&& players[player]
+		&& players[player]->entity == entity
+		&& entityStats->playerRace == RACE_WRAITH
+		&& entityStats->stat_appearance == 0
+		&& players[player]->mechanics.wraith.initialized
+		&& players[player]->mechanics.wraith.possessedEntityUid != 0;
+}
+
+enum class WraithPossessionAllianceMode
+{
+	PLAYER_PROFILE,
+	SELF_NEUTRAL,
+	NO_ALLIANCES
+};
+
+struct WraithPossessionAllianceRule
+{
+	WraithPossessionAllianceMode mode;
+	Monster profileType;
+	Monster bodyType;
+};
+
+static WraithPossessionAllianceRule getWraithPossessionAllianceRule(Monster bodyType)
+{
+	bodyType = wraithCanonicalPossessionType(bodyType);
+	switch ( bodyType )
+	{
+		case HUMAN:
+		case SKELETON:
+		case GOBLIN:
+		case GNOME:
+		case SUCCUBUS:
+		case INCUBUS:
+		case VAMPIRE:
+		case INSECTOID:
+		case GOATMAN:
+		case AUTOMATON:
+		case RAT:
+		case SPIDER:
+		case TROLL:
+		case CREATURE_IMP:
+			return { WraithPossessionAllianceMode::PLAYER_PROFILE, bodyType, bodyType };
+		case GHOUL:
+		case SHADOW:
+			return { WraithPossessionAllianceMode::PLAYER_PROFILE, SKELETON, bodyType };
+		case DEMON:
+			return { WraithPossessionAllianceMode::PLAYER_PROFILE, INCUBUS, bodyType };
+		case CRYSTALGOLEM:
+			return { WraithPossessionAllianceMode::PLAYER_PROFILE, AUTOMATON, bodyType };
+		case SCORPION:
+		case SCARAB:
+			return { WraithPossessionAllianceMode::PLAYER_PROFILE, SPIDER, bodyType };
+		case BAT_SMALL:
+		case SLIME:
+		case BUGBEAR:
+			return { WraithPossessionAllianceMode::SELF_NEUTRAL, bodyType, bodyType };
+		case KOBOLD:
+		case COCKATRICE:
+		default:
+			return { WraithPossessionAllianceMode::NO_ALLIANCES, bodyType, bodyType };
+	}
+}
+
+static bool isIncorporealWraithPlayerForAlliance(const Entity* entity, const Stat* entityStats)
+{
+	if ( !entity || !entityStats || entity->behavior != &actPlayer )
+	{
+		return false;
+	}
+	const int player = entity->skill[2];
+	return player >= 0 && player < MAXPLAYERS
+		&& players[player]
+		&& players[player]->entity == entity
+		&& playerIsInWraithForm(player);
+}
+
 bool Entity::checkEnemy(Entity* your)
 {
 	if ( !your )
@@ -18800,6 +19999,24 @@ bool Entity::checkEnemy(Entity* your)
 	Stat* yourStats = your->getStats();
 
 	if ( !myStats || !yourStats )
+	{
+		return false;
+	}
+	const bool myWraithBody = isActiveWraithPossessedPlayerForAlliance(this, myStats);
+	const bool yourWraithBody = isActiveWraithPossessedPlayerForAlliance(your, yourStats);
+	const auto myWraithAlliance = getWraithPossessionAllianceRule(myWraithBody
+		? getWraithEffectiveMonsterType(skill[2]) : NOTHING);
+	const auto yourWraithAlliance = getWraithPossessionAllianceRule(yourWraithBody
+		? getWraithEffectiveMonsterType(your->skill[2]) : NOTHING);
+	const Monster myPlayerAllianceType = myWraithBody
+		&& myWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE
+		? myWraithAlliance.profileType : myStats->type;
+	const Monster yourPlayerAllianceType = yourWraithBody
+		&& yourWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE
+		? yourWraithAlliance.profileType : yourStats->type;
+	const bool myWraithSpirit = isIncorporealWraithPlayerForAlliance(this, myStats);
+	const bool yourWraithSpirit = isIncorporealWraithPlayerForAlliance(your, yourStats);
+	if ( myStats->type == BAT_FAMILIAR || yourStats->type == BAT_FAMILIAR )
 	{
 		return false;
 	}
@@ -18879,8 +20096,8 @@ bool Entity::checkEnemy(Entity* your)
 		return false;
 	}
 
-	if ( (your->behavior == &actPlayer && monsterCanTradeWith(your->isEntityPlayer()))
-		|| (behavior == &actPlayer && your->monsterCanTradeWith(isEntityPlayer())) )
+	if ( (your->behavior == &actPlayer && !yourWraithSpirit && monsterCanTradeWith(your->isEntityPlayer()))
+		|| (behavior == &actPlayer && !myWraithSpirit && your->monsterCanTradeWith(isEntityPlayer())) )
 	{
 		return false;
 	}
@@ -19044,13 +20261,30 @@ bool Entity::checkEnemy(Entity* your)
 			result = swornenemies[myStats->type][yourStats->type];
 
 			// player exceptions to table go here.
-			if ( myStats->type == SHOPKEEPER && your->behavior == &actPlayer )
+			if ( (behavior == &actPlayer && myWraithSpirit)
+				|| (your->behavior == &actPlayer && yourWraithSpirit) )
+			{
+				result = true;
+			}
+			else if ( myStats->type == SHOPKEEPER && your->behavior == &actPlayer )
 			{
 				result = ShopkeeperPlayerHostility.isPlayerEnemy(your->skill[2]);
 			}
 			else if ( yourStats->type == SHOPKEEPER && behavior == &actPlayer )
 			{
 				result = ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
+			}
+			else if ( behavior == &actPlayer && your->behavior == &actMonster && myWraithBody
+				&& myWraithAlliance.mode != WraithPossessionAllianceMode::PLAYER_PROFILE )
+			{
+				result = myWraithAlliance.mode == WraithPossessionAllianceMode::SELF_NEUTRAL
+					? yourStats->type != myWraithAlliance.bodyType : true;
+			}
+			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourWraithBody
+				&& yourWraithAlliance.mode != WraithPossessionAllianceMode::PLAYER_PROFILE )
+			{
+				result = yourWraithAlliance.mode == WraithPossessionAllianceMode::SELF_NEUTRAL
+					? myStats->type != yourWraithAlliance.bodyType : true;
 			}
 			else if ( myStats->type == BAT_SMALL && your->behavior == &actPlayer )
 			{
@@ -19060,19 +20294,32 @@ bool Entity::checkEnemy(Entity* your)
 			{
 				result = true;
 			}
-			else if ( behavior == &actPlayer && myStats->type != HUMAN )
+			else if ( behavior == &actPlayer && myPlayerAllianceType != HUMAN
+				&& (!myWraithBody || myWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE) )
 			{
 				result = swornenemies[HUMAN][yourStats->type];
-				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) 
-					&& !(myStats->type == AUTOMATON || myStats->type == DRYAD || myStats->type == MYCONID || myStats->type == SALAMANDER
-						|| myStats->type == GNOME) )
+				if ( myPlayerAllianceType == LEONIN ) // mod add: use Human hostility unchanged
+				{
+					result = yourStats->type == LEONIN ? false : result;
+				}
+				else if ( myPlayerAllianceType == GOLEM )
+				{
+					const int alliance = getNaturalGolemAlliance(yourStats->type);
+					if ( alliance >= 0 )
+					{
+						result = alliance == 0;
+					}
+				}
+				else if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER)
+					&& !(myPlayerAllianceType == AUTOMATON || myPlayerAllianceType == DRYAD || myPlayerAllianceType == MYCONID || myPlayerAllianceType == SALAMANDER
+						|| myPlayerAllianceType == GNOME) )
 				{
 					// enemies.
 					result = true;
 				}
 				else
 				{
-					switch ( myStats->type )
+					switch ( myPlayerAllianceType )
 					{
 						case SKELETON:
 							if ( yourStats->type == GHOUL )
@@ -19201,19 +20448,32 @@ bool Entity::checkEnemy(Entity* your)
 					}
 				}
 			}
-			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )
+			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourPlayerAllianceType != HUMAN
+				&& (!yourWraithBody || yourWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE) )
 			{
 				result = swornenemies[myStats->type][HUMAN];
-				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER) && 
-					!(yourStats->type == AUTOMATON || yourStats->type == DRYAD || yourStats->type == MYCONID || yourStats->type == SALAMANDER
-						|| yourStats->type == GNOME) )
+				if ( yourPlayerAllianceType == LEONIN ) // mod add: use Human hostility unchanged
+				{
+					result = myStats->type == LEONIN ? false : result;
+				}
+				else if ( yourPlayerAllianceType == GOLEM )
+				{
+					const int alliance = your->getNaturalGolemAlliance(myStats->type);
+					if ( alliance >= 0 )
+					{
+						result = alliance == 0;
+					}
+				}
+				else if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER) &&
+					!(yourPlayerAllianceType == AUTOMATON || yourPlayerAllianceType == DRYAD || yourPlayerAllianceType == MYCONID || yourPlayerAllianceType == SALAMANDER
+						|| yourPlayerAllianceType == GNOME) )
 				{
 					// enemies.
 					result = true;
 				}
 				else
 				{
-					switch ( yourStats->type )
+					switch ( yourPlayerAllianceType )
 					{
 						case SKELETON:
 							if ( myStats->type == GHOUL )
@@ -19430,6 +20690,30 @@ bool Entity::checkFriend(Entity* your)
 	{
 		return false;
 	}
+	const bool myWraithBody = isActiveWraithPossessedPlayerForAlliance(this, myStats);
+	const bool yourWraithBody = isActiveWraithPossessedPlayerForAlliance(your, yourStats);
+	const auto myWraithAlliance = getWraithPossessionAllianceRule(myWraithBody
+		? getWraithEffectiveMonsterType(skill[2]) : NOTHING);
+	const auto yourWraithAlliance = getWraithPossessionAllianceRule(yourWraithBody
+		? getWraithEffectiveMonsterType(your->skill[2]) : NOTHING);
+	const Monster myPlayerAllianceType = myWraithBody
+		&& myWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE
+		? myWraithAlliance.profileType : myStats->type;
+	const Monster yourPlayerAllianceType = yourWraithBody
+		&& yourWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE
+		? yourWraithAlliance.profileType : yourStats->type;
+	const bool myWraithSpirit = isIncorporealWraithPlayerForAlliance(this, myStats);
+	const bool yourWraithSpirit = isIncorporealWraithPlayerForAlliance(your, yourStats);
+
+	// Spirit weapons produced by a Golem overload are hazards, not summons.
+	// They have no friendly faction on either side of this relationship.
+	if ( (myStats->type == MONSTER_ADORCISED_WEAPON
+			&& myStats->getAttribute("golem_wild_magic_hostile") != "")
+		|| (yourStats->type == MONSTER_ADORCISED_WEAPON
+			&& yourStats->getAttribute("golem_wild_magic_hostile") != "") )
+	{
+		return false;
+	}
 
 	if ( everybodyfriendly || intro )   // friendly monsters mode
 	{
@@ -19492,8 +20776,8 @@ bool Entity::checkFriend(Entity* your)
 		return false;
 	}
 
-	if ( (your->behavior == &actPlayer && monsterCanTradeWith(your->isEntityPlayer()))
-		|| (behavior == &actPlayer && your->monsterCanTradeWith(isEntityPlayer())) )
+	if ( (your->behavior == &actPlayer && !yourWraithSpirit && monsterCanTradeWith(your->isEntityPlayer()))
+		|| (behavior == &actPlayer && !myWraithSpirit && your->monsterCanTradeWith(isEntityPlayer())) )
 	{
 		return true;
 	}
@@ -19665,7 +20949,12 @@ bool Entity::checkFriend(Entity* your)
 			result = monsterally[myStats->type][yourStats->type];
 
 			// player exceptions to table go here.
-			if ( myStats->type == SHOPKEEPER && your->behavior == &actPlayer )
+			if ( (behavior == &actPlayer && myWraithSpirit)
+				|| (your->behavior == &actPlayer && yourWraithSpirit) )
+			{
+				result = false;
+			}
+			else if ( myStats->type == SHOPKEEPER && your->behavior == &actPlayer )
 			{
 				result = !ShopkeeperPlayerHostility.isPlayerEnemy(your->skill[2]);
 			}
@@ -19673,19 +20962,46 @@ bool Entity::checkFriend(Entity* your)
 			{
 				result = !ShopkeeperPlayerHostility.isPlayerEnemy(this->skill[2]);
 			}
-			else if ( behavior == &actPlayer && myStats->type != HUMAN )
+			else if ( behavior == &actPlayer && your->behavior == &actMonster && myWraithBody
+				&& myWraithAlliance.mode != WraithPossessionAllianceMode::PLAYER_PROFILE )
+			{
+				result = false;
+			}
+			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourWraithBody
+				&& yourWraithAlliance.mode != WraithPossessionAllianceMode::PLAYER_PROFILE )
+			{
+				result = false;
+			}
+			else if ( behavior == &actPlayer && myPlayerAllianceType != HUMAN
+				&& (!myWraithBody || myWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE) )
 			{
 				result = monsterally[HUMAN][yourStats->type];
-				if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER) 
-					&& !(myStats->type == AUTOMATON || myStats->type == DRYAD || myStats->type == MYCONID || myStats->type == SALAMANDER
-						|| myStats->type == GNOME) )
+				if ( myPlayerAllianceType == LEONIN ) //mod add: retain Human alliances, but Human itself is neutral
+				{
+					if ( yourStats->type == HUMAN )
+					{
+						result = false;
+					}
+					else if ( yourStats->type == LEONIN )
+					{
+						result = monsterally[LEONIN][LEONIN];
+					}
+				}
+				else if ( myPlayerAllianceType == GOLEM )
+				{
+					const int alliance = getNaturalGolemAlliance(yourStats->type);
+					result = alliance >= 0 && alliance != 0;
+				}
+				else if ( (yourStats->type == HUMAN || yourStats->type == SHOPKEEPER)
+					&& !(myPlayerAllianceType == AUTOMATON || myPlayerAllianceType == DRYAD || myPlayerAllianceType == MYCONID || myPlayerAllianceType == SALAMANDER
+						|| myPlayerAllianceType == GNOME) )
 				{
 					result = false;
 				}
 				else
 				{
 					result = false;
-					switch ( myStats->type )
+					switch ( myPlayerAllianceType )
 					{
 						case SKELETON:
 							if ( yourStats->type == GHOUL )
@@ -19795,23 +21111,52 @@ bool Entity::checkFriend(Entity* your)
 								result = false;
 							}
 							break;
+						// mod add: Merrow
+						case MERROW:
+							if ( yourStats->type == AUTOMATON)
+							{
+								result = true;
+							}
+							if ( yourStats->type == MERROW)
+							{
+								result = true;
+							}
+							break;
+						// mod add end
 						default:
 							break;
 					}
 				}
 			}
-			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourStats->type != HUMAN )
+			else if ( behavior == &actMonster && your->behavior == &actPlayer && yourPlayerAllianceType != HUMAN
+				&& (!yourWraithBody || yourWraithAlliance.mode == WraithPossessionAllianceMode::PLAYER_PROFILE) )
 			{
 				result = monsterally[myStats->type][HUMAN];
-				if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER)
-					&& !(yourStats->type == AUTOMATON || yourStats->type == DRYAD || yourStats->type == MYCONID || yourStats->type == SALAMANDER
-						|| yourStats->type == GNOME) )
+				if ( yourPlayerAllianceType == LEONIN ) //mod add: retain Human alliances, but Human itself is neutral
+				{
+					if ( myStats->type == HUMAN )
+					{
+						result = false;
+					}
+					else if ( myStats->type == LEONIN )
+					{
+						result = monsterally[LEONIN][LEONIN];
+					}
+				}
+				else if ( yourPlayerAllianceType == GOLEM )
+				{
+					const int alliance = your->getNaturalGolemAlliance(myStats->type);
+					result = alliance >= 0 && alliance != 0;
+				}
+				else if ( (myStats->type == HUMAN || myStats->type == SHOPKEEPER)
+					&& !(yourPlayerAllianceType == AUTOMATON || yourPlayerAllianceType == DRYAD || yourPlayerAllianceType == MYCONID || yourPlayerAllianceType == SALAMANDER
+						|| yourPlayerAllianceType == GNOME) )
 				{
 					result = false;
 				}
 				else
 				{
-					switch ( yourStats->type )
+					switch ( yourPlayerAllianceType )
 					{
 						case SKELETON:
 							if ( myStats->type == GHOUL )
@@ -20318,6 +21663,8 @@ int checkEquipType(const Item *item)
 		case TOOL_TORCH:
 		case TOOL_LANTERN:
 		case TOOL_CRYSTALSHARD:
+		case SPYGLASS: // mod add: Spyglass occupies the normal offhand slot.
+		case MAGIC_RUNE:
 			return TYPE_OFFHAND;
 			break;
 
@@ -20791,6 +22138,14 @@ bool isLevitating(Stat* mystats)
 	{
 		return false;
 	}
+	for ( int i = 0; i < MAXPLAYERS; ++i )
+	{
+		if ( players[i] && players[i]->entity
+			&& players[i]->entity->getStats() == mystats && playerIsInWraithForm(i) )
+		{
+			return true;
+		}
+	}
 
 	// check levitating value
 	bool levitating = false;
@@ -20883,9 +22238,10 @@ int getWeaponSkill(const Item* weapon)
 		return PRO_UNARMED;
 	}
 
-	if ( weapon->type == QUARTERSTAFF || weapon->type == IRON_SPEAR 
+	if ( weapon->type == QUARTERSTAFF || weapon->type == RUNE_HAMMER || weapon->type == IRON_SPEAR
 		|| weapon->type == STEEL_HALBERD || weapon->type == ARTIFACT_SPEAR 
 		|| weapon->type == CRYSTAL_SPEAR
+		|| weapon->type == HARPOON //mod addon
 		|| weapon->type == LANCE_SPEAR
 		|| weapon->type == BONE_SPEAR 
 		|| weapon->type == BLACKIRON_TRIDENT 
@@ -21044,6 +22400,423 @@ int Entity::isEntityPlayer() const
 	return -1;
 }
 
+// mod add: Leonin racial mechanics
+bool Entity::isNaturalLeoninPlayer() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats || behavior != &actPlayer )
+	{
+		return false;
+	}
+	return myStats->playerRace == RACE_LEONIN
+		&& myStats->stat_appearance == 0
+		&& myStats->type == LEONIN
+		&& effectPolymorph == NOTHING
+		&& effectShapeshift == NOTHING
+		&& !myStats->getEffectActive(EFF_POLYMORPH)
+		&& !myStats->getEffectActive(EFF_SHAPESHIFT);
+}
+
+bool Entity::isWraithPossessedDemonWithClaws() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats || behavior != &actPlayer || myStats->type != DEMON
+		|| myStats->playerRace != RACE_WRAITH || myStats->stat_appearance != 0
+		|| effectPolymorph != NOTHING || effectShapeshift != NOTHING
+		|| myStats->getEffectActive(EFF_POLYMORPH)
+		|| myStats->getEffectActive(EFF_SHAPESHIFT) )
+	{
+		return false;
+	}
+	const int player = isEntityPlayer();
+	return player >= 0 && player < MAXPLAYERS && players[player]
+		&& players[player]->mechanics.wraith.initialized
+		&& players[player]->mechanics.wraith.possessedEntityUid != 0
+		&& players[player]->mechanics.wraith.possessedType == DEMON;
+}
+
+// A natural Golem is its own gameplay identity and is not inferred from its
+// current rendering model.
+bool Entity::isNaturalGolemPlayer() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats || behavior != &actPlayer )
+	{
+		return false;
+	}
+	return myStats->playerRace == RACE_GOLEM
+		&& myStats->stat_appearance == 0
+		&& myStats->type == GOLEM
+		&& effectPolymorph == NOTHING
+		&& effectShapeshift == NOTHING
+		&& !myStats->getEffectActive(EFF_POLYMORPH)
+		&& !myStats->getEffectActive(EFF_SHAPESHIFT);
+}
+
+bool Entity::isBlessedGolemPlayer() const
+{
+	Stat* myStats = getStats();
+	return myStats && isNaturalGolemPlayer() && myStats->sex == MALE;
+}
+
+bool Entity::isCursedGolemPlayer() const
+{
+	Stat* myStats = getStats();
+	return myStats && isNaturalGolemPlayer() && myStats->sex == FEMALE;
+}
+
+int Entity::getNaturalGolemAlliance(Monster otherType) const
+{
+	if ( !isNaturalGolemPlayer() )
+	{
+		return -1;
+	}
+
+	if ( otherType == AUTOMATON )
+	{
+		return 1;
+	}
+	if ( otherType == HUMAN )
+	{
+		return isBlessedGolemPlayer() ? 1 : 0;
+	}
+	if ( otherType == INCUBUS || otherType == SUCCUBUS )
+	{
+		return isCursedGolemPlayer() ? 1 : 0;
+	}
+	return -1;
+}
+
+bool Entity::isLeoninNaturalClawAttack() const
+{
+	Stat* myStats = getStats();
+	return myStats && (isNaturalLeoninPlayer() || isWraithPossessedDemonWithClaws())
+		&& !myStats->weapon
+		&& !myStats->gloves;
+}
+
+int Entity::getLeoninNaturalClawTier() const
+{
+	if ( !isLeoninNaturalClawAttack() )
+	{
+		return 0;
+	}
+	return getLeoninClawTier();
+}
+
+int Entity::getLeoninClawTier() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats || (!isNaturalLeoninPlayer() && !isWraithPossessedDemonWithClaws()) )
+	{
+		return 0;
+	}
+	return 1 + (myStats->LVL / 10);
+}
+// mod add end
+
+// mod add: Merrow reflecting scales
+static constexpr int MERROW_SCALE_SWIM_COOLDOWN =
+	10 * TICKS_PER_SECOND;
+
+static constexpr int MERROW_SCALE_BASE_DURATION =
+	30 * TICKS_PER_SECOND;
+
+static constexpr int MERROW_SCALE_CLEAN_CHANCE = 50;
+static constexpr int MERROW_SCALE_DOUBLE_CLEAN_CHANCE = 5;
+
+bool Entity::isMerrowPlayer() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats || behavior != &actPlayer )
+	{
+		return false;
+	}
+	if ( effectShapeshift != NOTHING
+		|| effectPolymorph != NOTHING
+		|| myStats->getEffectActive(EFF_SHAPESHIFT)
+		|| myStats->getEffectActive(EFF_POLYMORPH) )
+	{
+		return false;
+	}
+	return myStats->type == MERROW
+		|| (myStats->playerRace == RACE_MERROW
+			&& myStats->stat_appearance == 0);
+}
+
+int Entity::getMerrowReflectingScaleCap() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats || !isMerrowPlayer() )
+	{
+		return 0;
+	}
+
+	int cap = 0;
+
+	if ( !myStats->shoes )
+	{
+		++cap;
+	}
+	if ( !myStats->breastplate )
+	{
+		++cap;
+	}
+	if ( !myStats->gloves )
+	{
+		++cap;
+	}
+	if ( !myStats->helmet )
+	{
+		++cap;
+	}
+	if ( !myStats->mask )
+	{
+		++cap;
+	}
+	if ( !myStats->cloak )
+	{
+		++cap;
+	}
+
+	return cap;
+}
+
+int Entity::getMerrowReflectingScales() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats || !isMerrowPlayer() )
+	{
+		return 0;
+	}
+
+	return std::min(6,
+		static_cast<int>(myStats->getEffectActive(EFF_GROWTH)));
+}
+
+void Entity::setMerrowReflectingScales(int scales)
+{
+	Stat* myStats = getStats();
+	if ( !myStats || !isMerrowPlayer() )
+	{
+		return;
+	}
+
+	const int cap = getMerrowReflectingScaleCap();
+	const int newScales = std::max(0, std::min(cap, scales));
+	const int oldScales = myStats->getEffectActive(EFF_GROWTH);
+
+	// Reaching zero also stops the grime-decay sequence.
+	if ( newScales <= 0 )
+	{
+		myStats->EFFECTS_TIMERS[EFF_GROWTH] = 0;
+		myStats->MISC_FLAGS[STAT_FLAG_MERROW_SCALE_DECAY_INTERVAL] = 0;
+	}
+
+	if ( newScales == oldScales )
+	{
+		return;
+	}
+
+	myStats->setEffectValueUnsafe(
+		EFF_GROWTH,
+		static_cast<Uint8>(newScales));
+
+	if ( multiplayer == SERVER )
+	{
+		serverUpdateEffects(skill[2]);
+	}
+}
+
+void Entity::polishMerrowReflectingScales(int durationTicks)
+{
+	if ( multiplayer == CLIENT || !isMerrowPlayer() )
+	{
+		return;
+	}
+
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	const int cap = getMerrowReflectingScaleCap();
+
+	// A fully cursed (-3 or worse) towel has zero polish duration.
+	if ( cap <= 0 || durationTicks <= 0 )
+	{
+		setMerrowReflectingScales(0);
+		return;
+	}
+
+	myStats->MISC_FLAGS[STAT_FLAG_MERROW_SCALE_DECAY_INTERVAL]
+		= durationTicks;
+	myStats->EFFECTS_TIMERS[EFF_GROWTH]
+		= durationTicks;
+
+	// Towels polish every currently exposed scale at once.
+	setMerrowReflectingScales(cap);
+
+	// setMerrowReflectingScales() does not send anything if already at cap,
+	// but polishing still refreshed the timer.
+	if ( multiplayer == SERVER )
+	{
+		serverUpdateEffects(skill[2]);
+	}
+}
+
+void Entity::updateMerrowReflectingScales()
+{
+	if ( multiplayer == CLIENT || !isMerrowPlayer() )
+	{
+		return;
+	}
+
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	// Swimming may attempt another cleaning roll once this reaches zero.
+	if ( myStats->MISC_FLAGS[STAT_FLAG_MERROW_SCALE_COOLDOWN] > 0 )
+	{
+		--myStats->MISC_FLAGS[STAT_FLAG_MERROW_SCALE_COOLDOWN];
+	}
+
+	// Equipping armor can lower the scale cap.
+	// Removing armor still never grants free polished scales.
+	setMerrowReflectingScales(getMerrowReflectingScales());
+
+	const int currentScales = getMerrowReflectingScales();
+	if ( currentScales <= 0 )
+	{
+		return;
+	}
+
+	// Migration/failsafe for old saves where Merrow scales were permanent.
+	if ( myStats->EFFECTS_TIMERS[EFF_GROWTH] < 0 )
+	{
+		myStats->MISC_FLAGS[STAT_FLAG_MERROW_SCALE_DECAY_INTERVAL]
+			= MERROW_SCALE_BASE_DURATION;
+		myStats->EFFECTS_TIMERS[EFF_GROWTH]
+			= MERROW_SCALE_BASE_DURATION;
+
+		if ( multiplayer == SERVER )
+		{
+			serverUpdateEffects(skill[2]);
+		}
+		return;
+	}
+
+	// The normal effect system counts this timer down for us.
+	if ( myStats->EFFECTS_TIMERS[EFF_GROWTH] == 0 )
+	{
+		int currentInterval =
+			myStats->MISC_FLAGS[STAT_FLAG_MERROW_SCALE_DECAY_INTERVAL];
+
+		if ( currentInterval <= 0 )
+		{
+			currentInterval = MERROW_SCALE_BASE_DURATION;
+		}
+
+		const int newScales = currentScales - 1;
+
+		if ( newScales > 0 )
+		{
+			const int nextInterval = std::max(1, currentInterval / 2);
+
+			myStats->MISC_FLAGS[STAT_FLAG_MERROW_SCALE_DECAY_INTERVAL]
+				= nextInterval;
+			myStats->EFFECTS_TIMERS[EFF_GROWTH]
+				= nextInterval;
+		}
+		else
+		{
+			myStats->MISC_FLAGS[STAT_FLAG_MERROW_SCALE_DECAY_INTERVAL] = 0;
+			myStats->EFFECTS_TIMERS[EFF_GROWTH] = 0;
+		}
+
+		setMerrowReflectingScales(newScales);
+	}
+}
+
+bool Entity::tryCleanMerrowReflectingScales()
+{
+	if ( multiplayer == CLIENT || !isMerrowPlayer() )
+	{
+		return false;
+	}
+
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	const int currentScales = getMerrowReflectingScales();
+	const int cap = getMerrowReflectingScaleCap();
+
+	if ( currentScales >= cap )
+	{
+		return false;
+	}
+
+	// Ten seconds between swimming CHECKS.
+	if ( myStats->MISC_FLAGS[STAT_FLAG_MERROW_SCALE_COOLDOWN] > 0 )
+	{
+		return false;
+	}
+
+	// As before, a failed roll still consumes the cooldown.
+	myStats->MISC_FLAGS[STAT_FLAG_MERROW_SCALE_COOLDOWN]
+		= MERROW_SCALE_SWIM_COOLDOWN;
+
+	// Cleaning from zero is guaranteed once the normal cooldown is ready.
+	if ( currentScales > 0 && local_rng.rand() % 100 >= MERROW_SCALE_CLEAN_CHANCE )
+	{
+		return false;
+	}
+
+	int cleanedScales = 1;
+
+	// Original conditional 5% chance to clean two.
+	if ( local_rng.rand() % 100 < MERROW_SCALE_DOUBLE_CLEAN_CHANCE )
+	{
+		cleanedScales = 2;
+	}
+
+	// A successful cleaning gives the newly polished state a fresh
+	// normal 30-second first decay interval.
+	myStats->MISC_FLAGS[STAT_FLAG_MERROW_SCALE_DECAY_INTERVAL]
+		= MERROW_SCALE_BASE_DURATION;
+	myStats->EFFECTS_TIMERS[EFF_GROWTH]
+		= MERROW_SCALE_BASE_DURATION;
+
+	setMerrowReflectingScales(currentScales + cleanedScales);
+
+	return true;
+}
+
+bool Entity::consumeMerrowReflectingScale()
+{
+	if ( multiplayer == CLIENT || !isMerrowPlayer() )
+	{
+		return false;
+	}
+
+	const int currentScales = getMerrowReflectingScales();
+	if ( currentScales <= 0 )
+	{
+		return false;
+	}
+
+	setMerrowReflectingScales(currentScales - 1);
+	return true;
+}
+// mod add end
+
 int Entity::getReflection() const
 {
 	Stat *stats = getStats();
@@ -21065,6 +22838,12 @@ int Entity::getReflection() const
 			return 3;
 		}
 	}
+	// mod add: Merrow reflecting scales
+	if ( isMerrowPlayer() && getMerrowReflectingScales() > 0 )
+	{
+		return 4;
+	}
+	// mod add end
 	if ( stats->amulet )
 	{
 		if ( stats->amulet->type == AMULET_MAGICREFLECTION )
@@ -22341,6 +24120,22 @@ Uint32 Entity::getMonsterFootstepSound(int footstepType, int bootSprite)
 {
 	int sound = -1;
 
+	// mod add: Merrow custom footsteps
+	Stat* myStats = getStats();
+	if ( myStats && myStats->type == MERROW )
+	{
+		static constexpr Uint32 merrowFootsteps[] =
+		{
+			860
+		};
+
+		return merrowFootsteps[
+			local_rng.rand()
+			% (sizeof(merrowFootsteps) / sizeof(merrowFootsteps[0]))
+		];
+	}
+	// mod add end
+
 	switch ( footstepType )
 	{
 		case MONSTER_FOOTSTEP_SKELETON:
@@ -22381,6 +24176,19 @@ Uint32 Entity::getMonsterFootstepSound(int footstepType, int bootSprite)
 			break;
 	}
 	return static_cast<Uint32>(sound);
+}
+
+static bool spriteIsWitchbrewBottleModel(Sint32 sprite)
+{
+	for ( int type = TINCTURE_STR; type <= OIL_BRINE; ++type )
+	{
+		const int variations = items[type].variations > 0 ? items[type].variations : 1;
+		if ( sprite >= items[type].index && sprite < items[type].index + variations )
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
@@ -22459,6 +24267,42 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			weaponLimb->z = weaponArmLimb->z + 1;
 			weaponLimb->pitch = weaponArmLimb->pitch;
 		}
+		 // mod add flintlock and musket offset
+		else if ( weaponLimb->sprite == items[FLINTLOCK_PISTOL].index )
+		{
+			weaponLimb->x = weaponArmLimb->x;
+			weaponLimb->y = weaponArmLimb->y;
+			weaponLimb->z = weaponArmLimb->z + 1;
+			weaponLimb->pitch = weaponArmLimb->pitch;
+			// forward/back
+			weaponLimb->x += 1 * cos(weaponArmLimb->yaw);
+			weaponLimb->y += 1 * sin(weaponArmLimb->yaw);
+
+			// sideways
+			weaponLimb->x += 0.0 * cos(weaponArmLimb->yaw + PI / 2);
+			weaponLimb->y += 0.0 * sin(weaponArmLimb->yaw + PI / 2);
+
+			// up/down
+			weaponLimb->z += 0.0;
+		}
+		else if ( weaponLimb->sprite == items[MUSKET].index )
+		{
+			weaponLimb->x = weaponArmLimb->x;
+			weaponLimb->y = weaponArmLimb->y;
+			weaponLimb->z = weaponArmLimb->z + 1;
+			weaponLimb->pitch = weaponArmLimb->pitch;
+			// forward/back
+			weaponLimb->x += 2 * cos(weaponArmLimb->yaw);
+			weaponLimb->y += 2 * sin(weaponArmLimb->yaw);
+
+			// sideways
+			weaponLimb->x += 0.0 * cos(weaponArmLimb->yaw + PI / 2);
+			weaponLimb->y += 0.0 * sin(weaponArmLimb->yaw + PI / 2);
+
+			// up/down
+			weaponLimb->z += 2.0;
+		}
+		//mod add end
 		else if ( weaponLimb->sprite == items[TOOL_LOCKPICK].index )
 		{
 			weaponLimb->x = weaponArmLimb->x + 1.5 * cos(weaponArmLimb->yaw);
@@ -22585,7 +24429,8 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		if ( isPlayer )
 		{
 			if ( (weaponLimb->sprite >= 50 && weaponLimb->sprite < 58)
-				|| weaponLimb->sprite == 795 )
+				|| weaponLimb->sprite == 795
+				|| spriteIsWitchbrewBottleModel(weaponLimb->sprite) )
 			{
 				weaponLimb->roll += (PI / 2); // potion sprites rotated
 				isPotion = true;
@@ -22707,6 +24552,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 			weaponLimb->z += 0.25;
 			switch ( monsterType )
 			{
+				case GOLEM:
+					weaponLimb->x += 0.5 * cos(weaponArmLimb->yaw + PI / 2);
+					weaponLimb->y += 0.5 * sin(weaponArmLimb->yaw + PI / 2);
+					break;
 				case SKELETON:
 				case AUTOMATON:
 				case GOATMAN:
@@ -22715,6 +24564,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				case DRYAD:
 				case MYCONID:
 				case SALAMANDER:
+				case LEONIN:
 				case GREMLIN:
 				case GNOME:
 					weaponLimb->x += 0.5 * cos(weaponArmLimb->yaw + PI / 2);
@@ -22759,11 +24609,18 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		}
 		else if ( weaponLimb->sprite == items[CROSSBOW].index 
 			|| weaponLimb->sprite == items[HEAVY_CROSSBOW].index
-			|| weaponLimb->sprite == items[BLACKIRON_CROSSBOW].index )
+			|| weaponLimb->sprite == items[BLACKIRON_CROSSBOW].index
+			|| weaponLimb->sprite == items[FLINTLOCK_PISTOL].index )// mod add: reuse crossbow focal offsets
 		{
 			weaponLimb->focalx += 2.1;
 			weaponLimb->focaly -= 0.1;
 		}
+			//mod add
+		else if ( weaponLimb->sprite == items[MUSKET].index )
+		{
+			weaponLimb->focalx += 5.1;
+			weaponLimb->focaly -= 0.0;
+		} //mod add end
 		else if ( weaponLimb->sprite == items[SHORTBOW].index || weaponLimb->sprite == items[ARTIFACT_BOW].index
 			|| weaponLimb->sprite == items[LONGBOW].index || weaponLimb->sprite == items[BRANCH_BOW].index
 			|| weaponLimb->sprite == items[BRANCH_BOW_INFECTED].index
@@ -22785,6 +24642,14 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 						weaponLimb->focaly += 0;
 						weaponLimb->focalz += 1.75;
 						break;
+					case GOLEM:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.25 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1;
+						weaponLimb->focalx += 0;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.25;
+						break;
 					case GOBLIN:
 					case GOATMAN:
 					case INSECTOID:
@@ -22793,6 +24658,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					case DRYAD:
 					case MYCONID:
 					case SALAMANDER:
+					case LEONIN:
 					case GREMLIN:
 					case GNOME:
 						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.25 * cos(weaponArmLimb->yaw);
@@ -22843,12 +24709,21 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 							weaponLimb->focalz += -0.5;
 						}
 						break;
+					case GOLEM:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.5 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.5 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1;
+						weaponLimb->focalx += 0;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.25;
+						break;
 					case GOBLIN:
 					case GOATMAN:
 					case INSECTOID:
 					case DRYAD:
 					case MYCONID:
 					case SALAMANDER:
+					case LEONIN:
 					case GREMLIN:
 					case GNOME:
 						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.5 * cos(weaponArmLimb->yaw);
@@ -22906,12 +24781,21 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 						weaponLimb->focaly += 0;
 						weaponLimb->focalz += 1.75;
 						break;
+					case GOLEM:
+						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.5 * cos(weaponArmLimb->yaw);
+						weaponLimb->y += -.1 * sin(weaponArmLimb->yaw + PI / 2) + 0.5 * sin(weaponArmLimb->yaw);
+						weaponLimb->z += -1;
+						weaponLimb->focalx += 0;
+						weaponLimb->focaly += 0;
+						weaponLimb->focalz += 1.25;
+						break;
 					case GOBLIN:
 					case GOATMAN:
 					case INSECTOID:
 					case DRYAD:
 					case MYCONID:
 					case SALAMANDER:
+					case LEONIN:
 					case GREMLIN:
 					case GNOME:
 						weaponLimb->x += -.1 * cos(weaponArmLimb->yaw + PI / 2) + 0.5 * cos(weaponArmLimb->yaw);
@@ -22954,6 +24838,9 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		{
 			switch ( monsterType )
 			{
+				case GOLEM:
+					weaponLimb->focaly -= 0.05;
+					break;
 				case SUCCUBUS:
 				case INCUBUS:
 				case HUMAN:
@@ -22964,6 +24851,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				case DRYAD:
 				case MYCONID:
 				case SALAMANDER:
+				case LEONIN:
 				case GREMLIN:
 				case GNOME:
 					weaponLimb->focaly -= 0.05; // minor z-fighting fix.
@@ -22972,7 +24860,16 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					break;
 			}
 
-			if ( monsterType == DRYAD || monsterType == MYCONID || monsterType == SALAMANDER || monsterType == GREMLIN
+			if ( monsterType == GOLEM )
+			{
+				weaponLimb->x += limbs[monsterType][17][0] * cos(weaponArmLimb->yaw + PI / 2) + limbs[monsterType][17][1] * cos(weaponArmLimb->yaw);
+				weaponLimb->y += limbs[monsterType][17][0] * sin(weaponArmLimb->yaw + PI / 2) + limbs[monsterType][17][1] * sin(weaponArmLimb->yaw);
+				weaponLimb->z += limbs[monsterType][17][2];
+
+				weaponLimb->focalx += 0.5;
+				weaponLimb->focalz -= 0.5;
+			}
+			else if ( monsterType == DRYAD || monsterType == MYCONID || monsterType == SALAMANDER || monsterType == LEONIN || monsterType == GREMLIN
 				|| monsterType == GNOME )
 			{
 				weaponLimb->x += limbs[monsterType][17][0] * cos(weaponArmLimb->yaw + PI / 2) + limbs[monsterType][17][1] * cos(weaponArmLimb->yaw);
@@ -23020,13 +24917,17 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 		if ( weaponLimb->sprite == items[BOOMERANG].index )
 		{
 			weaponLimb->focalx += 2;
-			weaponLimb->focaly += 0.25;
-			weaponLimb->focalz += 2;
-			weaponLimb->x += -1.2 * cos(weaponArmLimb->yaw + PI / 2) + -.1 * cos(weaponArmLimb->yaw);
-			weaponLimb->y += -1.2 * sin(weaponArmLimb->yaw + PI / 2) + -.1 * sin(weaponArmLimb->yaw);
-			weaponLimb->z += 0.25;
-			switch ( monsterType )
-			{
+		weaponLimb->focaly += 0.25;
+		weaponLimb->focalz += 2;
+		weaponLimb->x += -1.2 * cos(weaponArmLimb->yaw + PI / 2) + -.1 * cos(weaponArmLimb->yaw);
+		weaponLimb->y += -1.2 * sin(weaponArmLimb->yaw + PI / 2) + -.1 * sin(weaponArmLimb->yaw);
+		weaponLimb->z += 0.25;
+		switch ( monsterType )
+		{
+				case GOLEM:
+					weaponLimb->x += 0.5 * cos(weaponArmLimb->yaw + PI / 2);
+					weaponLimb->y += 0.5 * sin(weaponArmLimb->yaw + PI / 2);
+					break;
 				case SKELETON:
 				case AUTOMATON:
 				case GOATMAN:
@@ -23035,6 +24936,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 				case DRYAD:
 				case MYCONID:
 				case SALAMANDER:
+				case LEONIN:
 				case GREMLIN:
 				case GNOME:
 					weaponLimb->x += 0.5 * cos(weaponArmLimb->yaw + PI / 2);
@@ -23247,7 +25149,11 @@ void doParticleEffectForTouchSpell(Entity& my, Entity* focalLimb, Monster monste
 	{
 		z += 0.5;
 	}
-	else if ( monsterType == SALAMANDER )
+	else if ( monsterType == GOLEM )
+	{
+		z += 1.0;
+	}
+	else if ( monsterType == SALAMANDER || monsterType == LEONIN )
 	{
 		z += 1.0;
 	}
@@ -24234,6 +26140,10 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	{
 		return;
 	}
+	if ( myStats->type == BAT_FAMILIAR )
+	{
+		return;
+	}
 
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
 	Sint32 oldMonsterState = monsterState;
@@ -24280,6 +26190,21 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 	if ( target.behavior == &actMonster || target.behavior == &actPlayer )
 	{
 		if ( !target.monsterIsTargetable() )
+		{
+			return;
+		}
+	}
+
+	// mod add: Hearing a gunshot should not make a monster abandon its search
+	// for unrelated dungeon creatures. Players and their followers/bots still
+	// override it normally, and a physical hit always causes retaliation.
+	if ( monsterInvestigatingGunshot )
+	{
+		if ( monsterWasHit || monsterGunshotAllowsTarget(target) )
+		{
+			monsterClearGunshotInvestigation();
+		}
+		else
 		{
 			return;
 		}
@@ -24553,6 +26478,475 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool
 		//pose = MONSTER_POSE_MAGIC_WINDUP1;
 		monsterShadowInitialMimic = 1; //true!
 		attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+	}
+}
+
+bool Entity::monsterGunshotAllowsTarget(const Entity& target) const
+{
+	if ( target.behavior == &actPlayer )
+	{
+		return true;
+	}
+	if ( target.behavior == &actMonster )
+	{
+		if ( target.monsterAllyGetPlayerLeader() )
+		{
+			return true;
+		}
+		if ( Stat* targetStats = target.getStats() )
+		{
+			return achievementObserver.checkUidIsFromPlayer(targetStats->leader_uid) >= 0;
+		}
+	}
+	return false;
+}
+
+bool Entity::monsterGunshotShouldIgnoreMonsterCollision(const Entity& target) const
+{
+	// mod add: use the same investigation target-priority rule for physical traffic
+	// that vision and target acquisition use. Retaliation enters through
+	// monsterAcquireAttackTarget(..., monsterWasHit = true) and remains allowed.
+	return monsterInvestigatingGunshot && target.behavior == &actMonster
+		&& !monsterGunshotAllowsTarget(target);
+}
+
+void Entity::monsterClearGunshotInvestigation()
+{
+	monsterInvestigatingGunshot = false;
+	monsterGunshotPending = false;
+	monsterGunshotPhase = MonsterGunshotPhase::NONE;
+	monsterGunshotX = 0.0;
+	monsterGunshotY = 0.0;
+	monsterGunshotOriginX = 0.0;
+	monsterGunshotOriginY = 0.0;
+	monsterGunshotSearchTicks = 0;
+	monsterGunshotReturnPathTries = 0;
+	monsterGunshotHadPath = false;
+}
+
+bool Entity::monsterRebuildGunshotPath()
+{
+	if ( !monsterInvestigatingGunshot )
+	{
+		return false;
+	}
+	if ( monsterGunshotPhase == MonsterGunshotPhase::RETURN )
+	{
+		return monsterRebuildGunshotReturnPath();
+	}
+	if ( monsterGunshotPhase == MonsterGunshotPhase::SEARCH
+		|| monsterGunshotPhase == MonsterGunshotPhase::RETURN_SEARCH )
+	{
+		// Search phases deliberately have no movement path, but remain part of the
+		// disturbance state for target and collision filtering.
+		monsterState = MONSTER_STATE_WAIT;
+		return true;
+	}
+	if ( monsterGunshotPhase != MonsterGunshotPhase::INVESTIGATE )
+	{
+		return false;
+	}
+
+	const int shotTileX = static_cast<int>(floor(monsterGunshotX / 16.0));
+	const int shotTileY = static_cast<int>(floor(monsterGunshotY / 16.0));
+	const int currentTileX = static_cast<int>(floor(x / 16.0));
+	const int currentTileY = static_cast<int>(floor(y / 16.0));
+	if ( currentTileX == shotTileX && currentTileY == shotTileY )
+	{
+		monsterGunshotHadPath = true;
+		monsterState = MONSTER_STATE_WAIT;
+		return true;
+	}
+
+	auto tryDestination = [this, currentTileX, currentTileY](int tileX, int tileY)
+	{
+		if ( currentTileX == tileX && currentTileY == tileY )
+		{
+			// A newest-shot redirect may select the tile currently occupied while an
+			// older investigation/return path still exists. Discard that stale path
+			// and begin SEARCH here instead of accidentally continuing toward it.
+			if ( children.first )
+			{
+				list_RemoveNode(children.first);
+			}
+			node_t* pathNode = list_AddNodeFirst(&children);
+			pathNode->element = nullptr;
+			pathNode->deconstructor = &listDeconstructor;
+			monsterGunshotHadPath = true;
+			monsterState = MONSTER_STATE_WAIT;
+			return true;
+		}
+		if ( !monsterSetPathToLocation(tileX, tileY, 0,
+			GeneratePathTypes::GENERATE_PATH_GUNSHOT_INVESTIGATION) )
+		{
+			return false;
+		}
+		monsterGunshotHadPath = true;
+		monsterState = children.first && children.first->element
+			? MONSTER_STATE_HUNT : MONSTER_STATE_WAIT;
+		return true;
+	};
+
+	//mod add: stop two tiles from the gunshot rather than entering its tile.
+	// Try the four cardinal positions, nearest to this monster first.
+	static constexpr int GUNSHOT_STOP_DISTANCE_TILES = 2;
+	std::vector<std::pair<int, std::pair<int, int>>> cardinalTiles;
+	cardinalTiles.push_back({ abs(currentTileX - (shotTileX + GUNSHOT_STOP_DISTANCE_TILES)) + abs(currentTileY - shotTileY), {shotTileX + GUNSHOT_STOP_DISTANCE_TILES, shotTileY} });
+	cardinalTiles.push_back({ abs(currentTileX - (shotTileX - GUNSHOT_STOP_DISTANCE_TILES)) + abs(currentTileY - shotTileY), {shotTileX - GUNSHOT_STOP_DISTANCE_TILES, shotTileY} });
+	cardinalTiles.push_back({ abs(currentTileX - shotTileX) + abs(currentTileY - (shotTileY + GUNSHOT_STOP_DISTANCE_TILES)), {shotTileX, shotTileY + GUNSHOT_STOP_DISTANCE_TILES} });
+	cardinalTiles.push_back({ abs(currentTileX - shotTileX) + abs(currentTileY - (shotTileY - GUNSHOT_STOP_DISTANCE_TILES)), {shotTileX, shotTileY - GUNSHOT_STOP_DISTANCE_TILES} });
+	std::sort(cardinalTiles.begin(), cardinalTiles.end());
+	for ( const auto& candidate : cardinalTiles )
+	{
+		if ( tryDestination(candidate.second.first, candidate.second.second) )
+		{
+			monsterTargetX = monsterGunshotX;
+			monsterTargetY = monsterGunshotY;
+			return true;
+		}
+	}
+
+	// If every cardinal position is blocked, try the matching diagonal ring.
+	// Never fall back onto the report tile.
+	std::vector<std::pair<int, std::pair<int, int>>> diagonalTiles;
+	diagonalTiles.push_back({ abs(currentTileX - (shotTileX + GUNSHOT_STOP_DISTANCE_TILES)) + abs(currentTileY - (shotTileY + GUNSHOT_STOP_DISTANCE_TILES)), {shotTileX + GUNSHOT_STOP_DISTANCE_TILES, shotTileY + GUNSHOT_STOP_DISTANCE_TILES} });
+	diagonalTiles.push_back({ abs(currentTileX - (shotTileX + GUNSHOT_STOP_DISTANCE_TILES)) + abs(currentTileY - (shotTileY - GUNSHOT_STOP_DISTANCE_TILES)), {shotTileX + GUNSHOT_STOP_DISTANCE_TILES, shotTileY - GUNSHOT_STOP_DISTANCE_TILES} });
+	diagonalTiles.push_back({ abs(currentTileX - (shotTileX - GUNSHOT_STOP_DISTANCE_TILES)) + abs(currentTileY - (shotTileY + GUNSHOT_STOP_DISTANCE_TILES)), {shotTileX - GUNSHOT_STOP_DISTANCE_TILES, shotTileY + GUNSHOT_STOP_DISTANCE_TILES} });
+	diagonalTiles.push_back({ abs(currentTileX - (shotTileX - GUNSHOT_STOP_DISTANCE_TILES)) + abs(currentTileY - (shotTileY - GUNSHOT_STOP_DISTANCE_TILES)), {shotTileX - GUNSHOT_STOP_DISTANCE_TILES, shotTileY - GUNSHOT_STOP_DISTANCE_TILES} });
+	std::sort(diagonalTiles.begin(), diagonalTiles.end());
+	for ( const auto& candidate : diagonalTiles )
+	{
+		if ( tryDestination(candidate.second.first, candidate.second.second) )
+		{
+			monsterTargetX = monsterGunshotX;
+			monsterTargetY = monsterGunshotY;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Entity::monsterRebuildGunshotReturnPath()
+{
+	if ( !monsterInvestigatingGunshot
+		|| monsterGunshotPhase != MonsterGunshotPhase::RETURN )
+	{
+		return false;
+	}
+
+	// mod add: bound repeated collision/stall rebuilds so an obstructed origin
+	// can never strand a monster permanently in the RETURN phase.
+	static constexpr Sint32 MAX_RETURN_PATH_TRIES = 8;
+	if ( ++monsterGunshotReturnPathTries > MAX_RETURN_PATH_TRIES )
+	{
+		return false;
+	}
+
+	const int originTileX = static_cast<int>(floor(monsterGunshotOriginX / 16.0));
+	const int originTileY = static_cast<int>(floor(monsterGunshotOriginY / 16.0));
+	auto tryOrigin = [this, originTileX, originTileY](int adjacentTiles)
+	{
+		if ( !monsterSetPathToLocation(originTileX, originTileY, adjacentTiles,
+			GeneratePathTypes::GENERATE_PATH_GUNSHOT_INVESTIGATION) )
+		{
+			return false;
+		}
+		monsterTargetX = monsterGunshotOriginX;
+		monsterTargetY = monsterGunshotOriginY;
+		monsterState = children.first && children.first->element
+			? MONSTER_STATE_HUNT : MONSTER_STATE_WAIT;
+		return true;
+	};
+
+	// Prefer the original tile, then its immediate neighbourhood. A two-tile
+	// fallback is the final small search rather than an unbounded destination.
+	if ( tryOrigin(1) )
+	{
+		return true;
+	}
+	return tryOrigin(2);
+}
+
+void Entity::monsterBeginGunshotInvestigation(real_t shotX, real_t shotY)
+{
+	Stat* monsterStats = getStats();
+	if ( !monsterStats )
+	{
+		monsterClearGunshotInvestigation();
+		return;
+	}
+
+	if ( monsterStats->getEffectActive(EFF_ASLEEP) )
+	{
+		setEffect(EFF_ASLEEP, false, 0, true); // mod add: an accepted firearm report wakes the listener
+	}
+
+	// mod add: only the first report in a continuous disturbance sequence owns
+	// the return origin. New reports during INVESTIGATE, SEARCH, or RETURN retain it.
+	if ( !monsterInvestigatingGunshot
+		|| monsterGunshotPhase == MonsterGunshotPhase::NONE )
+	{
+		monsterGunshotOriginX = x;
+		monsterGunshotOriginY = y;
+	}
+	monsterInvestigatingGunshot = true;
+	monsterGunshotPending = false;
+	monsterGunshotPhase = MonsterGunshotPhase::INVESTIGATE;
+	monsterGunshotX = shotX;
+	monsterGunshotY = shotY;
+	monsterGunshotSearchTicks = 0;
+	monsterGunshotReturnPathTries = 0;
+	monsterGunshotHadPath = false;
+	monsterReleaseAttackTarget(true);
+	monsterTargetX = shotX;
+	monsterTargetY = shotY;
+	if ( !monsterRebuildGunshotPath() )
+	{
+		monsterClearGunshotInvestigation();
+	}
+	serverUpdateEntitySkill(this, 0);
+}
+
+void Entity::monsterBeginGunshotReturn()
+{
+	if ( !monsterInvestigatingGunshot )
+	{
+		return;
+	}
+
+	monsterGunshotPhase = MonsterGunshotPhase::RETURN;
+	monsterGunshotSearchTicks = 0;
+	monsterGunshotReturnPathTries = 0;
+	monsterTargetX = monsterGunshotOriginX;
+	monsterTargetY = monsterGunshotOriginY;
+	if ( !monsterRebuildGunshotReturnPath() )
+	{
+		// The preferred origin and both small fallbacks failed. Resume vanilla AI
+		// instead of retrying forever in a broken transient state.
+		monsterClearGunshotInvestigation();
+		monsterState = MONSTER_STATE_WAIT;
+	}
+	serverUpdateEntitySkill(this, 0);
+}
+
+void Entity::monsterUpdateGunshotInvestigation()
+{
+	if ( !monsterInvestigatingGunshot || multiplayer == CLIENT )
+	{
+		return;
+	}
+	if ( monsterGunshotPending )
+	{
+		// mod add: map monsters can hear a shot before their first actMonster
+		// initialization. Begin only now so init cannot overwrite sleep/path state.
+		monsterBeginGunshotInvestigation(monsterGunshotX, monsterGunshotY);
+		return;
+	}
+
+	// Any real target means a permitted acquisition (or retaliation) won.
+	if ( monsterTarget && uidToEntity(monsterTarget) )
+	{
+		monsterClearGunshotInvestigation();
+		return;
+	}
+
+	if ( monsterGunshotPhase == MonsterGunshotPhase::SEARCH
+		|| monsterGunshotPhase == MonsterGunshotPhase::RETURN_SEARCH )
+	{
+		if ( monsterGunshotSearchTicks > 0 )
+		{
+			--monsterGunshotSearchTicks;
+		}
+		if ( monsterGunshotSearchTicks <= 0 )
+		{
+			if ( monsterGunshotPhase == MonsterGunshotPhase::RETURN_SEARCH )
+			{
+				// The monster returned to an origin still close to the report. Keep
+				// dungeon-hostility suppression for the full post-return search, then
+				// resume vanilla AI without starting another RETURN loop.
+				monsterClearGunshotInvestigation();
+				monsterState = MONSTER_STATE_WAIT;
+				serverUpdateEntitySkill(this, 0);
+			}
+			else
+			{
+				monsterBeginGunshotReturn();
+			}
+		}
+		else if ( ticks % (TICKS_PER_SECOND / 2) == 0 )
+		{
+			// Reuse the normal idle-looking controls while briefly searching.
+			monsterLookTime = 1;
+			monsterMoveTime = local_rng.rand() % 10 + 1;
+			monsterLookDir = yaw + (local_rng.rand() % 2 ? PI / 2 : -PI / 2);
+		}
+		return;
+	}
+	else if ( monsterGunshotPhase == MonsterGunshotPhase::RETURN )
+	{
+		static constexpr real_t RETURN_ORIGIN_DISTANCE = 2.0 * 16.0;
+		static constexpr real_t CLOSE_ORIGIN_SHOT_DISTANCE = 7.0 * 16.0;
+		const real_t originDx = x - monsterGunshotOriginX;
+		const real_t originDy = y - monsterGunshotOriginY;
+		if ( originDx * originDx + originDy * originDy
+				<= RETURN_ORIGIN_DISTANCE * RETURN_ORIGIN_DISTANCE )
+		{
+			// The stored origin, rather than distance travelled from the report, now
+			// exclusively determines when RETURN has arrived.
+			if ( children.first )
+			{
+				list_RemoveNode(children.first);
+			}
+			node_t* pathNode = list_AddNodeFirst(&children);
+			pathNode->element = nullptr;
+			pathNode->deconstructor = &listDeconstructor;
+			monsterState = MONSTER_STATE_WAIT;
+
+			const real_t originShotDx = monsterGunshotOriginX - monsterGunshotX;
+			const real_t originShotDy = monsterGunshotOriginY - monsterGunshotY;
+			if ( originShotDx * originShotDx + originShotDy * originShotDy
+					< CLOSE_ORIGIN_SHOT_DISTANCE * CLOSE_ORIGIN_SHOT_DISTANCE )
+			{
+				// An origin close to the report would restore natural hostility while
+				// investigators are still congregated. Search there for ten more seconds
+				// while the existing player-side/retaliation priority remains active.
+				monsterGunshotPhase = MonsterGunshotPhase::RETURN_SEARCH;
+				monsterGunshotSearchTicks = TICKS_PER_SECOND * 10;
+			}
+			else
+			{
+				monsterClearGunshotInvestigation();
+			}
+			serverUpdateEntitySkill(this, 0);
+			return;
+		}
+
+		// HUNT becomes WAIT when its coordinate path is exhausted. If a fallback
+		// endpoint did not yet satisfy dispersal, make another bounded return attempt.
+		if ( monsterState == MONSTER_STATE_WAIT )
+		{
+			if ( !monsterRebuildGunshotReturnPath() )
+			{
+				monsterClearGunshotInvestigation();
+				monsterState = MONSTER_STATE_WAIT;
+			}
+			serverUpdateEntitySkill(this, 0);
+		}
+		return;
+	}
+
+	// HUNT naturally returns to WAIT when its coordinate path is exhausted or
+	// unreachable. At that point, search the arrival area for 3-5 seconds.
+	if ( monsterState == MONSTER_STATE_WAIT )
+	{
+		if ( monsterGunshotHadPath )
+		{
+			monsterGunshotPhase = MonsterGunshotPhase::SEARCH;
+			monsterGunshotSearchTicks = TICKS_PER_SECOND * (3 + local_rng.rand() % 3);
+		}
+		else
+		{
+			// A failed/empty path is not an arrival. Do not leave the monster
+			// spinning in a search state at the place where it heard the shot.
+			monsterClearGunshotInvestigation();
+		}
+	}
+}
+
+bool playerIsUsingSpyglass(const Entity* playerEntity)
+{
+	if ( !playerEntity || playerEntity->behavior != &actPlayer )
+	{
+		return false;
+	}
+	const Stat* playerStats = playerEntity->getStats();
+	return playerStats && playerStats->HP > 0 && playerStats->defending
+		&& playerStats->shield && playerStats->shield->type == SPYGLASS;
+}
+
+void alertMonstersToFirearmGunshot(const Entity& shooter)
+{
+	if ( multiplayer == CLIENT || !map.creatures )
+	{
+		return;
+	}
+
+	//mod add: centralized per-firearm hearing distances. Keep a flintlock
+	// fallback for any future firearm that has not received its own tuning yet.
+	static constexpr real_t FLINTLOCK_GUNSHOT_ALERT_RADIUS = 15.0 * 16.0;
+	static constexpr real_t MUSKET_GUNSHOT_ALERT_RADIUS = 30.0 * 16.0;
+	real_t alertRadius = FLINTLOCK_GUNSHOT_ALERT_RADIUS;
+	if ( const Stat* shooterStats = shooter.getStats() )
+	{
+		if ( shooterStats->weapon && shooterStats->weapon->type == MUSKET )
+		{
+			alertRadius = MUSKET_GUNSHOT_ALERT_RADIUS;
+		}
+	}
+	const real_t radiusSquared = alertRadius * alertRadius;
+
+	for ( node_t* node = map.creatures->first; node; node = node->next )
+	{
+		Entity* monster = static_cast<Entity*>(node->element);
+		if ( !monster || monster == &shooter || monster->behavior != &actMonster )
+		{
+			continue;
+		}
+		Stat* monsterStats = monster->getStats();
+		const bool initialized = monster->skill[3] >= 2; // MONSTER_INIT, unavailable as a macro in this file
+		const bool sleeping = monsterStats && monsterStats->getEffectActive(EFF_ASLEEP); // mod add: gunshots wake sleepers
+		if ( !monsterStats || monsterStats->HP <= 0
+			|| (initialized && !monster->isMobile() && !sleeping) || monster->isBossMonster()
+			|| monster->isInertMimic() || monster->monsterIsTinkeringCreation()
+			|| monsterStats->type == SHOPKEEPER
+			|| monster->monsterAllyGetPlayerLeader()
+			|| achievementObserver.checkUidIsFromPlayer(monsterStats->leader_uid) >= 0
+			|| monster->monsterAllyIndex >= 0 )
+		{
+			continue;
+		}
+		const real_t dx = monster->x - shooter.x;
+		const real_t dy = monster->y - shooter.y;
+		Entity* mutableShooter = const_cast<Entity*>(&shooter);
+		if ( dx * dx + dy * dy > radiusSquared
+			|| !monster->checkEnemy(mutableShooter) ) //mod add: listener's native hostility is authoritative
+		{
+			continue;
+		}
+
+		// Do not interrupt genuine combat. A monster already investigating may be
+		// redirected by the latest shot, but a fresh alert only starts from idle.
+		Entity* currentCombatTarget = uidToEntity(monster->monsterTarget);
+		if ( !monster->monsterInvestigatingGunshot && currentCombatTarget )
+		{
+			continue;
+		}
+
+		if ( initialized )
+		{
+			monster->monsterBeginGunshotInvestigation(shooter.x, shooter.y);
+		}
+		else
+		{
+			// mod add: retain the report until actMonster has initialized its
+			// species, effects, body, and child/path nodes on its normal tick.
+			// Preserve the first pre-disturbance position if more reports arrive
+			// before that initialization tick.
+			if ( !monster->monsterInvestigatingGunshot
+				|| monster->monsterGunshotPhase == MonsterGunshotPhase::NONE )
+			{
+				monster->monsterGunshotOriginX = monster->x;
+				monster->monsterGunshotOriginY = monster->y;
+			}
+			monster->monsterInvestigatingGunshot = true;
+			monster->monsterGunshotPending = true;
+			monster->monsterGunshotPhase = MonsterGunshotPhase::INVESTIGATE;
+			monster->monsterGunshotX = shooter.x;
+			monster->monsterGunshotY = shooter.y;
+			monster->monsterGunshotSearchTicks = 0;
+			monster->monsterGunshotReturnPathTries = 0;
+			monster->monsterGunshotHadPath = false;
+		}
 	}
 }
 
@@ -25228,6 +27622,12 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 	{
 		return false;
 	}
+	// mod add: Ordinary and forced ground-item AI must not acquire Muskets.
+	// Scripted theft may still place one directly into an Incubus inventory.
+	if ( item.type == MUSKET )
+	{
+		return false;
+	}
 
 	if ( myStats->type == GYROBOT && item.interactNPCUid == getUID() )
 	{
@@ -25739,13 +28139,16 @@ bool Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		return false; // conjured skeleton armor doesn't break.
 	}
 
-	if ( armor.type == ARTIFACT_BOOTS
+	if ( armor.type == AMULET_FAMILIAR
+		|| armor.type == ARTIFACT_BOOTS
 		|| armor.type == ARTIFACT_HELM
 		|| armor.type == ARTIFACT_CLOAK
 		|| armor.type == CLOAK_GUARDIAN
 		|| armor.type == ARTIFACT_GLOVES
 		|| armor.type == ARTIFACT_BREASTPIECE
-		|| armor.type == MASK_ARTIFACT_VISOR )
+		|| armor.type == MASK_ARTIFACT_VISOR
+		|| armor.type == SPYGLASS // mod add: offhand utility optics do not absorb attack durability loss
+		|| armor.type == MAGIC_RUNE ) // Rune durability is governed only by Rune casting stress.
 	{
 		return false;
 	}
@@ -26232,6 +28635,23 @@ void Entity::playerStatIncrease(int playerClass, int chosenStats[3])
 		{
 			//	            STR	DEX	CON	INT	PER	CHR
 			statWeights = { 1,	1,	1,	3,	1,	6 };
+		}
+	}
+	// Tinctures modify the class/form affinity baseline before the established
+	// race and equipment modifiers below. Native affinities above six are kept.
+	if ( behavior == &actPlayer )
+	{
+		if ( Stat* stat = getStats() )
+		{
+			for ( int i = 0; i < NUMSTATS; ++i )
+			{
+				const unsigned int nativeWeight = statWeights[i];
+				if ( nativeWeight < 6 && stat->tinctureStacks[i] > 0 )
+				{
+					const Uint64 boost = static_cast<Uint64>(stat->tinctureStacks[i]) * 2;
+					statWeights[i] = static_cast<unsigned int>(std::min<Uint64>(6, nativeWeight + boost));
+				}
+			}
 		}
 	}
 
@@ -27367,6 +29787,50 @@ bool Entity::setArrowProjectileProperties(int weaponType)
 		return false;
 	}
 
+	// mod add: Firearms remain ordinary actArrow projectiles. Their firing
+	// weapon identity selects only the presentation sprite; this runs for both
+	// authoritative setup and client initialization from synchronized skill[2].
+	int firearmProjectileSprite = -1;
+	switch ( weaponType )
+	{
+		case FLINTLOCK_PISTOL:
+			firearmProjectileSprite = 2443;
+			break;
+		case MUSKET:
+			firearmProjectileSprite = 2444;
+			break;
+		default:
+			break;
+	}
+	if ( firearmProjectileSprite >= 0 )
+	{
+		// A bad/missing mod model should fall back to the bolt used to create the
+		// entity, rather than producing an invisible projectile. The mounted
+		// models.txt is zero-indexed, so sprites 2443/2444 require 2445 entries.
+		if ( firearmProjectileSprite < static_cast<int>(nummodels)
+			&& models && models[firearmProjectileSprite] )
+		{
+			this->sprite = firearmProjectileSprite;
+			this->flags[INVISIBLE] = false;
+			this->flags[SPRITE] = false;
+		}
+		else
+		{
+			static bool reportedMissingFlintlockProjectile = false;
+			static bool reportedMissingMusketProjectile = false;
+			bool& alreadyReported = weaponType == FLINTLOCK_PISTOL
+				? reportedMissingFlintlockProjectile
+				: reportedMissingMusketProjectile;
+			if ( !alreadyReported )
+			{
+				printlog("[MODELS]: firearm projectile sprite %d is unavailable (loaded model count: %u); using bolt sprite %d.",
+					firearmProjectileSprite, nummodels, this->sprite);
+				alreadyReported = true;
+			}
+		}
+	}
+	// mod add end
+
 	if ( multiplayer == CLIENT && weaponType == TOOL_SENTRYBOT )
 	{
 		// hack for arrow traps.
@@ -27377,10 +29841,24 @@ bool Entity::setArrowProjectileProperties(int weaponType)
 	}
 
 	if ( weaponType == CROSSBOW || weaponType == SLING || weaponType == HEAVY_CROSSBOW
-		|| weaponType == BLACKIRON_CROSSBOW )
+		|| weaponType == BLACKIRON_CROSSBOW
+		|| weaponType == FLINTLOCK_PISTOL || weaponType == MUSKET ) // mod add: firearms use bolt physics
 	{
 		this->vel_z = -0.2;
-		this->arrowSpeed = 6;
+		//mod add: Fixed firearm ballistics. Crossbows and Flintlock retain the
+		// native speed; Musket travels three times as far horizontally per tick.
+		switch ( weaponType )
+		{
+			case FLINTLOCK_PISTOL:
+				this->arrowSpeed = 6;
+				break;
+			case MUSKET:
+				this->arrowSpeed = 18;
+				break;
+			default:
+				this->arrowSpeed = 6;
+				break;
+		}
 		this->pitch = -PI / 32;
 		this->arrowFallSpeed = 0.1;
 		this->arrowBoltDropOffRange = 5; // ticks before projectile starts falling.
@@ -27431,6 +29909,17 @@ bool Entity::setArrowProjectileProperties(int weaponType)
 		return true;
 	}
 	return false;
+}
+
+bool Entity::arrowShotByFirearm() const
+{
+	return arrowShotByWeapon == FLINTLOCK_PISTOL || arrowShotByWeapon == MUSKET;
+}
+
+bool Entity::arrowUsesBoltSemantics() const
+{
+	static constexpr int PROJECTILE_BOLT_SPRITE = 167;
+	return sprite == PROJECTILE_BOLT_SPRITE || arrowShotByFirearm();
 }
 
 /* SetEntityOnFire
@@ -27508,13 +29997,23 @@ bool Entity::SetEntityOnFire(Entity* sourceOfFire)
 				}
 			}
 
+			auto finishBurnDuration = [this]()
+			{
+				if ( isNaturalLeoninPlayer() )
+				{
+					//mod add: Natural Leonins retain the completed vanilla burn duration 20% longer.
+					this->char_fire = (this->char_fire * 6) / 5;
+				}
+				return true;
+			};
+
 			// Determine decrease in time on fire based on the Entity's CON
 			const Sint32 entityCON = this->getStats()->CON;
 
 			// If the Entity's CON is <= 1 then their time is just MAX_TICKS_ON_FIRE
 			if ( entityCON <= 1 )
 			{
-				return true; // The Entity was set on fire, with maximum duration and chance
+				return finishBurnDuration(); // The Entity was set on fire, with maximum duration and chance
 			}
 
 			// If the Entity's CON is <= 4 then their chance is just MAX_CHANCE_STOP_FIRE
@@ -27550,7 +30049,7 @@ bool Entity::SetEntityOnFire(Entity* sourceOfFire)
 				}
 			}
 
-			return true; // The Entity was set on fire, with a reduced duration
+			return finishBurnDuration(); // The Entity was set on fire, with a reduced duration
 		}
 	}
 
@@ -27762,7 +30261,23 @@ get text string for the different player chosen classes.
 
 char const * playerClassLangEntry(int classnum, int playernum)
 {
-	if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER )
+	if ( classnum == CLASS_WITCH ) // mod add
+	{
+		return "Witch";
+	}
+	else if ( classnum == CLASS_RUNESMITH ) // mod add
+	{
+		return "Runesmith";
+	}
+	else if ( classnum == CLASS_GUNSLINGER ) // mod add
+	{
+		return "Gunslinger";
+	}
+	else if ( classnum == CLASS_WHALER ) //mod add
+    {
+        return "Whaler";
+	}
+	else if ( classnum >= CLASS_BARBARIAN && classnum <= CLASS_JOKER ) //mod add end
 	{
 		return Language::get(1900 + classnum);
 	}
@@ -27813,6 +30328,10 @@ void Entity::setHelmetLimbOffset(Entity* helm)
 	helm->scalez = 1.01;
 	// for non-armor helmets, they are rotated so focaly acts as up/down postion.
 	int monster = getMonsterTypeFromSprite();
+	if ( monster == WRAITH && behavior == &actPlayer )
+	{
+		monster = SKELETON;
+	}
 	if ( int resultMonsterSprite = EquipmentModelOffsets.modelOffsetExists(monster, helm->sprite, sprite) )
 	{
 		auto& entry = EquipmentModelOffsets.getModelOffset(resultMonsterSprite, helm->sprite);
@@ -29166,12 +31685,274 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				}
 			}
 			break;
+		case WRAITH:
+			if ( limbType == LIMB_HUMANOID_TORSO )
+			{
+				limb->x -= .25 * cos(this->yaw);
+				limb->y -= .25 * sin(this->yaw);
+				limb->z += 2;
+				limb->scalez = 1.f;
+
+				this->setTorsoLimbOffset(limb);
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->x += 1 * cos(this->yaw + PI / 2)
+					+ .25 * cos(this->yaw);
+				limb->y += 1 * sin(this->yaw + PI / 2)
+					+ .25 * sin(this->yaw);
+				limb->z += 4;
+
+				if ( this->z >= 1.9 && this->z <= 2.1 )
+				{
+					limb->yaw += PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+			{
+				limb->x -= 1 * cos(this->yaw + PI / 2)
+					- .25 * cos(this->yaw);
+				limb->y -= 1 * sin(this->yaw + PI / 2)
+					- .25 * sin(this->yaw);
+				limb->z += 4;
+
+				if ( this->z >= 1.9 && this->z <= 2.1 )
+				{
+					limb->yaw -= PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->x += 2.f * cos(this->yaw + PI / 2)
+					- .20 * cos(this->yaw);
+				limb->y += 2.f * sin(this->yaw + PI / 2)
+					- .20 * sin(this->yaw);
+				limb->z += .6;
+
+				if ( this->z >= 1.9 && this->z <= 2.1 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM )
+			{
+				limb->x -= 2.f * cos(this->yaw + PI / 2)
+					+ .20 * cos(this->yaw);
+				limb->y -= 2.f * sin(this->yaw + PI / 2)
+					+ .20 * sin(this->yaw);
+				limb->z += .6;
+
+				if ( this->z >= 1.9 && this->z <= 2.1 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			break;
+		// mod add: Leonin humanoid proportions
+		case LEONIN:
+		{
+			constexpr real_t sleepHeight = 2.5;
+			if ( limbType == LIMB_HUMANOID_LEFTLEG || limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->z += 0.75;
+				if ( limb->sprite == LEONIN_MODEL_LEG_LEFT || limb->sprite == LEONIN_MODEL_LEG_RIGHT )
+				{
+					limb->focalx -= .5;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM || limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->z += .5;
+				limb->x += .25 * cos(this->yaw);
+				limb->y += .25 * sin(this->yaw);
+			}
+
+			if ( limbType == LIMB_HUMANOID_TORSO )
+			{
+				limb->x -= .25 * cos(this->yaw);
+				limb->y -= .25 * sin(this->yaw);
+				limb->z += 2;
+				limb->scalex = 1.01;
+				limb->scaley = 1.01;
+				limb->scalez = 1.01;
+				if ( limb->sprite == LEONIN_MODEL_TORSO )
+				{
+					// mod add: Leonin torso geometry correction.
+					limb->focalx += 0.75;
+					limb->focalz += 0.75;
+				}
+				else
+				{
+					limb->focalx += 1.0;
+					limb->focalz += 0.75;
+				}
+				this->setTorsoLimbOffset(limb);
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->x += 1 * cos(this->yaw + PI / 2) + .25 * cos(this->yaw);
+				limb->y += 1 * sin(this->yaw + PI / 2) + .25 * sin(this->yaw);
+				limb->z += 4;
+				if ( this->z >= (sleepHeight - 0.1) && this->z <= (sleepHeight + 0.1) )
+				{
+					limb->yaw += PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+			{
+				limb->x -= 1 * cos(this->yaw + PI / 2) - .25 * cos(this->yaw);
+				limb->y -= 1 * sin(this->yaw + PI / 2) - .25 * sin(this->yaw);
+				limb->z += 4;
+				if ( this->z >= (sleepHeight - 0.1) && this->z <= (sleepHeight + 0.1) )
+				{
+					limb->yaw -= PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->x += 2.5 * cos(this->yaw + PI / 2) - .20 * cos(this->yaw);
+				limb->y += 2.5 * sin(this->yaw + PI / 2) - .20 * sin(this->yaw);
+				limb->z += .5;
+				if ( this->z >= (sleepHeight - 0.1) && this->z <= (sleepHeight + 0.1) )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM )
+			{
+				limb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+				limb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+				limb->z += .5;
+				if ( this->z >= (sleepHeight - 0.1) && this->z <= (sleepHeight + 0.1) )
+				{
+					limb->pitch = 0;
+				}
+			}
+		}
+			break;
+		case GOLEM:
+		{
+			// Golems use Salamander-authored limb data, but keep an independent
+			// placement branch so future Golem offsets do not affect Salamanders.
+			const real_t sleepHeight = 3.0;
+
+			if ( limbType == LIMB_HUMANOID_LEFTLEG || limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->z += 0.75;
+				if ( limb->sprite == GOLEM_MODEL_B_LEG_LEFT
+					|| limb->sprite == GOLEM_MODEL_B_LEG_RIGHT
+					|| limb->sprite == GOLEM_MODEL_C_LEG_LEFT
+					|| limb->sprite == GOLEM_MODEL_C_LEG_RIGHT )
+				{
+					// Base feet are authored with the Salamander backward focal adjustment.
+					limb->focalx -= .5;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM
+				|| limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->z += .5;
+				limb->x += .25 * cos(this->yaw);
+				limb->y += .25 * sin(this->yaw);
+			}
+
+			if ( limbType == LIMB_HUMANOID_TORSO )
+			{
+				limb->x -= .25 * cos(this->yaw);
+				limb->y -= .25 * sin(this->yaw);
+				limb->z += 2;
+				limb->scalex = 1.01;
+				limb->scaley = 1.01;
+				limb->scalez = 1.01;
+
+				if ( limb->sprite != GOLEM_MODEL_B_TORSO
+					&& limb->sprite != GOLEM_MODEL_C_TORSO )
+				{
+					// Wearing armor: match the equipment alignment of the source body rig.
+					limb->focalx += 1.0;
+					limb->focalz += 0.75;
+				}
+				this->setTorsoLimbOffset(limb);
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTLEG )
+			{
+				limb->x += 1 * cos(this->yaw + PI / 2) + .25 * cos(this->yaw);
+				limb->y += 1 * sin(this->yaw + PI / 2) + .25 * sin(this->yaw);
+				limb->z += 4;
+				if ( this->z >= (sleepHeight - 0.1) && this->z <= (sleepHeight + 0.1) )
+				{
+					limb->yaw += PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTLEG )
+			{
+				limb->x -= 1 * cos(this->yaw + PI / 2) - .25 * cos(this->yaw);
+				limb->y -= 1 * sin(this->yaw + PI / 2) - .25 * sin(this->yaw);
+				limb->z += 4;
+				if ( this->z >= (sleepHeight - 0.1) && this->z <= (sleepHeight + 0.1) )
+				{
+					limb->yaw -= PI / 8;
+					limb->pitch = -PI / 2;
+				}
+				else if ( limb->pitch <= -PI / 3 )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_RIGHTARM )
+			{
+				limb->x += 2.5 * cos(this->yaw + PI / 2) - .20 * cos(this->yaw);
+				limb->y += 2.5 * sin(this->yaw + PI / 2) - .20 * sin(this->yaw);
+				limb->z += .5;
+				if ( this->z >= (sleepHeight - 0.1) && this->z <= (sleepHeight + 0.1) )
+				{
+					limb->pitch = 0;
+				}
+			}
+			else if ( limbType == LIMB_HUMANOID_LEFTARM )
+			{
+				limb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+				limb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+				limb->z += .5;
+				if ( this->z >= (sleepHeight - 0.1) && this->z <= (sleepHeight + 0.1) )
+				{
+					limb->pitch = 0;
+				}
+			}
+		}
+			break;
 		case GOBLIN:
 		case GOATMAN:
 		case INSECTOID:
 		case DRYAD:
 		case MYCONID:
 		case SALAMANDER:
+		case MERROW: //mod add
 		{
 			real_t sleepHeight = 2.5;
 			if ( race == DRYAD )
@@ -29302,7 +32083,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 				limb->x -= .25 * cos(this->yaw);
 				limb->y -= .25 * sin(this->yaw);
 				limb->z += 2;
-				if ( race == INSECTOID )
+				if ( race == INSECTOID || race == MERROW ) //mod add
 				{
 					if ( limb->sprite != 727 && limb->sprite != 458
 						&& limb->sprite != 761
@@ -29391,7 +32172,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					limb->pitch = 0;
 				}
 
-				if ( race == INSECTOID )
+				if ( race == INSECTOID || race == MERROW ) //mod add
 				{
 					if ( limb->sprite == 456 || limb->sprite == 457
 						|| limb->sprite == 732 || limb->sprite == 733
@@ -29418,7 +32199,7 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 					limb->pitch = 0;
 				}
 
-				if ( race == INSECTOID )
+				if ( race == INSECTOID || race == MERROW ) //mod add
 				{
 					if ( limb->sprite == 456 || limb->sprite == 457
 						|| limb->sprite == 732 || limb->sprite == 733
@@ -29541,14 +32322,14 @@ void Entity::setHumanoidLimbOffset(Entity* limb, Monster race, int limbType)
 	}
 }
 
-void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
+void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb, int raceOverride)
 {
 	if ( !shieldLimb || !shieldArmLimb )
 	{
 		return;
 	}
 
-	int race = this->getMonsterTypeFromSprite();
+	int race = raceOverride >= 0 ? raceOverride : this->getMonsterTypeFromSprite();
 	int player = -1;
 	if ( this->behavior == &actPlayer )
 	{
@@ -29957,14 +32738,94 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 				}
 			}
 			break;
+		case GOLEM:
+			// Dedicated Salamander-derived offhand placement for the Golem rig.
+			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
+			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
+			shieldLimb->z += 2.5;
+			shieldLimb->yaw = shieldArmLimb->yaw;
+			shieldLimb->roll = 0;
+			shieldLimb->pitch = 0;
+
+			if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+			{
+				shieldLimb->z += 2;
+			}
+			if ( flickerLights || ticks % TICKS_PER_SECOND == 1 )
+			{
+				if ( shieldLimb->sprite == items[TOOL_TORCH].index )
+				{
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2 * cos(shieldLimb->yaw);
+						flameEntity->y += 2 * sin(shieldLimb->yaw);
+						flameEntity->z -= 2;
+					}
+				}
+				else if ( shieldLimb->sprite == items[TOOL_LANTERN].index )
+				{
+					if ( flameEntity = spawnFlame(shieldLimb, SPRITE_FLAME) )
+					{
+						flameEntity->x += 2 * cos(shieldLimb->yaw);
+						flameEntity->y += 2 * sin(shieldLimb->yaw);
+						flameEntity->z += 1;
+					}
+				}
+			}
+			if ( shieldLimb->sprite >= items[SPELLBOOK_LIGHT].index
+				&& shieldLimb->sprite < (items[SPELLBOOK_LIGHT].index + items[SPELLBOOK_LIGHT].variations) )
+			{
+				shieldLimb->pitch = shieldArmLimb->pitch - .25 + 3 * PI / 2;
+				shieldLimb->yaw += PI / 6;
+				shieldLimb->focalx -= 5.0;
+				shieldLimb->focalz -= .5;
+				shieldLimb->x += 0.5 * cos(this->yaw + PI / 2) + .5 * cos(this->yaw);
+				shieldLimb->y += 0.5 * sin(this->yaw + PI / 2) + .5 * sin(this->yaw);
+				shieldLimb->z -= 1.5;
+				shieldLimb->scalex = 0.8;
+				shieldLimb->scaley = 0.8;
+				shieldLimb->scalez = 0.8;
+			}
+			else if ( itemSpriteIsQuiverThirdPersonModel(shieldLimb->sprite) )
+			{
+				shieldLimb->scalex = 1.05;
+				shieldLimb->focalz += 3;
+				shieldLimb->x -= -0.25 * cos(this->yaw + PI / 2) + 1.0 * cos(this->yaw);
+				shieldLimb->y -= -0.25 * sin(this->yaw + PI / 2) + 1.0 * sin(this->yaw);
+				shieldLimb->z -= 1.78;
+			}
+
+			if ( this->fskill[8] > PI / 32 )
+			{
+				if ( shieldLimb->sprite != items[TOOL_TORCH].index
+					&& shieldLimb->sprite != items[TOOL_LANTERN].index
+					&& shieldLimb->sprite != items[TOOL_CRYSTALSHARD].index )
+				{
+					shieldLimb->roll += PI / 64;
+				}
+				else
+				{
+					shieldLimb->x += 0.25 * cos(this->yaw);
+					shieldLimb->y += 0.25 * sin(this->yaw);
+					shieldLimb->pitch += PI / 16;
+					if ( flameEntity )
+					{
+						flameEntity->x += 0.75 * cos(shieldArmLimb->yaw);
+						flameEntity->y += 0.75 * sin(shieldArmLimb->yaw);
+					}
+				}
+			}
+			break;
 		case GOBLIN:
 		case GOATMAN:
 		case INSECTOID:
+		case MERROW: // mod add
 		case INCUBUS:
 		case SUCCUBUS:
 		case DRYAD:
 		case MYCONID:
 		case SALAMANDER:
+		case LEONIN:
 			shieldLimb->x -= 2.5 * cos(this->yaw + PI / 2) + .20 * cos(this->yaw);
 			shieldLimb->y -= 2.5 * sin(this->yaw + PI / 2) + .20 * sin(this->yaw);
 			shieldLimb->z += 2.5;
@@ -30044,7 +32905,7 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 					}
 					shieldLimb->z -= 1.0;
 				}
-				else if ( race == SALAMANDER )
+				else if ( race == SALAMANDER || race == LEONIN )
 				{
 					shieldLimb->focalx -= 1.0;
 					shieldLimb->focalz -= 1.0;
@@ -30142,6 +33003,16 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->yaw += PI / 12;
 		}
 	}
+	else if ( shieldLimb->sprite == items[SPYGLASS].index )
+	{
+		// mod add: dedicated third-person Spyglass positioning.
+		shieldLimb->focalx += 0.0;
+		shieldLimb->focaly += 0.5;
+		shieldLimb->focalz += 0.0;
+		shieldLimb->yaw += 0.75;
+		shieldLimb->pitch += 0.0;
+		shieldLimb->roll += 0.0;
+	}
 	else if ( shieldLimb->sprite == items[TOOL_FRYING_PAN].index )
 	{
 		if ( this->fskill[8] > PI / 32 )
@@ -30213,7 +33084,12 @@ void Entity::handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb)
 			shieldLimb->focaly -= 0.75;
 			shieldLimb->focalz -= 0.5;
 		}
-		else if ( race == SALAMANDER )
+		else if ( race == GOLEM )
+		{
+			shieldLimb->focaly += 0.75;
+			shieldLimb->focalz -= 0.5;
+		}
+		else if ( race == SALAMANDER || race == LEONIN )
 		{
 			shieldLimb->focaly += 0.75;
 			shieldLimb->focalz -= 0.5;
@@ -30376,6 +33252,7 @@ bool Entity::isSmiteWeakMonster()
 			case SHADOW:
 			case REVENANT_SKULL:
 			case MONSTER_ADORCISED_WEAPON:
+			case WRAITH:
 				return true;
 				break;
 			case MIMIC:
@@ -30590,6 +33467,10 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 		helm->scalez = 1.01;
 
 		int monster = getMonsterTypeFromSprite();
+		if ( monster == WRAITH && behavior == &actPlayer )
+		{
+			monster = SKELETON;
+		}
 		if ( int resultMonsterSprite = EquipmentModelOffsets.modelOffsetExists(monster, helm->sprite, sprite) )
 		{
 			auto& entry = EquipmentModelOffsets.getModelOffset(resultMonsterSprite, helm->sprite);
@@ -30611,6 +33492,10 @@ void Entity::setHelmetLimbOffsetWithMask(Entity* helm, Entity* mask)
 	mask->scalez = 1.01;
 
 	int monster = getMonsterTypeFromSprite();
+	if ( monster == WRAITH && behavior == &actPlayer )
+	{
+		monster = SKELETON;
+	}
 
 	if ( helm->sprite == items[LEATHER_HELM].index
 		|| helm->sprite == items[IRON_HELM].index
@@ -30809,7 +33694,8 @@ bool monsterChangesColorWhenAlly(Stat* myStats, Entity* entity)
 	}
 	
 	if ( race == HUMAN || race == SENTRYBOT || race == NOTHING || race == SLIME
-		|| race == SPELLBOT || race == AUTOMATON || race == GYROBOT || race == DUMMYBOT || race == DUCK_SMALL )
+		|| race == SPELLBOT || race == AUTOMATON || race == GYROBOT || race == DUMMYBOT || race == DUCK_SMALL
+		|| race == BAT_FAMILIAR )
 	{
 		return false;
 	}
@@ -31047,9 +33933,14 @@ real_t Entity::getDamageTableEquipmentMod(Stat& myStats, Item& item, real_t base
 	return bonus;
 }
 
-real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType, int* magicResistance, int* outNumSources)
+real_t Entity::getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType,
+	int* magicResistance, int* outNumSources, real_t innateDamageMultiplierOverride)
 {
-	real_t damageMultiplier = damagetables[myStats.type][damageType];
+	//mod add: Callers may replace only the creature's innate affinity while
+	// retaining the normal equipment/effect reductions assembled below.
+	real_t damageMultiplier = innateDamageMultiplierOverride >= 0.0
+		? innateDamageMultiplierOverride
+		: damagetables[myStats.type][damageType];
 	if ( myStats.getEffectActive(EFF_SHADOW_TAGGED) )
 	{
 		if ( myStats.type == LICH || myStats.type == LICH_FIRE || myStats.type == LICH_ICE
@@ -32516,6 +35407,8 @@ bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attac
 	bool result = false;
 	if ( hitstats->getEffectActive(EFF_BLOOD_WARD) )
 	{
+		spell_t* activeSpell = hitentity->getActiveMagicEffect(SPELL_BLOOD_WARD);
+		ScopedSpellPowerOverride spellPowerScope(activeSpell, true);
 		real_t reduction = std::min(getSpellDamageSecondaryFromID(SPELL_BLOOD_WARD, hitentity, nullptr, hitentity) / 100.0, std::max(0.0, getSpellDamageFromID(SPELL_BLOOD_WARD, hitentity, nullptr, hitentity) / 100.0));
 		if ( attackerStats )
 		{
@@ -32540,7 +35433,7 @@ bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attac
 				if ( hitentity->behavior == &actPlayer )
 				{
 					players[hitentity->skill[2]]->mechanics.updateSustainedSpellEvent(SPELL_BLOOD_WARD, 30.0, 1.0, attacker);
-					hitentity->safeConsumeMP(1);
+					consumeSustainedSpellResource(hitentity, activeSpell, 1);
 				}
 				result = true;
 			}
@@ -32565,16 +35458,38 @@ bool Entity::modifyDamageMultipliersFromEffects(Entity* hitentity, Entity* attac
 	}
 	if ( hitstats->getEffectActive(EFF_SANCTUARY) )
 	{
-		real_t reduction = std::min(0.8, std::max(0.0, 0.1 + (0.15 * (int)(hitstats->getEffectActive(EFF_SANCTUARY) & 0xF))));
+		const Uint8 sanctuaryEffect = hitstats->getEffectActive(EFF_SANCTUARY);
+		real_t reduction = std::min(0.8, std::max(0.0, 0.1 + (0.15 * (int)(sanctuaryEffect & 0xF))));
 		damageMultiplier = std::max(0.1, damageMultiplier * (1.0 - reduction));
 
-		int caster = ((hitstats->getEffectActive(EFF_SANCTUARY) >> 4) & 0xF) - 1;
+		int caster = ((sanctuaryEffect >> 4) & 0x7) - 1;
 		if ( caster >= 0 && caster < MAXPLAYERS )
 		{
 			if ( players[caster]->entity )
 			{
 				players[caster]->mechanics.updateSustainedSpellEvent(SPELL_SANCTUARY, 30.0, 1.0, hitentity);
-				players[caster]->entity->safeConsumeMP(1);
+				if ( sanctuaryEffect & 0x80 )
+				{
+					Uint32 runeInstanceId = 0;
+					for ( node_t* node = map.entities->first; node; node = node->next )
+					{
+						Entity* area = static_cast<Entity*>(node->element);
+						if ( area && area->behavior == &actRadiusMagic
+							&& area->actRadiusMagicID == SPELL_SANCTUARY
+							&& area->parent == players[caster]->entity->getUID()
+							&& area->actRadiusMagicRuneInstanceId != 0
+							&& entityDist(area, hitentity) <= area->actRadiusMagicDist + 4.0 )
+						{
+							runeInstanceId = static_cast<Uint32>(area->actRadiusMagicRuneInstanceId);
+							break;
+						}
+					}
+					if ( runeInstanceId != 0 ) { applyMagicRuneCastStress(runeInstanceId, 1, caster); }
+				}
+				else
+				{
+					players[caster]->entity->safeConsumeMP(1);
+				}
 			}
 		}
 		result = true;

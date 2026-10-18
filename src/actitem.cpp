@@ -47,23 +47,192 @@
 #define ITEM_SPLOOSHED my->skill[27]
 #define ITEM_WATERBOB my->fskill[2]
 
+bool inscribeFloorGemWithRuneHammer(int player, Entity* floorItem, int charge)
+{
+	if ( multiplayer == CLIENT || player < 0 || player >= MAXPLAYERS || !floorItem
+		|| floorItem->behavior != &actItem || !players[player] || !players[player]->entity
+		|| !stats[player] || !stats[player]->weapon || stats[player]->weapon->type != RUNE_HAMMER
+		|| entityDist(players[player]->entity, floorItem) > TOUCHRANGE
+		|| charge <= 0 || charge > Stat::getMaxAttackCharge(stats[player]) )
+	{
+		return false;
+	}
+
+	Item* spellbook = stats[player]->shield;
+	if ( !spellbook || itemCategory(spellbook) != SPELLBOOK )
+	{
+		messagePlayer(player, MESSAGE_STATUS, "Equip a spellbook in your offhand before inscribing a gemstone.");
+		return false;
+	}
+	const int spellID = getSpellIDFromSpellbook(spellbook->type);
+	spell_t* spell = getSpellFromID(spellID);
+	if ( !spell ) { return false; }
+	const int learningAbility = stats[player]->getModifiedProficiency(spell->skillID)
+		+ statGetINT(stats[player], players[player]->entity);
+	if ( !playerLearnedSpellbook(player, spellbook) && learningAbility < spell->difficulty )
+	{
+		messagePlayer(player, MESSAGE_PROGRESSION, "You are not yet able to learn the spell in that spellbook.");
+		return false;
+	}
+
+	const ItemType gemItemType = static_cast<ItemType>(floorItem->skill[10]);
+	const RuneGemType runeGem = runeGemTypeFromItemType(gemItemType);
+	const bool worthlessGlass = gemItemType == GEM_GLASS;
+	const Status gemstoneStatus = static_cast<Status>(floorItem->skill[11]);
+	if ( (!worthlessGlass && runeGem == RUNE_GEM_INVALID) || !spell || spellID <= SPELL_NONE
+		|| gemstoneStatus <= BROKEN || gemstoneStatus > EXCELLENT )
+	{
+		return false;
+	}
+	const bool dominate = spellID == SPELL_DOMINATE;
+	const int manaCost = dominate ? stats[player]->MP
+		: getRuneInscriptionManaCost(gemstoneStatus, spell, players[player]->entity);
+	const int goldCost = spellID == SPELL_LEAD_BOLT
+		? getRuneInscriptionGoldCost(gemstoneStatus, spell, player) : 0;
+	if ( manaCost < 0 || (!dominate && stats[player]->MP < manaCost) )
+	{
+		messagePlayer(player, MESSAGE_STATUS, "You do not have enough MP to inscribe that gemstone.");
+		return false;
+	}
+	if ( goldCost < 0 || stats[player]->GOLD < goldCost )
+	{
+		messagePlayer(player, MESSAGE_STATUS, "You do not have enough gold to inscribe that gemstone.");
+		return false;
+	}
+	auto consumeInscriptionGold = [&]()
+	{
+		stats[player]->GOLD -= goldCost;
+		if ( multiplayer == SERVER && player > 0 && !players[player]->isLocalPlayer() && goldCost > 0 )
+		{
+			strcpy((char*)net_packet->data, "GOLD");
+			SDLNet_Write32(stats[player]->GOLD, &net_packet->data[4]);
+			net_packet->address.host = net_clients[player - 1].host;
+			net_packet->address.port = net_clients[player - 1].port;
+			net_packet->len = 8;
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		}
+	};
+	auto commitInscriptionResources = [&]()
+	{
+		players[player]->entity->modMP(-manaCost);
+		consumeInscriptionGold();
+	};
+	if ( worthlessGlass )
+	{
+		commitInscriptionResources();
+		handleSpellbookCastingDegradation(players[player]->entity, spell);
+		if ( floorItem->skill[13] > 1 )
+		{
+			--floorItem->skill[13];
+			serverUpdateEntitySkill(floorItem, 13);
+		}
+		else
+		{
+			floorItem->removeLightField();
+			list_RemoveNode(floorItem->mynode);
+		}
+		messagePlayer(player, MESSAGE_INTERACTION,
+			"The worthless glass shatters, and the spell's magic is lost.");
+		return true;
+	}
+
+	Item* rune = createMagicRune(runeGem, spellID, gemstoneStatus,
+		static_cast<Sint16>(floorItem->skill[12]), floorItem->skill[15] != 0, nullptr);
+	if ( !rune ) { return false; }
+	if ( !initializeMagicRuneCraftingProfile(*rune, spell, players[player]->entity,
+		*spellbook) )
+	{
+		free(rune);
+		return false;
+	}
+	if ( dominate )
+	{
+		const int capacity = static_cast<int>(floor(manaCost * getRuneDominateStorageEfficiency(*rune)));
+		if ( !rune->runeSetDominateCapacity(capacity) )
+		{
+			messagePlayer(player, MESSAGE_STATUS, "That amount of magic cannot fit in Rune metadata.");
+			free(rune);
+			return false;
+		}
+	}
+	rune->runeSetCreatorPlayer(player);
+	rune->runeSetCreatorIdentity(ensureRuneCreatorIdentity(player));
+
+	if ( floorItem->skill[13] > 1 )
+	{
+		// Spawn the standalone Rune before committing any irreversible cost.
+		// dropItemMonster consumes the temporary Item whether spawning succeeds.
+		Entity* runeEntity = dropItemMonster(rune, floorItem, nullptr, 1);
+		rune = nullptr;
+		if ( !runeEntity )
+		{
+			return false;
+		}
+		runeEntity->x = floorItem->x;
+		runeEntity->y = floorItem->y;
+		runeEntity->z = floorItem->z;
+		runeEntity->vel_x = runeEntity->vel_y = runeEntity->vel_z = 0.0;
+		--floorItem->skill[13];
+		serverUpdateEntitySkill(floorItem, 13);
+		commitInscriptionResources();
+		degradeSpellbookFromLearning(spellbook, player);
+	}
+	else
+	{
+		// In-place conversion cannot fail once the Rune profile has been built.
+		floorItem->skill[10] = rune->type;
+		floorItem->skill[11] = rune->status;
+		floorItem->skill[12] = rune->beatitude;
+		floorItem->skill[13] = 1;
+		floorItem->skill[14] = rune->appearance;
+		floorItem->skill[15] = rune->identified;
+		floorItem->itemRuneStoredPWR = rune->runeGetStoredPWRRaw();
+		floorItem->itemRuneStoredPWRValid = rune->runeHasStoredPWR() ? 1 : 0;
+		floorItem->itemRuneCreatorPlayer = rune->runeGetCreatorPlayer();
+		floorItem->itemRuneCreatorPlayerValid = rune->runeHasCreator() ? 1 : 0;
+		floorItem->itemRuneInstanceId = static_cast<Sint32>(rune->runeGetInstanceId());
+		floorItem->itemRuneCreatorIdentity = static_cast<Sint32>(rune->runeGetCreatorIdentity());
+		for ( int skill = 10; skill <= 15; ++skill )
+		{
+			serverUpdateEntitySkill(floorItem, skill);
+		}
+		serverUpdateEntitySkill(floorItem, 33);
+		serverUpdateEntitySkill(floorItem, 34);
+		serverUpdateEntitySkill(floorItem, 35);
+		serverUpdateEntitySkill(floorItem, 36);
+		serverUpdateEntitySkill(floorItem, 37);
+		serverUpdateEntitySkill(floorItem, 38);
+		floorItem->itemNotMoving = 0;
+		floorItem->itemNotMovingClient = 0;
+		floorItem->flags[INVISIBLE] = true;
+		commitInscriptionResources();
+		degradeSpellbookFromLearning(spellbook, player);
+	}
+	messagePlayer(player, MESSAGE_INTERACTION, "You press %s into the gemstone.", spell->getSpellName());
+	magicOnGuaranteedSpellSchoolTraining(players[player]->entity, spellID);
+	if ( rune ) { free(rune); }
+	return true;
+}
+
 bool itemProcessReturnItemEffect(Entity* my, bool fallingIntoVoid)
 {
 	if ( Entity* returnToParent = uidToEntity(my->itemReturnUID) )
 	{
+		spell_t* sustainSpell = returnToParent->getActiveMagicEffect(SPELL_RETURN_ITEMS);
+		ScopedSpellPowerOverride spellPowerScope(sustainSpell, true);
 		int returnTime = std::max(10, std::max(getSpellDamageSecondaryFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent, 0.0, false),
 			getSpellDamageFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent, 0.0, false)));
 		if ( fallingIntoVoid || (my->ticks >= returnTime && returnToParent->behavior == &actPlayer) )
 		{
 			int cost = std::max(1, getSpellEffectDurationSecondaryFromID(SPELL_RETURN_ITEMS, returnToParent, nullptr, returnToParent));
-			if ( cost > 0 && !returnToParent->safeConsumeMP(cost) )
+			if ( cost > 0 && !consumeSustainedSpellResource(returnToParent, sustainSpell, cost) )
 			{
 				Stat* returnStats = returnToParent->getStats();
-				if ( returnStats && returnStats->MP > 0 )
+				if ( (!sustainSpell || sustainSpell->runeInstanceId == 0) && returnStats && returnStats->MP > 0 )
 				{
 					returnToParent->modMP(-returnStats->MP);
 				}
-				if ( spell_t* sustainSpell = returnToParent->getActiveMagicEffect(SPELL_RETURN_ITEMS) )
+				if ( sustainSpell )
 				{
 					sustainSpell->sustain = false;
 				}
@@ -526,6 +695,14 @@ void actItem(Entity* my)
 	}
 
 	ITEM_LIFE++;
+	if ( multiplayer != CLIENT && itemTypeIsIngredientBag(static_cast<ItemType>(ITEM_TYPE))
+		&& my->itemIngredientCount0 == 0 && my->itemIngredientCount1 == 0
+		&& my->itemIngredientCount2 == 0 && my->itemIngredientCount3 == 0 )
+	{
+		my->removeLightField();
+		list_RemoveNode(my->mynode);
+		return;
+	}
 
 	// pick up item
 	if (multiplayer != CLIENT)
@@ -741,6 +918,12 @@ void actItem(Entity* my)
 				}
 				else if ( inrange[i] && players[i] && players[i]->entity )
 				{
+					if ( itemTypeIsIngredientBag(static_cast<ItemType>(my->skill[10]))
+						&& my->itemIngredientBagOwnerUid != 0
+						&& static_cast<Uint32>(my->itemIngredientBagOwnerUid) != players[i]->entity->getUID() )
+					{
+						continue;
+					}
 					bool trySalvage = false;
 					if ( static_cast<Uint32>(my->itemAutoSalvageByPlayer) == players[i]->entity->getUID() )
 					{
@@ -939,6 +1122,8 @@ void actItem(Entity* my)
 			{
 				Stat* leaderStats = leader->getStats();
 				real_t dist = entityDist(leader, my);
+				spell_t* activeSpell = leader->getActiveMagicEffect(SPELL_ATTRACT_ITEMS);
+				ScopedSpellPowerOverride spellPowerScope(activeSpell, true);
 
 				real_t maxDist = std::max(16, std::min(getSpellDamageSecondaryFromID(SPELL_ATTRACT_ITEMS, leader, nullptr, leader),
 					getSpellDamageFromID(SPELL_ATTRACT_ITEMS, leader, nullptr, leader)));
@@ -1148,6 +1333,17 @@ void actItem(Entity* my)
 				else if (overWater) {
 					if (!ITEM_SPLOOSHED) {
 						ITEM_SPLOOSHED = true;
+						// mod add: Normal water spoils a world firearm's loaded shot in
+						// place. Lava keeps its existing break/burn behavior above.
+						if ( multiplayer != CLIENT && swimmingtiles[tile]
+							&& Item::firearmAppearanceIsLoaded(static_cast<ItemType>(ITEM_TYPE),
+								static_cast<Uint32>(ITEM_APPEARANCE)) )
+						{
+							ITEM_APPEARANCE = static_cast<Sint32>(Item::setFirearmAppearanceLoaded(
+								static_cast<ItemType>(ITEM_TYPE), static_cast<Uint32>(ITEM_APPEARANCE), false));
+							serverUpdateEntitySkill(my, 14);
+						}
+						// mod add end
 						bool splash = true;
 						if ( multiplayer == SINGLE && !splitscreen && my->parent == achievementObserver.playerUids[clientnum] )
 						{

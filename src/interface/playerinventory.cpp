@@ -62,6 +62,16 @@ bool executeItemMenuOption0ForPaperDoll(const int player, Item* item, bool dropp
 		printlog("Warning: executed paper doll menu on spell");
 		return false;
 	}
+	if ( isWraithPhysicalHandItem(player, item) )
+	{
+		// The Wraith hand can only be emptied by the real item action or drop path.
+		return false;
+	}
+	if ( playerIsInWraithForm(player)
+		&& !droppingAndUnequipping )
+	{
+		return false;
+	}
 
 	if ( !droppingAndUnequipping && !players[player]->inventoryUI.bItemInventoryHasFreeSlot() )
 	{
@@ -153,6 +163,10 @@ bool executeItemMenuOption0ForInventoryItem(const int player, Item* item) // ret
 
 const char* itemEquipString(int player, const Item& item)
 {
+	if ( itemTypeIsTincture(item.type) || itemTypeIsOil(item.type) )
+	{
+		return itemIsEquipped(&item, player) ? Language::get(323) : Language::get(324);
+	}
 	if ( items[item.type].item_slot == ItemEquippableSlot::NO_EQUIP && !(itemCategory(&item) == SPELL_CAT) )
 	{
 		return "Invalid";
@@ -366,6 +380,10 @@ const char* itemEquipString(int player, const Item& item)
 
 const char* itemUseString(int player, const Item& item)
 {
+	if ( itemTypeIsOil(item.type) || itemTypeIsInk(item.type) )
+	{
+		return "Apply";
+	}
 	if ( itemCategory(&item) == POTION )
 	{
 		return Language::get(329);
@@ -2282,9 +2300,102 @@ void select_inventory_slot(int player, int currentx, int currenty, int diffx, in
 	inventoryUI.selectSlot(x, y);
 }
 
+static std::string getDefaultMagicRuneSpritePath()
+{
+	auto firstImagePath = [](ItemType type) -> const char*
+	{
+		if ( node_t* imageNode = list_Node(&items[type].images, 0) )
+		{
+			if ( const string_t* imagePath = static_cast<const string_t*>(imageNode->element);
+				imagePath && imagePath->data && imagePath->data[0] != '\0' )
+			{
+				return imagePath->data;
+			}
+		}
+		return nullptr;
+	};
+	if ( const char* runePath = firstImagePath(MAGIC_RUNE) )
+	{
+		return runePath;
+	}
+	if ( const char* obsidianPath = firstImagePath(GEM_OBSIDIAN) )
+	{
+		return obsidianPath;
+	}
+	return "items/images/null.png";
+}
+
+static std::string getMagicRuneSpritePath(const Item& rune)
+{
+	if ( !rune.runeIsValid() )
+	{
+		return getDefaultMagicRuneSpritePath();
+	}
+
+	const char* colourPrefix = nullptr;
+	switch ( rune.runeGetGemType() )
+	{
+		case RUNE_GEM_OBSIDIAN:
+		case RUNE_GEM_JETSTONE:
+			colourPrefix = "RuneBlack";
+			break;
+		case RUNE_GEM_AQUAMARINE:
+		case RUNE_GEM_SAPPHIRE:
+			colourPrefix = "RuneBlue";
+			break;
+		case RUNE_GEM_JADE:
+		case RUNE_GEM_EMERALD:
+			colourPrefix = "RuneGreen";
+			break;
+		case RUNE_GEM_AMBER:
+		case RUNE_GEM_JACINTH:
+			colourPrefix = "RuneOrange";
+			break;
+		case RUNE_GEM_FLUORITE:
+		case RUNE_GEM_AMETHYST:
+			colourPrefix = "RunePurple";
+			break;
+		case RUNE_GEM_GARNET:
+		case RUNE_GEM_RUBY:
+			colourPrefix = "RuneRed";
+			break;
+		case RUNE_GEM_OPAL:
+		case RUNE_GEM_DIAMOND:
+			colourPrefix = "RuneWhite";
+			break;
+		case RUNE_GEM_CITRINE:
+			colourPrefix = "RuneYellow";
+			break;
+		default:
+			return getDefaultMagicRuneSpritePath();
+	}
+
+	const char* schoolSuffix = nullptr;
+	switch ( rune.runeGetMagicSchool() )
+	{
+		case PRO_MYSTICISM:
+			schoolSuffix = "myst";
+			break;
+		case PRO_SORCERY:
+			schoolSuffix = "sorc";
+			break;
+		case PRO_THAUMATURGY:
+			schoolSuffix = "thaum";
+			break;
+		default:
+			return getDefaultMagicRuneSpritePath();
+	}
+
+	return std::string("items/images/runes/") + colourPrefix + "_" + schoolSuffix + ".png";
+}
+
 std::string getItemSpritePath(const int player, Item& item)
 {
-	if ( item.type == SPELL_ITEM )
+	if ( item.isMagicRune() )
+	{
+		return getMagicRuneSpritePath(item);
+	}
+	else if ( item.type == SPELL_ITEM )
 	{
 		return ItemTooltips.getSpellIconPath(player, item, -1);
 	}
@@ -2364,6 +2475,12 @@ Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificI
 	{
 		return nullptr;
 	}
+	if ( item->type != SPELL_ITEM && !wraithCanAcceptPhysicalPickup(player) )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY,
+			"Your spectral hand is already occupied.");
+		return nullptr;
+	}
 	list_t* chest_inventory = nullptr;
 	if ( multiplayer == CLIENT )
 	{
@@ -2379,7 +2496,6 @@ Item* takeItemFromChest(int player, Item* item, int amount, Item* addToSpecificI
 		// item isn't a part of this chest?
 		return nullptr;
 	}
-
 	Item* checkExists = openedChest[player]->getItemFromChest(item, amount, true);
 	if ( !checkExists )
 	{
@@ -2429,7 +2545,10 @@ bool dragDropStackChestItems(const int player, Item*& selectedItem, Item* tempIt
 
 	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
 	bool stackedItems = false;
-	if ( !itemCompare(selectedItem, tempItem, false) )
+	const bool matchingIngredientBags = itemTypeIsIngredientBag(selectedItem->type)
+		&& itemTypeIsIngredientBag(tempItem->type)
+		&& ingredientCategoryFromBag(selectedItem->type) == ingredientCategoryFromBag(tempItem->type);
+	if ( matchingIngredientBags || !itemCompare(selectedItem, tempItem, false) )
 	{
 		int selectedItemQty = 0;
 		int destItemQty = 0;
@@ -2504,10 +2623,60 @@ bool dragDropStackChestItems(const int player, Item*& selectedItem, Item* tempIt
 	return stackedItems;
 }
 
+static void rebindWraithHeldStackBeforeSourceRemoval(
+	const int player, Item* source, Item* survivor)
+{
+	if ( player < 0
+		|| player >= MAXPLAYERS
+		|| !stats[player]
+		|| !source
+		|| !survivor
+		|| source == survivor )
+	{
+		return;
+	}
+
+	if ( !playerIsInWraithForm(player) )
+	{
+		return;
+	}
+
+	if ( getWraithHeldItem(player) != source )
+	{
+		return;
+	}
+
+	if ( !setWraithHeldItem(player, nullptr)
+		|| !setWraithHeldItem(player, survivor) )
+	{
+		printlog("[WRAITH]: ERROR failed to rebind held stacked Item");
+	}
+}
+
 bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* tempItem, int oldx, int oldy)
 {
 	bool& toggleclick = inputs.getUIInteraction(player)->toggleclick;
 	bool stackedItems = false;
+	if ( selectedItem && tempItem && selectedItem != tempItem
+		&& itemTypeIsIngredientBag(selectedItem->type)
+		&& itemTypeIsIngredientBag(tempItem->type)
+		&& ingredientCategoryFromBag(selectedItem->type) == ingredientCategoryFromBag(tempItem->type) )
+	{
+		mergeIngredientBags(*tempItem, *selectedItem);
+		rebindWraithHeldStackBeforeSourceRemoval(player, selectedItem, tempItem);
+		if ( selectedItem->node )
+		{
+			list_RemoveNode(selectedItem->node);
+		}
+		else
+		{
+			free(selectedItem);
+		}
+		selectedItem = nullptr;
+		inputs.getUIInteraction(player)->selectedItemFromChest = 0;
+		toggleclick = false;
+		return true;
+	}
 	if ( !itemCompare(selectedItem, tempItem, false) )
 	{
 		int selectedItemQty = 0;
@@ -2521,6 +2690,7 @@ bool dragDropStackInventoryItems(const int player, Item*& selectedItem, Item* te
 			{
 				messagePlayer(0, MESSAGE_DEBUG, "ERROR STACKING ITEM");
 			}
+			rebindWraithHeldStackBeforeSourceRemoval(player, selectedItem, tempItem);
 			if ( selectedItem->node )
 			{
 				list_RemoveNode(selectedItem->node);
@@ -4440,10 +4610,12 @@ int getContextMenuOptionOrder(const int player, ItemContextMenuPrompts prompt)
 void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int justify, Frame* parentFrame)
 {
     const int player = this->player.playernum;
-    if ( !item )
-    {
-        return;
-    }
+	if ( !item )
+	{
+		return;
+	}
+	ScopedSpellPowerOverride runePowerScope(item->runeHasStoredPWR(),
+		getMagicRuneEffectivePWR(*item, players[player] ? players[player]->entity : nullptr));
 
 	Frame* tooltipContainerFrame = nullptr;
 	Frame* frameMain = nullptr;
@@ -5326,9 +5498,9 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                             icon.iconPath = ItemTooltips.getSpellIconPath(player, *item, -1);
                         }
                     }
-                    else if ( item->type == SPELL_ITEM )
-                    {
-                        if ( icon.conditionalAttribute == "SPELL_ICON_EFFECT" )
+					else if ( item->type == SPELL_ITEM || item->isMagicRune() )
+					{
+						if ( icon.conditionalAttribute == "SPELL_ICON_EFFECT" )
                         {
                             icon.iconPath = "images/ui/HUD/statusfx/magic_effect.png";
                         }
@@ -5750,7 +5922,8 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         continue;
                     }
                 }
-                else if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR || itemCategory(item) == TOOL
+                else if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR
+                         || (itemCategory(item) == TOOL && !item->isMagicRune())
                          || itemCategory(item) == AMULET || itemCategory(item) == RING || itemTypeIsQuiver(item->type)
                          || itemCategory(item) == GEM || itemCategory(item) == THROWN )
                 {
@@ -5940,10 +6113,19 @@ void Player::HUD_t::updateFrameTooltip(Item* item, const int x, const int y, int
                         }
                     }
                 }
-                else if ( itemCategory(item) == SPELL_CAT )
-                {
-                    spell_t* spell = getSpellFromItem(player, item, false);
+				else if ( itemCategory(item) == SPELL_CAT || item->isMagicRune() )
+				{
+					spell_t* spell = getSpellFromItem(player, item, false);
 					if ( !spell ) { continue; }
+					if ( item->isMagicRune()
+						&& (tag.compare("spell_cast_success") == 0
+							|| tag.compare("spell_cast_success1") == 0
+							|| tag.compare("spell_cast_success2") == 0
+							|| tag.compare("spell_extramana_chance") == 0
+							|| tag.compare("spell_newbie_newline") == 0) )
+					{
+						continue;
+					}
                     if ( tag.compare("spell_damage_bonus") == 0 )
                     {
                         if ( !ItemTooltips.bIsSpellDamageOrHealingType(spell) )
@@ -7630,6 +7812,130 @@ void Player::HUD_t::finalizeFrameTooltip(Item* item, const int x, const int y, i
 			frameMain->setSize(mainPos);
 		}
 	}
+
+	static constexpr const char* ingredientOverlayName = "ingredient bag hover overlay";
+	Frame* ingredientOverlay = tooltipContainerFrame->findFrame(ingredientOverlayName);
+	if ( !itemTypeIsIngredientBag(item->type) || doTitleOnlyTooltip )
+	{
+		if ( ingredientOverlay )
+		{
+			ingredientOverlay->setDisabled(true);
+		}
+		return;
+	}
+
+	frameMain->setDisabled(true);
+	if ( frameTooltipPrompt )
+	{
+		frameTooltipPrompt->setDisabled(true);
+	}
+	if ( titleOnlyFrame )
+	{
+		titleOnlyFrame->setDisabled(true);
+	}
+
+	constexpr int overlayWidth = 114;
+	constexpr int overlayHeight = 102;
+	constexpr int slotWidth = 42;
+	constexpr int slotHeight = 39;
+	constexpr int slotStartX = 13;
+	constexpr int slotStartY = 11;
+	constexpr int slotStrideX = 44;
+	constexpr int slotStrideY = 41;
+	constexpr int iconWidth = 36;
+	constexpr int iconHeight = 36;
+	constexpr int quantityInset = 3;
+	if ( !ingredientOverlay )
+	{
+		ingredientOverlay = tooltipContainerFrame->addFrame(ingredientOverlayName);
+		ingredientOverlay->setHollow(true);
+		ingredientOverlay->setInheritParentFrameOpacity(false);
+		ingredientOverlay->addImage(SDL_Rect{ 0, 0, overlayWidth, overlayHeight }, 0xFFFFFFFF,
+			"images/ui/Inventory/HUD_Inventory_Ingredient_Bag_00a.png", "ingredient bag background");
+		for ( int slot = 0; slot < 4; ++slot )
+		{
+			const int column = slot % 2;
+			const int row = slot / 2;
+			char imageName[32];
+			char fieldName[32];
+			snprintf(imageName, sizeof(imageName), "ingredient icon %d", slot);
+			snprintf(fieldName, sizeof(fieldName), "ingredient count %d", slot);
+			const SDL_Rect slotRect{
+				slotStartX + column * slotStrideX,
+				slotStartY + row * slotStrideY,
+				slotWidth, slotHeight };
+			ingredientOverlay->addImage(SDL_Rect{
+				slotRect.x + (slotRect.w - iconWidth) / 2 + (column == 0 ? 3 : 0),
+				slotRect.y + (slotRect.h - iconHeight) / 2 + (row == 0 ? 1 : 0),
+				iconWidth, iconHeight }, 0xFFFFFFFF, "items/images/null.png", imageName);
+			Field* count = ingredientOverlay->addField(fieldName, 16);
+			count->setSize(SDL_Rect{ slotRect.x, slotRect.y,
+				slotRect.w - quantityInset, slotRect.h - quantityInset });
+			count->setFont("fonts/pixel_maz.ttf#32#2");
+			count->setColor(0xFFFFFFFF);
+			count->setHJustify(Field::justify_t::BOTTOM);
+			count->setVJustify(Field::justify_t::RIGHT);
+		}
+	}
+
+	const WitchIngredientCategory category = ingredientCategoryFromBag(item->type);
+	for ( int slot = 0; slot < 4; ++slot )
+	{
+		char imageName[32];
+		char fieldName[32];
+		snprintf(imageName, sizeof(imageName), "ingredient icon %d", slot);
+		snprintf(fieldName, sizeof(fieldName), "ingredient count %d", slot);
+		if ( auto image = ingredientOverlay->findImage(imageName) )
+		{
+			const ItemType ingredientType = ingredientForCategorySlot(category, slot);
+			if ( ingredientType >= 0 && ingredientType < NUMITEMS && items[ingredientType].images.first )
+			{
+				const string_t* path = static_cast<const string_t*>(items[ingredientType].images.first->element);
+				image->path = path ? path->data : "items/images/null.png";
+			}
+			else
+			{
+				image->path = "items/images/null.png";
+			}
+		}
+		if ( Field* count = ingredientOverlay->findField(fieldName) )
+		{
+			char quantity[16];
+			snprintf(quantity, sizeof(quantity), "%u", item->ingredientCounts[slot]);
+			count->setText(quantity);
+		}
+	}
+
+	const SDL_Rect mainPos = frameMain->getSize();
+	const SDL_Rect containerPos = tooltipContainerFrame->getSize();
+	const int gap = 6;
+	int overlayX = std::max(0, std::min(containerPos.w - overlayWidth, mainPos.x));
+	int overlayY = std::max(0, std::min(containerPos.h - overlayHeight, mainPos.y));
+	if ( x >= overlayX && x < overlayX + overlayWidth
+		&& y >= overlayY && y < overlayY + overlayHeight )
+	{
+		const int rightX = x + gap;
+		const int leftX = x - overlayWidth - gap;
+		if ( rightX + overlayWidth <= containerPos.w )
+		{
+			overlayX = rightX;
+		}
+		else if ( leftX >= 0 )
+		{
+			overlayX = leftX;
+		}
+		else if ( y + gap + overlayHeight <= containerPos.h )
+		{
+			overlayY = y + gap;
+		}
+		else
+		{
+			overlayY = std::max(0, y - overlayHeight - gap);
+		}
+	}
+	ingredientOverlay->setSize(SDL_Rect{ overlayX, overlayY, overlayWidth, overlayHeight });
+	ingredientOverlay->setOpacity(100.0);
+	ingredientOverlay->setDisabled(false);
 }
 
 void Player::Inventory_t::setCompactView(bool bCompact)
@@ -8133,15 +8439,47 @@ bool Player::Inventory_t::paperDollContextMenuActive()
 }
 
 bool blitInventorySlotFramesToSurf = false;
+static void setWraithBlockedInventorySlot(Frame* slotFrame)
+{
+	if ( !slotFrame )
+	{
+		return;
+	}
+
+	slotFrame->setDisabled(false);
+
+	static const char* framesToDisable[] = {
+		"beatitude status frame",
+		"broken status frame",
+		"item sprite frame",
+		"appraisal frame",
+		"quantity frame",
+		"equipped icon frame",
+		"broken icon frame"
+	};
+
+	for ( const char* name : framesToDisable )
+	{
+		if ( Frame* frame = slotFrame->findFrame(name) )
+		{
+			frame->setDisabled(true);
+		}
+	}
+
+	if ( Frame* unusable = slotFrame->findFrame("unusable item frame") )
+	{
+		unusable->setDisabled(false);
+	}
+}
 void Player::Inventory_t::updateInventory()
 {
 	const int player = this->player.playernum;
 	assert(frame);
 	assert(tooltipFrame);
-
 	auto& shopGUI = this->player.shopGUI;
 	auto& tinkerGUI = GenericGUI[player].tinkerGUI;
 	auto& alchemyGUI = GenericGUI[player].alchemyGUI;
+	auto& stewingGUI = GenericGUI[player].stewingGUI;
 	auto& mailboxGUI = GenericGUI[player].mailboxGUI;
 	auto& featherGUI = GenericGUI[player].featherGUI;
 	auto& itemfxGUI = GenericGUI[player].itemfxGUI;
@@ -9327,7 +9665,6 @@ void Player::Inventory_t::updateInventory()
 		nextnode = node->next;
 		Item* item = (Item*)node->element;
 		if ( !item ) { continue; }
-
 		if ( item == selectedItem )
 		{
 			bool interactable = true;
@@ -9507,6 +9844,18 @@ void Player::Inventory_t::updateInventory()
 						updateSlotFrameFromItem(slotFrame, item);
 					}
 				}
+				else if ( stewingGUI.bOpen )
+				{
+					if ( !(stewingGUI.inventoryItemAllowedInGUI(item)
+						&& item->identified && !itemIsEquipped(item, player)) )
+					{
+						updateSlotFrameFromItem(slotFrame, item, true);
+					}
+					else
+					{
+						updateSlotFrameFromItem(slotFrame, item);
+					}
+				}
 				else if ( alchemyGUI.bOpen )
 				{
 					if ( !(alchemyGUI.inventoryItemAllowedInGUI(item) /*&& item != GenericGUI[player].alembicItem*/
@@ -9563,6 +9912,48 @@ void Player::Inventory_t::updateInventory()
 		}
 	}
 
+
+	if ( playerIsInWraithForm(player) )
+	{
+		// Grey all normal backpack/inventory cells.
+		for ( int x = 0; x < getSizeX(); ++x )
+		{
+			for ( int y = 0; y < getSizeY(); ++y )
+			{
+				setWraithBlockedInventorySlot(getInventorySlotFrame(x, y));
+			}
+		}
+
+		// Query Barony's paper-doll layout; only jewelry and the hand stay usable.
+		int amuletX = 0;
+		int amuletY = 0;
+		int ringX = 0;
+		int ringY = 0;
+		int weaponX = 0;
+		int weaponY = 0;
+		players[player]->paperDoll.getCoordinatesFromSlotType(
+			Player::PaperDoll_t::SLOT_AMULET, amuletX, amuletY);
+		players[player]->paperDoll.getCoordinatesFromSlotType(
+			Player::PaperDoll_t::SLOT_RING, ringX, ringY);
+		players[player]->paperDoll.getCoordinatesFromSlotType(
+			Player::PaperDoll_t::SLOT_WEAPON, weaponX, weaponY);
+
+		for ( int x = Player::Inventory_t::DOLL_COLUMN_LEFT;
+			x <= Player::Inventory_t::DOLL_COLUMN_RIGHT; ++x )
+		{
+			for ( int y = Player::Inventory_t::DOLL_ROW_1;
+				y <= Player::Inventory_t::DOLL_ROW_5; ++y )
+			{
+				const bool allowed = (x == amuletX && y == amuletY)
+					|| (x == ringX && y == ringY)
+					|| (x == weaponX && y == weaponY);
+				if ( !allowed )
+				{
+					setWraithBlockedInventorySlot(getInventorySlotFrame(x, y));
+				}
+			}
+		}
+	}
 	//DebugStats.gui11 = std::chrono::high_resolution_clock::now();
 
 	// autosort button
@@ -9957,7 +10348,9 @@ void Player::Inventory_t::updateInventory()
 									break;
 								}
 
-								if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
+								if ( option == ItemContextMenuPrompts::PROMPT_DROP
+									&& players[player]->paperDoll.isItemOnDoll(*item)
+									&& !isWraithPhysicalHandItem(player, item) )
 								{
 									// need to unequip
 									players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
@@ -10119,7 +10512,6 @@ void Player::Inventory_t::updateInventory()
 			{
 				continue;
 			}
-
 			if ( GenericGUI[player].isGUIOpen() )
 			{
 				if ( !GenericGUI[player].isNodeFromPlayerInventory(item->node) )
@@ -10330,6 +10722,7 @@ void Player::Inventory_t::updateInventory()
 				bool sellingItemToShop = false;
 				bool tinkerOpen = false;
 				bool alchemyOpen = false;
+				bool stewingOpen = false;
 				bool mailboxOpen = false;
 				bool featherOpen = false;
 				bool itemfxOpen = false;
@@ -10365,6 +10758,10 @@ void Player::Inventory_t::updateInventory()
 						shopGUI.setItemDisplayNameAndPrice(item);
 					}
 				}
+				else if ( stewingGUI.bOpen )
+				{
+					stewingOpen = true;
+				}
 				else if ( alchemyGUI.bOpen )
 				{
 					alchemyOpen = true;
@@ -10395,6 +10792,29 @@ void Player::Inventory_t::updateInventory()
 					break;
 				}
 
+				auto activateStewingInventoryItem = [&]()
+				{
+					if ( item && stewingGUI.inventoryItemAllowedInGUI(item)
+						&& item->identified && !itemIsEquipped(item, player)
+						&& GenericGUI[player].executeOnItemClick(item) )
+					{
+						Player::soundActivate();
+					}
+					else
+					{
+						playSound(90, 64);
+					}
+				};
+				if ( stewingOpen && inventoryControlActive && !selectedItem
+					&& players[player]->GUI.activeModule != Player::GUI_t::MODULE_STEWING
+					&& !inputs.getVirtualMouse(player)->draw_cursor
+					&& Input::inputs[player].binaryToggle("MenuConfirm") )
+				{
+					Input::inputs[player].consumeBinaryToggle("MenuConfirm");
+					activateStewingInventoryItem();
+					break;
+				}
+
 				bool tooltipPromptWasDisabled = tooltipPromptFrame->isDisabled();
 				if ( useItemDropdownOnGamepad == GamepadDropdownTypes::GAMEPAD_DROPDOWN_FULL && !inputs.getVirtualMouse(player)->draw_cursor )
 				{
@@ -10407,7 +10827,8 @@ void Player::Inventory_t::updateInventory()
 					|| featherOpen
 					|| itemfxOpen
 					|| mailboxOpen
-					|| alchemyOpen)
+					|| alchemyOpen
+					|| stewingOpen)
 					&& inventoryControlActive
 					&& !selectedItem )
 				{
@@ -10426,7 +10847,9 @@ void Player::Inventory_t::updateInventory()
 								break;
 							}
 
-							if ( option == ItemContextMenuPrompts::PROMPT_DROP && players[player]->paperDoll.isItemOnDoll(*item) )
+							if ( option == ItemContextMenuPrompts::PROMPT_DROP
+								&& players[player]->paperDoll.isItemOnDoll(*item)
+								&& !isWraithPhysicalHandItem(player, item) )
 							{
 								// need to unequip
 								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
@@ -10534,7 +10957,8 @@ void Player::Inventory_t::updateInventory()
 					{
 						if ( guiAllowDropItems(item) )
 						{
-							if ( players[player]->paperDoll.isItemOnDoll(*item) )
+							if ( players[player]->paperDoll.isItemOnDoll(*item)
+								&& !isWraithPhysicalHandItem(player, item) )
 							{
 								// need to unequip
 								players[player]->inventoryUI.activateItemContextMenuOption(item, ItemContextMenuPrompts::PROMPT_UNEQUIP_FOR_DROP);
@@ -10546,7 +10970,7 @@ void Player::Inventory_t::updateInventory()
 								}
 							}
 
-							if ( Input::inputs[player].binaryToggle("MenuLeftClick") /*keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]*/ )
+							if ( item && Input::inputs[player].binaryToggle("MenuLeftClick") /*keystatus[SDLK_LCTRL] || keystatus[SDLK_RCTRL]*/ )
 							{
 								// drop all.
 								int qty = item->count;
@@ -10600,7 +11024,12 @@ void Player::Inventory_t::updateInventory()
 				else if ( Input::inputs[player].binaryToggle("MenuRightClick") && inputs.bPlayerUsingKeyboardControl(player)
 					&& inventoryControlActive && !selectedItem )
 				{
-					if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
+					if ( stewingOpen )
+					{
+						Input::inputs[player].consumeBinaryToggle("MenuRightClick");
+						activateStewingInventoryItem();
+					}
+					else if ( keystatus[SDLK_LSHIFT] || keystatus[SDLK_RSHIFT] )
 					{
 						if ( guiAllowDefaultRightClick() )
 						{
@@ -10641,7 +11070,8 @@ void Player::Inventory_t::updateInventory()
 							}
 						}
 					}
-					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen && !mailboxOpen && !featherInscribeOrRepairActive && !itemfxOpen )
+					else if ( !tinkeringSalvageOrRepairMenuActive && !alchemyOpen && !stewingOpen
+						&& !mailboxOpen && !featherInscribeOrRepairActive && !itemfxOpen )
 					{
 						// open a drop-down menu of options for "using" the item
 						itemMenuOpen = true;
@@ -10931,7 +11361,6 @@ void Player::Inventory_t::updateInventory()
 				nextnode = node->next;
 				Item* item = (Item*)node->element;
 				if ( !item ) { continue; }
-
 				int itemx = item->x;
 				int itemy = item->y;
 
@@ -11034,6 +11463,18 @@ void Player::Inventory_t::updateInventory()
 								&& invalidItem )
 							{
 								updateSlotFrameFromItem(slotFrame, item, true); // force grey backgrounds
+							}
+							else
+							{
+								updateSlotFrameFromItem(slotFrame, item);
+							}
+						}
+						else if ( stewingGUI.bOpen )
+						{
+							if ( !(stewingGUI.inventoryItemAllowedInGUI(item)
+								&& item->identified && !itemIsEquipped(item, player)) )
+							{
+								updateSlotFrameFromItem(slotFrame, item, true);
 							}
 							else
 							{
@@ -11224,7 +11665,8 @@ void Player::PaperDoll_t::updateSlots()
 				}
 				break;
 			case SLOT_OFFHAND:
-				if ( equippedItem = stats[player.playernum]->shield )
+				if ( !playerIsInWraithForm(player.playernum)
+					&& (equippedItem = stats[player.playernum]->shield) )
 				{
 					slot.item = equippedItem->uid;
 				}
@@ -11254,7 +11696,9 @@ void Player::PaperDoll_t::updateSlots()
 				}
 				break;
 			case SLOT_WEAPON:
-				if ( equippedItem = stats[player.playernum]->weapon )
+				if ( equippedItem = playerIsInWraithForm(player.playernum)
+					? getWraithHeldItem(player.playernum)
+					: stats[player.playernum]->weapon )
 				{
 					slot.item = equippedItem->uid;
 				}
@@ -11344,6 +11788,13 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 		case PROMPT_EQUIP:
 		case PROMPT_UNEQUIP:
 		case PROMPT_SPELL_EQUIP:
+			if ( isWraithPhysicalHandItem(player, &item)
+				&& (itemCategory(&item) == RING || itemCategory(&item) == AMULET) )
+			{
+				// A physical item in the Wraith's hand is pointer-equipped as the
+				// weapon, but jewelry's available action here is still Equip.
+				return Language::get(326);
+			}
 			return itemEquipString(player, item);
 		case PROMPT_INTERACT:
 		case PROMPT_INTERACT_SPELLBOOK_HOTBAR:
@@ -11396,6 +11847,10 @@ const char* getContextMenuLangEntry(const int player, const ItemContextMenuPromp
 
 std::vector<ItemContextMenuPrompts> getContextTooltipOptionsForItem(const int player, Item* item, int useDropdownMenu, bool hotbarItem)
 {
+	if ( !item )
+	{
+		return std::vector<ItemContextMenuPrompts>();
+	}
 	if ( (stats[player] && stats[player]->HP <= 0) || players[player]->ghost.isActive() )
 	{
 		// ded, cant do anything with items
@@ -11460,7 +11915,6 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	{
 		return options;
 	}
-
 	bool playerOwnedItem = false;
 	if ( item->node )
 	{
@@ -11468,6 +11922,23 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		{
 			playerOwnedItem = true;
 		}
+	}
+	const bool wraithPhysicalHandItem = isWraithPhysicalHandItem(player, item);
+	const bool actuallyEquipped = itemIsEquipped(item, player);
+	const bool contextTreatAsEquipped = actuallyEquipped && !wraithPhysicalHandItem;
+	if ( playerIsInWraithForm(player)
+		&& stats[player]
+		&& playerOwnedItem
+		&& itemCategory(item) != SPELL_CAT
+		&& !wraithPhysicalHandItem )
+	{
+		if ( stats[player]->ring == item || stats[player]->amulet == item )
+		{
+			options.push_back(PROMPT_DROP);
+			return options;
+		}
+		options.push_back(PROMPT_DROP);
+		return options;
 	}
 
 	if ( openedChest[player] && itemCategory(item) != SPELL_CAT )
@@ -11503,13 +11974,36 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 	}
 
-	if ( itemCategory(item) == POTION )
+	if ( itemTypeIsTincture(item->type) )
+	{
+		if ( !contextTreatAsEquipped )
+		{
+			options.push_back(PROMPT_EAT);
+		}
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( itemTypeIsOil(item->type) )
+	{
+		options.push_back(PROMPT_INTERACT);
+		options.push_back(PROMPT_EQUIP);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( itemTypeIsInk(item->type) )
+	{
+		options.push_back(PROMPT_INTERACT);
+		options.push_back(PROMPT_APPRAISE);
+		options.push_back(PROMPT_DROP);
+	}
+	else if ( itemCategory(item) == POTION )
 	{
 		bool is_potion_bad = isPotionBad(*item);
 		if ( is_potion_bad )
 		{
 			options.push_back(PROMPT_EQUIP);
-			if ( !itemIsEquipped(item, player) )
+			if ( !contextTreatAsEquipped )
 			{
 				options.push_back(PROMPT_EAT);
 			}
@@ -11518,7 +12012,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		else
 		{
-			if ( !itemIsEquipped(item, player) )
+			if ( !contextTreatAsEquipped )
 			{
 				options.push_back(PROMPT_EAT);
 			}
@@ -11563,7 +12057,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	}
 	else if ( item->type == FOOD_CREAMPIE )
 	{
-		if ( !itemIsEquipped(item, player) )
+		if ( !contextTreatAsEquipped )
 		{
 			if ( stats[player] && stats[player]->type == AUTOMATON && itemIsConsumableByAutomaton(*item) )
 			{
@@ -11589,7 +12083,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		else if ( itemCategory(item) == FOOD )
 		{
-			if ( !itemIsEquipped(item, player) )
+			if ( !contextTreatAsEquipped )
 			{
 				options.push_back(PROMPT_CONSUME);
 			}
@@ -11599,7 +12093,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		else if ( itemCategory(item) == GEM )
 		{
 			options.push_back(PROMPT_EQUIP);
-			if ( !itemIsEquipped(item, player) )
+			if ( !contextTreatAsEquipped )
 			{
 				options.push_back(PROMPT_CONSUME);
 			}
@@ -11617,7 +12111,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 	else if ( itemCategory(item) == SPELLBOOK )
 	{
 		bool learnedSpell = playerLearnedSpellbook(player, item);
-		if ( itemIsEquipped(item, player) )
+		if ( contextTreatAsEquipped )
 		{
 			learnedSpell = true; // equipped spellbook will unequip on use.
 		}
@@ -11661,6 +12155,17 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		options.push_back(PROMPT_DROP);
 	}
 
+	// Golem consumption is an additional action: never replace the item's normal
+	// equip/use entry, and never offer it for equipped or pseudo-spell items.
+	if ( playerOwnedItem && !contextTreatAsEquipped
+		&& players[player] && players[player]->entity
+		&& players[player]->entity->isNaturalGolemPlayer()
+		&& itemIsConsumableByGolem(*item) )
+	{
+		options.insert(options.begin() + std::min<size_t>(1, options.size()),
+			PROMPT_CONSUME_ALTERNATE);
+	}
+
 	bool sellingToShop = false;
 	bool tinkerOpen = false;
 	bool alembicOpen = false;
@@ -11697,6 +12202,17 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 
 	for ( auto it = options.begin(); it != options.end(); )
 	{
+		const bool wraithHeldJewelry = wraithPhysicalHandItem
+			&& (itemCategory(item) == RING || itemCategory(item) == AMULET);
+		if ( wraithPhysicalHandItem
+			&& ((*it == PROMPT_EQUIP && !wraithHeldJewelry)
+				|| *it == PROMPT_UNEQUIP
+				|| *it == PROMPT_UNEQUIP_FOR_DROP
+				|| *it == PROMPT_SPELL_EQUIP) )
+		{
+			it = options.erase(it);
+			continue;
+		}
 		if ( sellingToShop || tinkerOpen || alembicOpen || featherOpen || itemfxOpen || mailboxOpen )
 		{
 			if ( getContextMenuOptionBindingName(player, *it) == "MenuConfirm"
@@ -11733,7 +12249,7 @@ std::vector<ItemContextMenuPrompts> getContextMenuOptionsForItem(const int playe
 		}
 		if ( *it == PROMPT_EQUIP )
 		{
-			if ( itemIsEquipped(item, player) )
+			if ( contextTreatAsEquipped )
 			{
 				*it = PROMPT_UNEQUIP;
 			}
@@ -11917,10 +12433,39 @@ void quickStackItems(int player)
 					itemToStack->count += item2->count;
 					if ( multiplayer == CLIENT && itemIsEquipped(itemToStack, player) )
 					{
-						// if incrementing qty and holding item, then send "equip" for server to update their count of your held item.
-						clientSendEquipUpdateToServer(EQUIP_ITEM_SLOT_WEAPON, EQUIP_ITEM_SUCCESS_UPDATE_QTY, player,
-							itemToStack->type, itemToStack->status,	itemToStack->beatitude, itemToStack->count, itemToStack->appearance, itemToStack->identified);
+						// Update the authoritative quantity on the item's real equipment slot.
+						Item** slot = itemSlot(stats[player], itemToStack);
+						if ( slot )
+						{
+							if ( slot == &stats[player]->weapon )
+							{
+								clientSendEquipUpdateToServer(
+									EQUIP_ITEM_SLOT_WEAPON,
+									EQUIP_ITEM_SUCCESS_UPDATE_QTY,
+									player,
+									itemToStack->type,
+									itemToStack->status,
+									itemToStack->beatitude,
+									itemToStack->count,
+									itemToStack->appearance,
+									itemToStack->identified);
+							}
+							else if ( slot == &stats[player]->shield )
+							{
+								clientSendEquipUpdateToServer(
+									EQUIP_ITEM_SLOT_SHIELD,
+									EQUIP_ITEM_SUCCESS_UPDATE_QTY,
+									player,
+									itemToStack->type,
+									itemToStack->status,
+									itemToStack->beatitude,
+									itemToStack->count,
+									itemToStack->appearance,
+									itemToStack->identified);
+							}
+						}
 					}
+					rebindWraithHeldStackBeforeSourceRemoval(player, item2, itemToStack);
 					if ( item2->node )
 					{
 						list_RemoveNode(item2->node);
@@ -12081,6 +12626,24 @@ void autosortInventory(int player, bool sortPaperDoll)
 
 bool Player::Inventory_t::moveItemToFreeInventorySlot(Item* item)
 {
+	if ( !item )
+	{
+		return false;
+	}
+	if ( playerIsInWraithForm(player.playernum)
+		&& item->type != SPELL_ITEM )
+	{
+		if ( isWraithPhysicalHandItem(player.playernum, item) )
+		{
+			item->x =
+				Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE;
+			item->y =
+				Player::PaperDoll_t::ITEM_PAPERDOLL_COORDINATE;
+			return true;
+		}
+
+		return false;
+	}
 	bool notfree = false;
 	bool is_spell = itemCategory(item) == SPELL_CAT;
 	bool foundaspot = false;

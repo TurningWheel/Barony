@@ -24,6 +24,7 @@
 #include "prng.hpp"
 #include "player.hpp"
 #include "mod_tools.hpp"
+#include "monster.hpp"
 #ifdef __ARM_NEON__
 #include <arm_neon.h>
 #endif
@@ -390,7 +391,8 @@ bool entityInsideTile(Entity* entity, int x, int y, int z, bool checkSafeTiles)
 							if ( entity->behavior != &actDeathGhost 
 								&& !(entity->behavior == &actMonster 
 									&& entity->getStats() 
-									&& (entity->getStats()->type == BAT_SMALL 
+									&& (entity->getStats()->type == BAT_SMALL
+										|| familiarUsesBatCollisionSemantics(entity)
 										|| entity->getStats()->type == REVENANT_SKULL
 										|| entity->getStats()->type == MONSTER_ADORCISED_WEAPON
 										|| entity->getStats()->type == HOLOGRAM
@@ -506,6 +508,7 @@ bool entityInsideSomething(Entity* entity)
 			if ( entity->behavior == &actDeathGhost 
 				|| (entity->behavior == &actMonster &&
 					(type == BAT_SMALL
+					|| familiarUsesBatCollisionSemantics(entity)
 					|| type == REVENANT_SKULL
 					|| type == MONSTER_ADORCISED_WEAPON
 					|| type == MOTH_SMALL
@@ -542,8 +545,17 @@ bool entityInsideSomething(Entity* entity)
 }
 
 static ConsoleVariable<float> cvar_linetrace_smallcollision("/linetrace_smallcollision", 4.0);
+static bool collisionPairHasSolidFamiliar(const Entity* first, const Entity* second)
+{
+	return familiarFormHasCreatureCollision(first) || familiarFormHasCreatureCollision(second);
+}
+
 bool useSmallCollision(Entity& my, Stat& myStats, Entity& your, Stat& yourStats)
 {
+	if ( collisionPairHasSolidFamiliar(&my, &your) )
+	{
+		return false;
+	}
 	if ( (my.behavior == &actMonster || my.behavior == &actPlayer) &&
 		(your.behavior == &actMonster || your.behavior == &actPlayer) )
 	{
@@ -710,7 +722,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 					{
 						if ( projectile->behavior == &actArrow )
 						{
-							if ( projectile->sprite == 167 )
+							if ( projectile->arrowUsesBoltSemantics() )
 							{
 								// bolt
 								messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6472), Language::get(6292));
@@ -903,7 +915,7 @@ bool Entity::collisionProjectileMiss(Entity* parent, Entity* projectile)
 							}
 							else if ( projectile->behavior == &actArrow )
 							{
-								if ( projectile->sprite == 167 )
+								if ( projectile->arrowUsesBoltSemantics() )
 								{
 									// bolt
 									messagePlayerColor(skill[2], MESSAGE_COMBAT, makeColorRGB(0, 255, 0), Language::get(6287), Language::get(6292));
@@ -1120,7 +1132,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] 
 						|| (((swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && !waterWalking) 
 							|| (lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && !lavaWalking))
-							&& isMonster)) )
+							&& isMonster && !entrenchBridgeSupportsTile(x, y))) )
 					{
 						// no floor
 						hit.x = x * 16 + 8;
@@ -1161,8 +1173,17 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
+			if ( isEntrenchCarriedObject(entity) )
+			{
+				continue;
+			}
+			// mod add: laid Entrench barricades stop bodies, not projectiles/magic.
+			if ( projectileAttack && isEntrenchDoorBarricade(entity) )
+			{
+				continue;
+			}
 			entityDodgeChance = false;
-			if ( entity->flags[PASSABLE] )
+			if ( entity->flags[PASSABLE] && !collisionPairHasSolidFamiliar(my, entity) )
 			{
 				if ( my->behavior == &actBoulder && (entity->behavior == &actMonster 
 					&& (entity->sprite == 886
@@ -1199,7 +1220,8 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			if ( entity->isDamageableCollider() && (entity->colliderHasCollision & EditorEntityData_t::COLLIDER_COLLISION_FLAG_NPC)
 				&& ((my->behavior == &actMonster 
 					&& (type == GYROBOT 
-						|| type == BAT_SMALL 
+						|| type == BAT_SMALL
+						|| familiarUsesBatCollisionSemantics(my)
 						|| type == REVENANT_SKULL 
 						|| type == MONSTER_ADORCISED_WEAPON 
 						|| type == MOTH_SMALL
@@ -1215,7 +1237,8 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				entityDodgeChance = true;
 			}
 			if ( entity->behavior == &actFurniture 
-				&& (type == BAT_SMALL 
+				&& (type == BAT_SMALL
+					|| familiarUsesBatCollisionSemantics(my)
 					|| type == REVENANT_SKULL 
 					|| type == MONSTER_ADORCISED_WEAPON 
 					|| type == MOTH_SMALL
@@ -1223,7 +1246,8 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			{
 				continue;
 			}
-			if ( entity->behavior == &actMonster && !entity->monsterIsTargetable(true) )
+			if ( entity->behavior == &actMonster && !entity->monsterIsTargetable(true)
+				&& !collisionPairHasSolidFamiliar(my, entity) )
 			{
 				if ( my->behavior == &actBoulder )
 				{
@@ -1291,6 +1315,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 			Stat* myStats = stats; //my->getStats();	//SEB <<<
 			Stat* yourStats = entity->getStats();
+			const bool solidFamiliarPair = collisionPairHasSolidFamiliar(my, entity);
 			if ( my->behavior == &actPlayer && entity->behavior == &actPlayer )
 			{
 				continue;
@@ -1315,11 +1340,11 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			}
 			if ( myStats && yourStats )
 			{
-				if ( yourStats->leader_uid == my->getUID() )
+				if ( yourStats->leader_uid == my->getUID() && !solidFamiliarPair )
 				{
 					continue;
 				}
-				if ( myStats->leader_uid == entity->getUID() )
+				if ( myStats->leader_uid == entity->getUID() && !solidFamiliarPair )
 				{
 					continue;
 				}
@@ -1328,7 +1353,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					// client doesn't know about the type of the monster.
 					yourStats->type = static_cast<Monster>(entity->getMonsterTypeFromSprite());
 				}
-				if ( monsterally[myStats->type][yourStats->type] )
+				if ( monsterally[myStats->type][yourStats->type] && !solidFamiliarPair )
 				{
 					if ( my->behavior == &actPlayer && myStats->type != HUMAN )
 					{
@@ -1365,7 +1390,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						}
 					}
 				}
-				else if ( my->behavior == &actPlayer )
+				else if ( my->behavior == &actPlayer && !solidFamiliarPair )
 				{
 					if ( my->checkFriend(entity) )
 					{
@@ -1393,7 +1418,9 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 						continue;
 					}
 				}
-				if ( (myStats->type == HUMAN || my->flags[USERFLAG2]) && (yourStats->type == HUMAN || entity->flags[USERFLAG2]) )
+				if ( !solidFamiliarPair
+					&& (myStats->type == HUMAN || my->flags[USERFLAG2])
+					&& (yourStats->type == HUMAN || entity->flags[USERFLAG2]) )
 				{
 					continue;
 				}
@@ -1469,7 +1496,8 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				{
 					continue;
 				}
-				else if ( my->behavior == &actPlayer && entity->flags[USERFLAG2] )
+				else if ( my->behavior == &actPlayer && entity->flags[USERFLAG2]
+					&& !solidFamiliarPair )
 				{
 					continue; // fix clients not being able to walk through friendly monsters
 				}
@@ -1929,6 +1957,7 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		&& (myStats->type == SHOPKEEPER
 			|| myStats->type == MINOTAUR
 			|| myStats->type == BAT_SMALL
+			|| familiarUsesBatCollisionSemantics(my)
 			|| myStats->type == REVENANT_SKULL
 			|| myStats->type == MONSTER_ADORCISED_WEAPON
 			|| myStats->type == MOTH_SMALL
@@ -1942,9 +1971,14 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		{
 			Entity* entity = (Entity*)node->element;
 			if ( (entity != target && target != nullptr) || entity->flags[PASSABLE] || entity == my
+				|| isEntrenchCarriedObject(entity)
+				|| ((entities & LINETRACE_ATK_IGNORE_ENTRENCH_BARRICADE) && isEntrenchDoorBarricade(entity))
+				|| ((entities & LINETRACE_ATK_CHECK_FRIENDLYFIRE) && my->behavior == &actMonster
+					&& isEntrenchDoorBarricade(entity)) //mod add: monsters target through player-priority barricades too
 				|| ((entities & LINETRACE_IGNORE_ENTITIES) && 
 						( (!entity->flags[BLOCKSIGHT] && entity->behavior != &actMonster) 
-							|| (entity->behavior == &actMonster && (entity->flags[INVISIBLE] 
+							|| (entity->behavior == &actMonster && (entity->flags[INVISIBLE]
+								&& !isAmuletFamiliarMimic(entity)
 								&& entity->sprite != 889 
 									&& entity->sprite != 1247 
 									&& entity->sprite != 1792
@@ -2306,7 +2340,8 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 				{
 					ground = false;
 				}
-				else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT || stats->type == BAT_SMALL 
+				else if ( stats->type == SENTRYBOT || stats->type == SPELLBOT || stats->type == BAT_SMALL
+					|| familiarUsesBatCollisionSemantics(my)
 					|| stats->type == REVENANT_SKULL
 					|| stats->type == MONSTER_ADORCISED_WEAPON
 					|| stats->type == MOTH_SMALL
@@ -2701,7 +2736,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 			if ( !levitating
 					&& ((!map.tiles[index] && checkFloor)
 								   || ( ((swimmingtiles[map.tiles[index]] && !waterWalking) || (lavatiles[map.tiles[index]] && !lavaWalking))
-										 && isMonster) ) )   // no floor
+										 && isMonster && !entrenchBridgeSupportsTile(x >> 4, y >> 4)) ) )   // no floor
 			{
 				return 1; // if there's no floor, or either water/lava then a non-levitating monster sees obstacle.
 			}
@@ -2781,7 +2816,8 @@ int checkObstacle(long x, long y, Entity* my, Entity* target, bool useTileEntity
 							continue;
 						}
 						if ( entity->behavior == &actMonster 
-							&& (entity->getMonsterTypeFromSprite() == BAT_SMALL 
+							&& (entity->getMonsterTypeFromSprite() == BAT_SMALL
+								|| familiarUsesBatCollisionSemantics(entity)
 								|| entity->getMonsterTypeFromSprite() == REVENANT_SKULL
 								|| entity->getMonsterTypeFromSprite() == MONSTER_ADORCISED_WEAPON
 								|| entity->getMonsterTypeFromSprite() == HOLOGRAM

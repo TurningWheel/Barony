@@ -59,6 +59,11 @@ Item* newItem(const ItemType type, const Status status, const Sint16 beatitude, 
 	item->count = count;
 	item->appearance = appearance;
 	item->identified = identified;
+	item->runeStoredPWR = Item::RUNE_STORED_PWR_INVALID;
+	item->runeCreatorPlayer = Item::RUNE_CREATOR_INVALID;
+	item->runeInstanceId = Item::RUNE_INSTANCE_ID_INVALID;
+	item->runeCreatorIdentity = Item::RUNE_CREATOR_IDENTITY_INVALID;
+	item->wraithLoreInstanceId = 0;
 	item->uid = itemuids;
 	if ( inventory )
 	{
@@ -93,7 +98,7 @@ Returns the category that a specified item belongs to
 
 Category itemCategory(const Item* const item)
 {
-	if ( !item )
+	if ( !item || item->type < 0 || item->type >= NUMITEMS )
 	{
 		return GEM;
 	}
@@ -110,7 +115,8 @@ returns a model index number based on the properties of the given item
 
 Sint32 itemModel(const Item* const item)
 {
-	if ( !item )
+	if ( !item || item->type < 0 || item->type >= NUMITEMS
+		|| items[item->type].variations <= 0 )
 	{
 		return 0;
 	}
@@ -127,7 +133,8 @@ returns the first person model of the given item
 
 Sint32 itemModelFirstperson(const Item* const item)
 {
-	if ( !item )
+	if ( !item || item->type < 0 || item->type >= NUMITEMS
+		|| items[item->type].variations <= 0 )
 	{
 		return 0;
 	}
@@ -144,18 +151,22 @@ returns a pointer to the SDL_Surface used to represent the item
 
 SDL_Surface* itemSprite(Item* const item)
 {
-	if ( !item )
+	//mod add: The editor can know a compiled-in item name before its mounted
+	// items.json supplies ItemGeneric image data. Never modulo by an uninitialized
+	// zero variation count; the map renderer will use sprite 8 as its fallback.
+	if ( !item || item->type < 0 || item->type >= NUMITEMS
+		|| items[item->type].variations <= 0 )
 	{
 		return nullptr;
 	}
 	node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
-	if ( !node )
+	if ( !node || !node->element )
 	{
 		return nullptr;
 	}
 	
 	auto** surface = static_cast<SDL_Surface**>(node->element);
-	return *surface;
+	return surface ? *surface : nullptr;
 }
 
 /*-------------------------------------------------------------------------------

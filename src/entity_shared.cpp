@@ -565,6 +565,7 @@ Monster editorSpriteTypeToMonster(Sint32 sprite)
 	case 207: monsterType = GREMLIN; break;
 	case 246: monsterType = REVENANT_SKULL; break;
 	case 247: monsterType = MONSTER_ADORCISED_WEAPON; break;
+	case 304: monsterType = MERROW; break; // mod add
 	default:
 		break;
 	}
@@ -624,6 +625,7 @@ int checkSpriteType(Sint32 sprite)
 	case 207:
 	case 246:
 	case 247:
+	case 304: //mod add merrow
 		//monsters
 		return 1;
 		break;
@@ -1288,6 +1290,15 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_sanctuary",
 	"spellbook_holy_beam",
 	"spellbook_dominate",
+	"harpoon", //mod add
+	// mod add: firearm item names
+	"flintlock_pistol",
+	"musket",
+	// mod add end
+	"spellbook_entrench", // mod add: Entrench spellbook
+	"spyglass", // mod add: offhand telescope
+	"magic_rune", // mod add: instance-configured magic rune
+	"rune_hammer", // mod add: Rune Hammer
 	""
 };
 
@@ -2086,7 +2097,12 @@ char monsterEditorNameStrings[NUMMONSTERS][32] =
 	"duck_small",
 	"monster_unused_6",
 	"monster_unused_7",
-	"monster_unused_8"
+	"monster_unused_8",
+	"merrow",
+	"leonin",
+	"golem",
+	"bat_familiar",
+	"wraith"
 };
 
 char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
@@ -2362,7 +2378,6 @@ int canWearEquip(Entity* entity, int category)
 		if ( stats != NULL )
 		{
 			type = stats->type;
-
 			switch ( type )
 			{
 				//monsters that don't wear equipment (only rings/amulets)
@@ -2420,6 +2435,9 @@ int canWearEquip(Entity* entity, int category)
 				case MYCONID:
 				case SALAMANDER:
 				case GREMLIN:
+					equipType = 3;
+					break;
+				case GOLEM:
 					equipType = 3;
 					break;
 

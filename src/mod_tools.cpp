@@ -13,6 +13,7 @@ See LICENSE for details.
 #include "menu.hpp"
 #include "classdescriptions.hpp"
 #include "draw.hpp"
+#include "monster.hpp"
 #include "player.hpp"
 #include "scores.hpp"
 #include "ui/Field.hpp"
@@ -29,6 +30,7 @@ See LICENSE for details.
 #include <thread>
 #include <future>
 #include <fstream>
+#include "rapidjson/error/en.h"
 
 MonsterStatCustomManager monsterStatCustomManager;
 MonsterCurveCustomManager monsterCurveCustomManager;
@@ -992,6 +994,11 @@ void ItemTooltips_t::readItemsFromFile()
 		items[i].tooltip = tmpItems[i].tooltip;
 		items[i].attributes.clear();
 		items[i].attributes = tmpItems[i].attributes;
+		//mod add: Musket shares Khryselakatos' magic-weapon economic tier.
+		if ( i == MUSKET )
+		{
+			items[i].gold_value = items[ARTIFACT_BOW].gold_value;
+		}
 		if ( i == SPELL_ITEM )
 		{
 			items[i].variations = 1;
@@ -1145,6 +1152,397 @@ void ItemTooltips_t::readItemsFromFile()
 				});
 			itemValueTableByCategory[items[i].category].insert(lower, pair);
 		}*/
+	}
+
+	// mod add: The executable may be run with a mod items.json that predates
+	// SPYGLASS. Keep the new enum spawnable/equippable with existing glasses
+	// presentation until dedicated mod data/assets override this final item ID.
+	if ( itemsRead <= static_cast<int>(SPYGLASS) )
+	{
+		items[SPYGLASS].level = 0;
+		items[SPYGLASS].gold_value = 50;
+		items[SPYGLASS].weight = 1;
+		items[SPYGLASS].fpindex = items[TOOL_GLASSES].fpindex;
+		items[SPYGLASS].index = items[TOOL_GLASSES].index;
+		items[SPYGLASS].indexShort = items[TOOL_GLASSES].indexShort;
+		items[SPYGLASS].variations = std::max(1, items[TOOL_GLASSES].variations);
+		items[SPYGLASS].category = TOOL;
+		items[SPYGLASS].item_slot = ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD;
+		items[SPYGLASS].tooltip = "tooltip_default";
+		//mod add: readItemsFromFile() may run repeatedly while the mounted JSON
+		// still predates SPYGLASS. Rebuild the fallback list instead of appending
+		// duplicate glasses image nodes on every reload.
+		list_FreeAll(&items[SPYGLASS].images);
+		items[SPYGLASS].images.first = NULL;
+		items[SPYGLASS].images.last = NULL;
+		for ( node_t* imageNode = items[TOOL_GLASSES].images.first; imageNode; imageNode = imageNode->next )
+		{
+			const string_t* source = static_cast<const string_t*>(imageNode->element);
+			if ( !source || !source->data ) { continue; }
+			string_t* copy = static_cast<string_t*>(malloc(sizeof(string_t)));
+			const size_t len = 64;
+			copy->data = static_cast<char*>(malloc(len));
+			memset(copy->data, 0, len);
+			copy->lines = 1;
+			node_t* node = list_AddNodeLast(&items[SPYGLASS].images);
+			node->element = copy;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			copy->node = node;
+			stringCopy(copy->data, source->data, len - 1, strlen(source->data));
+		}
+	}
+	//mod add: enforce the executable contract even when a mounted mod JSON
+	// supplies item 528 with a missing or stale equip_slot/category value.
+	items[SPYGLASS].category = TOOL;
+	items[SPYGLASS].item_slot = ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD;
+
+	// MAGIC_RUNE presentation is resolved per instance from its encoded gem.
+	// Keep an obsidian fallback only for mounted item data that predates it.
+	if ( itemsRead <= static_cast<int>(MAGIC_RUNE) )
+	{
+		items[MAGIC_RUNE].level = -1;
+		items[MAGIC_RUNE].gold_value = 0;
+		items[MAGIC_RUNE].weight = 1;
+		items[MAGIC_RUNE].fpindex = items[GEM_OBSIDIAN].fpindex;
+		items[MAGIC_RUNE].index = items[GEM_OBSIDIAN].index;
+		items[MAGIC_RUNE].indexShort = items[GEM_OBSIDIAN].indexShort;
+		items[MAGIC_RUNE].variations = 1;
+		items[MAGIC_RUNE].category = TOOL;
+		items[MAGIC_RUNE].item_slot = ItemEquippableSlot::EQUIPPABLE_IN_SLOT_SHIELD;
+		items[MAGIC_RUNE].tooltip = "tooltip_default";
+		list_FreeAll(&items[MAGIC_RUNE].images);
+		items[MAGIC_RUNE].images.first = NULL;
+		items[MAGIC_RUNE].images.last = NULL;
+		for ( node_t* imageNode = items[GEM_OBSIDIAN].images.first; imageNode; imageNode = imageNode->next )
+		{
+			const string_t* source = static_cast<const string_t*>(imageNode->element);
+			if ( !source || !source->data ) { continue; }
+			string_t* copy = static_cast<string_t*>(malloc(sizeof(string_t)));
+			const size_t len = 64;
+			copy->data = static_cast<char*>(malloc(len));
+			memset(copy->data, 0, len);
+			copy->lines = 1;
+			node_t* node = list_AddNodeLast(&items[MAGIC_RUNE].images);
+			node->element = copy;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			copy->node = node;
+			stringCopy(copy->data, source->data, len - 1, strlen(source->data));
+		}
+	}
+	// A Rune remains a TOOL for equipment/gameplay, but presents the centrally
+	// resolved spell encoded in its per-instance metadata.
+	items[MAGIC_RUNE].tooltip = "tooltip_spell_item";
+
+	// Older mounted item data receives a Quarterstaff fallback. A real item 530
+	// definition remains authoritative, including its dedicated model indices.
+	if ( itemsRead <= static_cast<int>(RUNE_HAMMER) )
+	{
+		items[RUNE_HAMMER].level = -1;
+		items[RUNE_HAMMER].gold_value = 0;
+		items[RUNE_HAMMER].weight = items[QUARTERSTAFF].weight;
+		items[RUNE_HAMMER].fpindex = items[QUARTERSTAFF].fpindex;
+		items[RUNE_HAMMER].index = items[QUARTERSTAFF].index;
+		items[RUNE_HAMMER].indexShort = items[QUARTERSTAFF].indexShort;
+		items[RUNE_HAMMER].variations = 1;
+		items[RUNE_HAMMER].category = WEAPON;
+		items[RUNE_HAMMER].item_slot = ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON;
+		items[RUNE_HAMMER].tooltip = "tooltip_default";
+		list_FreeAll(&items[RUNE_HAMMER].images);
+		items[RUNE_HAMMER].images.first = NULL;
+		items[RUNE_HAMMER].images.last = NULL;
+		for ( node_t* imageNode = items[QUARTERSTAFF].images.first; imageNode; imageNode = imageNode->next )
+		{
+			const string_t* source = static_cast<const string_t*>(imageNode->element);
+			if ( !source || !source->data ) { continue; }
+			string_t* copy = static_cast<string_t*>(malloc(sizeof(string_t)));
+			const size_t len = 64;
+			copy->data = static_cast<char*>(malloc(len));
+			memset(copy->data, 0, len);
+			copy->lines = 1;
+			node_t* node = list_AddNodeLast(&items[RUNE_HAMMER].images);
+			node->element = copy;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			copy->node = node;
+			stringCopy(copy->data, source->data, len - 1, strlen(source->data));
+		}
+	}
+
+	// The base game data predates the familiar amulet. Keep the executable's
+	// final item slot valid until a mounted mod supplies its dedicated metadata
+	// and image. Use one known base amulet image rather than cloning every
+	// appearance, so one missing optional variation cannot break startup.
+	if ( itemsRead <= static_cast<int>(AMULET_FAMILIAR) )
+	{
+		items[AMULET_FAMILIAR].level = -1;
+		items[AMULET_FAMILIAR].gold_value = 150;
+		items[AMULET_FAMILIAR].weight = 5;
+		items[AMULET_FAMILIAR].fpindex = items[AMULET_MAGICREFLECTION].fpindex;
+		items[AMULET_FAMILIAR].index = items[AMULET_MAGICREFLECTION].index;
+		items[AMULET_FAMILIAR].indexShort = items[AMULET_MAGICREFLECTION].indexShort;
+		items[AMULET_FAMILIAR].variations = 1;
+		items[AMULET_FAMILIAR].category = AMULET;
+		items[AMULET_FAMILIAR].item_slot = ItemEquippableSlot::EQUIPPABLE_IN_SLOT_AMULET;
+		items[AMULET_FAMILIAR].tooltip = "tooltip_amulet";
+		list_FreeAll(&items[AMULET_FAMILIAR].images);
+		items[AMULET_FAMILIAR].images.first = NULL;
+		items[AMULET_FAMILIAR].images.last = NULL;
+		if ( node_t* imageNode = items[AMULET_MAGICREFLECTION].images.first )
+		{
+			const string_t* source = static_cast<const string_t*>(imageNode->element);
+			if ( source && source->data )
+			{
+				string_t* copy = static_cast<string_t*>(malloc(sizeof(string_t)));
+				const size_t len = 64;
+				copy->data = static_cast<char*>(malloc(len));
+				memset(copy->data, 0, len);
+				copy->lines = 1;
+				node_t* node = list_AddNodeLast(&items[AMULET_FAMILIAR].images);
+				node->element = copy;
+				node->deconstructor = &stringDeconstructor;
+				node->size = sizeof(string_t);
+				copy->node = node;
+				stringCopy(copy->data, source->data, len - 1, strlen(source->data));
+			}
+		}
+	}
+
+	// Witchbrew consumables are executable-defined mod items. Keep their metadata
+	// valid when the mounted base items.json predates them; a newer data file may
+	// still override every value normally.
+	struct WitchbrewItemDef
+	{
+		ItemType type;
+		const char* internalName;
+		int model;
+		const char* image;
+	};
+	static const WitchbrewItemDef witchbrewItems[] = {
+		{ TINCTURE_STR, "tincture_str", 2499, "items/images/witchbrew/tincture_STR.png" },
+		{ TINCTURE_DEX, "tincture_dex", 2496, "items/images/witchbrew/tincture_DEX.png" },
+		{ TINCTURE_CON, "tincture_con", 2495, "items/images/witchbrew/tincture_CON.png" },
+		{ TINCTURE_INT, "tincture_int", 2497, "items/images/witchbrew/tincture_INT.png" },
+		{ TINCTURE_PER, "tincture_per", 2498, "items/images/witchbrew/tincture_PER.png" },
+		{ TINCTURE_CHA, "tincture_cha", 2494, "items/images/witchbrew/tincture_CHA.png" },
+		{ OIL_AETHER, "oil_aether", 2487, "items/images/witchbrew/oil_aether.png" },
+		{ OIL_SILVER, "oil_silver", 2492, "items/images/witchbrew/oil_silver.png" },
+		{ OIL_TOXINS, "oil_toxins", 2493, "items/images/witchbrew/oil_toxins.png" },
+		{ OIL_BASES, "oil_bases", 2488, "items/images/witchbrew/oil_bases.png" },
+		{ OIL_LEAD, "oil_lead", 2490, "items/images/witchbrew/oil_lead.png" },
+		{ OIL_MINERAL, "oil_mineral", 2491, "items/images/witchbrew/oil_mineral.png" },
+		{ OIL_BRINE, "oil_brine", 2489, "items/images/witchbrew/oil_brine.png" },
+		{ INK_MYSTICISM, "ink_mysticism", 2500, "items/images/witchbrew/ink_mysticism.png" },
+		{ INK_SORCERY, "ink_sorcery", 2501, "items/images/witchbrew/ink_sorcery.png" },
+		{ INK_THAUMATURGY, "ink_thaumaturgy", 2502, "items/images/witchbrew/ink_thaumaturgy.png" }
+	};
+	for ( const auto& def : witchbrewItems )
+	{
+		const bool wieldableBottle = itemTypeIsTincture(def.type) || itemTypeIsOil(def.type);
+		// Witchbrew art is supplied by the mod, not the base install. The base
+		// item pass runs before a selected mod is mounted, and every registered
+		// image is preloaded fatally, so use the base null sprite during that pass.
+		const char* resolvedImage = PHYSFS_getRealDir(def.image)
+			? def.image : "items/images/null.png";
+		if ( itemsRead <= static_cast<int>(def.type) )
+		{
+			items[def.type].level = -1;
+			items[def.type].gold_value = 50;
+			items[def.type].weight = 1;
+			items[def.type].fpindex = def.model;
+			items[def.type].index = def.model;
+			items[def.type].indexShort = def.model;
+			items[def.type].variations = 1;
+			items[def.type].category = POTION;
+			items[def.type].item_slot = wieldableBottle
+				? ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON : ItemEquippableSlot::NO_EQUIP;
+			items[def.type].tooltip = "tooltip_potion";
+			list_FreeAll(&items[def.type].images);
+			items[def.type].images.first = nullptr;
+			items[def.type].images.last = nullptr;
+			string_t* image = static_cast<string_t*>(malloc(sizeof(string_t)));
+			const size_t len = 128;
+			image->data = static_cast<char*>(malloc(len));
+			memset(image->data, 0, len);
+			image->lines = 1;
+			node_t* node = list_AddNodeLast(&items[def.type].images);
+			node->element = image;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			image->node = node;
+			stringCopy(image->data, resolvedImage, len - 1, strlen(resolvedImage));
+		}
+		else
+		{
+			// Normalize older mod items.json files that used images/witchbrew/.
+			list_FreeAll(&items[def.type].images);
+			items[def.type].images.first = nullptr;
+			items[def.type].images.last = nullptr;
+			string_t* image = static_cast<string_t*>(malloc(sizeof(string_t)));
+			const size_t len = 128;
+			image->data = static_cast<char*>(malloc(len));
+			memset(image->data, 0, len);
+			image->lines = 1;
+			node_t* node = list_AddNodeLast(&items[def.type].images);
+			node->element = image;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			image->node = node;
+			stringCopy(image->data, resolvedImage, len - 1, strlen(resolvedImage));
+			items[def.type].variations = 1;
+		}
+		// Older mod data declared every Witchbrew item non-equippable. Preserve
+		// Ink's selector-only behavior while making tincture/oil bottles wieldable.
+		items[def.type].item_slot = wieldableBottle
+			? ItemEquippableSlot::EQUIPPABLE_IN_SLOT_WEAPON : ItemEquippableSlot::NO_EQUIP;
+		while ( tmpItems.size() <= static_cast<size_t>(def.type) )
+		{
+			tmpItems.push_back(tmpItem_t{});
+		}
+		auto& metadata = tmpItems[def.type];
+		metadata.internalName = def.internalName;
+		metadata.itemId = def.type;
+		metadata.fpIndex = def.model;
+		metadata.tpIndex = def.model;
+		metadata.tpShortIndex = def.model;
+		metadata.category = "POTION";
+		metadata.equipSlot = wieldableBottle ? "weapon" : "none";
+		if ( metadata.tooltip.empty() )
+		{
+			metadata.tooltip = "tooltip_potion";
+		}
+		metadata.imagePaths.clear();
+		metadata.imagePaths.push_back(resolvedImage);
+	}
+
+	struct WitchIngredientItemDef
+	{
+		ItemType type;
+		const char* internalName;
+		const char* image;
+		bool bag;
+	};
+	static const WitchIngredientItemDef witchIngredientItems[] = {
+		{ INGREDIENT_BAG_SLIME, "ingredient_bag_slime", "items/images/witchbrew/ingredients/ingredient_bag.png", true },
+		{ INGREDIENT_BAG_HUMORIN, "ingredient_bag_humorin", "items/images/witchbrew/ingredients/ingredient_bag.png", true },
+		{ INGREDIENT_BAG_WILDBLOOD, "ingredient_bag_wildblood", "items/images/witchbrew/ingredients/ingredient_bag.png", true },
+		{ INGREDIENT_BAG_ANIMATIC, "ingredient_bag_animatic", "items/images/witchbrew/ingredients/ingredient_bag.png", true },
+		{ INGREDIENT_GELATIN, "ingredient_gelatin", "items/images/witchbrew/ingredients/gelatin.png", false },
+		{ INGREDIENT_OOZE, "ingredient_ooze", "items/images/witchbrew/ingredients/ooze.png", false },
+		{ INGREDIENT_GREASE, "ingredient_grease", "items/images/witchbrew/ingredients/grease.png", false },
+		{ INGREDIENT_MOLD, "ingredient_mold", "items/images/witchbrew/ingredients/mold.png", false },
+		{ INGREDIENT_BLOOD, "ingredient_blood", "items/images/witchbrew/ingredients/blood.png", false },
+		{ INGREDIENT_PHLEGM, "ingredient_phlegm", "items/images/witchbrew/ingredients/phlegm.png", false },
+		{ INGREDIENT_BLACK_BILE, "ingredient_black_bile", "items/images/witchbrew/ingredients/black_bile.png", false },
+		{ INGREDIENT_YELLOW_BILE, "ingredient_yellow_bile", "items/images/witchbrew/ingredients/yellow_bile.png", false },
+		{ INGREDIENT_EYE, "ingredient_eye", "items/images/witchbrew/ingredients/eye.png", false },
+		{ INGREDIENT_HEART, "ingredient_heart", "items/images/witchbrew/ingredients/heart.png", false },
+		{ INGREDIENT_TOOTH, "ingredient_tooth", "items/images/witchbrew/ingredients/tooth.png", false },
+		{ INGREDIENT_LIVER, "ingredient_liver", "items/images/witchbrew/ingredients/liver.png", false },
+		{ INGREDIENT_SPIRIT, "ingredient_spirit", "items/images/witchbrew/ingredients/spirit.png", false },
+		{ INGREDIENT_CORE, "ingredient_core", "items/images/witchbrew/ingredients/core.png", false },
+		{ INGREDIENT_DUST, "ingredient_dust", "items/images/witchbrew/ingredients/dust.png", false },
+		{ INGREDIENT_FRAGMENTS, "ingredient_fragments", "items/images/witchbrew/ingredients/fragments.png", false }
+	};
+	for ( const auto& def : witchIngredientItems )
+	{
+		const char* resolvedImage = PHYSFS_getRealDir(def.image) ? def.image : "items/images/null.png";
+		if ( itemsRead <= static_cast<int>(def.type) )
+		{
+			items[def.type].level = -1;
+			items[def.type].gold_value = 0;
+			items[def.type].weight = def.bag ? 0 : 1;
+			items[def.type].fpindex = 2503;
+			items[def.type].index = 2503;
+			items[def.type].indexShort = 2503;
+			items[def.type].variations = 1;
+			items[def.type].category = TOOL;
+			items[def.type].item_slot = ItemEquippableSlot::NO_EQUIP;
+			items[def.type].tooltip = "tooltip_default";
+			list_FreeAll(&items[def.type].images);
+			items[def.type].images.first = nullptr;
+			items[def.type].images.last = nullptr;
+			string_t* image = static_cast<string_t*>(malloc(sizeof(string_t)));
+			const size_t len = 128;
+			image->data = static_cast<char*>(malloc(len));
+			memset(image->data, 0, len);
+			image->lines = 1;
+			node_t* node = list_AddNodeLast(&items[def.type].images);
+			node->element = image;
+			node->deconstructor = &stringDeconstructor;
+			node->size = sizeof(string_t);
+			image->node = node;
+			stringCopy(image->data, resolvedImage, len - 1, strlen(resolvedImage));
+		}
+		while ( tmpItems.size() <= static_cast<size_t>(def.type) )
+		{
+			tmpItems.push_back(tmpItem_t{});
+		}
+		auto& metadata = tmpItems[def.type];
+		metadata.internalName = def.internalName;
+		metadata.itemId = def.type;
+		metadata.itemLevel = -1;
+		metadata.weight = def.bag ? 0 : 1;
+		metadata.fpIndex = 2503;
+		metadata.tpIndex = 2503;
+		metadata.tpShortIndex = 2503;
+		metadata.category = "TOOL";
+		metadata.equipSlot = "none";
+		metadata.tooltip = "tooltip_default";
+		metadata.imagePaths.clear();
+		metadata.imagePaths.push_back(resolvedImage);
+	}
+
+	// mod add: Keep spell icon indexing aligned with the source-defined spells even when
+	// the mounted items.json still ends at spell 224. Every registered path is
+	// consumed by the fatal startup image preloader, so resolve the optional mod
+	// asset here rather than relying on a later UI fallback.
+	const char* entrenchIconPath = PHYSFS_getRealDir("items/images/spells/entrench.png")
+		? "items/images/spells/entrench.png" : "items/images/null.png";
+	const char* familiarPolymorphIconPath = PHYSFS_getRealDir("items/images/spells/polymorph_familiar.png")
+		? "items/images/spells/polymorph_familiar.png" : "items/images/null.png";
+	const char* possessIconPath = PHYSFS_getRealDir("items/images/spells/possess.png")
+		? "items/images/spells/possess.png" : "items/images/null.png";
+	while ( list_Size(&items[SPELL_ITEM].images) <= SPELL_POSSESS )
+	{
+		const int iconIndex = list_Size(&items[SPELL_ITEM].images);
+		const char* iconPath = iconIndex == SPELL_ENTRENCH
+			? entrenchIconPath : (iconIndex == SPELL_POLYMORPH_FAMILIAR
+				? familiarPolymorphIconPath : (iconIndex == SPELL_POSSESS
+					? possessIconPath : "items/images/null.png"));
+		string_t* string = static_cast<string_t*>(malloc(sizeof(string_t)));
+		const size_t len = 64;
+		string->data = static_cast<char*>(malloc(len));
+		memset(string->data, 0, len);
+		string->lines = 1;
+		node_t* node = list_AddNodeLast(&items[SPELL_ITEM].images);
+		node->element = string;
+		node->deconstructor = &stringDeconstructor;
+		node->size = sizeof(string_t);
+		string->node = node;
+		stringCopy(string->data, iconPath, len - 1, strlen(iconPath));
+	}
+	if ( node_t* entrenchIconNode = list_Node(&items[SPELL_ITEM].images, SPELL_ENTRENCH) )
+	{
+		if ( string_t* string = static_cast<string_t*>(entrenchIconNode->element) )
+		{
+			stringCopy(string->data, entrenchIconPath, 63, strlen(entrenchIconPath));
+		}
+	}
+	if ( node_t* familiarIconNode = list_Node(&items[SPELL_ITEM].images, SPELL_POLYMORPH_FAMILIAR) )
+	{
+		if ( string_t* string = static_cast<string_t*>(familiarIconNode->element) )
+		{
+			stringCopy(string->data, familiarPolymorphIconPath, 63, strlen(familiarPolymorphIconPath));
+		}
+	}
+	if ( node_t* possessIconNode = list_Node(&items[SPELL_ITEM].images, SPELL_POSSESS) )
+	{
+		if ( string_t* string = static_cast<string_t*>(possessIconNode->element) )
+		{
+			stringCopy(string->data, possessIconPath, 63, strlen(possessIconPath));
+		}
 	}
 
 	spellItems.clear();
@@ -1399,6 +1797,44 @@ void ItemTooltips_t::readItemsFromFile()
 		spellItems.insert(std::make_pair(t.id, t));
 		++spellsRead;
 	}
+
+	// Possess is source-defined and may be absent from an older mounted items.json.
+	if ( spellItems.find(SPELL_POSSESS) == spellItems.end() )
+	{
+		spellItem_t possess;
+		possess.id = SPELL_POSSESS;
+		possess.internalName = "spell_possess";
+		possess.name = "Possess";
+		possess.name_lowercase = "possess";
+		possess.spellTypeStr = "TOUCH_ENEMY";
+		possess.spellType = SPELL_TYPE_TOUCH_ENEMY;
+		possess.skillID = PRO_MYSTICISM;
+		possess.difficulty = 0;
+		possess.mana = 0;
+		possess.distance = 128.0;
+		possess.spellTags.insert(SPELL_TAG_UTILITY);
+		spellNameStringToSpellID[possess.internalName] = possess.id;
+		spellItems.emplace(possess.id, possess);
+	}
+
+	//mod add: Entrench participates in the native spell-level system through
+	// the definition supplied by the mod's items.json.
+	auto entrenchSpellDef = spellItems.find(SPELL_ENTRENCH);
+	if ( entrenchSpellDef != spellItems.end() )
+	{
+		auto& t = entrenchSpellDef->second;
+		t.skillID = PRO_SORCERY;
+		if ( auto salvageSpellDef = spellItems.find(SPELL_SALVAGE); salvageSpellDef != spellItems.end() )
+		{
+			t.difficulty = salvageSpellDef->second.difficulty;
+		}
+		t.spellTags.insert(SPELL_TAG_UTILITY);
+		t.spellLevelTags.insert(spell_t::SPELL_LEVEL_EVENT_DEFAULT);
+		if ( std::find(t.spellTagsStr.begin(), t.spellTagsStr.end(), "SPELL_LEVEL_EVENT") == t.spellTagsStr.end() )
+		{
+			t.spellTagsStr.push_back("SPELL_LEVEL_EVENT");
+		}
+	}
 	printlog("[JSON]: Successfully read %d spells from '%s'", spellsRead, inputPath.c_str());
 
 	for ( int i = 0; i < NUM_SPELLS; ++i )
@@ -1487,8 +1923,101 @@ void ItemTooltips_t::readItemsFromFile()
 	}*/
 }
 
+//mod add: optional fill-missing JSON overlays for presentation data
+static void mergeJsonMissingMembers(rapidjson::Value& destination,
+	const rapidjson::Value& additive, rapidjson::Document::AllocatorType& allocator,
+	bool topLevel)
+{
+	if ( !destination.IsObject() || !additive.IsObject() )
+	{
+		return;
+	}
+
+	for ( auto member = additive.MemberBegin(); member != additive.MemberEnd(); ++member )
+	{
+		if ( topLevel && !strcmp(member->name.GetString(), "version") )
+		{
+			continue;
+		}
+
+		auto destinationMember = destination.FindMember(member->name.GetString());
+		if ( destinationMember == destination.MemberEnd() )
+		{
+			rapidjson::Value copiedName;
+			copiedName.CopyFrom(member->name, allocator);
+			rapidjson::Value copiedValue;
+			copiedValue.CopyFrom(member->value, allocator);
+			destination.AddMember(copiedName, copiedValue, allocator);
+		}
+		else if ( destinationMember->value.IsObject() && member->value.IsObject() )
+		{
+			mergeJsonMissingMembers(destinationMember->value, member->value, allocator, false);
+		}
+	}
+}
+
+static bool loadOptionalJsonDocument(const char* virtualPath,
+	rapidjson::Document& document, size_t maximumSize)
+{
+	const char* realDirectory = PHYSFS_getRealDir(virtualPath);
+	if ( !realDirectory )
+	{
+		return false;
+	}
+
+	std::string inputPath = realDirectory;
+	inputPath.append(virtualPath);
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Warning: Could not open optional additive file '%s'.", inputPath.c_str());
+		return false;
+	}
+
+	const size_t fileSize = fp->size();
+	if ( fileSize >= maximumSize )
+	{
+		printlog("[JSON]: Warning: Optional additive file is too large: '%s'.", inputPath.c_str());
+		FileIO::close(fp);
+		return false;
+	}
+
+	std::vector<char> buffer(fileSize + 1, '\0');
+	const size_t count = fp->read(buffer.data(), sizeof(char), fileSize);
+	buffer[count] = '\0';
+	FileIO::close(fp);
+
+	const rapidjson::ParseResult result = document.Parse(buffer.data());
+	if ( !result )
+	{
+		printlog("[JSON]: Warning: Could not parse optional additive file '%s': %s (offset %llu).",
+			inputPath.c_str(), rapidjson::GetParseError_En(result.Code()),
+			static_cast<unsigned long long>(result.Offset()));
+		return false;
+	}
+	if ( !document.IsObject() )
+	{
+		printlog("[JSON]: Warning: Optional additive file root is not an object: '%s'.", inputPath.c_str());
+		return false;
+	}
+	return true;
+}
+
+void applyOptionalJsonAdditiveFile(rapidjson::Document& primary,
+	const char* virtualPath, size_t maximumSize)
+{
+	rapidjson::Document additive;
+	if ( !loadOptionalJsonDocument(virtualPath, additive, maximumSize) )
+	{
+		return;
+	}
+
+	mergeJsonMissingMembers(primary, additive, primary.GetAllocator(), true);
+	printlog("[JSON]: Applied optional additive file '%s'.", virtualPath);
+}
 void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 {
+	const bool applyAdditiveOverlay = !forceLoadBaseDirectory;
 	if ( !PHYSFS_getRealDir("/lang/item_names.json") )
 	{
 		printlog("[JSON]: Error: Could not find file: lang/item_names.json");
@@ -1551,6 +2080,10 @@ void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 		return;
 	}
 	int version = d["version"].GetInt();
+	if ( applyAdditiveOverlay )
+	{
+		applyOptionalJsonAdditiveFile(d, "/lang/item_names_add.json", buffer_size);
+	}
 
 	if ( d.HasMember("items") )
 	{
@@ -1601,7 +2134,9 @@ void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 	}
 
 	printlog("[JSON]: Successfully read %d item names, %d spell names from '%s'", itemNameLocalizations.size(), spellNameLocalizations.size(), inputPath.c_str());
-	assert(itemNameLocalizations.size() == (NUMITEMS));
+	// Executable-defined mod items may intentionally use the fallback names below
+	// when an older localization file is mounted.
+	assert(itemNameLocalizations.size() <= (NUMITEMS));
 #ifndef NDEBUG
 	//assert(spellNameLocalizations.size() == (NUM_SPELLS - 1)); // ignore SPELL_NONE
 #endif
@@ -1619,6 +2154,69 @@ void ItemTooltips_t::readItemLocalizationsFromFile(bool forceLoadBaseDirectory)
 			items[item.itemId].setIdentifiedName(itemNameLocalizations[item.internalName].name_identified);
 			items[item.itemId].setUnidentifiedName(itemNameLocalizations[item.internalName].name_unidentified);
 		}
+	}
+	if ( itemNameLocalizations.find("magic_rune") != itemNameLocalizations.end() )
+	{
+		items[MAGIC_RUNE].setIdentifiedName(itemNameLocalizations["magic_rune"].name_identified);
+		items[MAGIC_RUNE].setUnidentifiedName(itemNameLocalizations["magic_rune"].name_unidentified);
+	}
+	if ( itemNameLocalizations.find("rune_hammer") != itemNameLocalizations.end() )
+	{
+		items[RUNE_HAMMER].setIdentifiedName(itemNameLocalizations["rune_hammer"].name_identified);
+		items[RUNE_HAMMER].setUnidentifiedName(itemNameLocalizations["rune_hammer"].name_unidentified);
+	}
+	const auto familiarName = itemNameLocalizations.find("amulet_familiar");
+	if ( familiarName != itemNameLocalizations.end()
+		&& !familiarName->second.name_identified.empty() )
+	{
+		items[AMULET_FAMILIAR].setIdentifiedName(familiarName->second.name_identified);
+		items[AMULET_FAMILIAR].setUnidentifiedName(
+			familiarName->second.name_unidentified.empty()
+				? "amulet" : familiarName->second.name_unidentified);
+	}
+	else
+	{
+		// Keep console spawning and UI text usable if older mod localization data
+		// contains the item definition but not its display-name entry yet.
+		items[AMULET_FAMILIAR].setIdentifiedName("amulet of the familiar");
+		items[AMULET_FAMILIAR].setUnidentifiedName("amulet");
+	}
+	static const char* witchbrewNames[] = {
+		"Tincture of Strength", "Tincture of Dexterity", "Tincture of Constitution",
+		"Tincture of Intelligence", "Tincture of Perception", "Tincture of Charisma",
+		"Aether Oil", "Colloidal Silver", "Toxins", "Bases", "Colloidal Lead",
+		"Mineral Oil", "Brine", "Abyssal Ink", "Elemental Ink", "Holy Ink"
+	};
+	static const char* witchbrewUnidentifiedNames[] = {
+		"tincture", "tincture", "tincture", "tincture", "tincture", "tincture",
+		"oil", "oil", "oil", "oil", "oil", "oil", "oil",
+		"ink", "ink", "ink"
+	};
+	for ( int type = TINCTURE_STR; type <= INK_THAUMATURGY; ++type )
+	{
+		const auto& key = tmpItems[type].internalName;
+		const auto localized = itemNameLocalizations.find(key);
+		const char* fallback = witchbrewNames[type - TINCTURE_STR];
+		items[type].setIdentifiedName(localized != itemNameLocalizations.end()
+			&& !localized->second.name_identified.empty() ? localized->second.name_identified : fallback);
+		items[type].setUnidentifiedName(localized != itemNameLocalizations.end()
+			&& !localized->second.name_unidentified.empty() ? localized->second.name_unidentified
+			: witchbrewUnidentifiedNames[type - TINCTURE_STR]);
+	}
+	static const char* ingredientNames[] = {
+		"Slime Ingredient Bag", "Humorin Ingredient Bag", "Wildblood Ingredient Bag", "Animatic Ingredient Bag",
+		"Gelatin", "Ooze", "Grease", "Mold", "Blood", "Phlegm", "Black Bile", "Yellow Bile",
+		"Eye", "Heart", "Tooth", "Liver", "Spirit", "Core", "Dust", "Fragments"
+	};
+	for ( int type = INGREDIENT_BAG_SLIME; type <= INGREDIENT_FRAGMENTS; ++type )
+	{
+		const auto& key = tmpItems[type].internalName;
+		const auto localized = itemNameLocalizations.find(key);
+		const char* fallback = ingredientNames[type - INGREDIENT_BAG_SLIME];
+		items[type].setIdentifiedName(localized != itemNameLocalizations.end()
+			&& !localized->second.name_identified.empty() ? localized->second.name_identified : fallback);
+		items[type].setUnidentifiedName(localized != itemNameLocalizations.end()
+			&& !localized->second.name_unidentified.empty() ? localized->second.name_unidentified : fallback);
 	}
 	for ( auto& spell : spellItems )
 	{
@@ -1725,6 +2323,7 @@ void ItemTooltips_t::readBookLocalizationsFromFile(bool forceLoadBaseDirectory)
 #ifndef EDITOR
 void ItemTooltips_t::readTooltipsFromFile(bool forceLoadBaseDirectory)
 {
+	const bool applyAdditiveOverlay = !forceLoadBaseDirectory;
 	if ( !PHYSFS_getRealDir("/items/item_tooltips.json") )
 	{
 		printlog("[JSON]: Error: Could not find file: items/item_tooltips.json");
@@ -1787,6 +2386,10 @@ void ItemTooltips_t::readTooltipsFromFile(bool forceLoadBaseDirectory)
 		return;
 	}
 	int version = d["version"].GetInt();
+	if ( applyAdditiveOverlay )
+	{
+		applyOptionalJsonAdditiveFile(d, "/items/item_tooltips_add.json", buffer_size);
+	}
 
 	if ( forceLoadBaseDirectory )
 	{
@@ -2464,7 +3067,25 @@ std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item
 		return defaultString;
 	}
 
+	static constexpr const char* kRuneStoredPwrFormat = "Stored PWR: %s";
+	static constexpr const char* kRuneStoredPwrUnavailable = "unavailable";
 	std::string str;
+	if ( item.isMagicRune() )
+	{
+		char pwrValue[64] = "";
+		if ( item.runeHasStoredPWR() )
+		{
+			snprintf(pwrValue, sizeof(pwrValue), "%.f%%", item.runeGetStoredPWRDisplayPercent());
+		}
+		else
+		{
+			snprintf(pwrValue, sizeof(pwrValue), "%s", kRuneStoredPwrUnavailable);
+		}
+		char pwrLine[128] = "";
+		snprintf(pwrLine, sizeof(pwrLine), kRuneStoredPwrFormat, pwrValue);
+		str += pwrLine;
+		str += "\n\n";
+	}
 	for ( auto it = templates[templateName].begin();
 		it != templates[templateName].end(); ++it )
 	{
@@ -2481,6 +3102,19 @@ std::string ItemTooltips_t::getSpellDescriptionText(const int player, Item& item
 std::string& ItemTooltips_t::getIconLabel(Item& item)
 {
 #ifndef EDITOR
+	static std::string witchbrewLabel;
+	const AppliedOil oil = item.appliedOil != APPLIED_OIL_NONE
+		? item.appliedOil : appliedOilFromItemType(item.type);
+	if ( oil != APPLIED_OIL_NONE )
+	{
+		witchbrewLabel = getOilIconPath(oil);
+		return witchbrewLabel;
+	}
+	if ( itemTypeIsTincture(item.type) )
+	{
+		witchbrewLabel = getTinctureIconPath(item.type);
+		return witchbrewLabel;
+	}
 	if ( item.type == SPELL_ITEM && !item.spellNotifyIcon ) { return defaultString; }
 	return tmpItems[item.type].iconLabelPath;
 #endif
@@ -2976,6 +3610,7 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 	}
 	char buf[64];
 	memset(buf, 0, sizeof(buf));
+	const bool runeCostsNoMP = item.isMagicRune();
 	if ( spell->ID == SPELL_DOMINATE )
 	{
 		std::string templateName = "template_spell_cost_dominate";
@@ -2989,7 +3624,7 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 				str += '\n';
 			}
 		}
-		snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell));
+		snprintf(buf, sizeof(buf), str.c_str(), runeCostsNoMP ? 0 : getCostOfSpell(spell));
 	}
 	else if ( spell->ID == SPELL_DEMON_ILLUSION )
 	{
@@ -3004,7 +3639,7 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 				str += '\n';
 			}
 		}
-		snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell));
+		snprintf(buf, sizeof(buf), str.c_str(), runeCostsNoMP ? 0 : getCostOfSpell(spell));
 	}
 	else if ( spell->ID == SPELL_LEAD_BOLT || spell->ID == SPELL_MERCURY_BOLT
 		|| spell->ID == SPELL_FORGE_METAL_SCRAP || spell->ID == SPELL_FORGE_MAGIC_SCRAP )
@@ -3020,13 +3655,14 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 				str += '\n';
 			}
 		}
-		snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell), getGoldCostOfSpell(spell, player));
+		snprintf(buf, sizeof(buf), str.c_str(), runeCostsNoMP ? 0 : getCostOfSpell(spell), getGoldCostOfSpell(spell, player));
 	}
 	else
 	{
 		std::string templateName = "template_spell_cost";
-		real_t sustainCostPerSecond = getSpellSustainCostPerSecond(spell->ID);
-		if ( sustainCostPerSecond > 0.01 )
+		const real_t sustainCostPerSecond = getSpellSustainCostPerSecond(spell->ID);
+		const bool sustainedSpell = sustainCostPerSecond > 0.01;
+		if ( sustainedSpell )
 		{
 			templateName = "template_spell_cost_sustained";
 		}
@@ -3041,28 +3677,44 @@ std::string ItemTooltips_t::getCostOfSpellString(const int player, Item& item)
 				str += '\n';
 			}
 		}
-		snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell));
+		real_t displayedSustainCost = runeCostsNoMP ? 0.0 : sustainCostPerSecond;
+		if ( runeCostsNoMP && sustainedSpell )
+		{
+			// The current localized template expresses sustain as "1 MP/<interval>"
+			// and hard-codes the 1. Preserve that interval while zeroing the actual
+			// MP amount; future two-placeholder MP/sec templates receive 0 below.
+			const size_t hardcodedMana = str.find("1 MP/");
+			if ( hardcodedMana != std::string::npos )
+			{
+				str[hardcodedMana] = '0';
+				displayedSustainCost = sustainCostPerSecond;
+			}
+		}
+		snprintf(buf, sizeof(buf), str.c_str(), runeCostsNoMP ? 0 : getCostOfSpell(spell));
 		if ( players[player] && players[player]->entity )
 		{
-			if ( sustainCostPerSecond > 0.01 )
+			if ( sustainedSpell )
 			{
 				snprintf(buf, sizeof(buf), str.c_str(), 
-					getCostOfSpell(spell, players[player]->entity), sustainCostPerSecond);
+					runeCostsNoMP ? 0 : getCostOfSpell(spell, players[player]->entity),
+					displayedSustainCost);
 			}
 			else
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell, players[player]->entity));
+				snprintf(buf, sizeof(buf), str.c_str(),
+					runeCostsNoMP ? 0 : getCostOfSpell(spell, players[player]->entity));
 			}
 		}
 		else
 		{
-			if ( sustainCostPerSecond > 0.01 )
+			if ( sustainedSpell )
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell), sustainCostPerSecond);
+				snprintf(buf, sizeof(buf), str.c_str(), runeCostsNoMP ? 0 : getCostOfSpell(spell),
+					displayedSustainCost);
 			}
 			else
 			{
-				snprintf(buf, sizeof(buf), str.c_str(), getCostOfSpell(spell));
+				snprintf(buf, sizeof(buf), str.c_str(), runeCostsNoMP ? 0 : getCostOfSpell(spell));
 			}
 		}
 	}
@@ -3138,7 +3790,7 @@ std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item, int s
 	{
 		spellImageNode = list_Node(&items[SPELL_ITEM].images, item.status < EXCELLENT ? SPELL_FORCEBOLT : SPELL_MAGICMISSILE);
 	}
-	else if ( item.type == SPELL_ITEM )
+	else if ( item.type == SPELL_ITEM || item.isMagicRune() )
 	{
 		if ( spellID > SPELL_NONE )
 		{
@@ -3160,8 +3812,15 @@ std::string ItemTooltips_t::getSpellIconPath(const int player, Item& item, int s
 	if ( spellImageNode )
 	{
 		string_t* string = (string_t*)spellImageNode->element;
-		if ( string )
+		if ( string && string->data )
 		{
+			// mod add: Entrench uses its dedicated mounted asset when present and
+			// falls back only when that exact file is unavailable.
+			if ( !strcmp(string->data, "items/images/spells/entrench.png")
+				&& !PHYSFS_getRealDir(string->data) )
+			{
+				return "items/images/null.png";
+			}
 			return string->data;
 		}
 	}
@@ -3387,6 +4046,9 @@ Sint32 getStatAttributeBonusFromItem(const int player, Item& item, std::string& 
 
 void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, Item& item, std::string& str, int iconIndex, std::string& conditionalAttribute, Frame* parentFrame)
 {
+	ScopedSpellPowerOverride runePowerScope(item.runeHasStoredPWR(),
+		getMagicRuneEffectivePWR(item, player >= 0 && player < MAXPLAYERS && players[player]
+			? players[player]->entity : nullptr));
 #ifndef EDITOR
 	//auto itemTooltip = tooltips[tooltipType];
 	static Stat itemDummyStat(0);
@@ -3424,7 +4086,7 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 		}
 		return;
 	}
-	else if ( item.type == SPELL_ITEM && conditionalAttribute.find("spell_") != std::string::npos )
+	else if ( (item.type == SPELL_ITEM || item.isMagicRune()) && conditionalAttribute.find("spell_") != std::string::npos )
 	{
 		if ( auto spell = getSpellFromItem(player, &item, false) )
 		{
@@ -4868,6 +5530,22 @@ void ItemTooltips_t::formatItemIcon(const int player, std::string tooltipType, I
 
 void ItemTooltips_t::formatItemDescription(const int player, std::string tooltipType, Item& item, std::string& str)
 {
+	ScopedSpellPowerOverride runePowerScope(item.runeHasStoredPWR(),
+		getMagicRuneEffectivePWR(item, player >= 0 && player < MAXPLAYERS && players[player]
+			? players[player]->entity : nullptr));
+#ifndef EDITOR
+	if ( item.type == SCROLL_MAIL
+		&& player >= 0 && player < MAXPLAYERS
+		&& players[player]
+		&& stats[player]
+		&& stats[player]->playerRace == RACE_WRAITH
+		&& getWraithCanonicalMailLoreId(item.appearance)
+			== getWraithAddressedMailLoreId(player) )
+	{
+		str = "A letter addressed to you";
+		return;
+	}
+#endif
 	if ( tooltipType.find("tooltip_spell_") != std::string::npos )
 	{
 		str = getSpellDescriptionText(player, item);
@@ -4894,6 +5572,9 @@ void ItemTooltips_t::formatItemDescription(const int player, std::string tooltip
 
 void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType, Item& item, std::string& str, std::string detailTag, Frame* parentFrame)
 {
+	ScopedSpellPowerOverride runePowerScope(item.runeHasStoredPWR(),
+		getMagicRuneEffectivePWR(item, player >= 0 && player < MAXPLAYERS && players[player]
+			? players[player]->entity : nullptr));
 #ifndef EDITOR
 	if ( !stats[player] )
 	{
@@ -6256,7 +6937,21 @@ void ItemTooltips_t::formatItemDetails(const int player, std::string tooltipType
 			Entity* caster = compendiumTooltipIntro ? nullptr : players[player]->entity;
 			Stat* casterStats = compendiumTooltipIntro ? nullptr : stats[player];
 			real_t baseCastTime = spell->cast_time * 20;
-			real_t modifiedCastTime = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_SPELL_CAST_TIME, spell->ID, caster, casterStats, nullptr) * 20;
+			real_t modifiedCastTime = baseCastTime;
+			if ( item.isMagicRune() )
+			{
+				const real_t minimumCastTime = spell->cast_time <= 1.0 ? 0.5 : 1.0;
+				const real_t runeCastTime = std::max<real_t>(minimumCastTime, spell->cast_time * 0.5);
+				// The tooltip template divides its first argument by TICKS_PER_SECOND.
+				// Feed it Rune cast-time units directly, with no wielder modifier.
+				baseCastTime = runeCastTime * TICKS_PER_SECOND;
+				modifiedCastTime = baseCastTime;
+			}
+			else
+			{
+				modifiedCastTime = getSpellPropertyFromID(spell_t::SPELLPROP_MODIFIED_SPELL_CAST_TIME,
+					spell->ID, caster, casterStats, nullptr) * 20;
+			}
 			real_t diff = -(baseCastTime - modifiedCastTime);
 			if ( abs(diff) < 0.001 )
 			{
@@ -8585,6 +9280,135 @@ void MonsterData_t::loadMonsterDataJSON()
 				}
 			}
 		}
+
+		// mod add: Leonin ally/player portrait data. The executable owns the new
+		// model IDs, while the PNGs remain supplied by the mounted content mod.
+		{
+			auto& entry = monsterDataEntries[LEONIN];
+			entry.monsterType = LEONIN;
+			entry.defaultIconPath = baseIconPath + "basic/Icon_LeoninM_00.png";
+
+			static constexpr int leoninModels[] =
+			{
+				LEONIN_MODEL_ARM_LEFT, LEONIN_MODEL_ARM_RIGHT,
+				LEONIN_MODEL_ARM_BENT_LEFT, LEONIN_MODEL_ARM_BENT_RIGHT,
+				LEONIN_MODEL_HEAD_MALE, LEONIN_MODEL_HEAD_FEMALE,
+				LEONIN_MODEL_LEG_LEFT, LEONIN_MODEL_LEG_RIGHT,
+				LEONIN_MODEL_TORSO, LEONIN_MODEL_TAIL, LEONIN_MODEL_MANE
+			};
+			for ( const int model : leoninModels )
+			{
+				entry.modelIndexes.insert(model);
+			}
+
+			const std::string maleIcon = baseIconPath + "basic/Icon_LeoninM_00.png";
+			const std::string femaleIcon = baseIconPath + "basic/Icon_LeoninF_00.png";
+			entry.playerModelIndexes.insert(LEONIN_MODEL_HEAD_MALE);
+			entry.playerModelIndexes.insert(LEONIN_MODEL_HEAD_FEMALE);
+			entry.iconSpritesAndPaths[LEONIN_MODEL_HEAD_MALE].key = "player male";
+			entry.iconSpritesAndPaths[LEONIN_MODEL_HEAD_MALE].iconPath = maleIcon;
+			entry.iconSpritesAndPaths[LEONIN_MODEL_HEAD_FEMALE].key = "player female";
+			entry.iconSpritesAndPaths[LEONIN_MODEL_HEAD_FEMALE].iconPath = femaleIcon;
+			entry.keyToSpriteLookup["player male"] = { LEONIN_MODEL_HEAD_MALE };
+			entry.keyToSpriteLookup["player female"] = { LEONIN_MODEL_HEAD_FEMALE };
+		}
+		// Standalone Golem player-model data. Icons can be supplied independently by
+		// mounted content; model ownership must never fall back to Automaton.
+		{
+			auto& entry = monsterDataEntries[GOLEM];
+			entry.monsterType = GOLEM;
+			entry.defaultIconPath = baseIconPath + "basic/Icon_GolemB_00.png";
+
+			static constexpr int golemModels[] =
+			{
+				GOLEM_MODEL_B_ARM_LEFT, GOLEM_MODEL_B_ARM_RIGHT,
+				GOLEM_MODEL_B_ARM_BENT_LEFT, GOLEM_MODEL_B_ARM_BENT_RIGHT,
+				GOLEM_MODEL_B_HEAD, GOLEM_MODEL_B_LEG_LEFT,
+				GOLEM_MODEL_B_LEG_RIGHT, GOLEM_MODEL_B_TORSO,
+				GOLEM_MODEL_C_ARM_LEFT, GOLEM_MODEL_C_ARM_RIGHT,
+				GOLEM_MODEL_C_ARM_BENT_LEFT, GOLEM_MODEL_C_ARM_BENT_RIGHT,
+				GOLEM_MODEL_C_HEAD, GOLEM_MODEL_C_LEG_LEFT,
+				GOLEM_MODEL_C_LEG_RIGHT, GOLEM_MODEL_C_TORSO
+			};
+			for ( const int model : golemModels )
+			{
+				entry.modelIndexes.insert(model);
+			}
+
+			entry.playerModelIndexes.insert(GOLEM_MODEL_B_HEAD);
+			entry.playerModelIndexes.insert(GOLEM_MODEL_C_HEAD);
+			entry.iconSpritesAndPaths[GOLEM_MODEL_B_HEAD].key = "player male";
+			entry.iconSpritesAndPaths[GOLEM_MODEL_B_HEAD].iconPath =
+				baseIconPath + "basic/Icon_GolemB_00.png";
+			entry.iconSpritesAndPaths[GOLEM_MODEL_C_HEAD].key = "player female";
+			entry.iconSpritesAndPaths[GOLEM_MODEL_C_HEAD].iconPath =
+				baseIconPath + "basic/Icon_GolemC_00.png";
+			entry.keyToSpriteLookup["player male"] = { GOLEM_MODEL_B_HEAD };
+			entry.keyToSpriteLookup["player female"] = { GOLEM_MODEL_C_HEAD };
+		}
+		// Wraith player/ally portrait fallback for source-defined model IDs.
+		{
+			auto& entry = monsterDataEntries[WRAITH];
+			entry.monsterType = WRAITH;
+			entry.defaultShortDisplayName = "Wraith";
+			entry.defaultIconPath = baseIconPath + "basic/Icon_Wraith_00.png";
+			static constexpr int wraithModels[] = {
+				WRAITH_MODEL_ARM_LEFT, WRAITH_MODEL_ARM_BENT_LEFT,
+				WRAITH_MODEL_ARM_RIGHT, WRAITH_MODEL_ARM_BENT_RIGHT,
+				WRAITH_MODEL_HEAD, WRAITH_MODEL_TORSO
+			};
+			for ( const int model : wraithModels )
+			{
+				entry.modelIndexes.insert(model);
+			}
+			entry.playerModelIndexes.insert(WRAITH_MODEL_HEAD);
+			entry.iconSpritesAndPaths[WRAITH_MODEL_HEAD].key = "player";
+			entry.iconSpritesAndPaths[WRAITH_MODEL_HEAD].iconPath = entry.defaultIconPath;
+			entry.keyToSpriteLookup["player"] = { WRAITH_MODEL_HEAD };
+		}
+		// BAT_FAMILIAR data normally lives in the mounted monster_data.json. Keep
+		// the source-defined type usable when that data predates the mod entry.
+		{
+			auto& mimicEntry = monsterDataEntries[MIMIC];
+			mimicEntry.modelIndexes.insert(BAT_FAMILIAR_MODEL_MIMIC_TRUNK);
+			mimicEntry.modelIndexes.insert(BAT_FAMILIAR_MODEL_MIMIC_LID);
+
+			auto& entry = monsterDataEntries[BAT_FAMILIAR];
+			entry.monsterType = BAT_FAMILIAR;
+			if ( entry.defaultShortDisplayName.empty() )
+			{
+				entry.defaultShortDisplayName = "Bat Familiar";
+			}
+			entry.defaultIconPath = baseIconPath + "summons/icon_bat_familiar_00.png";
+
+			mimicEntry.iconSpritesAndPaths[BAT_FAMILIAR_MODEL_MIMIC_TRUNK].key =
+				"bat familiar";
+			mimicEntry.iconSpritesAndPaths[BAT_FAMILIAR_MODEL_MIMIC_TRUNK].iconPath =
+				entry.defaultIconPath;
+
+			mimicEntry.iconSpritesAndPaths[BAT_FAMILIAR_MODEL_MIMIC_LID].key =
+				"bat familiar";
+			mimicEntry.iconSpritesAndPaths[BAT_FAMILIAR_MODEL_MIMIC_LID].iconPath =
+				entry.defaultIconPath;
+
+			static constexpr int familiarModels[] =
+			{
+				BAT_FAMILIAR_MODEL_BODY, BAT_FAMILIAR_MODEL_HEAD,
+				BAT_FAMILIAR_MODEL_WING_LEFT, BAT_FAMILIAR_MODEL_WING_RIGHT,
+				BAT_FAMILIAR_MODEL_CAULDRON
+			};
+			for ( const int model : familiarModels )
+			{
+				entry.modelIndexes.insert(model);
+				entry.iconSpritesAndPaths[model].key = "default";
+				entry.iconSpritesAndPaths[model].iconPath = entry.defaultIconPath;
+			}
+			entry.keyToSpriteLookup["default"] = {
+				BAT_FAMILIAR_MODEL_BODY, BAT_FAMILIAR_MODEL_HEAD,
+				BAT_FAMILIAR_MODEL_WING_LEFT, BAT_FAMILIAR_MODEL_WING_RIGHT,
+				BAT_FAMILIAR_MODEL_CAULDRON
+			};
+		}
 		// validate data
 		for ( int i = 0; i < NUMMONSTERS; ++i )
 		{
@@ -9889,15 +10713,13 @@ void ClassHotbarConfig_t::readFromFile(ClassHotbarConfig_t::HotbarConfigType fil
 
 	for ( auto classes = d["classes"].MemberBegin(); classes != d["classes"].MemberEnd(); ++classes )
 	{
-		int classIndex = -1;
-		for ( auto& s : playerClassInternalNames )
+		const auto className = std::find(playerClassInternalNames.begin(),
+			playerClassInternalNames.end(), classes->name.GetString());
+		if ( className == playerClassInternalNames.end() )
 		{
-			++classIndex;
-			if ( s == classes->name.GetString() )
-			{
-				break;
-			}
+			continue;
 		}
+		const int classIndex = static_cast<int>(std::distance(playerClassInternalNames.begin(), className));
 		if ( !(classIndex >= CLASS_BARBARIAN && classIndex < NUMCLASSES) )
 		{
 			continue;
@@ -9953,7 +10775,7 @@ void ClassHotbarConfig_t::readFromFile(ClassHotbarConfig_t::HotbarConfigType fil
 							{
 								for ( int c = 0; c < NUMITEMS; ++c )
 								{
-									if ( itemString.compare(itemNameStrings[c + 2]) == 0 )
+									if ( itemString.compare(itemNameStrings[c + 2]) == 0     || (static_cast<size_t>(c) < ItemTooltips.tmpItems.size() && itemString == ItemTooltips.tmpItems[c].internalName) )
 									{
 										itemType = c;
 										found = true;
@@ -10017,6 +10839,30 @@ void ClassHotbarConfig_t::init()
 	}
 
 	readFromFile(HOTBAR_LAYOUT_DEFAULT_CONFIG);
+	// Keep the class playable before data/class_hotbars.json gains a Runesmith row.
+	// User custom hotbar data, loaded below, still takes precedence normally.
+	auto addRunesmithDefaultWeapon = [](ClassHotbar_t::ClassHotbarLayout_t& layout)
+	{
+		if ( !layout.hasData && !layout.hotbar.empty() )
+		{
+			layout.hotbar[0].itemTypes.push_back(RUNE_HAMMER);
+			layout.hasData = true;
+		}
+	};
+	addRunesmithDefaultWeapon(ClassHotbarsDefault[CLASS_RUNESMITH].layoutClassic);
+	addRunesmithDefaultWeapon(ClassHotbarsDefault[CLASS_RUNESMITH].layoutModern);
+	// Preserve the normal starting-spell hotbar result when mounted hotbar data
+	// does not yet contain the appended Witch class.
+	auto addWitchDefaultSpell = [](ClassHotbar_t::ClassHotbarLayout_t& layout)
+	{
+		if ( !layout.hasData && !layout.hotbar.empty() )
+		{
+			layout.hotbar[0].itemTypes.push_back(SPELL_VOID_CHEST + 10000);
+			layout.hasData = true;
+		}
+	};
+	addWitchDefaultSpell(ClassHotbarsDefault[CLASS_WITCH].layoutClassic);
+	addWitchDefaultSpell(ClassHotbarsDefault[CLASS_WITCH].layoutModern);
 	readFromFile(HOTBAR_LAYOUT_CUSTOM_CONFIG);
 }
 
@@ -10132,6 +10978,32 @@ void ClassHotbarConfig_t::assignHotbarSlots(const int player)
 			if ( matchingItems[itemAndSlot.first].item )
 			{
 				hotbar_t.slots()[matchingItems[itemAndSlot.first].slotnum].item = matchingItems[itemAndSlot.first].item->uid;
+			}
+		}
+	}
+	if ( stats[player]->playerRace == RACE_WRAITH && stats[player]->stat_appearance == 0 )
+	{
+		Item* possessItem = nullptr;
+		for ( node_t* node = stats[player]->inventory.first; node; node = node->next )
+		{
+			Item* item = static_cast<Item*>(node->element);
+			spell_t* spell = item && item->type == SPELL_ITEM
+				? getSpellFromItem(player, item, false) : nullptr;
+			if ( spell && spell->ID == SPELL_POSSESS )
+			{
+				possessItem = item;
+				break;
+			}
+		}
+		if ( possessItem )
+		{
+			for ( int slot = 0; slot < NUM_HOTBAR_SLOTS; ++slot )
+			{
+				if ( hotbar_t.slots()[slot].item == 0 )
+				{
+					hotbar_t.slots()[slot].item = possessItem->uid;
+					break;
+				}
 			}
 		}
 	}
@@ -11813,6 +12685,16 @@ void Mods::unloadMods(bool force)
 void Mods::loadMods()
 {
 #ifndef EDITOR
+	using ModLoadClock = std::chrono::steady_clock;
+	const auto modLoadStart = ModLoadClock::now();
+	auto logModLoadPhase = [](const char* phase, ModLoadClock::time_point start)
+	{
+		const double milliseconds = 1000.0
+			* std::chrono::duration_cast<std::chrono::duration<double>>(
+				ModLoadClock::now() - start).count();
+		printlog("[Mods::loadMods timing] %s: %.2f ms", phase, milliseconds);
+	};
+	auto phaseStart = ModLoadClock::now();
 	Mods::disableSteamAchievements = false;
 	Mods::verifyAchievements(nullptr, false);
 
@@ -11827,13 +12709,19 @@ void Mods::loadMods()
 	doLoadingScreen();
 
 	// process any new model files encountered in the mod load list.
-	if ( physfsSearchModelsToUpdate() || !Mods::modelsListModifiedIndexes.empty() )
+	phaseStart = ModLoadClock::now();
+	const bool modelFilesChanged = physfsSearchModelsToUpdate();
+	logModLoadPhase("physfsSearchModelsToUpdate", phaseStart);
+	if ( modelFilesChanged || !Mods::modelsListModifiedIndexes.empty() )
 	{
 		int modelsIndexUpdateStart = 1;
 		int modelsIndexUpdateEnd = nummodels;
 		bool oldModelCache = useModelCache;
 		useModelCache = false;
+		phaseStart = ModLoadClock::now();
 		physfsModelIndexUpdate(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		logModLoadPhase("physfsModelIndexUpdate", phaseStart);
+		phaseStart = ModLoadClock::now();
 		for (int c = modelsIndexUpdateStart; c < modelsIndexUpdateEnd && c < nummodels; ++c) {
 			if (polymodels[c].faces) {
 				free(polymodels[c].faces);
@@ -11852,12 +12740,17 @@ void Mods::loadMods()
 				GL_CHECK_ERR(glDeleteBuffers(1, &polymodels[c].normals));
 			}
 		}
+		logModLoadPhase("model GPU cleanup", phaseStart);
 
 		// polymodels will get free'd if generating all models in generatePolyModels
 		//free(polymodels);
 		//polymodels = nullptr;
+		phaseStart = ModLoadClock::now();
 		generatePolyModels(modelsIndexUpdateStart, modelsIndexUpdateEnd, true);
+		logModLoadPhase("generatePolyModels", phaseStart);
+		phaseStart = ModLoadClock::now();
 		generateVBOs(modelsIndexUpdateStart, modelsIndexUpdateEnd);
+		logModLoadPhase("generateVBOs", phaseStart);
 		useModelCache = oldModelCache;
 		Mods::modelsListRequiresReloadUnmodded = true;
 	}
@@ -11888,7 +12781,11 @@ void Mods::loadMods()
 	updateLoadingScreen(40);
 	doLoadingScreen();
 
-	if ( physfsSearchSpritesToUpdate() )
+	phaseStart = ModLoadClock::now();
+	const bool spriteFilesChanged = physfsSearchSpritesToUpdate();
+	logModLoadPhase("physfsSearchSpritesToUpdate", phaseStart);
+	phaseStart = ModLoadClock::now();
+	if ( spriteFilesChanged )
 	{
 		physfsReloadSprites(false);
 		Mods::spriteImagesRequireReloadUnmodded = true;
@@ -11898,6 +12795,7 @@ void Mods::loadMods()
 		physfsReloadSprites(true);
 		Mods::spriteImagesRequireReloadUnmodded = false;
 	}
+	logModLoadPhase("sprite reload", phaseStart);
 
 	updateLoadingScreen(50);
 	doLoadingScreen();
@@ -11972,7 +12870,11 @@ void Mods::loadMods()
 	updateLoadingScreen(85);
 	doLoadingScreen();
 
-	if ( physfsSearchSystemImagesToUpdate() )
+	phaseStart = ModLoadClock::now();
+	const bool systemImagesChanged = physfsSearchSystemImagesToUpdate();
+	logModLoadPhase("physfsSearchSystemImagesToUpdate", phaseStart);
+	phaseStart = ModLoadClock::now();
+	if ( systemImagesChanged )
 	{
 		physfsReloadSystemImages();
 		Mods::systemImagesReloadUnmodded = true;
@@ -11982,15 +12884,19 @@ void Mods::loadMods()
 		physfsReloadSystemImages();
 		Mods::systemImagesReloadUnmodded = false;
 	}
+	logModLoadPhase("system image reload", phaseStart);
 
 	updateLoadingScreen(90);
 	doLoadingScreen();
 
+	phaseStart = ModLoadClock::now();
 	initGameDatafiles(true);
+	logModLoadPhase("initGameDatafiles", phaseStart);
 
 	updateLoadingScreen(95);
 	doLoadingScreen();
 
+	phaseStart = ModLoadClock::now();
 	std::atomic_bool loading_done{ false };
 	auto loading_task = std::async(std::launch::async, [&loading_done]() {
 		initGameDatafilesAsync(true);
@@ -12002,6 +12908,7 @@ void Mods::loadMods()
 		doLoadingScreen();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
+	logModLoadPhase("initGameDatafilesAsync", phaseStart);
 
 	if ( physfsSearchBooksToUpdate() )
 	{
@@ -12019,6 +12926,10 @@ void Mods::loadMods()
 	loadLights();
 
 	consoleCommand("/dumpcache");
+	const char* halloweenAssetDir = PHYSFS_getRealDir("images/ui/Main Menus/Banners/banner_halloween.png");
+	printlog("[Mods::loadMods timing] Halloween banner source: %s",
+		halloweenAssetDir ? halloweenAssetDir : "not mounted");
+	logModLoadPhase("total", modLoadStart);
 
 	destroyLoadingScreen();
 
@@ -12191,6 +13102,308 @@ int Mods::createBlankModDirectory(std::string foldername)
 }
 
 EquipmentModelOffsets_t EquipmentModelOffsets;
+RuneHammerModelPositions_t RuneHammerModelPositions;
+WraithHybridItemModelPositions_t WraithHybridItemModelPositions;
+
+const RuneHammerModelPositions_t::Transform_t& RuneHammerModelPositions_t::hammerTransform(
+	bool firstPersonView, bool twoHanded) const
+{
+	const auto& view = firstPersonView ? firstPerson : thirdPerson;
+	return twoHanded ? view.twoHanded : view.normal;
+}
+
+const RuneHammerModelPositions_t::Transform_t& RuneHammerModelPositions_t::attachmentTransform(
+	bool firstPersonView) const
+{
+	return firstPersonView ? firstPerson.attachedOffhand : thirdPerson.attachedOffhand;
+}
+
+const RuneHammerModelPositions_t::Transform_t*
+	RuneHammerModelPositions_t::getThirdPersonTwoHandedRaceOffset(Monster race) const
+{
+	for ( const auto& group : thirdPersonTwoHandedRaceGroups )
+	{
+		if ( std::find(group.races.begin(), group.races.end(), race) != group.races.end() )
+		{
+			return &group.offset;
+		}
+	}
+	return nullptr;
+}
+
+const RuneHammerModelPositions_t::Transform_t&
+    RuneHammerModelPositions_t::standaloneRuneTransform(bool firstPersonView) const
+{
+    return firstPersonView ? firstPerson.standaloneRune : thirdPerson.standaloneRune;
+}
+void RuneHammerModelPositions_t::applyOffset(Entity& entity, const Transform_t& t) const
+{
+	entity.x += t.x; entity.y += t.y; entity.z += t.z;
+	entity.focalx += t.focalx; entity.focaly += t.focaly; entity.focalz += t.focalz;
+	entity.yaw += t.yaw; entity.pitch += t.pitch; entity.roll += t.roll;
+	entity.scalex *= t.scalex; entity.scaley *= t.scaley; entity.scalez *= t.scalez;
+}
+
+void RuneHammerModelPositions_t::attachTo(Entity& entity, const Entity& hammer, const Transform_t& t) const
+{
+	// Rz(yaw) * Ry(pitch) * Rx(roll): position is authored in Hammer-local space.
+	const real_t cr = cos(hammer.roll), sr = sin(hammer.roll);
+	const real_t cp = cos(hammer.pitch), sp = sin(hammer.pitch);
+	const real_t cy = cos(hammer.yaw), sy = sin(hammer.yaw);
+	const real_t rx = t.x;
+	const real_t ry = t.y * cr - t.z * sr;
+	const real_t rz = t.y * sr + t.z * cr;
+	const real_t px = rx * cp + rz * sp;
+	const real_t py = ry;
+	const real_t pz = -rx * sp + rz * cp;
+	entity.x = hammer.x + px * cy - py * sy;
+	entity.y = hammer.y + px * sy + py * cy;
+	entity.z = hammer.z + pz;
+	entity.yaw = hammer.yaw + t.yaw;
+	entity.pitch = hammer.pitch + t.pitch;
+	entity.roll = hammer.roll + t.roll;
+	// The mounted model inherits the Hammer's complete final transform. Values in
+	// attached_offhand are additional local adjustments, not replacement values.
+	entity.focalx = hammer.focalx + t.focalx;
+	entity.focaly = hammer.focaly + t.focaly;
+	entity.focalz = hammer.focalz + t.focalz;
+	entity.scalex = hammer.scalex * t.scalex;
+	entity.scaley = hammer.scaley * t.scaley;
+	entity.scalez = hammer.scalez * t.scalez;
+}
+
+void RuneHammerModelPositions_t::readFromFile()
+{
+	// Reset on every data/mod reload so a removed or bad override cannot leave stale values.
+	*this = RuneHammerModelPositions_t{};
+	const char* filename = "models/items/rune_hammer_positions.json";
+	const char* realDir = PHYSFS_getRealDir(filename);
+	if ( !realDir )
+	{
+		return;
+	}
+	std::string inputPath = realDir;
+	inputPath.append(PHYSFS_getDirSeparator()).append(filename);
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not open Rune Hammer positions file %s", inputPath.c_str());
+		return;
+	}
+	static char buf[32000];
+	const int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[std::max(0, count)] = '\0';
+	FileIO::close(fp);
+	rapidjson::Document d;
+	d.Parse(buf);
+	if ( d.HasParseError() || !d.IsObject() )
+	{
+		printlog("[JSON]: Error: Malformed Rune Hammer positions file %s", inputPath.c_str());
+		return;
+	}
+	auto readTransform = [](const rapidjson::Value& value, Transform_t& out, bool readScale)
+	{
+		if ( !value.IsObject() ) { return; }
+		auto number = [&](const char* key, real_t& dst)
+		{
+			if ( value.HasMember(key) && value[key].IsNumber() ) { dst = value[key].GetDouble(); }
+		};
+		number("x", out.x); number("y", out.y); number("z", out.z);
+		number("focalx", out.focalx); number("focaly", out.focaly); number("focalz", out.focalz);
+		number("yaw", out.yaw); number("pitch", out.pitch); number("roll", out.roll);
+		if ( readScale )
+		{
+			number("scalex", out.scalex); number("scaley", out.scaley); number("scalez", out.scalez);
+		}
+	};
+	auto readView = [&](const char* key, View_t& view)
+	{
+		if ( !d.HasMember(key) || !d[key].IsObject() ) { return; }
+		const auto& value = d[key];
+		if ( value.HasMember("normal") ) { readTransform(value["normal"], view.normal, true); }
+		if ( value.HasMember("two_handed") ) { readTransform(value["two_handed"], view.twoHanded, true); }
+		if ( value.HasMember("attached_offhand") ) { readTransform(value["attached_offhand"], view.attachedOffhand, true); }
+		if ( value.HasMember("standalone_rune") ) {readTransform(value["standalone_rune"], view.standaloneRune, true);}
+	};
+	readView("first_person", firstPerson);
+	readView("third_person", thirdPerson);
+
+	if ( d.HasMember("third_person") && d["third_person"].IsObject() )
+	{
+		const auto& thirdPersonValue = d["third_person"];
+		if ( thirdPersonValue.HasMember("two_handed_race_groups") )
+		{
+			const auto& groups = thirdPersonValue["two_handed_race_groups"];
+			if ( !groups.IsObject() )
+			{
+				printlog("[JSON]: Warning: Rune Hammer two_handed_race_groups is not an object in %s",
+					inputPath.c_str());
+			}
+			else
+			{
+				for ( auto group = groups.MemberBegin(); group != groups.MemberEnd(); ++group )
+				{
+					const char* groupName = group->name.GetString();
+					if ( !group->value.IsObject()
+						|| !group->value.HasMember("races") || !group->value["races"].IsArray()
+						|| !group->value.HasMember("offset") || !group->value["offset"].IsObject() )
+					{
+						printlog("[JSON]: Warning: Ignoring malformed Rune Hammer race offset group '%s' in %s",
+							groupName, inputPath.c_str());
+						continue;
+					}
+
+					RaceOffsetGroup_t parsedGroup;
+					bool malformedRaces = false;
+					for ( const auto& raceValue : group->value["races"].GetArray() )
+					{
+						if ( !raceValue.IsString() )
+						{
+							malformedRaces = true;
+							break;
+						}
+
+						Monster parsedRace = NOTHING;
+						bool raceFound = false;
+						for ( int race = 0; race < NUMMONSTERS; ++race )
+						{
+							if ( !strcmp(raceValue.GetString(), monstertypename[race]) )
+							{
+								parsedRace = static_cast<Monster>(race);
+								raceFound = true;
+								break;
+							}
+						}
+						if ( raceFound )
+						{
+							parsedGroup.races.push_back(parsedRace);
+						}
+						else
+						{
+							printlog("[JSON]: Warning: Unknown Rune Hammer race '%s' in group '%s'",
+								raceValue.GetString(), groupName);
+							malformedRaces = true;
+							break;
+						}
+					}
+					if ( malformedRaces || parsedGroup.races.empty() )
+					{
+						printlog("[JSON]: Warning: Ignoring Rune Hammer race offset group '%s' with a malformed or empty race list in %s",
+							groupName, inputPath.c_str());
+						continue;
+					}
+
+					const auto& offset = group->value["offset"];
+					static constexpr const char* offsetKeys[] = {
+						"x", "y", "z", "focalx", "focaly", "focalz", "yaw", "pitch", "roll"
+					};
+					bool malformedOffset = false;
+					for ( const char* key : offsetKeys )
+					{
+						if ( offset.HasMember(key) && !offset[key].IsNumber() )
+						{
+							malformedOffset = true;
+							break;
+						}
+					}
+					if ( malformedOffset )
+					{
+						printlog("[JSON]: Warning: Ignoring Rune Hammer race offset group '%s' with a nonnumeric offset in %s",
+							groupName, inputPath.c_str());
+						continue;
+					}
+
+					// Race corrections are additive only; scale remains neutral and inherited.
+					readTransform(offset, parsedGroup.offset, false);
+					thirdPersonTwoHandedRaceGroups.push_back(std::move(parsedGroup));
+				}
+			}
+		}
+	}
+}
+
+void WraithHybridItemModelPositions_t::applyOffset(
+	Entity& entity, const Transform_t& transform) const
+{
+	entity.x += transform.x;
+	entity.y += transform.y;
+	entity.z += transform.z;
+	entity.focalx += transform.focalx;
+	entity.focaly += transform.focaly;
+	entity.focalz += transform.focalz;
+	entity.yaw += transform.yaw;
+	entity.pitch += transform.pitch;
+	entity.roll += transform.roll;
+	entity.scalex *= transform.scalex;
+	entity.scaley *= transform.scaley;
+	entity.scalez *= transform.scalez;
+}
+
+void WraithHybridItemModelPositions_t::readFromFile()
+{
+	*this = WraithHybridItemModelPositions_t{};
+	const char* filename = "models/creatures/wraith/hybrid_item_positions.json";
+	const char* realDir = PHYSFS_getRealDir(filename);
+	if ( !realDir )
+	{
+		return;
+	}
+	std::string inputPath = realDir;
+	inputPath.append(PHYSFS_getDirSeparator()).append(filename);
+	File* fp = FileIO::open(inputPath.c_str(), "rb");
+	if ( !fp )
+	{
+		printlog("[JSON]: Error: Could not open Wraith hybrid Item positions file %s",
+			inputPath.c_str());
+		return;
+	}
+	static char buf[32000];
+	const int count = fp->read(buf, sizeof(buf[0]), sizeof(buf) - 1);
+	buf[std::max(0, count)] = '\0';
+	FileIO::close(fp);
+	rapidjson::Document d;
+	d.Parse(buf);
+	if ( d.HasParseError() || !d.IsObject() )
+	{
+		printlog("[JSON]: Error: Malformed Wraith hybrid Item positions file %s",
+			inputPath.c_str());
+		return;
+	}
+	auto readTransform = [](const rapidjson::Value& value, Transform_t& out)
+	{
+		if ( !value.IsObject() )
+		{
+			return;
+		}
+		auto number = [&](const char* key, real_t& dst)
+		{
+			if ( value.HasMember(key) && value[key].IsNumber() )
+			{
+				dst = value[key].GetDouble();
+			}
+		};
+		number("x", out.x); number("y", out.y); number("z", out.z);
+		number("focalx", out.focalx); number("focaly", out.focaly); number("focalz", out.focalz);
+		number("yaw", out.yaw); number("pitch", out.pitch); number("roll", out.roll);
+		number("scalex", out.scalex); number("scaley", out.scaley); number("scalez", out.scalez);
+	};
+	if ( d.HasMember("first_person") && d["first_person"].IsObject() )
+	{
+		const auto& view = d["first_person"];
+		if ( view.HasMember("generic") )
+		{
+			readTransform(view["generic"], firstPersonGeneric);
+		}
+	}
+	if ( d.HasMember("third_person") && d["third_person"].IsObject() )
+	{
+		const auto& view = d["third_person"];
+		if ( view.HasMember("generic") )
+		{
+			readTransform(view["generic"], thirdPersonGeneric);
+		}
+	}
+}
 
 int EquipmentModelOffsets_t::modelOffsetExists(int monster, int sprite, int monsterSprite)
 {
@@ -12412,6 +13625,20 @@ void EquipmentModelOffsets_t::readBaseItemsFromFile()
 
 void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterType)
 {
+	static bool wraithFallbackLogged = false;
+	static bool wraithLoadedLogged = false;
+	auto useWraithSkeletonFallback = [&]()
+	{
+		if ( monsterType == WRAITH )
+		{
+			monsterModelsMap[WRAITH] = monsterModelsMap[SKELETON];
+			if ( !wraithFallbackLogged )
+			{
+				printlog("Wraith model_positions.json missing; using Skeleton equipment-position fallback");
+				wraithFallbackLogged = true;
+			}
+		}
+	};
 	if ( monsterType == NOTHING )
 	{
 		for ( int i = 0; i < NUMMONSTERS; ++i )
@@ -12436,6 +13663,11 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 	if ( !PHYSFS_getRealDir(filename.c_str()) )
 	{
 		//printlog("[JSON]: Error: Could not locate json file %s", filename.c_str());
+		if ( monsterType == MERROW )
+		{
+			printlog("[MERROW]: Could not load required equipment position data %s", filename.c_str());
+		}
+		useWraithSkeletonFallback();
 		return;
 	}
 
@@ -12447,6 +13679,7 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 	if ( !fp )
 	{
 		printlog("[JSON]: Error: Could not locate json file %s", inputPath.c_str());
+		useWraithSkeletonFallback();
 		return;
 	}
 
@@ -12460,11 +13693,13 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 	d.ParseStream(is);
 	if ( !d.IsObject() )
 	{
+		useWraithSkeletonFallback();
 		return;
 	}
 	if ( !d.HasMember("version") || !d.HasMember("items") )
 	{
 		printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
+		useWraithSkeletonFallback();
 		return;
 	}
 
@@ -12755,6 +13990,11 @@ void EquipmentModelOffsets_t::readFromFile(std::string monsterName, int monsterT
 		}
 	}
 
+	if ( monsterType == WRAITH && !wraithLoadedLogged )
+	{
+		printlog("Wraith model_positions.json loaded");
+		wraithLoadedLogged = true;
+	}
 	printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 }
 
@@ -16439,7 +17679,7 @@ void Compendium_t::Events_t::readEventsFromFile()
 				{
 					for ( int skillnum = 0; skillnum < 16; ++skillnum )
 					{
-						for ( int i = 0; i <= CLASS_PALADIN; ++i )
+						for ( int i = 0; i < NUMCLASSES; ++i )
 						{
 							int index = i + skillnum * kEventClassesMax;
 							eventClassIds[id][index] = (classIdIndex + index);
@@ -16449,7 +17689,7 @@ void Compendium_t::Events_t::readEventsFromFile()
 				}
 				else
 				{
-					for ( int i = 0; i <= CLASS_PALADIN; ++i )
+					for ( int i = 0; i < NUMCLASSES; ++i )
 					{
 						eventClassIds[id][i] = (classIdIndex + i);
 					}

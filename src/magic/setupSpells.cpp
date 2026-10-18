@@ -3422,6 +3422,38 @@ void setupSpells()   ///TODO: Verify this function.
 		{ SPELL_ELEMENT_PROPULSION_MISSILE, SPELL_HOLY_BEAM }
 	);
 
+	// mod add: Entrench. TODO: replace its placeholder spellbook/icon in mod assets.
+	spell = createSimpleSpell(
+		SPELL_ENTRENCH,
+		20, // difficulty
+		5,  // modest mana cost
+		5, 1, 0, 1,
+		"spell_entrench");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_INTERACT;
+	spell->distance = 128.0;
+
+	// Amulet of the Familiar equipment spell. It has no book/staff/rune source.
+	spell = createSimpleSpell(
+		SPELL_POLYMORPH_FAMILIAR,
+		0, // difficulty
+		10, // mana
+		1, 1, 0, 1,
+		"spell_polymorph_familiar");
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+	spell->distance = 128.0;
+	spell->hide_from_ui = true;
+
+	// Wraith innate spell. Possession charges transactionally after validation.
+	spell = createSimpleSpell(
+		SPELL_POSSESS,
+		0,  // innate difficulty
+		0,
+		0, 1, 0, 1,
+		"spell_possess");
+	spell->skillID = PRO_MYSTICISM;
+	spell->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH;
+	spell->distance = 128.0;
+
 	//static const int SPELL_LIGHTNING_NEXUS = 182;
 	//static const int SPELL_LIFT = 184;
 	//static const int SPELL_IGNITE = 186;
@@ -3534,6 +3566,24 @@ void setupSpells()   ///TODO: Verify this function.
 				}
 			}
 		}
+	}
+	//mod add: Entrench follows Salvage's effective tier after expanded spell data.
+	// Salvage remains entirely controlled by the vanilla initialization path.
+	if ( auto entrench = getSpellFromID(SPELL_ENTRENCH) )
+	{
+		if ( auto salvage = getSpellFromID(SPELL_SALVAGE) )
+		{
+			entrench->difficulty = salvage->difficulty;
+		}
+		entrench->distance = 128.0;
+	}
+	if ( auto familiarPolymorph = getSpellFromID(SPELL_POLYMORPH_FAMILIAR) )
+	{
+		familiarPolymorph->difficulty = 0;
+		familiarPolymorph->mana = 10;
+		familiarPolymorph->rangefinder = SpellRangefinderType::RANGEFINDER_TOUCH_FLOOR_TILE;
+		familiarPolymorph->distance = 128.0;
+		familiarPolymorph->hide_from_ui = true;
 	}
 }
 

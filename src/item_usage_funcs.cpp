@@ -28,6 +28,8 @@
 #include "mod_tools.hpp"
 #include "scrolls.hpp"
 
+#include <limits>
+
 bool potionUseAbundanceEffect(Item* item, Entity* entity, Entity* usedBy)
 {
 	bool result = false;
@@ -40,6 +42,8 @@ bool potionUseAbundanceEffect(Item* item, Entity* entity, Entity* usedBy)
 			{
 				if ( stats[player]->getEffectActive(EFF_GREATER_ABUNDANCE) )
 				{
+					spell_t* activeSpell = entity->getActiveMagicEffect(SPELL_GREATER_ABUNDANCE);
+					ScopedSpellPowerOverride spellPowerScope(activeSpell, true);
 					if ( !itemIsEquipped(item, player) )
 					{
 						int mpCost = 0;
@@ -55,7 +59,8 @@ bool potionUseAbundanceEffect(Item* item, Entity* entity, Entity* usedBy)
 								if ( costPercent > 0.01 )
 								{
 									mpCost = std::max(1.0, spell->mana * costPercent);
-									if ( stats[player]->MP >= mpCost )
+									if ( (activeSpell && activeSpell->runeInstanceId != 0)
+										|| stats[player]->MP >= mpCost )
 									{
 										hasCost = true;
 									}
@@ -79,23 +84,31 @@ bool potionUseAbundanceEffect(Item* item, Entity* entity, Entity* usedBy)
 									SDLNet_Write32((Uint32)0, &net_packet->data[5]);
 									SDLNet_Write32((Uint32)mpCost, &net_packet->data[9]);
 
-									Uint16 spellID = SPELL_NONE;
+									Uint16 spellID = activeSpell && activeSpell->runeInstanceId != 0
+										? SPELL_GREATER_ABUNDANCE : SPELL_NONE;
 									SDLNet_Write16(spellID, &net_packet->data[13]);
+									SDLNet_Write32(activeSpell ? activeSpell->runeInstanceId : 0, &net_packet->data[15]);
 									net_packet->address.host = net_server.host;
 									net_packet->address.port = net_server.port;
-									net_packet->len = 15;
+									net_packet->len = 19;
 									sendPacketSafe(net_sock, -1, net_packet, 0);
 								}
 								else
 								{
-									if ( mpCost > stats[player]->MP )
+									if ( activeSpell && activeSpell->runeInstanceId != 0 )
 									{
-										cameravars[player].shakex += 0.1;
-										cameravars[player].shakey += 10;
-										playSoundPlayer(player, 28, 92);
+										consumeSustainedSpellResource(players[player]->entity, activeSpell, mpCost);
 									}
-									Sint32 prevMP = stats[player]->MP;
-									players[player]->entity->drainMP(mpCost);
+									else
+									{
+										if ( mpCost > stats[player]->MP )
+										{
+											cameravars[player].shakex += 0.1;
+											cameravars[player].shakey += 10;
+											playSoundPlayer(player, 28, 92);
+										}
+										players[player]->entity->drainMP(mpCost);
+									}
 								}
 
 								magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_GREATER_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_SUSTAIN, 1);
@@ -119,6 +132,8 @@ bool foodUseAbundanceEffect(Item* item, int player)
 			bool effect = false;
 			if ( stats[player]->getEffectActive(EFF_GREATER_ABUNDANCE) )
 			{
+				spell_t* activeSpell = players[player]->entity->getActiveMagicEffect(SPELL_GREATER_ABUNDANCE);
+				ScopedSpellPowerOverride spellPowerScope(activeSpell, true);
 				if ( !itemIsEquipped(item, player) )
 				{
 					int mpCost = 0;
@@ -134,7 +149,8 @@ bool foodUseAbundanceEffect(Item* item, int player)
 							if ( costPercent > 0.01 )
 							{
 								mpCost = std::max(1.0, spell->mana * costPercent);
-								if ( stats[player]->MP >= mpCost )
+								if ( (activeSpell && activeSpell->runeInstanceId != 0)
+									|| stats[player]->MP >= mpCost )
 								{
 									hasCost = true;
 								}
@@ -158,23 +174,31 @@ bool foodUseAbundanceEffect(Item* item, int player)
 								SDLNet_Write32((Uint32)0, &net_packet->data[5]);
 								SDLNet_Write32((Uint32)mpCost, &net_packet->data[9]);
 
-								Uint16 spellID = SPELL_NONE;
+								Uint16 spellID = activeSpell && activeSpell->runeInstanceId != 0
+									? SPELL_GREATER_ABUNDANCE : SPELL_NONE;
 								SDLNet_Write16(spellID, &net_packet->data[13]);
+								SDLNet_Write32(activeSpell ? activeSpell->runeInstanceId : 0, &net_packet->data[15]);
 								net_packet->address.host = net_server.host;
 								net_packet->address.port = net_server.port;
-								net_packet->len = 15;
+								net_packet->len = 19;
 								sendPacketSafe(net_sock, -1, net_packet, 0);
 							}
 							else
 							{
-								if ( mpCost > stats[player]->MP )
+								if ( activeSpell && activeSpell->runeInstanceId != 0 )
 								{
-									cameravars[player].shakex += 0.1;
-									cameravars[player].shakey += 10;
-									playSoundPlayer(player, 28, 92);
+									consumeSustainedSpellResource(players[player]->entity, activeSpell, mpCost);
 								}
-								Sint32 prevMP = stats[player]->MP;
-								players[player]->entity->drainMP(mpCost);
+								else
+								{
+									if ( mpCost > stats[player]->MP )
+									{
+										cameravars[player].shakex += 0.1;
+										cameravars[player].shakey += 10;
+										playSoundPlayer(player, 28, 92);
+									}
+									players[player]->entity->drainMP(mpCost);
+								}
 							}
 
 							magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_GREATER_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_SUSTAIN, 1);
@@ -184,6 +208,8 @@ bool foodUseAbundanceEffect(Item* item, int player)
 			}
 			if ( !effect && stats[player]->getEffectActive(EFF_ABUNDANCE) )
 			{
+				spell_t* activeSpell = players[player]->entity->getActiveMagicEffect(SPELL_ABUNDANCE);
+				ScopedSpellPowerOverride spellPowerScope(activeSpell, true);
 				if ( !itemIsEquipped(item, player) )
 				{
 					int mpCost = 0;
@@ -199,7 +225,8 @@ bool foodUseAbundanceEffect(Item* item, int player)
 							if ( costPercent > 0.01 )
 							{
 								mpCost = std::max(1.0, spell->mana * costPercent);
-								if ( stats[player]->MP >= mpCost )
+								if ( (activeSpell && activeSpell->runeInstanceId != 0)
+									|| stats[player]->MP >= mpCost )
 								{
 									hasCost = true;
 								}
@@ -223,23 +250,31 @@ bool foodUseAbundanceEffect(Item* item, int player)
 								SDLNet_Write32((Uint32)0, &net_packet->data[5]);
 								SDLNet_Write32((Uint32)mpCost, &net_packet->data[9]);
 
-								Uint16 spellID = SPELL_NONE;
+								Uint16 spellID = activeSpell && activeSpell->runeInstanceId != 0
+									? SPELL_ABUNDANCE : SPELL_NONE;
 								SDLNet_Write16(spellID, &net_packet->data[13]);
+								SDLNet_Write32(activeSpell ? activeSpell->runeInstanceId : 0, &net_packet->data[15]);
 								net_packet->address.host = net_server.host;
 								net_packet->address.port = net_server.port;
-								net_packet->len = 15;
+								net_packet->len = 19;
 								sendPacketSafe(net_sock, -1, net_packet, 0);
 							}
 							else
 							{
-								if ( mpCost > stats[player]->MP )
+								if ( activeSpell && activeSpell->runeInstanceId != 0 )
 								{
-									cameravars[player].shakex += 0.1;
-									cameravars[player].shakey += 10;
-									playSoundPlayer(player, 28, 92);
+									consumeSustainedSpellResource(players[player]->entity, activeSpell, mpCost);
 								}
-								Sint32 prevMP = stats[player]->MP;
-								players[player]->entity->drainMP(mpCost);
+								else
+								{
+									if ( mpCost > stats[player]->MP )
+									{
+										cameravars[player].shakex += 0.1;
+										cameravars[player].shakey += 10;
+										playSoundPlayer(player, 28, 92);
+									}
+									players[player]->entity->drainMP(mpCost);
+								}
 							}
 
 							magicOnSpellCastEvent(players[player]->entity, players[player]->entity, nullptr, SPELL_ABUNDANCE, spell_t::SPELL_LEVEL_EVENT_SUSTAIN, 1);
@@ -321,7 +356,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				//Blessed water damages undead.
 				int damage = -(20 * item->beatitude);
-				entity->modHP(damage);
+				entity->modHP(damage, usedBy);
 				playSoundEntity(entity, 28, 64);
 				playSoundEntity(entity, 249, 128);
 				entity->setObituary(Language::get(1533));
@@ -331,7 +366,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			{
 				if ( stats->type != AUTOMATON )
 				{
-					entity->modHP(item->potionGetEffectHealth(entity, stats));
+					entity->modHP(item->potionGetEffectHealth(entity, stats), usedBy);
 					playSoundEntity(entity, 168, 128);
 					spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 				}
@@ -342,7 +377,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			if ( stats->type == VAMPIRE )
 			{
-				entity->modHP(-5);
+				entity->modHP(-5, usedBy);
 				playSoundEntity(entity, 28, 64);
 				playSoundEntity(entity, 249, 128);
 				entity->setObituary(Language::get(1533));
@@ -350,7 +385,7 @@ bool item_PotionWater(Item*& item, Entity* entity, Entity* usedBy)
 			}
 			else if ( stats->type != AUTOMATON )
 			{
-				entity->modHP(item->potionGetEffectHealth(entity, stats));
+				entity->modHP(item->potionGetEffectHealth(entity, stats), usedBy);
 				playSoundEntity(entity, 168, 128);
 				spawnMagicEffectParticles(entity->x, entity->y, entity->z, 169);
 			}
@@ -791,7 +826,7 @@ bool item_PotionBooze(Item*& item, Entity* entity, Entity* usedBy, bool shouldCo
 			entity->modMP(5 * (1 + item->beatitude));
 		}
 	}
-	entity->modHP(item->potionGetEffectHealth(entity, stats));
+	entity->modHP(item->potionGetEffectHealth(entity, stats), usedBy);
 	// results of eating
 	if ( entity->behavior == &actPlayer && stats->type != SKELETON && stats->type != AUTOMATON )
 	{
@@ -922,7 +957,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 		{
 			stats->EFFECTS_TIMERS[EFF_DRUNK] = item->potionGetCursedEffectDurationRandom(entity, stats);
 		}
-		entity->modHP(item->potionGetEffectHealth(entity, stats));
+		entity->modHP(item->potionGetEffectHealth(entity, stats), usedBy);
 
 		if ( svFlags & SV_FLAG_HUNGER )
 		{
@@ -955,7 +990,7 @@ bool item_PotionJuice(Item*& item, Entity* entity, Entity* usedBy)
 	else
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(760));
-		entity->modHP(item->potionGetEffectHealth(entity, stats));
+		entity->modHP(item->potionGetEffectHealth(entity, stats), usedBy);
 
 		if ( svFlags & SV_FLAG_HUNGER )
 		{
@@ -1086,7 +1121,7 @@ bool item_PotionSickness(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	messagePlayer(player, MESSAGE_HINT, Language::get(761));
 	int oldHP = stats->HP;
-	entity->modHP(-damage);
+	entity->modHP(-damage, usedBy);
 	stats->setEffectActive(EFF_POISONED, 1);
 	if ( usedBy && usedBy != entity )
 	{
@@ -1993,7 +2028,7 @@ bool item_PotionAcid(Item*& item, Entity* entity, Entity* usedBy)
 	}
 	messagePlayer(player, MESSAGE_HINT, Language::get(770));
 	int oldHP = stats->HP;
-	entity->modHP(-damage);
+	entity->modHP(-damage, usedBy);
 	playSoundEntity(entity, 28, 64);
 
 	if ( usedBy && usedBy != entity )
@@ -2114,7 +2149,7 @@ bool item_PotionUnstableStorm(Item*& item, Entity* entity, Entity* usedBy, Entit
 	{
 		messagePlayer(player, MESSAGE_HINT, Language::get(770));
 		int oldHP = stats->HP;
-		entity->modHP(-damage);
+		entity->modHP(-damage, usedBy);
 		playSoundEntity(entity, 28, 64);
 
 		if ( usedBy && usedBy != entity )
@@ -2789,14 +2824,28 @@ Entity* item_PotionPolymorph(Item*& item, Entity* entity, Entity* usedBy)
 		}
 	}
 	Entity* transformedEntity = nullptr;
+	bool consumedBeforeWraithPolymorph = false;
+	if ( !usedBy && entity->behavior == &actPlayer && player >= 0 && player < MAXPLAYERS
+		&& players[player] && stats->playerRace == RACE_WRAITH
+		&& players[player]->mechanics.wraith.possessedEntityUid != 0 )
+	{
+		// Consume the original inventory item before applying the temporary
+		// possessed-body transformation. Do not release possession here.
+		potionUseAbundanceEffect(item, entity, usedBy);
+		consumeItem(item, player);
+		consumedBeforeWraithPolymorph = true;
+	}
 
 	if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
 	{
 		transformedEntity = spellEffectPolymorph(entity, usedBy, false);
 	}
 
-	potionUseAbundanceEffect(item, entity, usedBy);
-	consumeItem(item, player);
+	if ( !consumedBeforeWraithPolymorph )
+	{
+		potionUseAbundanceEffect(item, entity, usedBy);
+		consumeItem(item, player);
+	}
 
 	return transformedEntity;
 }
@@ -2944,6 +2993,11 @@ void item_ScrollMail(Item*& item, int player)
 	result = result % NUM_SCROLL_MAIL_OPTIONS;
 	Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LORE_READ, SCROLL_MAIL, 1);
 	Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_LORE_PERCENT_READ, SCROLL_MAIL, (1 << (result)));
+	if ( multiplayer != CLIENT )
+	{
+		processWraithItemLoreRead(player, item, WRAITH_LORE_MAIL,
+			getWraithCanonicalMailLoreId(item->appearance));
+	}
 }
 
 void item_ScrollIdentify(Item*& item, int player)
@@ -2994,7 +3048,7 @@ void item_ScrollIdentify(Item*& item, int player)
 	GenericGUI[player].openGUI(GUI_TYPE_ITEMFX, item, item->beatitude, item->type, SPELL_NONE);
 }
 
-void item_ScrollLight(Item*& item, int player)
+void item_ScrollLight(Item*& item, int player, bool suppressScrollNarration)
 {
 	int c;
 
@@ -3010,7 +3064,10 @@ void item_ScrollLight(Item*& item, int player)
 
 	if (players[player]->entity->isBlind())
 	{
-		messagePlayer(player, MESSAGE_HINT, Language::get(775));
+		if ( !suppressScrollNarration )
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(775));
+		}
 		playSoundPlayer(player, 90, 64);
 		return;
 	}
@@ -3019,11 +3076,17 @@ void item_ScrollLight(Item*& item, int player)
 	{
 		conductIlliterate = false;
 	}
-	messagePlayer(player, MESSAGE_INVENTORY, Language::get(848));
+	if ( !suppressScrollNarration )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY, Language::get(848));
+	}
     
     const auto color = makeColorRGB(150, 150, 150);
 
-	messagePlayer(player, MESSAGE_HINT, Language::get(851));
+	if ( !suppressScrollNarration )
+	{
+		messagePlayer(player, MESSAGE_HINT, Language::get(851));
+	}
     
     const char name[] = "scroll_light";
 	addLight(
@@ -3667,7 +3730,7 @@ void item_ScrollRemoveCurse(Item*& item, int player)
 	}
 }
 
-bool item_ScrollFire(Item*& item, int player)
+bool item_ScrollFire(Item*& item, int player, bool suppressScrollNarration)
 {
 	if (multiplayer == CLIENT)
 	{
@@ -3681,7 +3744,10 @@ bool item_ScrollFire(Item*& item, int player)
 
 	if (players[player]->entity->isBlind())
 	{
-		messagePlayer(player, MESSAGE_HINT, Language::get(775));
+		if ( !suppressScrollNarration )
+		{
+			messagePlayer(player, MESSAGE_HINT, Language::get(775));
+		}
 		playSoundPlayer(player, 90, 64);
 		return false;
 	}
@@ -3700,17 +3766,20 @@ bool item_ScrollFire(Item*& item, int player)
 	{
 		onScrollUseAppraisalIncrease(item, player);
 		item->identified = true;
-		messagePlayer(player, MESSAGE_HINT | MESSAGE_INVENTORY, Language::get(863));
+		if ( !suppressScrollNarration )
+		{
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_INVENTORY, Language::get(863));
+		}
 		return false;
 	}
 	else
 	{
 		playSoundEntity(players[player]->entity, 153, 128); // "FireballExplode.ogg"
-		if ( item->beatitude == 0 )
+		if ( !suppressScrollNarration && item->beatitude == 0 )
 		{
 			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(864)); // "The scroll erupts in a tower of flame!"
 		}
-		else if ( item->beatitude > 0 )
+		else if ( !suppressScrollNarration && item->beatitude > 0 )
 		{
 			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6861)); // "The scroll erupts in a cloak of flame!"
 		}
@@ -4572,12 +4641,50 @@ void item_ScrollSummon(Item*& item, int player)
 	item->identified = true;
 }
 
+static int merrowTowelPolishDurationTicks(Sint16 beatitude)
+{
+	int seconds = 30;
+
+	if ( beatitude >= 3 )
+	{
+		seconds += 30;
+	}
+	else if ( beatitude == 2 )
+	{
+		seconds += 25;
+	}
+	else if ( beatitude == 1 )
+	{
+		seconds += 15;
+	}
+	else if ( beatitude <= -3 )
+	{
+		seconds -= 30;
+	}
+	else if ( beatitude == -2 )
+	{
+		seconds -= 25;
+	}
+	else if ( beatitude == -1 )
+	{
+		seconds -= 15;
+	}
+
+	return 2 * std::max(0, seconds) * TICKS_PER_SECOND;
+}
+
 void item_ToolTowel(Item*& item, int player)
 {
 	if ( !item )
 	{
 		return;
 	}
+	//mod add
+	const bool merrowPolish =
+		players[player]
+		&& players[player]->entity
+		&& players[player]->entity->isMerrowPlayer();
+	//mod add end
 	if ( players[player]->isLocalPlayer() )
 	{
 		messagePlayer(player, MESSAGE_STATUS, Language::get(883));
@@ -4587,7 +4694,8 @@ void item_ToolTowel(Item*& item, int player)
 		if ( stats[player]->getEffectActive(EFF_GREASY)
 			|| stats[player]->getEffectActive(EFF_MAGIC_GREASE)
 			|| stats[player]->getEffectActive(EFF_MESSY)
-			|| stats[player]->getEffectActive(EFF_BLEEDING) )
+			|| stats[player]->getEffectActive(EFF_BLEEDING) 
+			|| merrowPolish ) //mod add merrow scale polish
 		{
 			steamAchievementClient(player, "BARONY_ACH_BRING_A_TOWEL");
 			if ( stats[player]->getEffectActive(EFF_GREASY) || stats[player]->getEffectActive(EFF_MAGIC_GREASE) )
@@ -4604,12 +4712,22 @@ void item_ToolTowel(Item*& item, int player)
 			}
 			Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_TOWEL_USES, item->type, 1);
 		}
+		//mod add
+		if ( merrowPolish )
+		{
+			players[player]->entity->polishMerrowReflectingScales(
+				merrowTowelPolishDurationTicks(item->beatitude));
+		}
+		//mod add end
 		stats[player]->clearEffect(EFF_MAGIC_GREASE);
 		stats[player]->clearEffect(EFF_GREASY);
 		stats[player]->clearEffect(EFF_MESSY);
 	}
 
 	// stop bleeding
+	//mod add: towel also consumes for merrow polishing, so don't consume twice if it was already used to stop bleeding.
+	bool towelConsumed = false;
+
 	if ( stats[player]->getEffectActive(EFF_BLEEDING) )
 	{
 		if ( players[player]->isLocalPlayer() )
@@ -4623,8 +4741,18 @@ void item_ToolTowel(Item*& item, int player)
 			stats[player]->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
 		}
 		consumeItem(item, player);
+		towelConsumed = true;
 	}
 
+	// Merrow polishing consumes the towel as well.
+	// Don't consume twice if it was already used to stop bleeding.
+	if ( multiplayer != CLIENT
+		&& merrowPolish
+		&& !towelConsumed )
+	{
+		consumeItem(item, player);
+	}
+	//mod add end
 	if ( multiplayer != CLIENT )
 	{
 		serverUpdateEffects(player);
@@ -5033,6 +5161,28 @@ int Item::getBaseFoodSatiation(ItemType type)
 	return hungerIncrease;
 }
 
+// mod add: Leonin racial meat mana regeneration
+static void applyLeoninMeatManaRegen(Item* item, int player)
+{
+	if ( multiplayer == CLIENT || !item || item->type != FOOD_MEAT
+		|| player < 0 || player >= MAXPLAYERS || !stats[player]
+		|| !players[player] || !players[player]->entity
+		|| !players[player]->entity->isNaturalLeoninPlayer() )
+	{
+		return;
+	}
+
+	const int minimumDuration = 10 * TICKS_PER_SECOND;
+	const int currentDuration = stats[player]->EFFECTS_TIMERS[EFF_MP_REGEN];
+	if ( !stats[player]->getEffectActive(EFF_MP_REGEN)
+		|| (currentDuration >= 0 && currentDuration < minimumDuration) )
+	{
+		players[player]->entity->setEffect(EFF_MP_REGEN, true,
+			std::max(currentDuration, minimumDuration), false);
+	}
+}
+// mod add end
+
 void item_Food(Item*& item, int player)
 {
 	if ( !item )
@@ -5044,6 +5194,20 @@ void item_Food(Item*& item, int player)
 
 	if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
 	{
+		return;
+	}
+
+	// Natural Golems may still use food normally, but physical food supplies no
+	// magical charge. Enchanted food only feeds them through the separate Consume action.
+	if ( players[player] && players[player]->entity
+		&& players[player]->entity->isNaturalGolemPlayer() )
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			messagePlayer(player, MESSAGE_STATUS, "Ordinary food provides no magical charge.");
+		}
+		foodUseAbundanceEffect(item, player);
+		consumeItem(item, player);
 		return;
 	}
 
@@ -5254,6 +5418,7 @@ void item_Food(Item*& item, int player)
 		}
 		if ( stats[player]->type != MYCONID )
 		{
+			applyLeoninMeatManaRegen(item, player);
 			foodUseAbundanceEffect(item, player);
 			consumeItem(item, player);
 			return;
@@ -5497,19 +5662,34 @@ void item_Food(Item*& item, int player)
 	{
 		updateHungerMessages(players[player]->entity, stats[player], item);
 	}
+	applyLeoninMeatManaRegen(item, player);
 	foodUseAbundanceEffect(item, player);
 	consumeItem(item, player);
 }
 
 void item_FoodTin(Item*& item, int player)
 {
-	if ( !item )
+	if ( !item || player < 0 || player >= MAXPLAYERS || !stats[player] )
 	{
 		return;
 	}
 	int oldcount;
 	int pukeChance;
 	bool slippery = false;
+
+	// Tins follow the same natural-Golem diet rule as every other ordinary food:
+	// the vessel is consumed, but it supplies no magical Core charge.
+	if ( players[player] && players[player]->entity
+		&& players[player]->entity->isNaturalGolemPlayer() )
+	{
+		if ( players[player]->isLocalPlayer() )
+		{
+			messagePlayer(player, MESSAGE_STATUS, "Ordinary food provides no magical charge.");
+		}
+		foodUseAbundanceEffect(item, player);
+		consumeItem(item, player);
+		return;
+	}
 
 	if ( player >= 0 && stats[player]->type == AUTOMATON )
 	{
@@ -5877,6 +6057,8 @@ void item_FoodTin(Item*& item, int player)
 
 void item_AmuletSexChange(Item*& item, int player)
 {
+	const bool naturalGolem = players[player] && players[player]->entity
+		&& players[player]->entity->isNaturalGolemPlayer();
 	if ( !players[player]->isLocalPlayer() )
 	{
 		consumeItem(item, player);
@@ -5915,6 +6097,17 @@ void item_AmuletSexChange(Item*& item, int player)
 
 	stats[player]->amulet = NULL;
 	stats[player]->sex = static_cast<sex_t>((stats[player]->sex == 0));
+	if ( naturalGolem )
+	{
+		stats[player]->golemBlessedComposition = 10000
+			- std::min(10000, std::max(0, stats[player]->golemBlessedComposition));
+		if ( multiplayer != CLIENT )
+		{
+			reverseGolemEquipmentBeatitudes(*stats[player], item);
+			serverUpdateGolemEquipmentBeatitudes(player);
+		}
+		serverUpdateGolemComposition(player);
+	}
 
 	serverUpdateSexChange(player);
 
@@ -5941,7 +6134,13 @@ void item_AmuletSexChange(Item*& item, int player)
 	}
 	else
 	{
-		if ( stats[player]->type == AUTOMATON )
+		if ( naturalGolem )
+		{
+			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS,
+				stats[player]->sex == MALE ? "Your polarity shifts to Blessed."
+					: "Your polarity shifts to Cursed.");
+		}
+		else if ( stats[player]->type == AUTOMATON )
 		{
 			messagePlayer(player, MESSAGE_HINT | MESSAGE_STATUS, Language::get(6914));
 		}
@@ -5977,6 +6176,33 @@ void item_AmuletSexChange(Item*& item, int player)
 		}
 	}
 	messagePlayer(player, MESSAGE_INVENTORY, Language::get(969));
+}
+
+void degradeSpellbookFromLearning(Item*& spellbook, int player)
+{
+	if ( !spellbook || itemCategory(spellbook) != SPELLBOOK
+		|| spellbook->status <= BROKEN )
+	{
+		return;
+	}
+	Compendium_t::Events_t::eventUpdate(player,
+		Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, spellbook->type, 1);
+	spellbook->status = static_cast<Status>(spellbook->status - 1);
+	if ( spellbook->status != BROKEN )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(2595));
+	}
+	else
+	{
+		messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(2596));
+		consumeItem(spellbook, player);
+	}
+
+	if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID
+		&& stats[player]->stat_appearance == 0 )
+	{
+		steamStatisticUpdate(STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
+	}
 }
 
 void item_Spellbook(Item*& item, int player)
@@ -6344,7 +6570,6 @@ void item_Spellbook(Item*& item, int player)
 			if ( itemCategory(item) == SPELLBOOK )
 			{
 				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_LEARNT, item->type, 1);
-				Compendium_t::Events_t::eventUpdate(player, Compendium_t::CPDM_SPELLBOOK_CAST_DEGRADES, item->type, 1);
 				spellID = getSpellIDFromSpellbook(item->type);
 			}
 			else if ( itemCategory(item) == TOME_SPELL )
@@ -6365,21 +6590,7 @@ void item_Spellbook(Item*& item, int player)
 
 			if ( itemCategory(item) == SPELLBOOK )
 			{
-				item->status = static_cast<Status>(item->status - 1);
-				if ( item->status != BROKEN )
-				{
-					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(2595));
-				}
-				else
-				{
-					messagePlayer(player, MESSAGE_INVENTORY | MESSAGE_EQUIPMENT, Language::get(2596));
-					consumeItem(item, player);
-				}
-
-				if ( stats[player] && stats[player]->playerRace == RACE_INSECTOID && stats[player]->stat_appearance == 0 )
-				{
-					steamStatisticUpdate(STEAM_STAT_BOOKWORM, STEAM_STAT_INT, 1);
-				}
+				degradeSpellbookFromLearning(item, player);
 			}
 			else if ( itemCategory(item) == TOME_SPELL )
 			{
@@ -6767,6 +6978,110 @@ bool itemIsConsumableByAutomaton(const Item& item)
 	return false;
 }
 
+bool itemIsConsumableByGolem(const Item& item)
+{
+	return item.type >= 0 && item.type < NUMITEMS
+		&& itemCategory(&item) != SPELL_CAT
+		&& item.beatitude != 0;
+}
+
+int getGolemChargeValue(const Item& item)
+{
+	const Sint64 baseValue = std::max<Sint64>(1, item.getGoldValue());
+	const Sint64 enchantmentLevels = std::max<Sint64>(1,
+		std::abs(static_cast<int>(item.beatitude)));
+	return static_cast<int>(std::min<Sint64>(
+		baseValue * enchantmentLevels, std::numeric_limits<int>::max()));
+}
+
+void item_GolemConsume(Item*& item, int player)
+{
+	if ( !item || player < 0 || player >= MAXPLAYERS || !stats[player]
+		|| !players[player] || !players[player]->entity
+		|| !players[player]->entity->isNaturalGolemPlayer()
+		|| !itemIsConsumableByGolem(*item)
+		|| itemIsEquipped(item, player) )
+	{
+		return;
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		consumeItem(item, player);
+		return;
+	}
+
+	const int charge = getGolemChargeValue(*item);
+	const Sint64 oldRatio = std::max(0, std::min(10000,
+		stats[player]->golemBlessedComposition));
+	const Sint64 storedCharge = std::max<Sint64>(0,
+		std::min<Sint64>(GOLEM_CHARGE_MAX, stats[player]->HUNGER));
+
+	// Only an enchantment aligned with the Golem's current core can leave its
+	// physical vessel intact. This roll deliberately uses the pre-consumption
+	// composition so an item cannot improve its own chance to survive.
+	Sint32 survivalChance = 0;
+	if ( players[player]->entity->isBlessedGolemPlayer() && item->beatitude > 0 )
+	{
+		survivalChance = static_cast<Sint32>(std::max<Sint64>(0, oldRatio - 5000));
+	}
+	else if ( players[player]->entity->isCursedGolemPlayer() && item->beatitude < 0 )
+	{
+		const Sint64 cursedRatio = 10000 - oldRatio;
+		survivalChance = static_cast<Sint32>(std::max<Sint64>(0, cursedRatio - 5000));
+	}
+	const bool physicalItemSurvives = survivalChance > 0
+		&& local_rng.rand() % 10000 < survivalChance;
+
+	Item* survivingItem = nullptr;
+	if ( physicalItemSurvives )
+	{
+		// Copy everything the normal floor-item route serializes before
+		// consumeItem() is allowed to invalidate the original stack pointer.
+		survivingItem = newItem(item->type, item->status, 0, 1,
+			item->appearance, item->identified, nullptr);
+		survivingItem->ownerUid = players[player]->entity->getUID();
+		survivingItem->runeSetStoredPWRRaw(item->runeGetStoredPWRRaw());
+		survivingItem->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
+		survivingItem->runeSetInstanceId(item->runeGetInstanceId());
+		survivingItem->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+		survivingItem->appliedOil = item->appliedOil;
+		copyItemPersistentCustomState(*survivingItem, *item);
+	}
+
+	const Sint64 blessedCharge = (storedCharge * oldRatio + 5000) / 10000;
+	const Sint64 mixedCharge = storedCharge + charge;
+	const Sint64 mixedBlessed = blessedCharge + (item->beatitude > 0 ? charge : 0);
+	stats[player]->HUNGER = static_cast<Sint32>(std::min<Sint64>(GOLEM_CHARGE_MAX,
+		static_cast<Sint64>(stats[player]->HUNGER) + charge));
+	stats[player]->golemBlessedComposition = static_cast<Sint32>(
+		std::max<Sint64>(0, std::min<Sint64>(10000,
+			(mixedBlessed * 10000 + mixedCharge / 2) / mixedCharge)));
+	updateGolemPolarityFromComposition(player);
+
+	const int oldcount = item->count;
+	item->count = 1;
+	messagePlayer(player, MESSAGE_STATUS, "You consume the enchantment from %s.", item->description());
+	item->count = oldcount;
+	playSoundEntity(players[player]->entity, 167, 96);
+	serverUpdateHunger(player);
+	serverUpdateGolemComposition(player);
+	consumeItem(item, player);
+	if ( !(svFlags & SV_FLAG_HUNGER) )
+	{
+		players[player]->entity->modHP(5);
+	}
+
+	if ( survivingItem )
+	{
+		if ( dropItemMonster(survivingItem, players[player]->entity, nullptr, 1) )
+		{
+			messagePlayer(player, MESSAGE_STATUS,
+				"The depleted item survives and falls to the ground.");
+		}
+	}
+}
+
 void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 {
 	if ( !myStats || !eaten || !my)
@@ -6829,6 +7144,12 @@ void updateHungerMessages(Entity* my, Stat* myStats, Item* eaten)
 
 void item_ToolLootBag(Item*& item, int player)
 {
+	if ( playerIsInWraithForm(player) )
+	{
+		messagePlayer(player, MESSAGE_INVENTORY,
+			"You cannot open a death chest while in Wraith Form.");
+		return;
+	}
 	if ( multiplayer == CLIENT )
 	{
 		strcpy((char*)net_packet->data, "LOOT");

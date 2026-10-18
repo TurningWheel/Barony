@@ -118,6 +118,10 @@ void actFurniture(Entity* my)
 	{
 		return;
 	}
+	if ( isEntrenchCarriedObject(my) )
+	{
+		return;
+	}
 
 	if ( !my->flags[BURNABLE] )
 	{
@@ -132,6 +136,10 @@ void Entity::furnitureHandleDamageMagic(int damage, Entity& magicProjectile, Ent
 	updateEntityOldHPBeforeMagicHit(*this, magicProjectile);
 	int oldHP = this->furnitureHealth;
 	this->furnitureHealth -= damage;
+	if ( oldHP > 0 && this->furnitureHealth <= 0 )
+	{
+		entrenchOnEntityDestroyedByCreature(this, caster);
+	}
 	if ( caster )
 	{
 		if ( caster->behavior == &actPlayer )
@@ -1353,6 +1361,35 @@ void Entity::colliderOnDestroy()
 	}
 	if ( colliderContainedEntity != 0 )
 	{
+		//mod add: Entrench moves the breakable collider, while its hidden contents
+		// remain UID-linked world entities. Release every linked item/gold entity
+		// from the collider's authoritative current position rather than its stale
+		// map-generation position.
+		for ( node_t* node = map.entities->first; node; node = node->next )
+		{
+			Entity* contained = static_cast<Entity*>(node->element);
+			if ( !contained || !contained->flags[INVISIBLE]
+				|| !((contained->behavior == &actItem && contained->itemContainer == getUID())
+					|| (contained->behavior == &actGoldBag && contained->goldInContainer == getUID())) )
+			{
+				continue;
+			}
+			if ( contained->x == x && contained->y == y )
+			{
+				continue;
+			}
+			contained->x = x;
+			contained->y = y;
+			contained->flags[UPDATENEEDED] = true;
+			TileEntityList.updateEntity(*contained);
+			if ( multiplayer == SERVER )
+			{
+				for ( int client = 1; client < MAXPLAYERS; ++client )
+				{
+					sendEntityUDP(contained, client, true);
+				}
+			}
+		}
 		if ( auto entity = uidToEntity(colliderContainedEntity) )
 		{
 			if ( entity->behavior == &actItem || entity->behavior == &actGoldBag )
@@ -1850,6 +1887,10 @@ std::set<Uint32> collidersToRaiseToHeight;
 void actColliderDecoration(Entity* my)
 {
 	if ( !my )
+	{
+		return;
+	}
+	if ( isEntrenchCarriedObject(my) )
 	{
 		return;
 	}
@@ -2354,6 +2395,10 @@ void Entity::colliderHandleDamageMagic(int damage, Entity &magicProjectile, Enti
 	updateEntityOldHPBeforeMagicHit(*this, magicProjectile);
 	auto oldHP = colliderCurrentHP;
 	colliderCurrentHP -= damage; //Decrease object health.
+	if ( oldHP > 0 && colliderCurrentHP <= 0 )
+	{
+		entrenchOnEntityDestroyedByCreature(this, caster);
+	}
 	if ( caster )
 	{
 		if ( colliderCurrentHP <= 0 )

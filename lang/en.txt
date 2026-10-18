@@ -7270,5 +7270,24 @@ has been unlocked!#
 6996 Mouse Events Limit#
 6997 Limits the amount of mouse movement events processed per frame to prevent large camera swings.#
 6998 Unlimited#
+6999 The water ruins the loaded shot in your %s.#
+7000 The water ruins the loaded shots in %d of your firearms.#
+7001 Your %s jams!#
+7002 You clear the jam in your %s.#
+7003 You need %d %s to load your %s.#
+7004 You begin loading your %s.#
+7005 You finish loading your %s.#
+7006 You no longer have enough %s to load your %s.#
+7007 You stop loading your firearm.#
+7008 Entrench cannot move that object.#
+7009 Entrench cannot move a locked door.#
+7010 You lift the object with Entrench.#
+7011 The carried object is gone.#
+7012 Entrench cannot place there.#
+7013 That destination is occupied.#
+7014 Entrench cannot place that object on this surface.#
+7015 You lay the door as a bridge.#
+7016 You place the entrenched object.#
+7017 The charge is ruined.#
 
 7999 END#

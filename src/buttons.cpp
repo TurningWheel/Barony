@@ -1920,7 +1920,7 @@ void buttonSpriteProperties(button_t* my)
 				break;
 			case 3: //items
 				itemSelect = 1;
-				snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity[0]->skill[10])); //ID
+				snprintf(spriteProperties[0], sizeof(spriteProperties[0]), "%d", static_cast<int>(selectedEntity[0]->skill[10])); //ID
 				snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity[0]->skill[11])); //status
 				if ( (int)selectedEntity[0]->skill[12] == 10 )
 				{
@@ -2619,7 +2619,7 @@ void buttonSpriteProperties(button_t* my)
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
+						snprintf(tmpStr, sizeof(tmpStr), "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 
 					if ( canWearEquip(selectedEntity[0], itemIndex) )

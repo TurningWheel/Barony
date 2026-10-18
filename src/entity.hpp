@@ -44,6 +44,43 @@ static const int NUMENTITYSKILLS = 60;
 static const int NUMENTITYFSKILLS = 30;
 extern ConsoleVariable<int> cvar_entity_bodypart_sync_tick;
 struct spell_t;
+class Entity;
+
+// mod add: Entrench reserves skill[55]/skill[56] on movable scenery for the
+// deployed owner and its one-shot progression eligibility. skill[57] identifies
+// carried scenery. skill[58] is intentionally overloaded: on a player it
+// replicates the carried entity UID/stage, while on a door it stores the
+// deployed Entrench door mode.
+static constexpr int ENTRENCH_DEPLOYED_OWNER_SKILL = 55;
+static constexpr int ENTRENCH_DEPLOYED_REWARD_SKILL = 56;
+static constexpr int ENTRENCH_CARRIED_OWNER_SKILL = 57;
+static constexpr int ENTRENCH_PLAYER_CARRIED_UID_OR_DOOR_MODE_SKILL = 58;
+static constexpr Sint32 ENTRENCH_DOOR_MODE_NONE = 0;
+static constexpr Sint32 ENTRENCH_DOOR_MODE_BARRICADE = 1;
+static constexpr Sint32 ENTRENCH_DOOR_MODE_BRIDGE = 2;
+
+// mod add: centralized Entrench predicates used by collision/pathfinding.
+bool isEntrenchDoorBarricade(const Entity* entity);
+bool isEntrenchDoorBridge(const Entity* entity);
+bool entrenchBridgeSupportsTile(int tilex, int tiley);
+bool isEntrenchCarriedObject(const Entity* entity);
+bool isEntrenchMovableObject(const Entity* entity);
+void entrenchOnEntityDestroyedByCreature(Entity* entity, Entity* attacker);
+
+// mod add: firearm gunshots alert eligible monsters to a snapshot location.
+void alertMonstersToFirearmGunshot(const Entity& shooter);
+// mod add: derived entirely from synchronized equipment + defend state.
+bool playerIsUsingSpyglass(const Entity* playerEntity);
+
+// mod add: transient server-authoritative firearm disturbance lifecycle.
+enum class MonsterGunshotPhase : Uint8
+{
+	NONE,
+	INVESTIGATE,
+	SEARCH,
+	RETURN,
+	RETURN_SEARCH
+};
 
 // entity class
 class Entity
@@ -284,6 +321,37 @@ public:
 	Sint32& monsterIllusionTauntingThisUid; //skill[55]
 	Sint32& monsterLastDistractedByNoisemaker;//skill[55] shared with above as above only is for inner demons.
 	Sint32& monsterExtraReflexTick; //skill[56]
+	// Amulet Familiar persistent replicated state. These monster slots are safe
+	// for actMonster familiars; their other uses are entity-type-specific.
+	Sint32& familiarIdentity = skill[57];
+	Sint32& familiarForm = skill[58];
+	// Transient transformation commands are authoritative server-only state.
+	// Do not alias these to skill/fskill: skill[59] belongs to entityShowOnMap,
+	// and world coordinates cannot be safely serialized through ENFS.
+	Sint32 familiarPendingForm = -1;
+	real_t familiarTransformTargetX = 0.0;
+	real_t familiarTransformTargetY = 0.0;
+	real_t familiarLastGroundedX = 0.0;
+	real_t familiarLastGroundedY = 0.0;
+	real_t familiarCauldronBaseZ = -2.0;
+	bool familiarHasGroundedPosition = false;
+	Uint32 familiarIngredientTargetUid = 0;
+	Sint32 familiarLowHpRecoveryTicks = 0;
+	// Permanent identity of the physical AMULET_FAMILIAR represented by this
+	// temporary manifestation. This is deliberately separate from leader_uid.
+	Uint32 familiarInstanceId = 0;
+	// mod add: server-only firearm gunshot investigation state. The destination
+	// is deliberately a position, not an entity UID, so this never tracks the shooter.
+	bool monsterInvestigatingGunshot = false;
+	bool monsterGunshotPending = false; // mod add: heard before the monster's first initialization tick
+	MonsterGunshotPhase monsterGunshotPhase = MonsterGunshotPhase::NONE;
+	real_t monsterGunshotX = 0.0;
+	real_t monsterGunshotY = 0.0;
+	real_t monsterGunshotOriginX = 0.0;
+	real_t monsterGunshotOriginY = 0.0;
+	Sint32 monsterGunshotSearchTicks = 0;
+	Sint32 monsterGunshotReturnPathTries = 0;
+	bool monsterGunshotHadPath = false;
 	real_t& monsterSentrybotLookDir; //fskill[10]
 	real_t& monsterKnockbackTangentDir; //fskill[11]
 	real_t& playerStrafeVelocity; //fskill[12]
@@ -312,6 +380,11 @@ public:
 	Sint32& playerAutomatonDeathCounter; //skill[15] - 0 if unused, > 0 if counting to death
 	Sint32& playerCreatedDeathCam; //skill[16] - if we triggered actDeathCam already.
 	Sint32& playerCastTimeAnim = skill[17]; // how many ticks we're casting for in the current animation
+	// Transient presentation state replicated by SANM; never drives spell or attack gameplay.
+	bool runeHammerCastVisualActive = false;
+	Uint32 runeHammerCastVisualStartTick = 0;
+	Uint32 runeHammerCastVisualReleaseTick = 0;
+	Sint32 runeHammerCastVisualDuration = 0;
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;  //skill[20]
@@ -556,6 +629,10 @@ public:
 	Sint32& arrowQuiverType; //skill[8]
 	Sint32& arrowShotByParent; //skill[9]
 	Sint32& arrowDropOffEquipmentModifier; //skill[14]
+	// Snapshot at launch; source identity is used only for authoritative wear-off.
+	Sint32& projectileAppliedOil = skill[39];
+	Sint32& projectileOilSourceItemUID = skill[40];
+	Sint32& projectileOilSourceItemType = skill[41];
 	enum arrowShotBy : int
 	{
 		ARROW_SHOT_BY_TRAP,
@@ -578,6 +655,41 @@ public:
 	Sint32& itemFollowUID = skill[30];
 	Sint32& itemReturnUID = skill[31];
 	Sint32& itemGerminateResult = skill[32];
+	// Item-only transport fields. The validity flag keeps legacy floor Runes
+	// distinguishable from a valid, exactly-zero stored PWR value.
+	Sint32& itemRuneStoredPWR = skill[33];
+	Sint32& itemRuneStoredPWRValid = skill[34];
+	Sint32& itemRuneCreatorPlayer = skill[35];
+	Sint32& itemRuneCreatorPlayerValid = skill[36];
+	Sint32& itemRuneInstanceId = skill[37];
+	Sint32& itemRuneCreatorIdentity = skill[38];
+	Sint32& itemAppliedOil = skill[39];
+	// actItem-only ingredient transport. These are intentionally named aliases
+	// and never used as Familiar monster state.
+	Sint32& itemIngredientCount0 = skill[40];
+	Sint32& itemIngredientCount1 = skill[41];
+	Sint32& itemIngredientCount2 = skill[42];
+	Sint32& itemIngredientCount3 = skill[43];
+	Sint32& itemIngredientBagOwnerUid = skill[44];
+	// actItem-only Familiar Amulet transport. These slots are mutually exclusive
+	// with their actMonster aliases above.
+	Sint32& itemFamiliarInitialized = skill[45];
+	Sint32& itemFamiliarInstanceId = skill[46];
+	Sint32& itemFamiliarHP = skill[47];
+	Sint32& itemFamiliarMAXHP = skill[48];
+	Sint32& itemFamiliarMP = skill[49];
+	Sint32& itemFamiliarMAXMP = skill[50];
+	Sint32& itemFamiliarLVL = skill[51];
+	Sint32& itemFamiliarEXP = skill[52];
+	Sint32& itemFamiliarSTR = skill[53];
+	Sint32& itemFamiliarDEX = skill[54];
+	Sint32& itemFamiliarCON = skill[55];
+	Sint32& itemFamiliarINT = skill[56];
+	Sint32& itemFamiliarPER = skill[57];
+	Sint32& itemFamiliarCHR = skill[58];
+	// actItem-only Wraith lore identity. Other behavior aliases of skill[59]
+	// remain unchanged and are never interpreted through this name.
+	Sint32& itemWraithLoreInstanceId = skill[59];
 	real_t& itemWaterBob; //fskill[2]
 	real_t& itemLevitate = fskill[3];
 	real_t& itemLevitateStartZ = fskill[4];
@@ -621,6 +733,16 @@ public:
 	Sint32& actmagicUpdateOLDHPOnHit = skill[34];
 	Sint32& actmagicAllowFriendlyFireHit = skill[35];
 	Sint32& actmagicAdditionalDamage = skill[38]; // extra damage bonus from external sources like windgate
+	// A derived spell entity snapshots its PWR and Rune-cast provenance. All
+	// direct caster/target-stat reads remain live through the normal entity paths.
+	bool hasSpellPowerOverride = false;
+	real_t spellPowerOverride = 0.0;
+	bool magicCastFromRune = false;
+	Sint8 magicRuneCreatorPlayer = -1;
+	Uint32 magicRuneInstanceId = 0;
+	Uint32 magicRuneCreatorIdentity = 0;
+	// Transient provenance used to select only missiles spawned by one Golem surge cast.
+	bool golemWildMagicCastEntity = false;
 
 	Sint32& actfloorMagicType = skill[3];
 	Sint32& actfloorMagicClientReceived = skill[4];
@@ -632,6 +754,7 @@ public:
 	Sint32& actRadiusMagicDoPulseTick = skill[6];
 	Sint32& actRadiusMagicAutoPulseTick = skill[7];
 	Sint32& actRadiusMagicEffectPower = skill[8];
+	Sint32& actRadiusMagicRuneInstanceId = skill[9];
 
 	Sint32& actParticleWaveStartFrame = skill[4];
 	Sint32& actParticleWaveLight = skill[7];
@@ -862,11 +985,12 @@ public:
 
 	Stat* getStats() const;
 
-	void setHP(int amount);
-	void modHP(int amount); //Adds amount to HP.
+	void setHP(int amount, bool bypassWraithGainSuppression = false,
+		Entity* damageSource = nullptr);
+	void modHP(int amount, Entity* damageSource = nullptr); //Adds amount to HP.
 	int getHP();
 
-	void setMP(int amount, bool updateClients = true);
+	void setMP(int amount, bool updateClients = true, bool bypassWraithGainSuppression = false);
 	int modMP(int amount, bool updateClients = true); //Adds amount to MP.
 	int getMP();
 
@@ -952,7 +1076,9 @@ public:
 	void closeChestServer(); //Close the chest serverside, silently. Called when the chest is closed somewhere else for that client, but the server end stuff needs to be tied up.
 	Item* addItemToChest(Item* item, bool forceNewStack, Item* specificDestinationStack); //Adds an item to the chest. If server, notifies the client. If client, notifies the server.
 	static Item* addItemToVoidChest(int player, Item* item, bool forceNewStack, Item* specificDestinationStack); //Adds an item to the chest. If client, notifies the server.
+	static Item* tryAddItemToVoidChestServer(int player, Item* item, bool forceNewStack, Item* specificDestinationStack);
 	static Item* addItemToVoidChestServer(int player, Item* item, bool forceNewStack, Item* specificDestinationStack);
+	static void serverSendItemToOpenVoidChest(int player, const Item* item, bool forceNewStack);
 	Item* getItemFromChest(Item* item, int amount, bool getInfoOnly = false); //Removes an item from the chest and returns a pointer to it.
 	Item* addItemToChestFromInventory(int player, Item* item, int amount, bool forceNewStack, Item* specificDestinationStack);
 	Item* addItemToChestServer(Item* item, bool forceNewStack, Item* specificDestinationStack); //Adds an item to the chest. Called when the server receives a notification from the client that an item was added to the chest.
@@ -1034,6 +1160,17 @@ public:
 	 * Returns -1 if not a player.
 	 */
 	int isEntityPlayer() const;
+	// mod add: Leonin racial mechanics
+	bool isNaturalLeoninPlayer() const;
+	bool isWraithPossessedDemonWithClaws() const;
+	bool isNaturalGolemPlayer() const;
+	bool isBlessedGolemPlayer() const;
+	bool isCursedGolemPlayer() const;
+	int getNaturalGolemAlliance(Monster otherType) const;
+	bool isLeoninNaturalClawAttack() const;
+	int getLeoninClawTier() const;
+	int getLeoninNaturalClawTier() const;
+	// mod add end
 
 	void initMonster(int mySprite);
 
@@ -1050,6 +1187,18 @@ public:
 
 	void spawnBlood(int bloodsprite = 160);
 
+	Uint32 entrenchSyncRevision = 0; // Entrench-only atomic world transitions
+
+	// mod add: Merrow reflecting scales
+	bool isMerrowPlayer() const;
+	int getMerrowReflectingScaleCap() const;
+	int getMerrowReflectingScales() const;
+	void setMerrowReflectingScales(int scales);
+	void updateMerrowReflectingScales();
+	void polishMerrowReflectingScales(int durationTicks);
+	bool tryCleanMerrowReflectingScales();
+	bool consumeMerrowReflectingScale();
+	// mod add end
 	// reflection is set 1, 2 or 3 depending on the item slot. reflection of 3 does not degrade.
 	int getReflection() const;
 	// monster attack pose, return the animation to use based on weapon.
@@ -1064,7 +1213,7 @@ public:
 	Uint32 getMonsterFootstepSound(int footstepType, int bootSprite);
 	// handle humanoid weapon arm animation/sprite offsets
 	void handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb);
-	void handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb);
+	void handleHumanoidShieldLimb(Entity* shieldLimb, Entity* shieldArmLimb, int raceOverride = -1);
 	void handleQuiverThirdPersonModel(Stat& myStats, int mySprite = -1);
 	// server only function to set boot sprites on monsters.
 	bool setBootSprite(Entity* leg, int spriteOffset, bool forceShort = false);
@@ -1110,6 +1259,8 @@ public:
 	// calc damage/effects for ranged weapons.
 	void setRangedProjectileAttack(Entity& marksman, Stat& myStats, int optionalOverrideForArrowType = 0);
 	bool setArrowProjectileProperties(int weaponType);
+	bool arrowShotByFirearm() const; // mod add: projectile identity follows the firing weapon, not its sprite
+	bool arrowUsesBoltSemantics() const; // mod add: firearms retain native bolt-like presentation behavior
 	real_t yawDifferenceFromEntity(Entity* entity); // calc targets yaw compared to an entity, returns 0 - 2 * PI, where > PI is facing towards player.
 	spell_t* getActiveMagicEffect(int spellID);
 
@@ -1134,6 +1285,14 @@ public:
 	 * @param monsterWasHit: monster is retaliating to an attack as opposed to finding an enemy. to set reaction time accordingly in hardcore
 	 */
 	void monsterAcquireAttackTarget(const Entity& target, Sint32 state, bool monsterWasHit = false);
+	bool monsterGunshotAllowsTarget(const Entity& target) const;
+	bool monsterGunshotShouldIgnoreMonsterCollision(const Entity& target) const;
+	void monsterClearGunshotInvestigation();
+	bool monsterRebuildGunshotPath();
+	bool monsterRebuildGunshotReturnPath();
+	void monsterBeginGunshotInvestigation(real_t shotX, real_t shotY);
+	void monsterBeginGunshotReturn();
+	void monsterUpdateGunshotInvestigation();
 	bool monsterAlertBeforeHit(Entity* attacker);
 
 	/*
@@ -1265,6 +1424,10 @@ public:
 	void addToWorldUIList(list_t *list);
 	std::vector<Entity*> bodyparts;
 	std::set<Uint32> collisionIgnoreTargets;
+	// mod add: A firearm projectile owns one deterministic first-hostile crit.
+	// This is separate from collisionIgnoreTargets because pierceable world
+	// colliders may be recorded there without consuming the creature crit.
+	bool arrowFirearmCritConsumed = false;
 
 	bool collisionProjectileMiss(Entity* parent, Entity* projectile);
 
@@ -1310,7 +1473,9 @@ public:
 	Sint32 playerInsectoidExpectedManaFromHunger(Stat& myStats);
 	Sint32 playerInsectoidHungerValueOfManaPoint(Stat& myStats);
 	void playerInsectoidIncrementHungerToMP(int mpAmount);
-	static real_t getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType, int* magicResistance = nullptr, int* outNumSources = nullptr);
+	static real_t getDamageTableMultiplier(Entity* my, Stat& myStats, DamageTableType damageType,
+		int* magicResistance = nullptr, int* outNumSources = nullptr,
+		real_t innateDamageMultiplierOverride = -1.0);
 	static real_t getDamageTableEquipmentMod(Stat& myStats, Item& item, real_t base, real_t mod);
 	bool isBoulderSprite();
 	void createWorldUITooltip();
@@ -1336,6 +1501,7 @@ public:
 	int getColliderSfxOnBreak() const;
 	int getColliderLangName() const;
 	static void monsterRollLevelUpStats(int increasestat[3]);
+	void monsterApplyNormalLevelUpGrowth(Stat* myStats);
 	bool disturbMimic(Entity* touched, bool takenDamage, bool doMessage);
 	bool disturbBat(Entity* touched, bool takenDamage, bool doMessage);
 	bool isInertMimic() const;

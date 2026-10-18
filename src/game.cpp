@@ -918,6 +918,103 @@ static ConsoleCommand ccmd_demo_play("/demo_play", "play a recorded demo(default
     }
     });
 
+// mod add: recover an in-flight Harpoon before changing level
+static void returnHarpoonOnLevelChange(Entity* entity)
+{
+    if ( !entity )
+    {
+        return;
+    }
+
+    // Only care about a Harpoon that is either still flying
+    // or already in its return phase.
+    if ( entity->skill[10] != HARPOON
+        || (entity->behavior != &actThrown
+            && entity->behavior != &actParticleSapCenter) )
+    {
+        return;
+    }
+
+    Entity* parent = uidToEntity(entity->parent);
+    if ( !parent || parent->behavior != &actPlayer )
+    {
+        return;
+    }
+
+    int player = parent->skill[2];
+    if ( player < 0 || player >= MAXPLAYERS || !stats[player] )
+    {
+        return;
+    }
+
+    Item* item = newItemFromEntity(entity);
+    if ( !item )
+    {
+        return;
+    }
+
+    // Extra safety: don't accidentally recover something
+    // that merely has unexpected skill data.
+    if ( item->type != HARPOON )
+    {
+        free(item);
+        return;
+    }
+
+    item->ownerUid = parent->getUID();
+
+    Item* pickedUp = itemPickup(player, item);
+
+    if ( pickedUp )
+    {
+        Uint32 color = makeColorRGB(0, 255, 0);
+        messagePlayerColor(
+            player,
+            MESSAGE_EQUIPMENT,
+            color,
+            "You pulled the harpoon back!"
+        );
+
+        if ( player == 0 || (player > 0 && splitscreen) )
+        {
+            // Same ownership handling as Boomerang.
+            free(item);
+            item = nullptr;
+
+            if ( multiplayer != CLIENT && !stats[player]->weapon )
+            {
+                useItem(pickedUp, player);
+            }
+
+            // Restore the slot it occupied before being thrown.
+            auto& hotbar_t = players[player]->hotbar;
+
+            if ( hotbar_t.harpoonHotbarSlot >= 0 )
+            {
+                auto& hotbar = hotbar_t.slots();
+
+                hotbar[hotbar_t.harpoonHotbarSlot].item = pickedUp->uid;
+
+                for ( int i = 0; i < NUM_HOTBAR_SLOTS; ++i )
+                {
+                    if ( i != hotbar_t.harpoonHotbarSlot
+                        && hotbar[i].item == pickedUp->uid )
+                    {
+                        hotbar[i].item = 0;
+                        hotbar[i].resetLastItem();
+                    }
+                }
+
+                hotbar_t.harpoonHotbarSlot = -1;
+            }
+        }
+        else
+        {
+            free(pickedUp);
+        }
+    }
+}
+// mod add end	
 /*-------------------------------------------------------------------------------
 
 	gameLogic
@@ -1831,6 +1928,7 @@ void gameLogic(void)
 				    // when this flag is set, it's time to load the next level.
 					loadnextlevel = false;
 					loadedNextLevel = true;
+					sweepAmuletFamiliarIngredientsOnLevelChange();
 
 					int totalFloorGold = 0;
 					int totalFloorItems = 0;
@@ -1938,6 +2036,7 @@ void gameLogic(void)
 								}
 							}
 						}
+						returnHarpoonOnLevelChange(entity); // mod add: recover Harpoon before old level is unloaded
 					}
 
 					// hack to fix these things from breaking everything...
@@ -2013,6 +2112,7 @@ void gameLogic(void)
 
 					// copy followers list
 					list_t tempFollowers[MAXPLAYERS];
+					Stat* tempWraithBodies[MAXPLAYERS] = {};
 					bool bCopyFollowers = true;
 					if ( gameModeManager.getMode() == GameModeManager_t::GAME_MODE_TUTORIAL )
 					{
@@ -2053,6 +2153,14 @@ void gameLogic(void)
 						}
 
 						list_FreeAll(&stats[c]->FOLLOWERS);
+					}
+					if ( multiplayer != CLIENT )
+					{
+						for ( c = 0; c < MAXPLAYERS; ++c )
+						{
+							tempWraithBodies[c] =
+								captureWraithPossessedBodyForLevelTransition(c);
+						}
 					}
 
 					// unlock some steam achievements
@@ -2402,6 +2510,12 @@ void gameLogic(void)
 
 					for (c = 0; c < MAXPLAYERS; c++)
 					{
+						if ( tempWraithBodies[c] )
+						{
+							restoreWraithPossessedBodyAfterLevelTransition(
+								c, tempWraithBodies[c]);
+							tempWraithBodies[c] = nullptr; // consumed by restore
+						}
 						if (players[c] && players[c]->entity && !client_disconnected[c])
 						{
 							if ( stats[c] && stats[c]->getEffectActive(EFF_POLYMORPH) && stats[c]->playerPolymorphStorage != NOTHING )
@@ -3444,6 +3558,8 @@ void gameLogic(void)
 							{
 								entity->ranbehavior = true;
 								nextnode = node->next;
+								const double wraithProxyOldX = entity->x;
+								const double wraithProxyOldY = entity->y;								
 								if ( entity->flags[UPDATENEEDED] && !entity->flags[NOUPDATE] )
 								{
 									// adjust entity position
@@ -3486,8 +3602,10 @@ void gameLogic(void)
 											}
 										}
 									}
-									// dead reckoning
-									if ( fabs(entity->vel_x) > 0.0001 || fabs(entity->vel_y) > 0.0001 )
+									// Dead reckoning is inappropriate for a possessed Wraith
+									// visual proxy. Its position is already controlled by the host.
+									if ( !isClientWraithMonsterVisualProxy(entity)
+										&& (fabs(entity->vel_x) > 0.0001 || fabs(entity->vel_y) > 0.0001) )
 									{
 										double ox = 0, oy = 0, onewx = 0, onewy = 0;
 										if ( entity->behavior == &actPlayer 
@@ -3608,6 +3726,77 @@ void gameLogic(void)
 												}
 											}
 										}
+									}
+								}
+								// Network interpolation above has now established the
+								// authoritative position AND orientation of the
+								// possessed monster proxy. Lay out its limbs once
+								// at that final transform, before their own render
+								// interpolation is updated. Do not move the root
+								// or change its network interpolation target.
+								if ( isClientWraithMonsterVisualProxy(entity) )
+								{
+									static Uint32 lastProxyUid[MAXPLAYERS] = {};
+									static double smoothedWalkDist[MAXPLAYERS] = {};
+
+									int owner = -1;
+
+									for (int p = 0; p < MAXPLAYERS; ++p)
+									{
+										if (players[p] && stats[p]
+											&& stats[p]->playerRace == RACE_WRAITH
+											&& players[p]->mechanics.wraith.possessedEntityUid == entity->getUID())
+										{
+											owner = p;
+											break;
+										}
+									}
+
+									if (owner >= 0)
+									{
+										// New possession: reset visual animation exactly once.
+										if (lastProxyUid[owner] != entity->getUID())
+										{
+											lastProxyUid[owner] = entity->getUID();
+											smoothedWalkDist[owner] = 0.0;
+
+											entity->monsterAttack = 0;
+											entity->monsterAttackTime = 0;
+											entity->monsterArmbended = 0;
+											entity->monsterWeaponYaw = 0;
+											entity->monsterSpellAnimation = 0;
+
+											for (Entity* limb : entity->bodyparts)
+											{
+												if (!limb)
+												{
+													continue;
+												}
+
+												limb->pitch = 0;
+												limb->roll = 0;
+												limb->skill[0] = 0;
+												limb->skill[1] = 0;
+											}
+										}
+
+										const double dx = entity->x - wraithProxyOldX;
+										const double dy = entity->y - wraithProxyOldY;
+
+										const double rawDist =
+											std::min(2.0, sqrt(dx * dx + dy * dy));
+
+										// Smooth irregular network interpolation steps.
+										smoothedWalkDist[owner] +=
+											(rawDist - smoothedWalkDist[owner]) * 0.25;
+
+										// Allow the animation to settle completely at rest.
+										if (rawDist < 0.02 && smoothedWalkDist[owner] < 0.1)
+										{
+											smoothedWalkDist[owner] = 0.0;
+										}
+
+										monsterAnimate(entity, nullptr, smoothedWalkDist[owner]);
 									}
 								}
 								TimerExperiments::updateEntityInterpolationPosition(entity);
@@ -5789,12 +5978,17 @@ void ingameHud()
 		{
             const bool shootmode = players[player]->shootmode;
 			bool hasSpellbook = false;
+			Item* equippedRune = nullptr;
 			bool tryHotbarQuickCast = players[player]->hotbar.faceMenuQuickCast;
 			bool tryInventoryQuickCast = players[player]->magic.doQuickCastSpell();
 			bool tryTomeQuickCast = players[player]->magic.doQuickCastTome();
 			if ( stats[player]->shield && itemCategory(stats[player]->shield) == SPELLBOOK )
 			{
 				hasSpellbook = true;
+			}
+			else if ( stats[player]->shield && stats[player]->shield->runeIsValid() )
+			{
+				equippedRune = stats[player]->shield;
 			}
 
 			players[player]->hotbar.faceMenuQuickCast = false;
@@ -5810,6 +6004,7 @@ void ingameHud()
 				bool hotbarFaceMenuOpen = players[player]->hotbar.faceMenuButtonHeld != Player::Hotbar_t::GROUP_NONE;
 				bool castMemorizedSpell = input.binaryToggle("Cast Spell");
 				bool castSpellbook = (hasSpellbook && input.binaryToggle("Defend"));
+				bool castRune = (equippedRune && input.binaryToggle("Defend"));
 
 				if ( inputs.hasController(player) && cast_animation[player].spellWaitingAttackInput() )
 				{
@@ -5831,7 +6026,7 @@ void ingameHud()
 						castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false, false);
 					}
 				}
-			    else if (tryHotbarQuickCast || castMemorizedSpell || castSpellbook )
+			    else if (tryHotbarQuickCast || castMemorizedSpell || castSpellbook || castRune )
 			    {
 				    allowCasting = true;
 				    if ( tryHotbarQuickCast == false )
@@ -5856,7 +6051,7 @@ void ingameHud()
 										allowCasting = false;
 									}
 								}
-								if ( castSpellbook )
+								if ( castSpellbook || castRune )
 								{
 									if ( input.bindingIsSharedWithKeyboardSystemBinding("Defend") )
 									{
@@ -5877,7 +6072,7 @@ void ingameHud()
 										allowCasting = false;
 									}
 								}
-								if ( castSpellbook )
+								if ( castSpellbook || castRune )
 								{
 									allowCasting = false;
 									input.consumeBinaryToggle("Defend");
@@ -5893,7 +6088,7 @@ void ingameHud()
 						}
 					}
 
-				    if ( allowCasting && castSpellbook && players[player] && players[player]->entity )
+				    if ( allowCasting && (castSpellbook || castRune) && players[player] && players[player]->entity )
 				    {
 					    if ( players[player]->entity->effectShapeshift != NOTHING )
 					    {
@@ -5964,6 +6159,10 @@ void ingameHud()
 							{
 								castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true, false);
 							}
+							else if ( equippedRune && input.consumeBinaryToggle("Defend") )
+							{
+								activateMagicRune(player);
+							}
 							else
 							{
 								castSpellInit(players[player]->entity->getUID(), players[player]->magic.selectedSpell(), false, false);
@@ -6006,6 +6205,10 @@ void ingameHud()
 						else if ( hasSpellbook && input.consumeBinaryToggle("Defend") )
 						{
 							castSpellInit(players[player]->entity->getUID(), getSpellFromID(getSpellIDFromSpellbook(stats[player]->shield->type)), true, false);
+						}
+						else if ( equippedRune && input.consumeBinaryToggle("Defend") )
+						{
+							activateMagicRune(player);
 						}
 						else
 						{
@@ -6176,6 +6379,7 @@ void ingameHud()
 		players[player]->inventoryUI.processInventory();
 		GenericGUI[player].tinkerGUI.updateTinkerMenu();
 		GenericGUI[player].alchemyGUI.updateAlchemyMenu();
+		GenericGUI[player].stewingGUI.updateStewingMenu();
 		GenericGUI[player].assistShrineGUI.updateAssistShrine();
 		GenericGUI[player].mailboxGUI.updateMailMenu();
 		GenericGUI[player].featherGUI.updateFeatherMenu();
@@ -6547,6 +6751,51 @@ void ingameHud()
 	}
 }
 
+// mod add: local screen-space Spyglass mask, drawn over the completed 3D
+// viewport and beneath the ordinary HUD.
+static void drawSpyglassOverlay(const view_t& camera)
+{
+	// The UI image loader's '*' prefix selects nearest-neighbor minification
+	// and magnification while resolving the same underlying asset path.
+	Image* overlay = Image::get("*images/spyglass_overlay.png");
+	if ( !overlay || overlay->getWidth() <= 0 || overlay->getHeight() <= 0
+		|| camera.winw <= 0 || camera.winh <= 0 )
+	{
+		return;
+	}
+
+	const real_t scale = std::min(
+		static_cast<real_t>(camera.winw) / overlay->getWidth(),
+		static_cast<real_t>(camera.winh) / overlay->getHeight());
+	const int renderWidth = std::max(1, static_cast<int>(std::round(overlay->getWidth() * scale)));
+	const int renderHeight = std::max(1, static_cast<int>(std::round(overlay->getHeight() * scale)));
+	const SDL_Rect destination{
+		camera.winx + (camera.winw - renderWidth) / 2,
+		camera.winy + (camera.winh - renderHeight) / 2,
+		renderWidth,
+		renderHeight
+	};
+	const SDL_Rect viewport{ camera.winx, camera.winy, camera.winw, camera.winh };
+
+	// The overlay has a transparent viewing aperture, so blacken only the area
+	// outside its aspect-fit destination. Its opaque pixels mask the remainder.
+	auto drawBlackBorder = [](SDL_Rect rect)
+	{
+		if ( rect.w > 0 && rect.h > 0 )
+		{
+			drawRect(&rect, makeColor(0, 0, 0, 255), 255);
+		}
+	};
+	drawBlackBorder(SDL_Rect{ viewport.x, viewport.y, viewport.w, destination.y - viewport.y });
+	drawBlackBorder(SDL_Rect{ viewport.x, destination.y + destination.h,
+		viewport.w, viewport.y + viewport.h - (destination.y + destination.h) });
+	drawBlackBorder(SDL_Rect{ viewport.x, destination.y, destination.x - viewport.x, destination.h });
+	drawBlackBorder(SDL_Rect{ destination.x + destination.w, destination.y,
+		viewport.x + viewport.w - (destination.x + destination.w), destination.h });
+
+	overlay->draw(nullptr, destination, SDL_Rect{ 0, 0, xres, yres });
+}
+
 void drawAllPlayerCameras() {
 	DebugStats.drawWorldT1 = std::chrono::high_resolution_clock::now();
 	int playercount = 0;
@@ -6598,6 +6847,17 @@ void drawAllPlayerCameras() {
 				continue;
 			}
 			auto& camera = players[c]->camera();
+			const bool spyglassZoomActive = playerIsUsingSpyglass(players[c]->entity);
+			// mod add: local-only maintained Spyglass zoom. Apply relative to the
+			// current/custom (and split-screen adjusted) FOV, then restore after
+			// this viewport so other local players are unaffected.
+			const Uint32 viewportFov = ::fov;
+			static constexpr real_t SPYGLASS_ZOOM_FOV_MULTIPLIER = 0.45;
+			if ( spyglassZoomActive )
+			{
+				::fov = static_cast<Uint32>(std::max<real_t>(10.0,
+					viewportFov * SPYGLASS_ZOOM_FOV_MULTIPLIER));
+			}
 		    auto& globalLightModifier = players[c]->camera().globalLightModifier;
 		    auto& globalLightModifierEntities = players[c]->camera().globalLightModifierEntities;
 		    auto& globalLightModifierActive = players[c]->camera().globalLightModifierActive;
@@ -6801,6 +7061,13 @@ void drawAllPlayerCameras() {
 			DebugStats.drawWorldT5 = std::chrono::high_resolution_clock::now();
 			drawEntities3D(&camera, REALCOLORS);
 			glEndCamera(&camera, true, map);
+			::fov = viewportFov;
+			if ( spyglassZoomActive )
+			{
+				// mod add: Use the exact state which selected the Spyglass FOV. The
+				// mask therefore remains until that zoom state has fully released.
+				drawSpyglassOverlay(camera);
+			}
             
             // undo ghost fog
             if (players[c]->ghost.isActive() || (players[c]->entity && players[c]->entity->isBlind()) ) {
@@ -7614,7 +7881,19 @@ int main(int argc, char** argv)
 				{
 					if (classtoquickstart[0] != '\0')
 					{
-						for ( c = 0; c <= CLASS_MONK; c++ ) {
+						for ( c = 0; c < NUMCLASSES; c++ ) {
+							if ( c > CLASS_MONK )
+							{
+								bool allowCustomBaseClass = c == CLASS_RUNESMITH;
+								if ( c == CLASS_WITCH )
+								{
+									allowCustomBaseClass = true;
+								}
+								if ( !allowCustomBaseClass )
+								{
+									continue;
+								}
+							}
 							if ( !strcmp(classtoquickstart, playerClassLangEntry(c, 0)) ) {
 								client_classes[0] = c;
 								break;
@@ -8091,6 +8370,22 @@ int main(int argc, char** argv)
 			if ( showfps )
 			{
 			    printTextFormatted(font16x16_bmp, 8, 8, "fps = %3.1f", fps);
+			}
+			if ( showgolemstats && players[clientnum] && players[clientnum]->entity
+				&& stats[clientnum]
+				&& players[clientnum]->entity->isNaturalGolemPlayer() )
+			{
+				const Sint32 blessed = std::max<Sint32>(0,
+					std::min<Sint32>(10000, stats[clientnum]->golemBlessedComposition));
+				const Sint32 cursed = 10000 - blessed;
+				const int overlayY = showfps ? 28 : 8;
+				printTextFormatted(font8x8_bmp, 8, overlayY,
+					"GOLEM HUNGER: %d / %d\n"
+					"BLESSED: %d (%d.%02d%%)\n"
+					"CURSED:  %d (%d.%02d%%)",
+					stats[clientnum]->HUNGER, GOLEM_CHARGE_MAX,
+					blessed, blessed / 100, blessed % 100,
+					cursed, cursed / 100, cursed % 100);
 			}
 			if ( enableDebugKeys )
 			{

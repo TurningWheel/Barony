@@ -27,6 +27,7 @@
 #include "../book.hpp"
 #include "../scrolls.hpp"
 
+#include <fstream> // mod add: exe version check
 #include <cassert>
 #include <functional>
 #ifdef STEAMWORKS
@@ -8616,7 +8617,7 @@ bind_failed:
 	}
 
 	// number of player selectable races
-	constexpr int num_races = 14;
+	constexpr int num_races = 18; // mod add: include Wraith selectable race
 
 /******************************************************************************/
 	int getLangEntryForMainMenuRaceName(int race)
@@ -8643,6 +8644,52 @@ bind_failed:
 		}
 		return 5369;
 	}
+
+	// mod add: custom Merrow race name without language-file dependency
+	const char* getMainMenuRaceName(int race)
+	{
+		if ( race == 14 ) // Merrow's visible menu index
+		{
+			return "Merrow";
+		}
+		if ( race == 15 ) // mod add: Leonin's visible menu index
+		{
+			return "Leonin";
+		}
+		if ( race == 16 ) // mod add: Golem's visible menu index
+		{
+			return "Golem";
+		}
+		if ( race == 17 ) // mod add: Wraith's visible menu index
+		{
+			return "Wraith";
+		}
+
+		return Language::get(getLangEntryForMainMenuRaceName(race));
+	}
+
+	const char* getPlayerRaceName(int race)
+	{
+		if ( race == RACE_MERROW )
+		{
+			return "Merrow";
+		}
+		if ( race == RACE_LEONIN ) // mod add: no language-file dependency
+		{
+			return "Leonin";
+		}
+		if ( race == RACE_GOLEM )
+		{
+			return "Golem";
+		}
+		if ( race == RACE_WRAITH )
+		{
+			return "Wraith";
+		}
+
+		return Language::get(getLangEntryForPlayerRaceName(race));
+	}
+	// mod add end
 
     static void createLeaderboards(std::string leaderboard_type) {
         assert(main_menu_frame);
@@ -9437,7 +9484,7 @@ bind_failed:
             assert(character_title);
             snprintf(buf, sizeof(buf), Language::get(5298),
                 score->stats->LVL,
-                Language::get(getLangEntryForPlayerRaceName(score->stats->playerRace)),
+                getPlayerRaceName(score->stats->playerRace), //mod add merrow
                 playerClassLangEntry(score->classnum, 0));
             character_title->setText(buf);
 
@@ -13234,6 +13281,8 @@ failed:
 			printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
 			return;
 		}
+		//mod add: optional fill-missing description overlay
+		applyOptionalJsonAdditiveFile(d, "/data/class_descriptions_add.json", sizeof(buf));
 
 		data.clear();
 
@@ -13340,6 +13389,37 @@ failed:
 				}
 			}
 		}
+		// mod add: Keep Gunslinger selectable before the mod's description JSON is
+		// installed. Its proper "gunslinger" description entry overrides this fallback.
+		if ( data.find(CLASS_GUNSLINGER) == data.end() )
+		{
+			auto tinkerer = data.find(CLASS_MACHINIST);
+			if ( tinkerer != data.end() )
+			{
+				data[CLASS_GUNSLINGER] = tinkerer->second;
+				data[CLASS_GUNSLINGER].internal_name = "gunslinger";
+				data[CLASS_GUNSLINGER].text = "A resourceful marksman armed with a flintlock pistol and fieldcraft spellbooks.";
+			}
+		}
+		// Keep Runesmith selectable when its mounted description data is absent.
+		if ( data.find(CLASS_RUNESMITH) == data.end() )
+		{
+			auto& runesmith = data[CLASS_RUNESMITH];
+			runesmith.internal_name = "runesmith";
+			runesmith.text = "A runic artisan who binds spellbook magic into gemstones and wields a Rune Hammer.";
+			tmpStats.clearStats();
+			initClassStats(CLASS_RUNESMITH, &tmpStats);
+			runesmith.hp = tmpStats.HP;
+			runesmith.mp = tmpStats.MP;
+			runesmith.survivalComplexity = {
+				std::make_tuple(3, "***", average),
+				std::make_tuple(4, "****", poor)
+			};
+			runesmith.statRatingsStrings = {
+				"decent", "poor", "average", "decent", "poor", "average"
+			};
+			runesmith.statRatings = { decent, poor, average, decent, poor, average };
+		}
 		init = true;
 		printlog("[JSON]: Successfully read json file %s", inputPath.c_str());
 	}
@@ -13382,6 +13462,8 @@ failed:
 			printlog("[JSON]: Error: No 'version' value in json file, or JSON syntax incorrect! %s", inputPath.c_str());
 			return;
 		}
+		//mod add: optional fill-missing description overlay
+		applyOptionalJsonAdditiveFile(d, "/data/race_descriptions_add.json", sizeof(buf));
 
 		data.clear();
 
@@ -13530,6 +13612,27 @@ failed:
 	}
 
 	constexpr int num_classes = sizeof(classes_in_order) / sizeof(classes_in_order[0]);
+	static_assert(num_classes == NUMCLASSES, "Class selection list must match NUMCLASSES"); // mod add
+	static bool classUsesBasePresentation(int classnum)
+	{
+		if ( classnum < CLASS_CONJURER )
+		{
+			return true;
+		}
+		if ( classnum == CLASS_GUNSLINGER )
+		{
+			return true;
+		}
+		if ( classnum == CLASS_RUNESMITH )
+		{
+			return true;
+		}
+		if ( classnum == CLASS_WITCH )
+		{
+			return true;
+		}
+		return false;
+	}
 
     constexpr Uint32 color_dlc0 = makeColorRGB(169, 185, 212);
     constexpr Uint32 color_dlc1 = makeColorRGB(241, 129, 78);
@@ -13543,7 +13646,7 @@ failed:
 	std::vector<const char*> reducedClassList(int index) {
 		std::vector<const char*> result;
 		result.reserve(num_classes);
-		for (int c = CLASS_BARBARIAN; c <= CLASS_PALADIN; ++c) {
+		for (int c = CLASS_BARBARIAN; c < num_classes; ++c) {
 			if (isCharacterValidFromDLC(*stats[index], c) == VALID_OK_CHARACTER) {
 				result.emplace_back(classes_in_order[c]);
 			}
@@ -13822,12 +13925,25 @@ failed:
 	        color_race = color_dlc0;
 	    }
 
-		auto& raceDescriptionData = RaceDescriptions::getRaceDescriptionData(race);
+		// mod add: custom race descriptions without language-file dependencies
+		auto& raceDescriptionData =
+			(race == RACE_MERROW)
+				? RaceDescriptions::getMonsterDescriptionData(MERROW)
+				: (race == RACE_LEONIN)
+					? RaceDescriptions::getMonsterDescriptionData(LEONIN)
+				: (race == RACE_GOLEM)
+					? RaceDescriptions::getMonsterDescriptionData(GOLEM)
+				: (race == RACE_WRAITH)
+					? RaceDescriptions::getMonsterDescriptionData(WRAITH)
+				: RaceDescriptions::getRaceDescriptionData(race);
+		// mod add end
 
 	    auto details_title = card.findField("details_title");
 	    if (details_title) {
 	        details_title->clearLinesToColor();
-	        details_title->setText(raceDescriptionData.title.c_str());
+	        details_title->setText(race == RACE_WRAITH ? "Wraith"
+				: (race == RACE_GOLEM ? "Golem"
+				: (race == RACE_LEONIN ? "Leonin" : raceDescriptionData.title.c_str())));
             details_title->setColor(color_race);
 	    }
 
@@ -13868,6 +13984,57 @@ failed:
 
 	static void race_achievement_required_error(int classnum)
 	{
+		// mod add: custom race / class unlocks
+		if ( classnum == CLASS_WHALER || classnum == CLASS_GUNSLINGER
+			|| classnum == CLASS_RUNESMITH || classnum == CLASS_WITCH )
+		{
+			const char* pairedRace = "";
+			const char* pairedClass = "";
+
+			if ( classnum == CLASS_WHALER )
+			{
+				pairedRace = "Merrow";
+				pairedClass = "Whaler";
+			}
+			else if ( classnum == CLASS_GUNSLINGER )
+			{
+				pairedRace = "Leonin";
+				pairedClass = "Gunslinger";
+			}
+			else if ( classnum == CLASS_RUNESMITH )
+			{
+				pairedRace = "Golem";
+				pairedClass = "Runesmith";
+			}
+			else if ( classnum == CLASS_WITCH )
+			{
+				pairedRace = "Wraith";
+				pairedClass = "Witch";
+			}
+			char customPrompt[128] = "";
+			snprintf(customPrompt, sizeof(customPrompt),
+				"Win the game as a %s to unlock %s for other races.", pairedRace, pairedClass);
+			auto prompt = errorPrompt(
+				customPrompt,
+				Language::get(5884),
+				[](Button& button) {
+					soundCancel();
+					closeMono();
+				});
+
+			if ( prompt )
+			{
+				if ( auto txt = prompt->findField("text") )
+				{
+					SDL_Rect pos = txt->getSize();
+					pos.y -= 8;
+					pos.h += 8;
+					txt->setSize(pos);
+				}
+			}
+			return;
+		}
+		// mod add end
 		char buf[256];
 		std::string achName = "";
 		switch ( classnum )
@@ -13936,6 +14103,11 @@ failed:
 	static bool race_button_challenge_check_fn(int race, int challengeClass)
 	{
 		bool allowPick = true;
+		if ( challengeClass == CLASS_WITCH )
+		{
+			return race == 0 || race == RACE_WRAITH - 4
+				|| isAchievementUnlockedForClassUnlock(RACE_WRAITH);
+		}
 		if ( race == RACE_HUMAN )
 		{
 			return true;
@@ -13992,6 +14164,18 @@ failed:
 		{
 			allowPick = isAchievementUnlockedForClassUnlock(RACE_SALAMANDER);
 		}
+		else if ( race != RACE_MERROW - 4 && challengeClass == CLASS_WHALER )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_MERROW);
+		}
+		else if ( race != RACE_LEONIN - 4 && challengeClass == CLASS_GUNSLINGER )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_LEONIN);
+		}
+		else if ( race != RACE_GOLEM - 4 && challengeClass == CLASS_RUNESMITH )
+		{
+			allowPick = isAchievementUnlockedForClassUnlock(RACE_GOLEM);
+		}
 		return allowPick;
 	}
 
@@ -14003,10 +14187,10 @@ failed:
 		bool fixedRace = gameModeManager.currentSession.challengeRun.isActive()
 			&& gameModeManager.currentSession.challengeRun.race >= 0 && gameModeManager.currentSession.challengeRun.race <= RACE_INSECTOID;
 		bool fixedClass = gameModeManager.currentSession.challengeRun.isActive()
-			&& gameModeManager.currentSession.challengeRun.classnum >= 0 && gameModeManager.currentSession.challengeRun.classnum <= NUMCLASSES;
+			&& gameModeManager.currentSession.challengeRun.classnum >= 0 && gameModeManager.currentSession.challengeRun.classnum < NUMCLASSES;
 
 		for (int c = 0; c < num_races; ++c) {
-			auto race = Language::get(getLangEntryForMainMenuRaceName(c));
+			auto race = getMainMenuRaceName(c); //mod add extra races
 			if (strcmp(button.getName(), race) == 0) {
 				if ( fixedRace && !override_dlc && gameModeManager.currentSession.challengeRun.race != c )
 				{
@@ -14115,7 +14299,7 @@ failed:
 		}
 		for (int c = 0; c < num_races; ++c) {
 			// clear other buttons
-			auto race = Language::get(getLangEntryForMainMenuRaceName(c));
+			auto race = getMainMenuRaceName(c); //mod add extra races
 			auto other_button = frame->findButton(race);
 			if (other_button != &button) {
 				other_button->setPressed(false);
@@ -15955,7 +16139,8 @@ failed:
 	    slider->setHideSelectors(true);
 
 		auto hover_image = subframe->addImage(
-			SDL_Rect{0, 4 + 36 * stats[index]->playerRace, 234, 30},
+			SDL_Rect{0, 4 + 36 * (stats[index]->playerRace > RACE_INSECTOID
+				? stats[index]->playerRace - 4 : stats[index]->playerRace), 234, 30},
 			0xffffffff,
 			"*#images/ui/Main Menus/Play/PlayerCreation/RaceSelection/sublist_item-hover.png",
 		    "hover");
@@ -15968,7 +16153,7 @@ failed:
 		gradient->ontop = true;
 
         for (int c = 0; c < num_races; ++c) {
-		    auto race = subframe->addButton(Language::get(getLangEntryForMainMenuRaceName(c)));
+		    auto race = subframe->addButton(getMainMenuRaceName(c));  //mod add extra races
 		    race->setSize(SDL_Rect{0, c * 36 + 2, 30, 30});
 
 			bool fixedRace = gameModeManager.currentSession.challengeRun.isActive()
@@ -16025,13 +16210,13 @@ failed:
 		    race->addWidgetAction("MenuPageLeftAlt", "privacy");
 		    race->setWidgetBack("back_button");
 		    if (c < num_races - 1) {
-		        race->setWidgetDown(Language::get(getLangEntryForMainMenuRaceName(c + 1)));
+		        race->setWidgetDown(getMainMenuRaceName(c + 1)); //mod add merrow
 		    }
 		    /*else {
 		        race->setWidgetDown("disable_abilities");
 		    }*/
 		    if (c > 0) {
-		        race->setWidgetUp(Language::get(getLangEntryForMainMenuRaceName(c - 1)));
+		        race->setWidgetUp(getMainMenuRaceName(c - 1)); //mod ad merrow
 		    }
 		    race->setGlyphPosition(Widget::glyph_position_t::CENTERED);
 		    race->addWidgetAction("MenuPageLeft", "male");
@@ -16082,7 +16267,7 @@ failed:
                 }
 		        });
 
-		    auto label = subframe->addField((std::string(Language::get(getLangEntryForMainMenuRaceName(c))) + "_label").c_str(), 64);
+		    auto label = subframe->addField((std::string(getMainMenuRaceName(c)) + "_label").c_str(), 64);  //mod add extra races
 		    if (c >= 1 && c <= 4) 
 			{
 		        label->setColor(color_dlc1);
@@ -16099,7 +16284,7 @@ failed:
 			{
 		        label->setColor(color_dlc0);
 		    }
-		    label->setText(Language::get(getLangEntryForMainMenuRaceName(c)));
+		    label->setText(getMainMenuRaceName(c));  //mod add extra races
 		    label->setFont(smallfont_outline);
 		    label->setSize(SDL_Rect{32, c * 36, 108, 36});
 		    label->setHJustify(Field::justify_t::LEFT);
@@ -16369,7 +16554,7 @@ failed:
 		disable_abilities->addWidgetAction("MenuPageLeftAlt", "privacy");
 		disable_abilities->setWidgetBack("back_button");
 		disable_abilities->setWidgetDown("show_race_info");
-		disable_abilities->setWidgetUp(Language::get(getLangEntryForMainMenuRaceName(num_races - 1)));
+		disable_abilities->setWidgetUp(getMainMenuRaceName(num_races - 1)); //mod add merrow
 		if (stats[index]->playerRace != RACE_HUMAN) {
 			disable_abilities->setPressed(stats[index]->stat_appearance != 0);
 		}
@@ -16413,7 +16598,19 @@ failed:
 		male_button->setColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 		male_button->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 		male_button->setStyle(Button::style_t::STYLE_RADIO);
-		if (stats[index]->playerRace == RACE_AUTOMATON) {
+		if ( stats[index]->playerRace == RACE_GOLEM )
+		{
+			male_button->setFont(smallfont_outline);
+			male_button->setText("Blessed");
+		}
+		if ( stats[index]->playerRace == RACE_GOLEM )
+		{
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolemOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolem_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolemHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolemPress_00.png");
+		}
+		else if (stats[index]->playerRace == RACE_AUTOMATON) {
 			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoOn_00.png");
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
@@ -16468,7 +16665,15 @@ failed:
 		male_button->setTickCallback([](Widget& widget){
 			const int index = widget.getOwner();
 			auto button = static_cast<Button*>(&widget); assert(button);
-			if (stats[index]->playerRace == RACE_AUTOMATON) 
+			button->setText(stats[index]->playerRace == RACE_GOLEM ? "Blessed" : "");
+			if ( stats[index]->playerRace == RACE_GOLEM )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolemOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolem_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolemHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolemPress_00.png");
+			}
+			else if (stats[index]->playerRace == RACE_AUTOMATON)
 			{
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
@@ -16503,7 +16708,19 @@ failed:
 		female_button->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 		female_button->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 		female_button->setStyle(Button::style_t::STYLE_RADIO);
-		if ( stats[index]->playerRace == RACE_AUTOMATON ) {
+		if ( stats[index]->playerRace == RACE_GOLEM )
+		{
+			female_button->setFont(smallfont_outline);
+			female_button->setText("Cursed");
+		}
+		if ( stats[index]->playerRace == RACE_GOLEM )
+		{
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolemOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolem_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolemHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolemPress_00.png");
+		}
+		else if ( stats[index]->playerRace == RACE_AUTOMATON ) {
 			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoOn_00.png");
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
@@ -16559,7 +16776,15 @@ failed:
 		female_button->setTickCallback([](Widget& widget){
 			const int index = widget.getOwner();
 			auto button = static_cast<Button*>(&widget); assert(button);
-			if (stats[index]->playerRace == RACE_AUTOMATON) {
+			button->setText(stats[index]->playerRace == RACE_GOLEM ? "Cursed" : "");
+			if ( stats[index]->playerRace == RACE_GOLEM )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolemOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolem_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolemHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolemPress_00.png");
+			}
+			else if (stats[index]->playerRace == RACE_AUTOMATON) {
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
@@ -16691,9 +16916,9 @@ failed:
 
         if (details) {
   		    static auto class_desc_fn = [](Field& field, int index){
-			    const int i = std::min(std::max(0, client_classes[index]), (Sint32)(ClassDescriptions::data.size() - 1));
+			    const int i = std::min(std::max(0, client_classes[index]), NUMCLASSES - 1);
 				field.setText(ClassDescriptions::data[i].text.c_str());
-			    if (i < CLASS_CONJURER) {
+			    if (classUsesBasePresentation(i)) { // mod add: custom Base classes
 			        field.addColorToLine(0, color_dlc0);
 			    } else if (i < CLASS_MACHINIST) {
 			        field.addColorToLine(0, color_dlc1);
@@ -16733,7 +16958,7 @@ failed:
 
 		    for (int c = 0; c < num_class_stats; ++c) {
 		        static auto class_stat_fn = [](Field& field, int index){
-			        const int i = std::min(std::max(0, client_classes[index]), (Sint32)(ClassDescriptions::data.size() - 1));
+			        const int i = std::min(std::max(0, client_classes[index]), NUMCLASSES - 1);
 			        const int s = (int)strtol(field.getName(), nullptr, 10);
 			        field.setColor(ClassDescriptions::data[i].statRatings[s]);
 
@@ -16837,7 +17062,7 @@ failed:
 
 				static constexpr int hpmp_buf_size = 32;
 				static auto hpmp_fn = [](Field& field, int index) {
-					const int i = std::min(std::max(0, client_classes[index]), (Sint32)(ClassDescriptions::data.size() - 1));
+					const int i = std::min(std::max(0, client_classes[index]), NUMCLASSES - 1);
 					char buf[hpmp_buf_size];
 					snprintf(buf, sizeof(buf), "%d\n%d",
 						ClassDescriptions::data[i].hp,
@@ -16876,7 +17101,7 @@ failed:
 		    // difficulty stars
 		    static constexpr int star_buf_size = 32;
 	        static auto stars_fn = [](Field& field, int index){
-		        const int i = std::min(std::max(0, client_classes[index]), (Sint32)(ClassDescriptions::data.size() - 1));
+			        const int i = std::min(std::max(0, client_classes[index]), NUMCLASSES - 1);
 		        for (int c = 0; c < 2; ++c) {
 					field.addColorToLine(c, std::get<2>(ClassDescriptions::data[i].survivalComplexity[c]));
 		        }
@@ -16898,8 +17123,27 @@ failed:
         } else {
 		    static auto class_name_fn = [](Field& field, int index){
 			    const int i = std::min(std::max(0, client_classes[index]), num_classes - 1);
-			    field.setText(Language::get(playerClassLangEntryCapitalized(i)));
-			    if (i < CLASS_CONJURER) {
+			    if ( i == CLASS_WHALER ) //mod add: override lang packs because I'm lazy
+				{
+					field.setText("Whaler");
+				}
+				else if ( i == CLASS_GUNSLINGER ) // mod add: hardcoded like Whaler
+				{
+					field.setText("Gunslinger");
+				}
+				else if ( i == CLASS_RUNESMITH )
+				{
+					field.setText("Runesmith");
+				}
+				else if ( i == CLASS_WITCH )
+				{
+					field.setText("Witch");
+				}
+				else
+				{
+					field.setText(Language::get(playerClassLangEntryCapitalized(i)));
+				}
+			    if (classUsesBasePresentation(i)) { // mod add: custom Base classes
 			        field.setColor(color_dlc0);
 			    } else if (i < CLASS_MACHINIST) {
 			        field.setColor(color_dlc1);
@@ -17373,6 +17617,28 @@ failed:
 		if (!lobby) {
 		    return;
 		}
+		if ( !loadingsavegame && index >= 0 && index < MAXPLAYERS
+			&& players[index] && stats[index]
+			&& stats[index]->playerRace == RACE_WRAITH
+			&& players[index]->mechanics.wraith.initialized )
+		{
+			const int savedRace = stats[index]->playerRace;
+			const sex_t savedSex = stats[index]->sex;
+			const int savedAppearance = stats[index]->stat_appearance;
+			const int savedClass = client_classes[index];
+			const std::string savedName = stats[index]->name;
+
+			players[index]->mechanics.wraith =
+				Player::PlayerMechanics_t::WraithPlayerState();
+			stats[index]->clearStats();
+			stats[index]->playerRace = savedRace;
+			stats[index]->sex = savedSex;
+			stats[index]->stat_appearance = savedAppearance;
+			client_classes[index] = savedClass;
+			stringCopy(stats[index]->name, savedName.c_str(),
+				sizeof(Stat::name), savedName.size());
+			initClass(index);
+		}
 
 		if (multiplayer == CLIENT) {
 			sendSvFlagsOverNet();
@@ -17602,7 +17868,14 @@ failed:
 		male_button->setColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 		male_button->setHighlightColor(stats[index]->sex == MALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 		male_button->setStyle(Button::style_t::STYLE_RADIO);
-		if (stats[index]->playerRace == RACE_AUTOMATON) {
+		if ( stats[index]->playerRace == RACE_GOLEM )
+		{
+			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolemOn_00.png");
+			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolem_00.png");
+			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolemHigh_00.png");
+			male_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolemPress_00.png");
+		}
+		else if (stats[index]->playerRace == RACE_AUTOMATON) {
 			male_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoOn_00.png");
 			male_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
 			male_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
@@ -17653,7 +17926,14 @@ failed:
 		male_button->setTickCallback([](Widget& widget){
 			const int index = widget.getOwner();
 			auto button = static_cast<Button*>(&widget); assert(button);
-			if (stats[index]->playerRace == RACE_AUTOMATON) {
+			if ( stats[index]->playerRace == RACE_GOLEM )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolemOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolem_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolemHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonBGolemPress_00.png");
+			}
+			else if (stats[index]->playerRace == RACE_AUTOMATON) {
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAuto_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonMAutoHigh_00.png");
@@ -17687,7 +17967,14 @@ failed:
 		female_button->setColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 		female_button->setHighlightColor(stats[index]->sex == FEMALE ? makeColorRGB(255, 255, 255) : makeColorRGB(127, 127, 127));
 		female_button->setStyle(Button::style_t::STYLE_RADIO);
-		if (stats[index]->playerRace == RACE_AUTOMATON) {
+		if ( stats[index]->playerRace == RACE_GOLEM )
+		{
+			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolemOn_00.png");
+			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolem_00.png");
+			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolemHigh_00.png");
+			female_button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolemPress_00.png");
+		}
+		else if (stats[index]->playerRace == RACE_AUTOMATON) {
 			female_button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoOn_00.png");
 			female_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
 			female_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
@@ -17739,7 +18026,14 @@ failed:
 		female_button->setTickCallback([](Widget& widget){
 			const int index = widget.getOwner();
 			auto button = static_cast<Button*>(&widget); assert(button);
-			if (stats[index]->playerRace == RACE_AUTOMATON) {
+			if ( stats[index]->playerRace == RACE_GOLEM )
+			{
+				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolemOn_00.png");
+				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolem_00.png");
+				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolemHigh_00.png");
+				button->setBackgroundActivated("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonCGolemPress_00.png");
+			}
+			else if (stats[index]->playerRace == RACE_AUTOMATON) {
 				button->setIcon("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoOn_00.png");
 				button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAuto_00.png");
 				button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/RaceSelection/UI_RaceSelection_ButtonFAutoHigh_00.png");
@@ -17772,7 +18066,7 @@ failed:
 		race_button->setColor(makeColor(255, 255, 255, 255));
 		race_button->setHighlightColor(makeColor(255, 255, 255, 255));
 		race_button->setSize(SDL_Rect{166, 166, 108, 52});
-		race_button->setText(Language::get(getLangEntryForPlayerRaceName(stats[index]->playerRace)));
+		race_button->setText(getPlayerRaceName(stats[index]->playerRace) ); //mod add extra races
 		race_button->setFont(smallfont_outline);
 		race_button->setBackground("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBase_00.png");
 		race_button->setBackgroundHighlighted("*images/ui/Main Menus/Play/PlayerCreation/Finalize_Button_RaceBaseHigh_00.png");
@@ -17836,7 +18130,8 @@ failed:
 						}
 						stats[index]->playerRace = race;
 						chances[race] = 0;
-						if ( isCharacterValidFromDLC(*stats[index], index) == VALID_OK_CHARACTER )
+						if ( isCharacterValidFromDLC(*stats[index],
+							gameModeManager.currentSession.challengeRun.classnum) == VALID_OK_CHARACTER )
 						{
 							chances[race] = 1;
 							chanceFound = true;
@@ -17881,12 +18176,15 @@ failed:
 						chances[RACE_GNOME] = 1;
 						chances[RACE_SALAMANDER] = 1;
 					}
+					chances[RACE_LEONIN] = 1; // mod add: Leonin is a no-DLC selectable race
+					chances[RACE_GOLEM] = 1; // mod add: Golem is a no-DLC selectable race
+					chances[RACE_WRAITH] = 1; // mod add: Wraith is a no-DLC selectable race
 					stats[index]->playerRace = RNG.discrete(chances.data(), chances.size());
 				}
 			}
 
 			auto race_button = card->findButton("race");
-			race_button->setText(Language::get(getLangEntryForPlayerRaceName(stats[index]->playerRace)));
+			race_button->setText(getPlayerRaceName(stats[index]->playerRace) ); //mod add extra races
 
 			// choose a random appearance
 			const int appearance_choice = RNG.uniform(0, NUMAPPEARANCES - 1);
@@ -17969,7 +18267,26 @@ failed:
 		class_text->setSize(SDL_Rect{96, 236, 138, 32});
 		static auto class_text_fn = [](Field& field, int index){
 			int i = std::min(std::max(0, client_classes[index]), num_classes - 1);
-            field.setText(Language::get(playerClassLangEntryCapitalized(i)));
+			if ( i == CLASS_WHALER ) //mod add: override lang packs because I'm lazy
+			{
+				field.setText("Whaler");
+			}
+			else if ( i == CLASS_GUNSLINGER ) // mod add: hardcoded like Whaler
+			{
+				field.setText("Gunslinger");
+			}
+			else if ( i == CLASS_RUNESMITH )
+			{
+				field.setText("Runesmith");
+			}
+			else if ( i == CLASS_WITCH )
+			{
+				field.setText("Witch");
+			}
+			else
+			{
+				field.setText(Language::get(playerClassLangEntryCapitalized(i)));
+			}
 		};
 		class_text->setFont(smallfont_outline);
 		class_text->setJustify(Field::justify_t::CENTER);
@@ -28457,6 +28774,72 @@ failed:
 		setHostname(buf);
 	}
 
+	// mod add: executable version check
+	static constexpr const char* KNIGHTLY_EXE_VERSION = "4.05";
+
+	static int knightlyVersionNumber(const std::string& version)
+	{
+		int major = -1;
+		int minor = -1;
+
+		if ( sscanf(version.c_str(), "%d.%d", &major, &minor) != 2 )
+		{
+			return -1;
+		}
+
+		if ( major < 0 || minor < 0 || minor > 999 )
+		{
+			return -1;
+		}
+
+		return major * 1000 + minor;
+	}
+
+	static bool knightlyNewExeAvailable(std::string& latestVersion)
+	{
+		const int currentVersion = knightlyVersionNumber(KNIGHTLY_EXE_VERSION);
+		if ( currentVersion < 0 )
+		{
+			return false;
+		}
+
+		for ( const auto& mod : Mods::mountedFilepaths )
+		{
+			std::string versionPath = mod.first;
+			versionPath += PHYSFS_getDirSeparator();
+			versionPath += "knightly_exe_version.txt";
+
+			std::ifstream versionFile(versionPath);
+			if ( !versionFile.is_open() )
+			{
+				continue;
+			}
+
+			std::string modVersion;
+			std::getline(versionFile, modVersion);
+
+			const int availableVersion = knightlyVersionNumber(modVersion);
+			if ( availableVersion < 0 )
+			{
+				printlog("[Knightly] Invalid executable version file: %s\n",
+					versionPath.c_str());
+				continue;
+			}
+
+			printlog("[Knightly] Running EXE v%s, new version available: v%s.\n",
+				KNIGHTLY_EXE_VERSION, modVersion.c_str());
+
+			if ( availableVersion > currentVersion )
+			{
+				latestVersion = modVersion;
+				return true;
+			}
+		}
+
+		return false;
+	}
+	// mod add end
+
 	static std::string mods_active_tab = "";
 	static Uint32 mods_loading_tick = 0;
 #ifdef STEAMWORKS
@@ -28505,10 +28888,44 @@ failed:
 
 		gui->deselect();
 
+		//mod add
+		std::string latestKnightlyExeVersion;
+		const bool newKnightlyExeAvailable =
+			knightlyNewExeAvailable(latestKnightlyExeVersion);
+		//mod add end
 		Mods::loadMods();
 
 		destroyMainMenu();
 		createMainMenu(false);
+
+		// mod add: executable version warning
+		if ( newKnightlyExeAvailable )
+		{
+			char warning[256];
+			snprintf(warning, sizeof(warning),
+				"NEW KNIGHTLY .EXE AVAILABLE! v%s\n"
+				"Copy the new executable from the Workshop folder.",
+				latestKnightlyExeVersion.c_str());
+
+			auto exeWarning = main_menu_frame->addField(
+				"knightly_exe_warning", 256);
+
+			exeWarning->setFont(smallfont_outline);
+			exeWarning->setText(warning);
+
+			exeWarning->setHJustify(Field::justify_t::RIGHT);
+			exeWarning->setVJustify(Field::justify_t::BOTTOM);
+
+			exeWarning->setSize(SDL_Rect{
+				Frame::virtualScreenX - 520,
+				Frame::virtualScreenY - 115,
+				500,
+				60
+			});
+
+			exeWarning->setColor(makeColorRGB(255, 200, 64));
+		}
+		// mod add end
 
 		return true;
 	}
@@ -33069,7 +33486,7 @@ failed:
 						std::string s = playerClassLangEntry(e.scenarioInfo.classnum, 0);
 						camelCaseString(s);
 						txt->setText(s.c_str());
-						if ( e.scenarioInfo.classnum <= CLASS_MONK )
+						if ( classUsesBasePresentation(e.scenarioInfo.classnum) )
 						{
 							txt->setColor(hudColors.characterBaseClassText);
 						}

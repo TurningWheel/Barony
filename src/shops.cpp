@@ -108,6 +108,11 @@ void startTradingServer(Entity* entity, int player)
 	{
 		return;
 	}
+	if ( playerIsInWraithForm(player) )
+	{
+		messagePlayer(player, MESSAGE_INTERACTION, "The shopkeeper refuses to trade with a Wraith.");
+		return;
+	}
 
 	Stat* stats = entity->getStats();
 	if ( stats == NULL )
@@ -173,9 +178,18 @@ void startTradingServer(Entity* entity, int player)
 			net_packet->data[15] |= ((0xF & item->itemRequireTradingSkillInShop) << 4);
 			net_packet->data[16] = (Sint8)item->x;
 			net_packet->data[17] = (Sint8)item->y;
+			SDLNet_Write32(static_cast<Uint32>(item->runeGetStoredPWRRaw()), &net_packet->data[18]);
+			net_packet->data[22] = static_cast<Uint8>(item->runeGetCreatorPlayer());
+			SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[23]);
+			SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[27]);
+			net_packet->data[31] = static_cast<Uint8>(item->appliedOil);
+			writeIngredientCountsToPacket(*item, net_packet->data, 32);
+			writeFamiliarPersistentStateToPacket(*item, net_packet->data, 48);
+			writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+				48 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 			net_packet->address.host = net_clients[player - 1].host;
 			net_packet->address.port = net_clients[player - 1].port;
-			net_packet->len = 18;
+			net_packet->len = 104 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
 	}
@@ -222,6 +236,12 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 		}
 		shoptimer[player] = ticks - 1;
 		Item* itemToPickup = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, nullptr);
+		itemToPickup->runeSetStoredPWRRaw(item->runeGetStoredPWRRaw());
+		itemToPickup->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
+		itemToPickup->runeSetInstanceId(item->runeGetInstanceId());
+		itemToPickup->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+		itemToPickup->appliedOil = item->appliedOil;
+		copyItemPersistentCustomState(*itemToPickup, *item);
 		if ( itemTypeIsQuiver(item->type) )
 		{
 			itemToPickup->count = item->count;
@@ -381,9 +401,18 @@ bool buyItemFromShop(const int player, Item* item, bool& bOutConsumedEntireStack
 				net_packet->data[28] |= (1 << 4);
 			}
 			net_packet->data[29] = player;
+			SDLNet_Write32(static_cast<Uint32>(item->runeGetStoredPWRRaw()), &net_packet->data[30]);
+			net_packet->data[34] = static_cast<Uint8>(item->runeGetCreatorPlayer());
+			SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[35]);
+			SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[39]);
+			net_packet->data[43] = static_cast<Uint8>(item->appliedOil);
+			writeIngredientCountsToPacket(*item, net_packet->data, 44);
+			writeFamiliarPersistentStateToPacket(*item, net_packet->data, 60);
+			writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+				60 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
-			net_packet->len = 30;
+			net_packet->len = 116 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 		if ( shopIsMysteriousShopkeeper(entity) )
@@ -645,6 +674,12 @@ bool sellItemToShop(const int player, Item* item)
 	else
 	{
 		Item* sold = newItem(item->type, item->status, item->beatitude, 1, item->appearance, item->identified, shopInv[player]);
+		sold->runeSetStoredPWRRaw(item->runeGetStoredPWRRaw());
+		sold->runeSetCreatorPlayer(item->runeGetCreatorPlayer());
+		sold->runeSetInstanceId(item->runeGetInstanceId());
+		sold->runeSetCreatorIdentity(item->runeGetCreatorIdentity());
+		sold->appliedOil = item->appliedOil;
+		copyItemPersistentCustomState(*sold, *item);
 		if ( itemTypeIsQuiver(item->type) )
 		{
 			sold->count = item->count;
@@ -738,9 +773,18 @@ bool sellItemToShop(const int player, Item* item)
 			net_packet->data[28] = 0;
 		}
 		net_packet->data[29] = player;
+		SDLNet_Write32(static_cast<Uint32>(item->runeGetStoredPWRRaw()), &net_packet->data[30]);
+		net_packet->data[34] = static_cast<Uint8>(item->runeGetCreatorPlayer());
+		SDLNet_Write32(item->runeGetInstanceId(), &net_packet->data[35]);
+		SDLNet_Write32(item->runeGetCreatorIdentity(), &net_packet->data[39]);
+		net_packet->data[43] = static_cast<Uint8>(item->appliedOil);
+		writeIngredientCountsToPacket(*item, net_packet->data, 44);
+		writeFamiliarPersistentStateToPacket(*item, net_packet->data, 60);
+		writeWraithLoreInstanceIdToPacket(*item, net_packet->data,
+			60 + FAMILIAR_PERSISTENT_PACKET_BYTES);
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		net_packet->len = 30;
+		net_packet->len = 116 + WRAITH_LORE_INSTANCE_PACKET_BYTES;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
 	if ( itemTypeIsQuiver(item->type) )

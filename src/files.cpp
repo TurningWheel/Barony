@@ -3950,7 +3950,190 @@ bool physfsSearchModelsToUpdate()
 	FileIO::close(fp);
 	return false;
 }
+// mod edit: safely resize model storage when a mod adds model indices.
+static bool resizeModelStorage(Uint32 newCount)
+{
+    static Uint32 baseModelCount = 0;
 
+    if ( baseModelCount == 0 )
+    {
+        // First call occurs after the vanilla model list has been loaded.
+        baseModelCount = nummodels;
+    }
+
+    // A mod may append models, but must not remove vanilla model indices.
+    if ( newCount < baseModelCount )
+    {
+        printlog(
+            "[MODELS]: ERROR: mounted models.txt contains only %u models, "
+            "but vanilla requires at least %u.",
+            newCount,
+            baseModelCount
+        );
+        return false;
+    }
+
+    if ( newCount == nummodels )
+    {
+        return true;
+    }
+
+    const Uint32 oldCount = nummodels;
+    const Uint32 copyCount = std::min(oldCount, newCount);
+
+    printlog(
+        "[MODELS]: resizing model storage from %u to %u entries.",
+        oldCount,
+        newCount
+    );
+
+    // Allocate the new arrays first. If this fails, the existing arrays
+    // remain completely untouched.
+    voxel_t** newModels =
+        (voxel_t**)calloc(newCount, sizeof(voxel_t*));
+
+    polymodel_t* newPolymodels =
+        (polymodel_t*)calloc(newCount, sizeof(polymodel_t));
+
+    if ( !newModels || !newPolymodels )
+    {
+        printlog("[MODELS]: ERROR: failed to resize model storage.");
+
+        if ( newModels )
+        {
+            free(newModels);
+        }
+
+        if ( newPolymodels )
+        {
+            free(newPolymodels);
+        }
+
+        return false;
+    }
+
+    // Preserve all model entries which still exist.
+    if ( models && copyCount > 0 )
+    {
+        memcpy(
+            newModels,
+            models,
+            sizeof(voxel_t*) * copyCount
+        );
+    }
+
+    if ( polymodels && copyCount > 0 )
+    {
+        memcpy(
+            newPolymodels,
+            polymodels,
+            sizeof(polymodel_t) * copyCount
+        );
+    }
+
+    // If we're shrinking back to vanilla after unloading a mod,
+    // destroy the model resources which are disappearing.
+    if ( newCount < oldCount )
+    {
+        for ( Uint32 c = newCount; c < oldCount; ++c )
+        {
+            if ( models && models[c] )
+            {
+                if ( models[c]->data )
+                {
+                    free(models[c]->data);
+                }
+
+                free(models[c]);
+                models[c] = nullptr;
+            }
+
+            if ( polymodels )
+            {
+                if ( polymodels[c].faces )
+                {
+                    free(polymodels[c].faces);
+                    polymodels[c].faces = nullptr;
+                }
+
+                if ( !disablevbos )
+                {
+                    if ( polymodels[c].vao )
+                    {
+                        GL_CHECK_ERR(
+                            glDeleteVertexArrays(
+                                1,
+                                &polymodels[c].vao
+                            )
+                        );
+                    }
+
+                    if ( polymodels[c].positions )
+                    {
+                        GL_CHECK_ERR(
+                            glDeleteBuffers(
+                                1,
+                                &polymodels[c].positions
+                            )
+                        );
+                    }
+
+                    if ( polymodels[c].colors )
+                    {
+                        GL_CHECK_ERR(
+                            glDeleteBuffers(
+                                1,
+                                &polymodels[c].colors
+                            )
+                        );
+                    }
+
+                    if ( polymodels[c].normals )
+                    {
+                        GL_CHECK_ERR(
+                            glDeleteBuffers(
+                                1,
+                                &polymodels[c].normals
+                            )
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    // Only the top-level arrays are freed here.
+    // The retained voxel/polygon data was copied above.
+    if ( models )
+    {
+        free(models);
+    }
+
+    if ( polymodels )
+    {
+        free(polymodels);
+    }
+
+    models = newModels;
+    polymodels = newPolymodels;
+    nummodels = newCount;
+
+    // Remove bookkeeping entries belonging to models which disappeared.
+    Mods::modelsListModifiedIndexes.erase(
+        std::remove_if(
+            Mods::modelsListModifiedIndexes.begin(),
+            Mods::modelsListModifiedIndexes.end(),
+            [newCount](int index)
+            {
+                return index >= static_cast<int>(newCount);
+            }
+        ),
+        Mods::modelsListModifiedIndexes.end()
+    );
+
+    return true;
+}
+// mod edit end
 bool physfsModelIndexUpdate(int &start, int &end)
 {
 	if ( !PHYSFS_getRealDir("models/models.txt") )
@@ -3961,6 +4144,36 @@ bool physfsModelIndexUpdate(int &start, int &end)
 	
 	std::string modelsDirectory = PHYSFS_getRealDir("models/models.txt");
 	modelsDirectory.append(PHYSFS_getDirSeparator()).append("models/models.txt");
+
+	// mod edit: determine how many model indices the mounted models.txt contains.
+	File* countFp = openDataFile(modelsDirectory.c_str(), "rb");
+	if ( !countFp )
+	{
+		return false;
+	}
+
+	Uint32 mountedModelCount = 0;
+
+	for ( mountedModelCount = 0;
+		!countFp->eof();
+		mountedModelCount++ )
+	{
+		while ( countFp->getc() != '\n' )
+		{
+			if ( countFp->eof() )
+			{
+				break;
+			}
+		}
+	}
+
+	FileIO::close(countFp);
+
+	if ( !resizeModelStorage(mountedModelCount) )
+	{
+		return false;
+	}
+	// mod edit end
 
 	File* fp = openDataFile(modelsDirectory.c_str(), "rb");
 	if ( !fp )
@@ -4007,22 +4220,18 @@ bool physfsModelIndexUpdate(int &start, int &end)
 					Mods::modelsListModifiedIndexes.erase(it);
 				}
 			}
-
-			if ( c < nummodels )
+			//mod edit
+			if ( models[c] != NULL )
 			{
-				if ( models[c] != NULL )
+				if ( models[c]->data )
 				{
-					if ( models[c]->data )
-					{
-						free(models[c]->data);
-					}
-					free(models[c]);
+					free(models[c]->data);
 				}
+
+				free(models[c]);
+				models[c] = nullptr;
 			}
-			else
-			{
-				printlog("[PhysFS]: WARNING: Loading a new model: %d outside normal nummodels: %d range - Need special handling case to free model after use", c, nummodels);
-			}
+			//mod edit end
 			models[c] = loadVoxel(modelName);
 
 			// this index is not found in the normal models folder.
@@ -5361,6 +5570,140 @@ bool physfsSearchSoundsToUpdate()
 	return false;
 }
 
+// mod edit: safely resize sound storage when a mod adds sound indices.
+static bool resizeSoundStorage(Uint32 newCount)
+{
+	static Uint32 baseSoundCount = 0;
+
+	if ( baseSoundCount == 0 )
+	{
+		// First mod reload occurs after the vanilla sound list has loaded.
+		baseSoundCount = numsounds;
+	}
+
+	// Mods may append sounds, but must not remove vanilla sound indices.
+	if ( newCount < baseSoundCount )
+	{
+		printlog(
+			"[SOUNDS]: ERROR: mounted sounds.txt contains only %u sounds, "
+			"but vanilla requires at least %u.",
+			newCount,
+			baseSoundCount
+		);
+		return false;
+	}
+
+	if ( newCount == numsounds )
+	{
+		return true;
+	}
+
+	const Uint32 oldCount = numsounds;
+	const Uint32 copyCount = std::min(oldCount, newCount);
+
+	printlog(
+		"[SOUNDS]: resizing sound storage from %u to %u entries.",
+		oldCount,
+		newCount
+	);
+
+#ifdef USE_FMOD
+	FMOD::Sound** newSounds =
+		(FMOD::Sound**)calloc(newCount, sizeof(FMOD::Sound*));
+
+	if ( !newSounds )
+	{
+		printlog("[SOUNDS]: ERROR: failed to resize sound storage.");
+		return false;
+	}
+
+	if ( sounds && copyCount > 0 )
+	{
+		memcpy(
+			newSounds,
+			sounds,
+			sizeof(FMOD::Sound*) * copyCount
+		);
+	}
+
+	// If a mod was unloaded and the list shrinks back toward vanilla,
+	// release the sound resources which are disappearing.
+	if ( sounds && newCount < oldCount )
+	{
+		for ( Uint32 c = newCount; c < oldCount; ++c )
+		{
+			if ( sounds[c] )
+			{
+				sounds[c]->release();
+				sounds[c] = nullptr;
+			}
+		}
+	}
+
+	if ( sounds )
+	{
+		free(sounds);
+	}
+
+	sounds = newSounds;
+
+#elif defined USE_OPENAL
+	OPENAL_BUFFER** newSounds =
+		(OPENAL_BUFFER**)calloc(newCount, sizeof(OPENAL_BUFFER*));
+
+	if ( !newSounds )
+	{
+		printlog("[SOUNDS]: ERROR: failed to resize sound storage.");
+		return false;
+	}
+
+	if ( sounds && copyCount > 0 )
+	{
+		memcpy(
+			newSounds,
+			sounds,
+			sizeof(OPENAL_BUFFER*) * copyCount
+		);
+	}
+
+	if ( sounds && newCount < oldCount )
+	{
+		for ( Uint32 c = newCount; c < oldCount; ++c )
+		{
+			if ( sounds[c] )
+			{
+				OPENAL_Sound_Release(sounds[c]);
+				sounds[c] = nullptr;
+			}
+		}
+	}
+
+	if ( sounds )
+	{
+		free(sounds);
+	}
+
+	sounds = newSounds;
+#endif
+
+	numsounds = newCount;
+
+	// Remove bookkeeping entries for sound indices which disappeared.
+	Mods::soundsListModifiedIndexes.erase(
+		std::remove_if(
+			Mods::soundsListModifiedIndexes.begin(),
+			Mods::soundsListModifiedIndexes.end(),
+			[newCount](int index)
+			{
+				return index >= static_cast<int>(newCount);
+			}
+		),
+		Mods::soundsListModifiedIndexes.end()
+	);
+
+	return true;
+}
+// mod edit end
 void physfsReloadSounds(bool reloadAll)
 {
 	if ( no_sound )
@@ -5374,6 +5717,36 @@ void physfsReloadSounds(bool reloadAll)
 	}
 	std::string soundsDirectory = PHYSFS_getRealDir("sound/sounds.txt");
 	soundsDirectory.append(PHYSFS_getDirSeparator()).append("sound/sounds.txt");
+	// mod edit: resize storage to match the mounted sounds.txt.
+	File* countFp = openDataFile(soundsDirectory.c_str(), "rb");
+	if ( !countFp )
+	{
+		printlog("[SOUNDS]: ERROR: failed to open mounted sounds.txt.");
+		return;
+	}
+
+	Uint32 mountedSoundCount = 0;
+
+	for ( mountedSoundCount = 0;
+		!countFp->eof();
+		++mountedSoundCount )
+	{
+		while ( countFp->getc() != '\n' )
+		{
+			if ( countFp->eof() )
+			{
+				break;
+			}
+		}
+	}
+
+	FileIO::close(countFp);
+
+	if ( !resizeSoundStorage(mountedSoundCount) )
+	{
+		return;
+	}
+	// mod edit end
 	File* fp = openDataFile(soundsDirectory.c_str(), "rb");
 	char name[PATH_MAX];
 
@@ -5439,13 +5812,13 @@ void physfsReloadSounds(bool reloadAll)
 				}
 
 #ifdef USE_FMOD
-				if ( !reloadAll )
+				if ( !reloadAll && sounds[c] ) //mod edit
 				{
 					sounds[c]->release();
 					sounds[c] = nullptr;
 				}
 				FMOD_MODE flags = FMOD_DEFAULT | FMOD_3D | FMOD_LOWMEM;
-				if ( c == 133 || c == 672 || c == 135 || c == 155 || c == 149 )
+				if ( c == 133 || c == 672 || c == 135 || c == 155 || c == 149 || c == 866 ) // cauldron_ambiance.ogg
 				{
 					flags |= FMOD_LOOP_NORMAL;
 				}
@@ -5456,9 +5829,10 @@ void physfsReloadSounds(bool reloadAll)
 				}
 #endif
 #ifdef USE_OPENAL
-				if ( !reloadAll )
+				if ( !reloadAll && sounds[c] ) //mod edit
 				{
 					OPENAL_Sound_Release(sounds[c]);
+					sounds[c] = nullptr; //mod edit
 				}
 				OPENAL_CreateSound(soundFile.c_str(), true, &sounds[c]);
 #endif
@@ -5501,6 +5875,89 @@ bool physfsSearchSpritesToUpdate() //TODO: NX PORT: Any changes needed here?
 	return false;
 }
 
+// mod edit: safely resize sprite storage when a mod adds sprite indices.
+static bool resizeSpriteStorage(Uint32 newCount)
+{
+	static Uint32 baseSpriteCount = 0;
+
+	if ( baseSpriteCount == 0 )
+	{
+		// First call occurs after the vanilla sprite list has been loaded.
+		baseSpriteCount = numsprites;
+	}
+
+	// A mod may append sprites, but must not remove vanilla sprite indices.
+	if ( newCount < baseSpriteCount )
+	{
+		printlog(
+			"[SPRITES]: ERROR: mounted sprites.txt contains only %u sprites, "
+			"but vanilla requires at least %u.",
+			newCount,
+			baseSpriteCount
+		);
+		return false;
+	}
+
+	if ( newCount == numsprites )
+	{
+		return true;
+	}
+
+	const Uint32 oldCount = numsprites;
+	const Uint32 copyCount = std::min(oldCount, newCount);
+
+	printlog(
+		"[SPRITES]: resizing sprite storage from %u to %u entries.",
+		oldCount,
+		newCount
+	);
+
+	SDL_Surface** newSprites =
+		(SDL_Surface**)calloc(newCount, sizeof(SDL_Surface*));
+
+	if ( !newSprites )
+	{
+		printlog("[SPRITES]: ERROR: failed to resize sprite storage.");
+		return false;
+	}
+
+	// Preserve all sprite entries which still exist.
+	if ( sprites && copyCount > 0 )
+	{
+		memcpy(
+			newSprites,
+			sprites,
+			sizeof(SDL_Surface*) * copyCount
+		);
+	}
+
+	// If a mod was unloaded, free sprites whose indices disappear.
+	if ( newCount < oldCount )
+	{
+		for ( Uint32 c = newCount; c < oldCount; ++c )
+		{
+			if ( sprites && sprites[c] )
+			{
+				SDL_FreeSurface(sprites[c]);
+				sprites[c] = nullptr;
+			}
+		}
+	}
+
+	// Only free the old pointer array.
+	// Retained SDL_Surface objects were copied above.
+	if ( sprites )
+	{
+		free(sprites);
+	}
+
+	sprites = newSprites;
+	numsprites = newCount;
+
+	return true;
+}
+// mod edit end
+
 void physfsReloadSprites(bool reloadAll) //TODO: NX PORT: Any changes needed here?
 {
 	if ( !PHYSFS_getRealDir("images/sprites.txt") )
@@ -5511,17 +5968,45 @@ void physfsReloadSprites(bool reloadAll) //TODO: NX PORT: Any changes needed her
 	std::string spritesDirectory = PHYSFS_getRealDir("images/sprites.txt");
 	spritesDirectory.append(PHYSFS_getDirSeparator()).append("images/sprites.txt");
 	printlog("[PhysFS]: Loading sprites from directory %s...\n", spritesDirectory.c_str());
-	File* fp = openDataFile(spritesDirectory.c_str(), "rb");
-	char name[PATH_MAX];
-
-	/*int numsprites = 0;
-	for ( numsprites = 0; !fp->eof(); numsprites++ )
+	
+	// mod edit: determine how many sprite indices the mounted sprites.txt contains.
+	File* countFp = openDataFile(spritesDirectory.c_str(), "rb");
+	if ( !countFp )
 	{
-		while ( fp->getc() != '\n' ) if ( fp->eof() )
+		return;
+	}
+
+	Uint32 mountedSpriteCount = 0;
+
+	for ( mountedSpriteCount = 0;
+		!countFp->eof();
+		mountedSpriteCount++ )
+	{
+		while ( countFp->getc() != '\n' )
 		{
-			break;
+			if ( countFp->eof() )
+			{
+				break;
+			}
 		}
-	}*/
+	}
+
+	FileIO::close(countFp);
+
+	if ( !resizeSpriteStorage(mountedSpriteCount) )
+	{
+		return;
+	}
+	// mod edit end
+
+	File* fp = openDataFile(spritesDirectory.c_str(), "rb");
+	if ( !fp )
+	{
+		return;
+	}
+
+	char name[PATH_MAX];
+	//mod edit end
 
 	for ( int c = 0; !fp->eof(); ++c )
 	{
@@ -6006,6 +6491,7 @@ void physfsReloadMonsterLimbFiles()
 		// close file
 		FileIO::close(fp);
 	}
+
 }
 
 bool physfsSearchSystemImagesToUpdate()

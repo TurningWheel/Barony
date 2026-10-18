@@ -7686,6 +7686,17 @@ void assignActions(map_t* map)
 						entity->skill[14] = 0;    // appearance
 					}
 				}
+				// mod add: A normally placed Musket in the Library starts with the
+				// persistent quest jam. The saved statistic prevents it being restored
+				// after the one-time awakening has already occurred.
+				if ( multiplayer != CLIENT && entity->skill[10] == MUSKET
+					&& !strcmp(map->name, "The Mystic Library")
+					&& gameStatistics[STATISTICS_MUSKET_QUEST_UNLOCKED] == 0 )
+				{
+					entity->skill[14] = static_cast<Sint32>(
+						Item::setMusketAppearanceQuestJammed(MUSKET,
+							static_cast<Uint32>(entity->skill[14]), true));
+				}
 				if ( entity->skill[15] == 1 ) // editor set as identified
 				{
 					entity->skill[15] = 1;
@@ -7838,6 +7849,7 @@ void assignActions(map_t* map)
 			case 207:
 			case 246:
 			case 247:
+			case 304: // mod add: Merrow
 			{
 				entity->sizex = 4;
 				entity->sizey = 4;
