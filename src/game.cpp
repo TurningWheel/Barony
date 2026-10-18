@@ -3558,6 +3558,8 @@ void gameLogic(void)
 							{
 								entity->ranbehavior = true;
 								nextnode = node->next;
+								const double wraithProxyOldX = entity->x;
+								const double wraithProxyOldY = entity->y;								
 								if ( entity->flags[UPDATENEEDED] && !entity->flags[NOUPDATE] )
 								{
 									// adjust entity position
@@ -3600,8 +3602,10 @@ void gameLogic(void)
 											}
 										}
 									}
-									// dead reckoning
-									if ( fabs(entity->vel_x) > 0.0001 || fabs(entity->vel_y) > 0.0001 )
+									// Dead reckoning is inappropriate for a possessed Wraith
+									// visual proxy. Its position is already controlled by the host.
+									if ( !isClientWraithMonsterVisualProxy(entity)
+										&& (fabs(entity->vel_x) > 0.0001 || fabs(entity->vel_y) > 0.0001) )
 									{
 										double ox = 0, oy = 0, onewx = 0, onewy = 0;
 										if ( entity->behavior == &actPlayer 
@@ -3722,6 +3726,77 @@ void gameLogic(void)
 												}
 											}
 										}
+									}
+								}
+								// Network interpolation above has now established the
+								// authoritative position AND orientation of the
+								// possessed monster proxy. Lay out its limbs once
+								// at that final transform, before their own render
+								// interpolation is updated. Do not move the root
+								// or change its network interpolation target.
+								if ( isClientWraithMonsterVisualProxy(entity) )
+								{
+									static Uint32 lastProxyUid[MAXPLAYERS] = {};
+									static double smoothedWalkDist[MAXPLAYERS] = {};
+
+									int owner = -1;
+
+									for (int p = 0; p < MAXPLAYERS; ++p)
+									{
+										if (players[p] && stats[p]
+											&& stats[p]->playerRace == RACE_WRAITH
+											&& players[p]->mechanics.wraith.possessedEntityUid == entity->getUID())
+										{
+											owner = p;
+											break;
+										}
+									}
+
+									if (owner >= 0)
+									{
+										// New possession: reset visual animation exactly once.
+										if (lastProxyUid[owner] != entity->getUID())
+										{
+											lastProxyUid[owner] = entity->getUID();
+											smoothedWalkDist[owner] = 0.0;
+
+											entity->monsterAttack = 0;
+											entity->monsterAttackTime = 0;
+											entity->monsterArmbended = 0;
+											entity->monsterWeaponYaw = 0;
+											entity->monsterSpellAnimation = 0;
+
+											for (Entity* limb : entity->bodyparts)
+											{
+												if (!limb)
+												{
+													continue;
+												}
+
+												limb->pitch = 0;
+												limb->roll = 0;
+												limb->skill[0] = 0;
+												limb->skill[1] = 0;
+											}
+										}
+
+										const double dx = entity->x - wraithProxyOldX;
+										const double dy = entity->y - wraithProxyOldY;
+
+										const double rawDist =
+											std::min(2.0, sqrt(dx * dx + dy * dy));
+
+										// Smooth irregular network interpolation steps.
+										smoothedWalkDist[owner] +=
+											(rawDist - smoothedWalkDist[owner]) * 0.25;
+
+										// Allow the animation to settle completely at rest.
+										if (rawDist < 0.02 && smoothedWalkDist[owner] < 0.1)
+										{
+											smoothedWalkDist[owner] = 0.0;
+										}
+
+										monsterAnimate(entity, nullptr, smoothedWalkDist[owner]);
 									}
 								}
 								TimerExperiments::updateEntityInterpolationPosition(entity);

@@ -1090,6 +1090,8 @@ void mothDie(Entity* my);
 void earthElementalDie(Entity* my);
 void duckDie(Entity* my);
 
+// Wraith visual proxies animate AFTER client ENTU interpolation (game.cpp).
+bool isClientWraithMonsterVisualProxy(Entity* my);
 void monsterAnimate(Entity* my, Stat* myStats, double dist, bool visualOnly = false);
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);

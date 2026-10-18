@@ -2785,6 +2785,32 @@ static int getWraithProxyAttackPresentationPose(Entity* proxy, Stat* proxyStats)
 	}
 }
 
+// This client-side body is only a visual proxy for a Wraith controlling an
+// otherwise unplayable monster. Its root position comes from the host's ENTU
+// stream, not from the locally interpolated player entity. Animate its limbs
+// after that root position has been interpolated in game.cpp.
+bool isClientWraithMonsterVisualProxy(Entity* my)
+{
+	if ( multiplayer != CLIENT || !my || my->behavior != &actMonster
+		|| my->bodyparts.empty() )
+	{
+		return false;
+	}
+	for ( int player = 0; player < MAXPLAYERS; ++player )
+	{
+		if ( !players[player] || !stats[player]
+			|| stats[player]->playerRace != RACE_WRAITH
+			|| players[player]->mechanics.wraith.possessedEntityUid != my->getUID() )
+		{
+			continue;
+		}
+		return wraithPossessionUsesMonsterVisualProxy(
+			players[player]->mechanics.wraith.possessedType)
+			&& !wraithPossessionHasTemporaryFormOverride(player);
+	}
+	return false;
+}
+
 void actMonster(Entity* my)
 {
 	if (!my)
@@ -2909,7 +2935,13 @@ void actMonster(Entity* my)
 			// updates. Do not snap it to the local view of the player here.
 			const auto dist = sqrt(MONSTER_VELX * MONSTER_VELX
 				+ MONSTER_VELY * MONSTER_VELY);
-			monsterAnimate(my, nullptr, dist);
+			// For a Wraith-owned visual proxy, game.cpp animates limbs once,
+			// AFTER network position/rotation interpolation. Animating here
+			// would use the previous root transform and leave limbs behind.
+			if ( !isClientWraithMonsterVisualProxy(my) )
+			{
+				monsterAnimate(my, nullptr, dist);
+			}
 
 			if ( !intro )
 			{

@@ -1629,6 +1629,23 @@ bool beginWraithPossession(int player, Entity* target)
 	// is not transferred: possession only takes its current HP.
 	playerStats->MP -= cost;
 	const Sint32 mpAfterCost = playerStats->MP;
+
+	// The creature stops its previous AI attack/casting animation
+	// when the Wraith takes control.
+	target->monsterAttack = 0;
+	target->monsterAttackTime = 0;
+	target->monsterArmbended = 0;
+	target->monsterWeaponYaw = 0;
+	target->monsterSpellAnimation = 0;
+
+	if (multiplayer == SERVER)
+	{
+		serverUpdateEntitySkill(target, 8);
+		serverUpdateEntitySkill(target, 9);
+		serverUpdateEntitySkill(target, 10);
+		serverUpdateEntitySkill(target, 31);
+	}
+
 	detachWraithBodyFollower(target, targetStats);
 
 	clearWraithBodyEquipment(*targetStats);
